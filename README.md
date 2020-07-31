@@ -21,58 +21,19 @@
 * **性能优越**：集成自主研发的分布式训练平台，提供高性能的分布式计算体验，节省训练成本和训练时间。
 
 ## 页面预览
-![概览](/docs/images/dubhe_dashboard.png "概览")
+![概览](http://cdn.qjycloud.com/dubhe_web_dashboard.png "概览")
 
 
-## 功能列表
-<table>
-    <tbody>
-        <tr>
-            <td rowspan="12">一站式开发平台</td>
-        </tr>
-        <tr>
-            <td>数据管理</td>
-            <td>数据集管理</td>
-        </tr>
-        <tr>
-            <td rowspan="2">模型开发</td>
-            <td>Notebook</td>
-        </tr>
-        <tr>
-            <td>算法管理</td>
-        </tr>
-        <tr>
-            <td rowspan="2">训练管理</td>
-            <td>镜像管理</td>
-        </tr>
-        <tr>
-            <td>训练任务</td>
-        </tr>
-        <tr>
-            <td>模型管理</td>
-            <td>模型列表</td>
-        </tr>
-        <tr>
-            <td rowspan="5">控制台</td>
-            <td>用户管理</td>
-        </tr>
-        <tr>
-            <td>角色管理</td>
-        </tr>
-        <tr>
-            <td>菜单管理</td>
-        </tr>
-        <tr>
-            <td>字典管理</td>
-        </tr>
-        <tr>
-            <td>集群状态</td>
-        </tr>
-    </tbody>
-</table>
+## 目录结构
+```
+├── dubhe_data_process    数据处理服务
+├── dubhe-server          后端服务 
+├── dubhe-visual-server   可视化服务 
+├── webapp                前端服务 
+```
 
 ## 技术架构
-![技术架构](./docs/images/tech-arc.jpg "技术架构")
+![技术架构](http://cdn.qjycloud.com/tech-arc.jpg "技术架构")
 
 ## 技术栈
 - 后端: [Spring Boot](https://spring.io/projects/spring-boot)
@@ -82,22 +43,12 @@
 - 中间件: [MySQL](https://www.mysql.com/), [MyBatis-Plus](https://mp.baomidou.com/), [Redis](https://redis.io/)
 - 基础设施: [Docker](https://www.docker.com/), [Kubernetes](https://kubernetes.io/)
 
-## 目录结构
-
-```
-├── dubhe_data_process    数据处理服务
-├── dubhe-server          后端服务 
-├── dubhe-visual-server   可视化服务 
-├── webapp                前端服务 
-```
-
 ## 反馈问题
 
 - [在线社区](http://www.aiiaos.cn/index.php?s=/forum/index/forum/id/45.html)
 - 钉钉交流群
 
-<a href="./docs/images/dingtalk.jpg"><img src="http://cdn.qjycloud.com/dingtalk.jpg" width="320" /></a> 
-
+<img src="http://cdn.qjycloud.com/dingtalk.jpg" width="320" />
 
 ## 许可证书
 本项目的发布受[Apache 2.0 license](./LICENSE)许可认证。
