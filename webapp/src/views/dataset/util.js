@@ -74,7 +74,31 @@ export const stringifyAnnotations = (annotations) => {
 const buildImgUrl = (list = []) => {
   return list.map(d => ({
     url: `${bucketName}/${d.data.objectName}`,
+    ...(d.data.meta || {}), // 附加的信息，目前只包括 width, height
   }));
+};
+
+// 对文件进行自定义转换
+export const withDimensionFile = (result, file) => {
+  return new Promise((resolve) => {
+    const reader = new FileReader();
+    reader.addEventListener("load", () => {
+      const img = new Image();
+      img.onload = () => resolve({
+        ...result,
+        data: {
+          ...result.data,
+          meta: {
+            width: img.width,
+            height: img.height,
+          },
+        },
+      });
+      img.src = reader.result;
+    }, false);
+
+    reader.readAsDataURL(file.raw);
+  });
 };
 
 export const getImgFromMinIO = (res) => {
@@ -110,6 +134,7 @@ export const transformFile = (rawFile, callback) => {
   return res;
 };
 
+// deprecated
 // 获取文件信息
 async function checkImg (file){
   const fileUrl = getFullFileUrl(file);
@@ -126,6 +151,7 @@ async function checkImg (file){
   });
 }
 
+// deprecated
 // 上传文件之前加一层转换
 export const withDimensionFiles = async(files) => {
   return Promise.all(files.map(file => checkImg(file)));

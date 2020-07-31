@@ -55,6 +55,7 @@ export default {
       type: Boolean,
       default: false,
     },
+    transformFile: Function,
     hash: {
       type: Boolean,
       default: true,
@@ -67,7 +68,7 @@ export default {
     },
   },
   setup(props, ctx) {
-    const { toggleVisible, request } = props;
+    const { toggleVisible, request, transformFile } = props;
     const formRef = ref(null);
     const state = reactive({
       visible: props.visible,
@@ -98,7 +99,7 @@ export default {
 
       state.uploading = true;
       // 开始调用上传接口
-      uploadReqeust && uploadReqeust({ ...props.params, fileList: renameFileList }, handleUploadProgress)
+      uploadReqeust && uploadReqeust({ ...props.params, fileList: renameFileList, transformFile }, handleUploadProgress)
         .then(res => {
           const outputPath = getFileOutputPath(renameFileList, props.params);
           state.uploading = false;

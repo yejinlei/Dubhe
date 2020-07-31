@@ -19,6 +19,7 @@
     <UploadForm
       action="fakeApi"
       :visible="uploadDialogVisible"
+      :transformFile="withDimensionFile"
       :toggleVisible="handleClose"
       :params="uploadParams"
       @uploadSuccess="uploadSuccess"
@@ -164,7 +165,7 @@ import { without, isNil } from 'lodash';
 import { Message } from 'element-ui';
 import { queryDataEnhanceList } from '@/api/preparation/dataset';
 
-import { transformFile, transformFiles , getImgFromMinIO, dataEnhanceMap, withDimensionFiles } from '@/views/dataset/util';
+import { transformFile, transformFiles, getImgFromMinIO, dataEnhanceMap, withDimensionFile } from '@/views/dataset/util';
 import crudDataFile, { list, del , submit } from '@/api/preparation/datafile';
 import { getAutoLabels, getLabels, createLabel } from '@/api/preparation/datalabel';
 import { batchFinishAnnotation } from '@/api/preparation/annotation';
@@ -232,6 +233,10 @@ export default {
     };
   },
   computed: {
+    // 文件上传前携带尺寸信息
+    withDimensionFile() {
+      return withDimensionFile;
+    },
     uploadParams() {
       return {
         datasetId: this.datasetId,
@@ -412,10 +417,9 @@ export default {
     },
     async uploadSuccess(res) {
       const files = getImgFromMinIO(res);
-      const _files = await withDimensionFiles(files);
       // 提交业务上传
-      if (_files.length > 0) {
-        submit(this.datasetId, _files).then(() => {
+      if (files.length > 0) {
+        submit(this.datasetId, files).then(() => {
           this.$message({
             message: '上传文件成功',
             type: 'success',

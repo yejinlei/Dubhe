@@ -78,6 +78,7 @@
       ref="uploaderRef"
       action="fakeApi"
       :visible="thumbState.showDialog"
+      :transformFile="withDimensionFile"
       :toggleVisible="handleClose"
       :params="uploadParams"
       @uploadSuccess="uploadSuccess"
@@ -92,7 +93,7 @@ import { Message } from 'element-ui';
 import { pick } from 'lodash';
 
 import UploadForm from '@/components/UploadForm';
-import { fileTypeEnum, getImgFromMinIO, withDimensionFiles } from '@/views/dataset/util';
+import { fileTypeEnum, getImgFromMinIO, withDimensionFile } from '@/views/dataset/util';
 import { submit } from '@/api/preparation/datafile';
 import { detectFileList, queryFileOffset } from '@/api/preparation/dataset';
 import List from './list';
@@ -160,9 +161,8 @@ export default {
 
     const uploadSuccess = async(res) => {
       const files = getImgFromMinIO(res);
-      const _files = await withDimensionFiles(files);
       // 提交业务上传
-      submit(datasetId.value, _files).then(() => {
+      submit(datasetId.value, files).then(() => {
         Message.success('上传成功');
         updateList({ type: thumbState.type });
       });
@@ -224,6 +224,7 @@ export default {
 
     return {
       thumbState,
+      withDimensionFile,
       uploadParams,
       dropdownList,
       handleUpload,

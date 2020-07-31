@@ -125,6 +125,7 @@
           ref="initFileUploadForm"
           action="fakeApi"
           :params="uploadParams"
+          :transformFile="withDimensionFile"
           v-bind="optionCreateProps"
           @uploadSuccess="uploadSuccess"
           @uploadError="uploadError"
@@ -203,6 +204,7 @@
       :visible="uploadDialogVisible"
       :toggleVisible="toggleUploadFormClose"
       :params="uploadParams"
+      :transformFile="withDimensionFile"
       v-bind="optionImportProps"
       @uploadSuccess="uploadSuccess"
       @uploadError="uploadError"
@@ -446,7 +448,7 @@ import InfoSelect from '@/components/InfoSelect';
 import { getAutoLabels } from '@/api/preparation/datalabel';
 
 import { submit, submitVideo } from '@/api/preparation/datafile';
-import { getImgFromMinIO, getFullFileUrl, annotationMap, dataTypeMap, annotationProgressMap, decompressProgressMap, datasetStatusMap, withDimensionFiles } from '@/views/dataset/util';
+import { getImgFromMinIO, annotationMap, dataTypeMap, annotationProgressMap, decompressProgressMap, datasetStatusMap, withDimensionFile } from '@/views/dataset/util';
 import Edit from '@/components/InlineTableEdit';
 import BaseModal from '@/components/BaseModal';
 import { toFixed, isEqualByProp, formatDateTime, downloadZipFromObjectPath } from '@/utils';
@@ -586,6 +588,10 @@ export default {
         return String(state.dataset.activePanel);
       },
     }),
+    // 文件上传前携带尺寸信息
+    withDimensionFile() {
+      return withDimensionFile;
+    },
     // 自定义上传数据集
     isImport() {
       return isImport;
@@ -1132,41 +1138,14 @@ export default {
       }
     },
 
-    // 获取文件信息
-    async checkImg (file){
-      const fileUrl = getFullFileUrl(file);
-      return new Promise((resolve, reject) => {
-        const img = new Image();
-        img.onload = () => resolve({
-          width: img.width,
-          height: img.height,
-          ...file,
-        });
-        img.onerror = (err) => reject(err);
-
-        img.src = fileUrl;
-      });
-    },
-
-    // 上传文件之前加一层转换
-    async getTransformFiles(files) {
-      return Promise.all(files.map(file => this.checkImg(file)));
-    },
-
     // 将文件上传和视频上传统一
-    async uploader(datasetId, files, options = {}) {
+    async uploader(datasetId, files) {
       const datasetInfo = await this.queryDatasetDetail(datasetId);
-      const { transformFile } = options;
       // 点击导入操作
       const { dataType } = datasetInfo || {};
       // 文件上传
       if (dataType === 0) {
-        let _files = files.slice();
-        // 对文件进行转换，生成宽、高信息
-        if (typeof transformFile === 'function') {
-          _files = await transformFile(files);
-        }
-        return submit(datasetId, _files);
+        return submit(datasetId, files);
       } if (dataType === 1) {
         // 根据是否通过点击导入按钮来区分 frameInterval 来源
         const frameInterval = this.importRow
@@ -1194,9 +1173,7 @@ export default {
       const successMessage = [0, 1].includes(this.chosenDatasetStatus)
         ? '上传文件成功' : '上传文件成功，若数据集状态未及时更新，请手动刷新页面';
       if (files.length > 0) {
-        this.uploader(this.chosenDatasetId, files, {
-          transformFile: withDimensionFiles,
-        }).then(() => {
+        this.uploader(this.chosenDatasetId, files).then(() => {
           this.$message({
             message: successMessage,
             duration: 5000,
@@ -1244,9 +1221,11 @@ export default {
       return toFixed(allFinished / (allFinished + progress.unfinished), 2, 0);
     },
     parseDataType(row, column, cellValue = 0) {
+      if(row.import) return "自定义";
       return dataTypeMap[cellValue];
     },
     parseAnnotateType(row, column, cellValue) {
+      if(row.import) return "自定义";
       return (annotationMap[cellValue] || {}).name || '';
     },
     parseStatus(row, column, cellValue = 0) {

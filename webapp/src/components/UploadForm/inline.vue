@@ -38,6 +38,7 @@ export default {
       type: Boolean,
       default: false,
     },
+    transformFile: Function,
     hash: {
       type: Boolean,
       default: true,
@@ -48,7 +49,7 @@ export default {
     },
   },
   setup(props, ctx) {
-    const { request } = props;
+    const { request, transformFile } = props;
     const formRef = ref(null);
     const state = reactive({
       uploading: false,
@@ -71,7 +72,7 @@ export default {
       ctx.emit('uploadStart');
       const uploadReqeust = request || minIOUpload;
       // 开始调用上传接口
-      return uploadReqeust({ ...props.params, fileList: renameFileList }, callback)
+      return uploadReqeust({ ...props.params, fileList: renameFileList, transformFile }, callback)
         .then(res => {
           const outputPath = getFileOutputPath(renameFileList, props.params);
           state.uploading = false;

@@ -35,14 +35,6 @@
 ## 技术架构
 ![技术架构](http://cdn.qjycloud.com/tech-arc.jpg "技术架构")
 
-## 技术栈
-- 后端: [Spring Boot](https://spring.io/projects/spring-boot)
-- 前端: [Vue.js](https://vuejs.org/), [Element](https://element.eleme.cn/)
-- 数据处理 [Yolo](https://pjreddie.com/darknet/yolo/) ...
-- 可视化: [Django](https://www.djangoproject.com/) ...
-- 中间件: [MySQL](https://www.mysql.com/), [MyBatis-Plus](https://mp.baomidou.com/), [Redis](https://redis.io/)
-- 基础设施: [Docker](https://www.docker.com/), [Kubernetes](https://kubernetes.io/)
-
 ## 反馈问题
 
 - [在线社区](http://www.aiiaos.cn/index.php?s=/forum/index/forum/id/45.html)

@@ -87,7 +87,7 @@ export const putObject = (uploadUrl, file, options = {}) => {
 };
 
 // 默认通过 minIO 上传
-export const minIOUpload = async({ objectPath, fileList }, callback) => {
+export const minIOUpload = async({ objectPath, fileList, transformFile }, callback) => {
   // add 进度条
   let resolved = 0;
 
@@ -97,7 +97,7 @@ export const minIOUpload = async({ objectPath, fileList }, callback) => {
 
     const uploadPrefix = `${minIOPrefix}/${bucketName}`;
     const objectName = `${objectPath}/${d.name}`;
-    const result = await putObject(`${uploadPrefix}/${objectName}`, d.raw, {
+    const fileRes = await putObject(`${uploadPrefix}/${objectName}`, d.raw, {
       objectName,
       callback,
     });
@@ -110,11 +110,18 @@ export const minIOUpload = async({ objectPath, fileList }, callback) => {
     if (typeof callback === 'function' && fileList.length > 1) {
       callback(resolved, fileList.length);
     }
-    return result;
+
+    // 视频不做转换
+    if (isValidVideoFile(d)) return fileRes;
+
+    if (typeof transformFile === 'function') {
+      const transformed = await transformFile(fileRes, d);
+      return transformed;
+    }   
+    return fileRes;
   };
 
   const result = await pMap(fileList, mapper, {concurrency: 10});
-
   return result;
 };
 
@@ -124,4 +131,27 @@ export const hashify = (name, hash) => {
 
 export const getFileOutputPath = (rawFiles, { objectPath }) => {
   return rawFiles.map(d => `${bucketHost}/${bucketName}/${objectPath}/${d.name}`);
+};
+
+// 对文件进行自定义转换
+export const transformFile = (result, file) => {
+  return new Promise((resolve) => {
+    const reader = new FileReader();
+    reader.addEventListener("load", () => {
+      const img = new Image();
+      img.onload = () => resolve({
+        ...result,
+        data: {
+          ...result.data,
+          meta: {
+            width: img.width,
+            height: img.height,
+          },
+        },
+      });
+      img.src = reader.result;
+    }, false);
+
+    reader.readAsDataURL(file.raw);
+  });
 };
