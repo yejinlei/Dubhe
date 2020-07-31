@@ -1,0 +1,258 @@
+/*
+* Copyright 2019-2020 Zheng Jie
+*
+* Licensed under the Apache License, Version 2.0 (the "License");
+* you may not use this file except in compliance with the License.
+* You may obtain a copy of the License at
+*
+* http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS,
+* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+* See the License for the specific language governing permissions and
+* limitations under the License.
+*/
+
+#app {
+  .main-container {
+    position: relative;
+    min-height: 100%;
+    margin-left: $sideBarWidth;
+    transition: margin-left 0.28s;
+  }
+
+  .sidebar-container {
+    position: fixed;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    z-index: 1001;
+    width: $sideBarWidth !important;
+    height: 100%;
+    overflow: hidden;
+    font-size: 0;
+    background-color: $menuBg;
+    transition: width 0.28s;
+
+    // reset element-ui css
+    .horizontal-collapse-transition {
+      transition: 0s width ease-in-out, 0s padding-left ease-in-out, 0s padding-right ease-in-out;
+    }
+
+    .scrollbar-wrapper {
+      overflow-x: hidden !important;
+    }
+
+    .el-scrollbar__bar.is-vertical {
+      right: 0;
+    }
+
+    .el-scrollbar {
+      height: 100%;
+    }
+
+    &.has-logo {
+      .el-scrollbar {
+        height: calc(100% - 50px);
+      }
+    }
+
+    .is-horizontal {
+      display: none;
+    }
+
+    .svg-icon {
+      margin-right: 16px;
+    }
+
+    .el-menu {
+      width: 100% !important;
+      height: 100%;
+      border: none;
+    }
+
+    // 一级菜单
+    .el-menu-item {
+      &.is-active {
+        padding-left: 16px !important;
+        background-color: $menuActiveBg !important;
+        border-left: 4px solid $primaryColor;
+      }
+
+      &:hover {
+        background-color: $menuHoverBg !important;
+      }
+    }
+    // 子菜单
+    .el-submenu {
+      .el-submenu__title,
+      .el-menu-item {
+        &:hover {
+          background-color: $menuHoverBg !important;
+        }
+      }
+
+      &.is-active {
+        .el-submenu__title,
+        .el-menu-item {
+          background-color: $subMenuBg !important;
+
+          &:hover {
+            background-color: $menuHoverBg !important;
+          }
+        }
+
+        .el-menu-item.is-active {
+          padding-left: 36px !important;
+          background-color: $menuActiveBg !important;
+          border-left: 4px solid $primaryColor;
+        }
+      }
+    }
+  }
+
+  .hideSidebar {
+    .main-container {
+      margin-left: $iconBarWidth;
+    }
+
+    .sidebar-container {
+      width: $iconBarWidth !important;
+    }
+
+    .el-menu-item {
+      .el-tooltip {
+        padding: 0 !important;
+
+        .svg-icon {
+          margin-left: 25px;
+        }
+      }
+
+      &.is-active {
+        .el-tooltip .svg-icon {
+          margin-left: 21px;
+        }
+      }
+    }
+
+    .el-submenu {
+      overflow: hidden;
+
+      & > .el-submenu__title {
+        padding: 0 !important;
+
+        .svg-icon {
+          margin-left: 25px;
+        }
+
+        .el-submenu__icon-arrow {
+          display: none;
+        }
+      }
+
+      &.is-active > .el-submenu__title {
+        background-color: $menuActiveBg !important;
+        border-left: 4px solid $primaryColor;
+
+        .svg-icon {
+          margin-left: 21px;
+        }
+      }
+    }
+
+    .el-menu--collapse {
+      .el-submenu {
+        & > .el-submenu__title {
+          & > span {
+            display: inline-block;
+            width: 0;
+            height: 0;
+            overflow: hidden;
+            visibility: hidden;
+          }
+        }
+      }
+    }
+  }
+
+  .noSidebar {
+    .main-container {
+      margin-left: 0;
+    }
+  }
+
+  .el-menu--collapse .el-menu .el-submenu {
+    min-width: $sideBarWidth !important;
+  }
+
+  // mobile responsive
+  .mobile {
+    .main-container {
+      margin-left: 0;
+    }
+
+    .sidebar-container {
+      width: $sideBarWidth !important;
+      transition: transform 0.28s;
+    }
+
+    &.hideSidebar {
+      .sidebar-container {
+        pointer-events: none;
+        transition-duration: 0.3s;
+        transform: translate3d(-$sideBarWidth, 0, 0);
+      }
+    }
+  }
+
+  .withoutAnimation {
+    .main-container,
+    .sidebar-container {
+      transition: none;
+    }
+  }
+}
+
+// when menu collapsed
+.el-menu--vertical {
+  & > .el-menu {
+    .svg-icon {
+      margin-right: 16px;
+    }
+  }
+
+  .el-submenu > .el-submenu__title,
+  .el-menu-item {
+    background-color: $subMenuBg !important;
+
+    &.is-active {
+      padding-left: 16px !important;
+      background-color: $menuHoverBg !important;
+      border-left: 4px solid $primaryColor;
+    }
+
+    &:hover {
+      background-color: $menuHoverBg !important;
+    }
+  }
+  // the scroll bar appears when the subMenu is too long
+  > .el-menu--popup {
+    max-height: 100vh;
+    overflow-y: auto;
+
+    &::-webkit-scrollbar-track-piece {
+      background: #d3dce6;
+    }
+
+    &::-webkit-scrollbar {
+      width: 6px;
+    }
+
+    &::-webkit-scrollbar-thumb {
+      background: #99a9bf;
+      border-radius: 20px;
+    }
+  }
+}

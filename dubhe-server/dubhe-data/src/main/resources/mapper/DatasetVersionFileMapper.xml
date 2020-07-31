@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+
+<mapper namespace="org.dubhe.data.dao.DatasetVersionFileMapper">
+    <insert id="saveList">
+        INSERT INTO data_dataset_version_file ( dataset_id, version_name,file_id, `status`, annotation_status,
+        backup_status)
+        values
+        <foreach collection="datasetVersionFiles" item="temp" separator=",">
+            (#{temp.datasetId}, #{temp.versionName}, #{temp.fileId}, #{temp.status}, #{temp.annotationStatus}
+            <choose>
+                <when test="temp.backupStatus != null">
+                    , #{temp.backupStatus}
+                </when>
+                <otherwise>
+                    ,0
+                </otherwise>
+            </choose>
+            )
+        </foreach>
+    </insert>
+
+    <select id="getNeedEnhanceFilesByDatasetIdAndVersionName"
+            resultType="org.dubhe.data.domain.entity.DatasetVersionFile">
+        select ddvf.* from data_dataset_version_file ddvf left join data_file df on ddvf.file_id = df.id
+        where ddvf.dataset_id = #{datasetId} and ddvf.`status` <![CDATA[<>]]> 1 and df.pid = 0
+        <if test="versionName != null">
+            and ddvf.version_name = #{versionName}
+        </if>
+    </select>
+
+    <select id="getEnhanceFileList" resultType="org.dubhe.data.domain.entity.File">
+        select df.* from data_dataset_version_file ddvf left join data_file df on ddvf.file_id = df.id
+        where ddvf.dataset_id = #{datasetId}
+        <if test="versionName != null">
+            and ddvf.version_name = #{versionName}
+        </if>
+        and df.pid = #{fileId}
+    </select>
+
+    <select id="getSourceFileCount" resultType="java.lang.Integer">
+        select count(1) from data_dataset_version_file ddvf left join data_file df on ddvf.file_id = df.id
+        where ddvf.dataset_id = #{dataset.id}
+        <if test="dataset.currentVersionName != null">
+            and ddvf.version_name = #{dataset.currentVersionName}
+        </if>
+        and isnull(enhance_type)
+    </select>
+</mapper>

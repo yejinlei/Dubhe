@@ -1,0 +1,78 @@
+/**
+ * Copyright 2020 Zhejiang Lab. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ * =============================================================
+ */
+
+package org.dubhe.data.dao;
+
+import com.baomidou.mybatisplus.core.mapper.BaseMapper;
+import org.apache.ibatis.annotations.Delete;
+import org.apache.ibatis.annotations.Param;
+import org.apache.ibatis.annotations.Select;
+import org.dubhe.annotation.DataPermission;
+import org.dubhe.constant.PermissionConstant;
+import org.dubhe.data.domain.entity.DatasetVersion;
+
+import java.util.List;
+
+/**
+ * @description 数据集
+ * @date 2020-05-14
+ */
+@DataPermission(ignores = {"insert", "getMaxVersionName", "selectPage", "update"})
+public interface DatasetVersionMapper extends BaseMapper<DatasetVersion> {
+
+    /**
+     * 查询某个数据集的某个版本是否存在
+     *
+     * @param datasetId   数据集ID
+     * @param versionName 数据集版本
+     * @return List<DatasetVersion> 数据集的版本信息
+     */
+    @DataPermission(permission = PermissionConstant.SELECT)
+    @Select("select * from data_dataset_version where dataset_id = #{datasetId} and version_name = #{versionName}")
+    List<DatasetVersion> findDatasetVersion(@Param("datasetId") Long datasetId, @Param("versionName") String versionName);
+
+
+    /**
+     * 获取指定数据集当前使用最大版本号
+     *
+     * @param datasetId 数据集ID
+     * @return String 指定数据集当前使用最大版本号
+     */
+    @DataPermission(permission = PermissionConstant.SELECT)
+    @Select("select max(version_name) from data_dataset_version where dataset_id = #{datasetId} and version_name like 'V%'")
+    String getMaxVersionName(@Param("datasetId") Long datasetId);
+
+    /**
+     * 数据集版本数据删除
+     *
+     * @param datasetId 数据集ID
+     */
+    @Delete("delete from data_dataset_version where dataset_id = #{datasetId}")
+    void datasetVersionDelete(@Param("datasetId") Long datasetId);
+
+    /**
+     * 获取当前数据集版本的url
+     *
+     * @param datasetId   数据集ID
+     * @param versionName 数据集版本
+     * @return: List<String> 数据集版本的url
+     */
+    @DataPermission(permission = PermissionConstant.SELECT)
+    @Select("SELECT version_url FROM data_dataset_version  WHERE dataset_id = #{datasetId}  and version_name = #{versionName}")
+    List<String> selectVersionUrl(@Param("datasetId") Long datasetId, @Param("versionName") String versionName);
+
+}

@@ -1,0 +1,26 @@
+#backend
+__pycache__/
+db.sqlite3
+*.pyc
+.idea/
+file_test.py
+__cache__/
+discard
+backend/frontend/
+*.rdb
+
+#demo_logs
+#demo_logs/test/
+demo_logs/
+
+#parser_service
+parser_service/python_io/profile_loader.py
+
+#service_utils
+service_utils/redis_test.py
+
+# redis
+Redis-x64-3.2.100/
+
+# config
+config.ini

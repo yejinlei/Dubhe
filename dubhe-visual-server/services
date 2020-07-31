@@ -1,0 +1,40 @@
+#!/bin/sh
+
+HOME={可视化后端代码根目录}
+CONDA={conda环境目录}
+
+django()
+{
+	cd $HOME/backend
+	nohup $CONDA/bin/python -u $HOME/backend/main.py --port $1 >$HOME/django.log 2>&1 &
+}
+
+server()
+{
+	cd $HOME/parser_service
+	nohup $CONDA/bin/python -u $HOME/parser_service/master.py >$HOME/server.log 2>&1 &
+}
+
+monitor()
+{
+	cd $HOME/service_utils
+	nohup $CONDA/bin/python -u $HOME/service_utils/monitor.py >$HOME/monitor.log 2>&1 &
+}
+
+
+case $1 in
+	django)
+		django $2
+		;;
+	server)
+		server
+		;;
+	monitor)
+		monitor
+		;;
+        *)      
+		echo "usage:dubhe-visual-server {django PORT|server|monitor}" >&2
+                exit 0
+                ;;
+esac
+exit 0

@@ -1,0 +1,119 @@
+/**
+ * Copyright 2020 Zhejiang Lab. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ * =============================================================
+ */
+
+package org.dubhe.data.service;
+
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import org.dubhe.data.domain.dto.ConversionCreateDTO;
+import org.dubhe.data.domain.dto.DatasetVersionCreateDTO;
+import org.dubhe.data.domain.dto.DatasetVersionDeleteDTO;
+import org.dubhe.data.domain.dto.DatasetVersionQueryCriteriaDTO;
+import org.dubhe.data.domain.entity.DatasetVersion;
+import org.dubhe.data.domain.vo.DatasetVersionVO;
+
+import java.util.List;
+import java.util.Map;
+
+/**
+ * @description 数据集版本信息服务
+ * @date 2020-05-14
+ */
+public interface DatasetVersionService {
+
+    /**
+     * 数据集版本发布
+     *
+     * @param datasetVersionCreateDTO
+     * @return String 版本名
+     */
+    String publish(DatasetVersionCreateDTO datasetVersionCreateDTO);
+
+    /**
+     * 数据集版本列表
+     *
+     * @param datasetVersionQueryCriteria 查询条件
+     * @param page                        分页查询
+     * @return Map<String, Object> 版本列表
+     */
+    Map<String, Object> getList(DatasetVersionQueryCriteriaDTO datasetVersionQueryCriteria, Page<DatasetVersion> page);
+
+    /**
+     * 数据集版本删除
+     *
+     * @param datasetVersionDeleteDTO 数据集版本删除条件
+     */
+    void versionDelete(DatasetVersionDeleteDTO datasetVersionDeleteDTO);
+
+    /**
+     * 数据集版本切换
+     *
+     * @param datasetId   数据集id
+     * @param versionName 版本名称
+     */
+    void versionSwitch(Long datasetId, String versionName);
+
+    /**
+     * 获取下一个可用版本号
+     *
+     * @param datasetId 数据集id
+     * @return String 下一个可用版本名称
+     */
+    String getNextVersionName(Long datasetId);
+
+    /**
+     * 数据集版本数据删除
+     *
+     * @param datasetId 数据集id
+     */
+    void datasetVersionDelete(Long datasetId);
+
+    /**
+     * 训练任务所需版本
+     *
+     * @param id 数据集id
+     * @return List<DatasetVersionVO> 版本列表
+     */
+    List<DatasetVersionVO> versionList(Long id);
+
+    /**
+     * 数据转换
+     */
+    void datasetConvert();
+
+
+    /**
+     * 数据转换回调接口
+     *
+     * @param datasetVersionId    版本id
+     * @param conversionCreateDTO 数据转换回调参数
+     * @return int 影响版本数量
+     */
+    int finishConvert(Long datasetVersionId, ConversionCreateDTO conversionCreateDTO);
+
+    /**
+     * 文件复制
+     */
+    void fileCopy();
+
+    /**
+     * 查询当前数据集版本的原始文件数量
+     *
+     * @param datasetId 数据集id
+     * @return Integer 原始文件数量
+     */
+    Integer getSourceFileCount(Long datasetId);
+}

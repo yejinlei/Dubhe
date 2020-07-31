@@ -1,0 +1,86 @@
+/**
+ * Copyright 2020 Zhejiang Lab. All Rights Reserved.
+ * 
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ * 
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * 
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ * =============================================================
+ */
+
+package org.dubhe.data.domain.entity;
+
+import com.baomidou.mybatisplus.annotation.IdType;
+import com.baomidou.mybatisplus.annotation.TableId;
+import com.baomidou.mybatisplus.annotation.TableName;
+
+import java.time.LocalDateTime;
+import java.io.Serializable;
+
+import io.swagger.annotations.ApiModel;
+import io.swagger.annotations.ApiModelProperty;
+import lombok.*;
+import lombok.experimental.Accessors;
+
+/**
+ * @description 标注任务信息
+ * @date 2020-04-10
+ */
+@Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
+@EqualsAndHashCode(callSuper = false)
+@Accessors(chain = true)
+@TableName("data_task")
+@ApiModel(value = "Task对象", description = "标注任务信息")
+public class Task implements Serializable {
+
+    private static final long serialVersionUID = 1L;
+
+    @TableId(type = IdType.AUTO)
+    private Long id;
+
+    @ApiModelProperty(value = "任务需要处理的文件总数")
+    private Integer total;
+
+    @ApiModelProperty(value = "任务状态，创建即为进行中。1进行中，2已完成")
+    private Integer status;
+
+    @ApiModelProperty(value = "已完成的文件数")
+    private Integer finished;
+
+    @ApiModelProperty(value = "文件id数组")
+    private String files;
+
+    @ApiModelProperty(value = "数据集id数组")
+    private String datasets;
+
+    @ApiModelProperty(value = "创建用户ID")
+    private Long createUserId;
+
+    @ApiModelProperty(value = "创建时间")
+    private LocalDateTime createTime;
+
+    @ApiModelProperty(value = "更新时间")
+    private LocalDateTime updateTime;
+
+    @ApiModelProperty(value = "0正常，1已删除")
+    private Boolean deleted;
+
+    @ApiModelProperty(value = "同dataset")
+    private Integer annotateType;
+
+    @ApiModelProperty(value = "同dataset")
+    private Integer dataType;
+
+    private String labels;
+
+}

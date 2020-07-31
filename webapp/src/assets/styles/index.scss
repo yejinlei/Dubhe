@@ -1,0 +1,102 @@
+/*
+* Copyright 2019-2020 Zheng Jie
+*
+* Licensed under the Apache License, Version 2.0 (the "License");
+* you may not use this file except in compliance with the License.
+* You may obtain a copy of the License at
+*
+* http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS,
+* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+* See the License for the specific language governing permissions and
+* limitations under the License.
+*/
+
+@import 'variables';
+@import 'element-variables';
+@import 'mixin';
+@import 'atomic';
+@import 'element-ui';
+@import 'sidebar';
+@import 'common';
+
+body {
+  height: 100%;
+  -moz-osx-font-smoothing: grayscale;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  font-family: Helvetica Neue, Helvetica, PingFang SC, Hiragino Sans GB, Microsoft YaHei, Arial, sans-serif;
+}
+
+label {
+  font-weight: 700;
+}
+
+html {
+  box-sizing: border-box;
+  height: 100%;
+}
+
+#app {
+  height: 100%;
+}
+
+image {
+  user-select: none;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: inherit;
+  -webkit-tap-highlight-color: transparent;
+}
+
+ul,
+ol {
+  padding: 0;
+  margin: 0;
+}
+
+*,
+*:focus,
+*:active {
+  outline: none;
+}
+
+a,
+a:focus,
+a:hover {
+  color: inherit;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+ul li,
+ol li {
+  list-style-type: none;
+}
+
+.primary {
+  color: $primaryColor;
+}
+
+.infoColor {
+  color: $infoColor;
+}
+
+.primary-bg {
+  background-color: $primaryColor;
+
+  &:hover {
+    background-color: $primaryHoverColor;
+  }
+}
+
+p.error-message {
+  margin: 0;
+  font-size: 12px;
+  color: $red;
+}

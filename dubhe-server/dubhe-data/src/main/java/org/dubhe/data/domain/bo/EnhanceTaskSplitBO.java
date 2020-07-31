@@ -1,0 +1,139 @@
+/**
+ * Copyright 2020 Zhejiang Lab. All Rights Reserved.
+ *
+ * Licensed un   der the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ * =============================================================
+ */
+
+package org.dubhe.data.domain.bo;
+
+import cn.hutool.core.util.ObjectUtil;
+import lombok.Data;
+import org.dubhe.base.MagicNumConstant;
+import org.dubhe.data.constant.Constant;
+import org.dubhe.data.domain.dto.DatasetEnhanceRequestDTO;
+import org.dubhe.data.domain.entity.File;
+import org.dubhe.utils.JwtUtils;
+import org.dubhe.utils.StringUtils;
+
+import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+
+/**
+ * @description 增强任务拆分BO
+ * @date 2020-06-28
+ */
+@Data
+public class EnhanceTaskSplitBO implements Serializable {
+
+    /**
+     * 增强后图片存放位置
+     */
+    private String enhanceFilePath;
+
+    /**
+     * 增强后图片标注文件存放位置
+     */
+    private String enhanceAnnotationPath;
+
+    /**
+     * 任务优先级
+     */
+    private Integer priority;
+
+    /**
+     * 任务ID
+     */
+    private Long id;
+
+    /**
+     * 任务类型
+     */
+    private Integer type;
+
+    /**
+     * 数据集ID
+     */
+    private Long datasetId;
+
+    /**
+     * 数据集版本
+     */
+    private String versionName;
+
+    /**
+     * 待增强图片信息
+     */
+    private List<DatasetFileBO> fileDtos;
+
+    /**
+     * 任务执行人
+     */
+    private Long userId;
+
+    /**
+     * 发送时间
+     */
+    private Long sendTime;
+
+    public EnhanceTaskSplitBO() {
+    }
+
+    public EnhanceTaskSplitBO(Long taskId, List<File> files, String nfs, String bucketName,
+                              Long datasetId, String versionName, DatasetEnhanceRequestDTO datasetEnhanceRequestDTO,
+                              Map<Long, Integer> fileAnnotationStatus, Integer enhanceType) {
+        StringBuilder stringBuilder = new StringBuilder();
+        stringBuilder.append(nfs).append(bucketName)
+                .append(java.io.File.separator).append("dataset").append(java.io.File.separator).append(datasetId)
+                .append(java.io.File.separator);
+        this.enhanceFilePath = stringBuilder.toString() + "origin";
+        stringBuilder.append("annotation");
+
+        if (StringUtils.isNotEmpty(versionName)) {
+            stringBuilder.append(java.io.File.separator).append(versionName);
+        }
+        this.enhanceAnnotationPath = stringBuilder.toString();
+        this.priority = Constant.DEFAULT_PRIORITY;
+        this.id = taskId;
+        this.datasetId = datasetId;
+        this.versionName = versionName;
+        this.type = enhanceType;
+        List<DatasetFileBO> fileDtos = new ArrayList<>();
+        files.stream().forEach(file -> {
+            fileDtos.add(new DatasetFileBO(nfs + file.getUrl(), stringBuilder.toString() + java.io.File.separator + file.getName(),
+                    file.getId(), fileAnnotationStatus.get(file.getId()), file.getWidth(), file.getHeight()));
+        });
+        this.fileDtos = fileDtos;
+        if (ObjectUtil.isNotNull(JwtUtils.getCurrentUserDto())) {
+            this.setUserId(JwtUtils.getCurrentUserDto().getId());
+        }
+    }
+
+    /**
+     * 获取增强后文件路径
+     *
+     * @param suffix        文件后缀
+     * @param datasetFileBO 数据集文件
+     * @return String       增强后文件路径
+     */
+    public String createEnhanceFilePath(String suffix, DatasetFileBO datasetFileBO) {
+        String filePath = datasetFileBO.getFilePath();
+        String fileFullName = filePath.substring(filePath.lastIndexOf(java.io.File.separator) + MagicNumConstant.ONE, filePath.length());
+        String fileName = fileFullName.substring(0, fileFullName.lastIndexOf("."));
+        String fileSuffix = fileFullName.substring(fileFullName.lastIndexOf("."), fileFullName.length());
+        return enhanceFilePath + java.io.File.separator + fileName + suffix + fileSuffix;
+    }
+
+}
