@@ -1,3 +1,6 @@
+/**
+* Modified from https://segmentfault.com/a/1190000012453975
+*/
 <template>
   <div v-loading="audioStruct.waiting" class="di main-wrap">
     <audio
