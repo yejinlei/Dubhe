@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+
+<mapper namespace="org.dubhe.datasetutil.dao.DataVersionFileMapper">
+    <insert id="saveBatchDataFileVersion" parameterType="java.util.List" useGeneratedKeys="true" keyProperty="id">
+        insert into data_dataset_version_file (id,dataset_id,file_id,annotation_status,status)
+        values
+        <foreach collection="listDataVersionFile" item="temp" separator=",">
+            (#{temp.id},#{temp.datasetId},#{temp.fileId},#{temp.annotationStatus},#{temp.status})
+        </foreach>
+    </insert>
+</mapper>

@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+
+<mapper namespace="org.dubhe.datasetutil.dao.DatasetDataLabelMapper">
+    <insert id="saveBatchDatasetDataLabel" parameterType="java.util.List" useGeneratedKeys="true" keyProperty="id">
+        insert into data_dataset_label(dataset_id,label_id )
+        values
+        <foreach collection="datasetDataLabelList" item="datasetDataLabel" separator=",">
+            (#{datasetDataLabel.datasetId},#{datasetDataLabel.labelId})
+        </foreach>
+    </insert>
+</mapper>
