@@ -26,10 +26,12 @@
 
 ## 目录结构
 ```
-├── dubhe_data_process    数据处理服务
-├── dubhe-server          后端服务 
-├── dubhe-visual-server   可视化服务 
-├── webapp                前端服务 
+├── dubhe_data_process            数据处理服务
+├── dubhe-server                  后端服务 
+├── dubhe-visual-server           可视化服务 
+├── webapp                        前端服务 
+├── dataset-util                  数据集上传脚本服务
+├── distribute-train-operator     分布式训练OP服务
 ```
 
 ## 技术架构
