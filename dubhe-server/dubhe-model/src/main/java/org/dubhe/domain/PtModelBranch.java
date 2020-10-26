@@ -103,6 +103,12 @@ public class PtModelBranch extends BaseEntity {
     @TableField(value = "team_id")
     private Integer teamId;
 
+    /**
+     * 资源拥有者ID
+     */
+    @TableField(value = "origin_user_id",fill = FieldFill.INSERT)
+    private Long originUserId;
+
     public void copy(PtModelBranch source) {
         BeanUtil.copyProperties(source, this, CopyOptions.create().setIgnoreNullValue(true));
     }

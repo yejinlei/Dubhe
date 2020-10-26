@@ -75,6 +75,7 @@
                 <configuration>
                     <skip>false</skip>
                     <fork>true</fork>
+                    <classifier>exec</classifier>
                 </configuration>
             </plugin>
             <!-- 跳过单元测试 -->

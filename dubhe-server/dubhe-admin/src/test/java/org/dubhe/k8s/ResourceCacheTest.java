@@ -75,4 +75,24 @@ public class ResourceCacheTest {
         String namespace = "namespace-41",resourceName = "notebook-rn-algorithm-153",podName = "notebook-rn-algorithm-153-7djrk-0";
         resourceCache.cachePods(namespace,resourceName);
     }
+
+    @Test
+    public void getDistributedLock(){
+        System.out.println(redisUtils.getDistributedLock("87jkssshjk","fhfgsssygfjfgh",10));
+        System.out.println(redisUtils.getDistributedLock("87jkssshjk","fhfgsssygfjfgh",10));
+        System.out.println(redisUtils.releaseDistributedLock("87jkssshjk","fhfgsssygfjfgh"));
+        System.out.println(redisUtils.getDistributedLock("87jkssshjk","fhfgsssygfjfgh",10));
+        try {
+            Thread.sleep(1000);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+        System.out.println(redisUtils.getDistributedLock("87jkssshjk","fhfgsssygfjfgh",10));
+        try {
+            Thread.sleep(10000);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+        System.out.println(redisUtils.getDistributedLock("87jkssshjk","fhfgsssygfjfgh",10));
+    }
 }

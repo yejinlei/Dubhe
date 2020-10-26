@@ -32,6 +32,7 @@ import org.dubhe.utils.LogUtil;
 import org.dubhe.utils.SpringContextHolder;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingClass;
 import org.springframework.stereotype.Component;
 
 /**
@@ -39,6 +40,7 @@ import org.springframework.stereotype.Component;
  * @date 2020-06-02
  */
 @Component
+@ConditionalOnMissingClass(value = "org.dubhe.task.DubheTaskApplication")
 public class PodWatcher implements CommandLineRunner, Watcher<Pod> {
 
     @Autowired

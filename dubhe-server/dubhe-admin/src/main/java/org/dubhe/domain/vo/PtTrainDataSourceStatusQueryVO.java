@@ -24,8 +24,8 @@ import lombok.Setter;
 import java.io.Serializable;
 
 /**
- * @description: 查询数据集状态查询结果
- * @date: 2020-05-21
+ * @description 查询数据集状态查询结果
+ * @date 2020-05-21
  */
 @Data
 @Setter

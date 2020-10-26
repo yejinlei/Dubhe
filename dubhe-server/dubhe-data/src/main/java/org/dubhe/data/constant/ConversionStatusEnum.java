@@ -56,7 +56,7 @@ public enum ConversionStatusEnum {
      * 数据转换类型校验 用户web端接口调用时参数校验
      *
      * @param value 数据转换类型
-     * @return
+     * @return      参数校验结果
      */
     public static boolean isValid(Integer value) {
         for (ConversionStatusEnum conversionStatusEnum : ConversionStatusEnum.values()) {

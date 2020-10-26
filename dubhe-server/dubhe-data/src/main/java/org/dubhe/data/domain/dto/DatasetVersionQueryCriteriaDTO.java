@@ -43,10 +43,6 @@ public class DatasetVersionQueryCriteriaDTO implements Serializable {
     @Min(value = NumberConstant.NUMBER_0, message = "数据集ID不能小于0")
     private Long datasetId;
 
-    @ApiModelProperty("用户ID")
-    @Query(propName = "create_user_id", type = Query.Type.IN)
-    private Set<Long> createUserId;
-
     @Query(propName = "deleted", type = Query.Type.EQ)
     @ApiModelProperty(hidden = true)
     private int deleted;

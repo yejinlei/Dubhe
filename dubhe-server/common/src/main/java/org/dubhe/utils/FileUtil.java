@@ -19,10 +19,12 @@ package org.dubhe.utils;
 
 import cn.hutool.core.codec.Base64;
 import cn.hutool.core.io.IoUtil;
+import cn.hutool.core.util.CharsetUtil;
 import cn.hutool.core.util.IdUtil;
 import cn.hutool.poi.excel.BigExcelWriter;
 import cn.hutool.poi.excel.ExcelUtil;
 import org.apache.poi.util.IOUtils;
+import org.dubhe.enums.LogEnum;
 import org.dubhe.exception.BusinessException;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -350,6 +352,58 @@ public class FileUtil extends cn.hutool.core.io.FileUtil {
 
     public static String getMd5(File file) {
         return getMd5(getByte(file));
+    }
+
+
+    /**
+     * 生成文件
+     * @param filePath  文件绝对路径
+     * @param content   文件内容
+     * @param append    文件是否是追加
+     * @return
+     */
+    public static boolean generateFile(String filePath,String content,boolean append){
+        File file = new File(filePath);
+        FileOutputStream outputStream = null;
+        try {
+            if (!file.exists()){
+                file.createNewFile();
+            }
+            outputStream = new FileOutputStream(file,append);
+            outputStream.write(content.getBytes(CharsetUtil.defaultCharset()));
+            outputStream.flush();
+        }catch (IOException e) {
+            LogUtil.error(LogEnum.FILE_UTIL,e);
+            return false;
+        }finally {
+            if (outputStream != null){
+                try {
+                    outputStream.close();
+                } catch (IOException e) {
+                    LogUtil.error(LogEnum.FILE_UTIL,e);
+                }
+            }
+        }
+        return true;
+    }
+
+
+    /**
+     * 压缩文件目录
+     *
+     * @param zipDir        待压缩文件夹路径
+     * @param zipFile       压缩完成zip文件绝对路径
+     * @return
+     */
+    public static boolean zipPath(String zipDir,String zipFile) {
+        if (zipDir == null) {
+            return false;
+        }
+        File zip = new File(zipFile);
+        cn.hutool.core.util.ZipUtil.zip(zip, CharsetUtil.defaultCharset(), true,
+                (f) -> !f.isDirectory(),
+                new File(zipDir).listFiles());
+        return true;
     }
 
 }

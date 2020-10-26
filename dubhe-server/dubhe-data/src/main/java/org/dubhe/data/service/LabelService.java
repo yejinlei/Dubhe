@@ -17,6 +17,8 @@
 
 package org.dubhe.data.service;
 
+import org.dubhe.data.domain.dto.LabelCreateDTO;
+import org.dubhe.data.domain.dto.LabelDTO;
 import org.dubhe.data.domain.entity.Label;
 
 import java.util.List;
@@ -31,9 +33,9 @@ public interface LabelService {
      * 根据数据ID获取包含标签列表
      *
      * @param datasetId 数据ID
-     * @return List<Label> 根据数据ID获取包含标签列表
+     * @return List<LabelDTO> 根据数据ID获取包含标签列表
      */
-    List<Label> list(Long datasetId);
+    List<LabelDTO> list(Long datasetId);
 
     /**
      * 获取所有自动标注标签
@@ -45,8 +47,9 @@ public interface LabelService {
     /**
      * 保存标签
      *
-     * @param label     标签
-     * @param datasetId 数据集id
+     * @param label        标签
+     * @param datasetId    数据集ID
+     * @return             标签ID
      */
     Long save(Label label, Long datasetId);
 
@@ -61,25 +64,101 @@ public interface LabelService {
     /**
      * 获取指定类型下所有标签
      *
-     * @param type 标签类型
-     * @return List<Label> 指定类型下所有标签
+     * @param type          标签类型
+     * @return List<Label>  指定类型下所有标签
      */
     List<Label> listByType(Integer type);
 
     /**
+     * 获取数据集下所有标签类型
+     *
+     * @param datasetId         数据集id
+     * @return List<Integer>    数据集下所有标签类型
+     */
+    List<Integer> getDatasetLabelTypes(Long datasetId);
+
+    /**
      * 删除数据集标签
      *
-     * @param id 数据集id
-     * @return int 执行次数
+     * @param id        数据集id
+     * @return int      执行次数
      */
     int delDataset(Long id);
 
     /**
-     * 获取数据集下所有标签类型
+     * 根据标签组ID查询标签
      *
-     * @param datasetId 数据集id
-     * @return List<Integer> 数据集下所有标签类型
+     * @param labelGroupId 标签组ID
+     * @return List<Label> 标签列表
      */
-    List<Integer> getDatasetLabelTypes(Long datasetId);
+    List<Label> listByGroup(Long labelGroupId);
 
+    /**
+     * 保存标签
+     *
+     * @param label 标签
+     */
+    void saveLabel(Label label);
+
+    /**
+     * 批量删除标签
+     *
+     * @param ids 需删除的标签ID
+     */
+    void deleteByIds(List<Long> ids);
+
+    /**
+     * 修改标签
+     *
+     * @param labelCreateDto 修改标签条件
+     * @param labelId        标签Id
+     * @return boolean      修改结果是否成功
+     */
+    boolean update(LabelCreateDTO labelCreateDto, Long labelId);
+
+
+    /**
+     * 新增标签
+     *
+     * @param label 标签实体
+     * @return  新增标签结果
+     */
+    int insert(Label label);
+
+    /**
+     * 根据标签组获取标签列表
+     *
+     * @param labelGroupId 标签组ID
+     * @return List<Label> 标签组列表
+     */
+    List<Label> listByGroupId(Long labelGroupId);
+
+    /**
+     * 编辑标签
+     *
+     * @param label 标签实体
+     */
+    void updateLabel(Label label);
+
+    /**
+     * 获取预置标签组下的标签id
+     *
+     * @return 预置标签ids
+     */
+    List<Long> getPubLabelIds();
+
+    /**
+     * 获取预置标签组下的标签
+     *
+     * @return 预置标签集合
+     */
+    List<Label> getPubLabels();
+
+    /**
+     * 获取标签数量
+     *
+     * @param id 标签组Id
+     * @return  标签数量
+     */
+    int selectCount(Long id);
 }

@@ -17,16 +17,24 @@
 
 package org.dubhe.data.util;
 
+import org.dubhe.constant.NumberConstant;
 import org.dubhe.data.constant.Constant;
+import org.dubhe.data.constant.ErrorEnum;
 import org.dubhe.data.domain.entity.Dataset;
 import org.dubhe.data.service.DatasetService;
+import org.dubhe.enums.LogEnum;
+import org.dubhe.exception.BusinessException;
+import org.dubhe.utils.LogUtil;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
+import org.springframework.web.multipart.MultipartFile;
 
 import javax.annotation.Resource;
-import java.io.File;
+import java.io.*;
+import java.nio.charset.StandardCharsets;
+import java.util.Objects;
 
 /**
  * @description 文件工具
@@ -40,6 +48,11 @@ public class FileUtil {
     @Resource
     @Lazy
     private DatasetService datasetService;
+
+    /**
+     * 允许上传的文件格式
+     */
+    private static final String ALLOW_FILE_TYPE =".json";
 
     /**
      * 获取数据集根路径
@@ -73,6 +86,62 @@ public class FileUtil {
         return getAnnotationDirAbsPath(datasetId) +
                 (StringUtils.isEmpty(dataset.getCurrentVersionName()) ? "" : dataset.getCurrentVersionName() + File.separator)
                 + fileName;
+    }
+
+
+
+
+    /**
+     * 通过本地文件访问json并读取
+     *
+     * @param file 读取文件
+     * @return  读取的文件内容
+     */
+    public static String readFile(MultipartFile file){
+        StringBuffer lastStr= new StringBuffer();
+        BufferedReader reader=null;
+        try{
+            Reader br = new InputStreamReader(file.getInputStream(), StandardCharsets.UTF_8);
+            reader = new BufferedReader( br);
+            String tempString=null;
+            while((tempString=reader.readLine())!=null){
+                lastStr.append(tempString);
+            }
+        }catch(IOException e){
+            LogUtil.error(LogEnum.BIZ_DATASET,"Class FileUtil method readFile error , error info is :{}",e);
+            throw new BusinessException(ErrorEnum.NET_ERROR);
+        }finally{
+            if(reader!=null){
+                try{
+                    reader.close();
+                }catch(IOException e){
+                    LogUtil.error(LogEnum.BIZ_DATASET,"Class FileUtil method readFile error , error info is :{}",e);
+                }
+            }
+        }
+        return lastStr.toString();
+    }
+
+    /**
+     * 文件格式/大小/属性校验
+     *
+     * @param file json文件
+     */
+    public static void checkoutFile(MultipartFile file) {
+        if(Objects.isNull(file)){
+            throw new BusinessException(ErrorEnum.FILE_ABSENT);
+        }
+        String fileName = file.getOriginalFilename();
+        if(Objects.isNull(fileName)){
+            throw new BusinessException(ErrorEnum.LABELGROUP_FILE_NAME_NOT_EXIST);
+        }
+        String lastFileName = fileName.substring(fileName.lastIndexOf("."));
+        if(!ALLOW_FILE_TYPE.equals(lastFileName)){
+            throw new BusinessException(ErrorEnum.LABELGROUP_JSON_FILE_ERROR);
+        }else if(file.getSize() > NumberConstant.NUMBER_1024 * NumberConstant.NUMBER_1024 * NumberConstant.NUMBER_5){
+            throw new BusinessException(ErrorEnum.LABELGROUP_JSON_FILE_SIZE_ERROR);
+        }
+
     }
 
 }

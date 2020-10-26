@@ -20,6 +20,8 @@ package org.dubhe.service.impl;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import org.dubhe.aspect.PermissionAspect;
+import org.dubhe.base.DataContext;
 import org.dubhe.base.MagicNumConstant;
 import org.dubhe.base.ResponseCode;
 import org.dubhe.dao.PtTrainAlgorithmUsageMapper;
@@ -38,10 +40,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -72,23 +71,24 @@ public class PtTrainAlgorithmUsageServiceImpl implements PtTrainAlgorithmUsageSe
         IPage<PtTrainAlgorithmUsage> ptTrainAlgorithms = null;
 
         if (ptTrainAlgorithmUsageQueryDTO.getIsContainDefault()) {
-            wrapper.and(qw -> qw.eq("user_id", user.getId()).or().eq("is_default",
-                    ptTrainAlgorithmUsageQueryDTO.getIsContainDefault()));
+            wrapper.in("origin_user_id", user.getId(), PermissionAspect.PUBLIC_DATA_USER_ID);
         } else {
-            wrapper.eq("user_id", user.getId());
+            wrapper.eq("origin_user_id", user.getId());
         }
 
         wrapper.eq("type", ptTrainAlgorithmUsageQueryDTO.getType());
 
+        DataContext.set(CommonPermissionDataDTO.builder().type(true).build());
         ptTrainAlgorithms = ptTrainAlgorithUsagemMapper.selectPage(page, wrapper);
+        DataContext.remove();
 
         List<PtTrainAlgorithmUsageQueryVO> ptTrainAlgorithmUsageQueryResult = ptTrainAlgorithms.getRecords().stream()
                 .map(x -> {
                     PtTrainAlgorithmUsageQueryVO ptTrainAlgorithmUsageQueryVO = new PtTrainAlgorithmUsageQueryVO();
                     BeanUtils.copyProperties(x, ptTrainAlgorithmUsageQueryVO);
+                    ptTrainAlgorithmUsageQueryVO.setIsDefault(Objects.equals(x.getOriginUserId(),PermissionAspect.PUBLIC_DATA_USER_ID));
                     return ptTrainAlgorithmUsageQueryVO;
                 }).collect(Collectors.toList());
-
         return PageUtil.toPage(page, ptTrainAlgorithmUsageQueryResult);
     }
 
@@ -104,7 +104,7 @@ public class PtTrainAlgorithmUsageServiceImpl implements PtTrainAlgorithmUsageSe
         UserDTO user = JwtUtils.getCurrentUserDto();
         PtTrainAlgorithmUsage ptTrainAlgorithmUsage = new PtTrainAlgorithmUsage();
         ptTrainAlgorithmUsage.setAuxInfo(ptTrainAlgorithmUsageCreateDTO.getAuxInfo())
-                .setType(ptTrainAlgorithmUsageCreateDTO.getType()).setUserId(user.getId());
+                .setType(ptTrainAlgorithmUsageCreateDTO.getType());
 
         int insertResult = ptTrainAlgorithUsagemMapper.insert(ptTrainAlgorithmUsage);
 
@@ -126,7 +126,6 @@ public class PtTrainAlgorithmUsageServiceImpl implements PtTrainAlgorithmUsageSe
         UserDTO user = JwtUtils.getCurrentUserDto();
         Set<Long> idList = Stream.of(ptTrainAlgorithmUsageDeleteDTO.getIds()).collect(Collectors.toSet());
         QueryWrapper<PtTrainAlgorithmUsage> query = new QueryWrapper<>();
-        query.eq("user_id", user.getId());
         query.in("id", idList);
         Integer queryCountResult = ptTrainAlgorithUsagemMapper.selectCount(query);
 
@@ -140,7 +139,6 @@ public class PtTrainAlgorithmUsageServiceImpl implements PtTrainAlgorithmUsageSe
             LogUtil.error(LogEnum.BIZ_TRAIN, "User {} failed to delete user assistance information. User service deletion based on id array {} failed", user.getUsername(), ptTrainAlgorithmUsageDeleteDTO.getIds());
             throw new BusinessException(ResponseCode.SUCCESS, "内部错误");
         }
-
     }
 
     /**
@@ -154,7 +152,6 @@ public class PtTrainAlgorithmUsageServiceImpl implements PtTrainAlgorithmUsageSe
         UserDTO user = JwtUtils.getCurrentUserDto();
 
         QueryWrapper<PtTrainAlgorithmUsage> query = new QueryWrapper<>();
-        query.eq("user_id", user.getId());
         query.in("id", ptTrainAlgorithmUsageUpdateDTO.getId());
         Integer queryIntResult = ptTrainAlgorithUsagemMapper.selectCount(query);
 

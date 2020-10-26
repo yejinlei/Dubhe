@@ -30,30 +30,17 @@ import org.dubhe.data.domain.entity.Dataset;
  * @description 数据集管理 Mapper 接口
  * @date 2020-04-10
  */
-@DataPermission(ignores = {"insert"})
+@DataPermission(ignoresMethod = {"insert","selectById","selectCountByPublic"})
 public interface DatasetMapper extends BaseMapper<Dataset> {
 
     /**
      * 分页获取数据集
      *
-     * @param page         分页插件
-     * @param queryWrapper 查询条件
+     * @param page          分页插件
+     * @param queryWrapper  查询条件
      * @return Page<Dataset>数据集列表
      */
-    @DataPermission(permission = PermissionConstant.SELECT)
     @Select("SELECT * FROM data_dataset ${ew.customSqlSegment}")
-    @Results(id = "datasetMapperResults",
-            value = {
-                    @Result(column = "team_id", property = "team",
-                            one = @One(select = "org.dubhe.dao.TeamMapper.selectById",
-                                    fetchType = FetchType.LAZY)),
-                    @Result(column = "create_user_id", property = "createUser",
-                            one = @One(select = "org.dubhe.dao.UserMapper.selectById",
-                                    fetchType = FetchType.LAZY)),
-                    @Result(column = "update_user_id", property = "updateUser",
-                            one = @One(select = "org.dubhe.dao.UserMapper.selectById",
-                                    fetchType = FetchType.LAZY))
-            })
     Page<Dataset> listPage(Page<Dataset> page, @Param("ew") Wrapper<Dataset> queryWrapper);
 
     /**
@@ -62,7 +49,6 @@ public interface DatasetMapper extends BaseMapper<Dataset> {
      * @param id          数据集ID
      * @param versionName 数据集版本名称
      */
-    @DataPermission(permission = PermissionConstant.UPDATE)
     @Update("update data_dataset set current_version_name = #{versionName} where id = #{id}")
     void updateVersionName(@Param("id") Long id, @Param("versionName") String versionName);
 
@@ -80,9 +66,27 @@ public interface DatasetMapper extends BaseMapper<Dataset> {
      * @param datasetId   数据集ID
      * @param sourceState 压缩开始状态
      * @param targetState 压缩结束状态
-     * @return
+     * @return int 被修改行数
      */
     @Update("update data_dataset set decompress_state = #{targetState} where id = #{datasetId} and decompress_state = #{sourceState}")
     int updateDecompressState(@Param("datasetId") Long datasetId, @Param("sourceState") Integer sourceState, @Param("targetState") Integer targetState);
 
+    /**
+     * 获取指定类型数据集的数量
+     *
+     * @param type 数据集类型
+     * @return     公共数据集的数量
+     */
+    @Select("SELECT count(1) FROM data_dataset where type = #{type}")
+    int selectCountByPublic(@Param("type") Integer type);
+
+
+    /**
+     * 根据标签组ID查询关联的数据集数量
+     *
+     * @param labelGroupId 标签组ID
+     * @return 数量
+     */
+    @Select("SELECT count(1) FROM data_dataset where label_group_id = #{labelGroupId}")
+    int getCountByLabelGroupId(@Param("labelGroupId")Long labelGroupId);
 }

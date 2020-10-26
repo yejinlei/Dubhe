@@ -17,20 +17,19 @@
 
 package org.dubhe.data.dao;
 
+import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Select;
+import org.dubhe.data.domain.dto.LabelDTO;
 import org.dubhe.data.domain.entity.Label;
-import com.baomidou.mybatisplus.core.mapper.BaseMapper;
-import org.dubhe.annotation.DataPermission;
+import org.springframework.security.core.parameters.P;
 
 import java.util.List;
-import java.util.Set;
 
 /**
  * @description 数据集标签管理 Mapper 接口
  * @date 2020-04-10
  */
-@DataPermission(ignores = {"insert", "listLabelByDatasetId", "getDatasetLabelTypes", "selectListByType", "batchListByIds"})
 public interface LabelMapper extends BaseMapper<Label> {
 
     /**
@@ -57,7 +56,7 @@ public interface LabelMapper extends BaseMapper<Label> {
      * @param type 标签类型
      * @return List<Label> 标签类型获取标签
      */
-    @Select("select * from data_label where `type` = #{type}")
+    @Select("select * from data_label where `type` = #{type}  and deleted = 0")
     List<Label> selectListByType(@Param("type") Integer type);
 
     /**
@@ -68,4 +67,49 @@ public interface LabelMapper extends BaseMapper<Label> {
      */
     List<Label> batchListByIds(@Param("datasetId") Long datasetId);
 
+
+    /**
+     * 根据标签组获取标签列表
+     *
+     * @param labelGroupId 标签组ID
+     * @return List<Label> 标签组列表
+     */
+    @Select("select dl.* from data_label dl left join data_group_label dgl on dl.id = dgl.label_id\n" +
+            "where dgl.label_group_id = #{labelGroupId} and dgl.deleted = 0")
+    List<Label> listByGroupId(@Param("labelGroupId") Long labelGroupId);
+
+
+
+    /**
+     * 获取预置标签组下的标签
+     *
+     * @param startLabelId 初始标签ID
+     * @param endLabelId 最大标签ID
+     * @return 标签列表
+     */
+    @Select("select * from data_label where id <= #{endLabelId} and id> #{startLabelId}  and deleted = 0")
+    List<Label> getPubLabels(@Param("startLabelId") int startLabelId, @Param("endLabelId") int  endLabelId);
+
+    /**
+     * 获取预置标签组下的标签
+     *
+     * @param startLabelId 初始标签ID
+     * @param endLabelId 最大标签ID
+     * @return 预置标签ids
+     */
+    @Select("select id from data_label where id <= #{endLabelId} and id> #{startLabelId} and deleted = 0")
+    List<Long> getPubLabelIds(@Param("startLabelId") int startLabelId, @Param("endLabelId") int  endLabelId);
+
+
+    /**
+     * 根据数据集ID获取数据集对应标签组下的标签列表
+     *
+     * @param datasetId 数据集ID
+     * @return 标签列表
+     */
+    @Select("select dl.*,dd.label_group_id from data_label dl\n" +
+            "left join data_group_label dgl on dl.id = dgl.label_id\n" +
+            "left join data_dataset dd on dgl.label_group_id = dd.label_group_id\n" +
+            "where dd.id = #{datasetId}  and dl.deleted = 0")
+    List<LabelDTO> listByDatesetId(@Param("datasetId") Long datasetId);
 }

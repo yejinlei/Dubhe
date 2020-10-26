@@ -27,8 +27,8 @@ import javax.validation.constraints.NotNull;
 import java.io.Serializable;
 
 /**
- * @description: 恢复训练
- * @date: 2020-04-27
+ * @description 恢复训练
+ * @date 2020-04-27
  */
 @Data
 @Accessors(chain = true)
@@ -40,5 +40,9 @@ public class PtTrainJobResumeDTO implements Serializable {
     @NotNull(message = "id不能为空")
     @Min(value = TrainUtil.NUMBER_ONE, message = "id数值不合法")
     private Long id;
+
+    @ApiModelProperty(value = "path", required = true)
+    @NotNull(message = "path不能为空")
+    private String path;
 
 }

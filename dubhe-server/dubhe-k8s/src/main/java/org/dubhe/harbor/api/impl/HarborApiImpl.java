@@ -32,12 +32,12 @@ import org.dubhe.utils.LogUtil;
 import org.dubhe.utils.StringUtils;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.util.CollectionUtils;
-
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import static org.dubhe.constant.SymbolConstant.COLON;
@@ -56,6 +56,10 @@ public class HarborApiImpl implements HarborApi {
     private String projectSearchUrl;
     @Value("https://${harbor.address}/api/repositories/")
     private String tagSearchUrl;
+    @Value("${harbor.username}")
+    private String harborName;
+    @Value("${harbor.password}")
+    private String harborPassword;
     private static final String TAG_SEARCH_CONF = "/%2F";
     private static final String TAG_SEARCH_PARAMS = "/tags";
     private static final String RESOURCE_NAME_KEY = "name";
@@ -137,7 +141,6 @@ public class HarborApiImpl implements HarborApi {
     /**
      * 获取projectName-projectId映射Map
      *
-     * @param
      * @return Map<String, Integer> 项目名称和项目id映射map
      */
     private Map<String, Integer> getProjectIdMap() {
@@ -277,4 +280,33 @@ public class HarborApiImpl implements HarborApi {
         }
         return imageVO;
     }
+
+    /**
+     * 根据镜像标签删除镜像
+     *
+     * @param imageUrl
+     */
+    @Override
+    public void deleteImageByTag(String imageUrl) {
+     if(StringUtils.isNotEmpty(imageUrl)){
+         LogUtil.info(LogEnum.BIZ_K8S,"image path{}",imageUrl);
+         String[] urlSplits = imageUrl.split(SymbolConstant.SLASH);
+         String[] tagUrls = urlSplits[MagicNumConstant.TWO].split(SymbolConstant.COLON);
+         String  dataRep=urlSplits[MagicNumConstant.ONE]+SymbolConstant.SLASH+tagUrls[MagicNumConstant.ZERO];
+         LogUtil.info(LogEnum.BIZ_K8S,"data warehouse{}",dataRep);
+         Map<String, Integer> projectIdMap = getProjectIdMap();
+         //获取harbor中所有项目的名称
+         Set<String> names = projectIdMap.keySet();
+         //判断harbor中是否具有改项目
+         names.stream().forEach(name->{
+             if(urlSplits[MagicNumConstant.ONE].equals(name)){
+                 //发送删除请求
+                HttpClientUtils.sendHttpsDelete(tagSearchUrl+dataRep+TAG_SEARCH_PARAMS+SymbolConstant.SLASH+tagUrls[MagicNumConstant.ONE],harborName,harborPassword);
+                LogUtil.error(LogEnum.BIZ_K8S,"fail to delete{}",imageUrl);
+                return;
+             }
+         });
+     }
+    }
+
 }

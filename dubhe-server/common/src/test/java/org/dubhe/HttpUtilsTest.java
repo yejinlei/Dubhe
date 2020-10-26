@@ -23,8 +23,8 @@ import org.junit.Test;
 import static org.dubhe.utils.HttpUtils.isSuccess;
 
 /**
- * @description: HttpUtil
- * @date 2020.04.30
+ * @description HttpUtil
+ * @date 2020-04-30
  */
 public class HttpUtilsTest {
 

@@ -25,10 +25,15 @@ import lombok.Getter;
  */
 @Getter
 public enum TaskSplitStatusEnum {
+
     /**
      * 进行中
      */
     ING(1, "进行中"),
+
+    /**
+     * 已完成
+     */
     FINISHED(2, "已完成"),
     ;
 
@@ -39,4 +44,5 @@ public enum TaskSplitStatusEnum {
 
     private int value;
     private String msg;
+
 }

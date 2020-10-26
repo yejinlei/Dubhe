@@ -25,6 +25,7 @@ import org.dubhe.base.MagicNumConstant;
  */
 public class K8sParamConstants {
     public static final String GPU_RESOURCE_KEY = "nvidia.com/gpu";
+    public static final String GPU_MEM_RESOURCE_KEY = "aliyun.com/gpu-mem";
     public static final String QUANTITY_CPU_KEY = "cpu";
     public static final String QUANTITY_MEMORY_KEY = "memory";
     public static final String NODE_READY_TRUE = "True";

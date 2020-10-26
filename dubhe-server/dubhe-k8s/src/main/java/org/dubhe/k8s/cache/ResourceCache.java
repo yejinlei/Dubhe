@@ -198,11 +198,12 @@ public class ResourceCache {
     public boolean deletePodCacheByResourceName(String namespace, String resourceName){
         try{
             if (StringUtils.isNotEmpty(namespace) && StringUtils.isNotEmpty(resourceName)){
-                Set<String> podNameSet = getPodNameByResourceName(namespace,resourceName);
+                Set<String> podNameSet = (Set) redisUtils.zGet(resourceNamePrefix +resourceName);
                 redisUtils.del(resourceNamePrefix +resourceName);
                 if (!CollectionUtils.isEmpty(podNameSet)){
                     podNameSet.forEach(podName-> redisUtils.del(podNamePrefix +podName));
                 }
+                k8sResourceService.deleteByResourceName(K8sKindEnum.POD.getKind(),namespace,resourceName);
             }
             return true;
         }catch (Exception e){
@@ -221,11 +222,12 @@ public class ResourceCache {
     public boolean deletePodCacheByPodName(String namespace, String podName){
         try {
             if (StringUtils.isNotEmpty(namespace) && StringUtils.isNotEmpty(podName)){
-                String resourceName = getResourceNameByPodName(namespace,podName);
+                String resourceName = (String) redisUtils.get(podNamePrefix +podName);
                 redisUtils.del(podNamePrefix + podName);
                 if (StringUtils.isNotEmpty(resourceName)){
                     redisUtils.del(resourceNamePrefix +resourceName);
                 }
+                k8sResourceService.deleteByName(K8sKindEnum.POD.getKind(),namespace,podName);
             }
             return true;
         }catch (Exception e){

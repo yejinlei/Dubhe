@@ -81,9 +81,42 @@ public class PtTrainParamUpdateDTO extends BaseImageDTO {
     @NotNull(message = "类型(0为CPU，1为GPU)不能为空")
     private Integer resourcesPoolType;
 
-    @ApiModelProperty(value = "规格类型Id", required = true)
-    @NotNull(message = "规格类型id不能为空")
-    @Min(value = TrainUtil.NUMBER_ONE, message = "规格类型id必须不小于1")
-    private Integer trainJobSpecsId;
+    @ApiModelProperty(value = "规格名称", required = true)
+    @NotNull(message = "规格名称不能为空")
+    private String trainJobSpecsName;
+
+    @ApiModelProperty("验证数据来源名称")
+    private String valDataSourceName;
+
+    @ApiModelProperty("验证数据来源路径")
+    private String valDataSourcePath;
+
+    @ApiModelProperty("是否验证数据集")
+    private Integer valType;
+
+    @ApiModelProperty(value = "是否打开模型选择")
+    private Integer modelType;
+
+    @ApiModelProperty(value = "模型类型(0我的模型1预置模型)")
+    private Integer modelResource;
+
+    @ApiModelProperty(value = "模型名称")
+    private String modelName;
+
+    @ApiModelProperty(value = "模型加载路径")
+    private String modelLoadPathDir;
+
+    @ApiModelProperty(value = "模型id")
+    private Integer modelId;
+
+    @ApiModelProperty(value = "训练类型 0：普通训练，1：分布式训练")
+    @Min(value = TrainUtil.NUMBER_ZERO, message = "训练类型错误")
+    @Max(value = TrainUtil.NUMBER_ONE, message = "训练类型错误")
+    private Integer trainType;
+
+    @ApiModelProperty(value = "节点个数")
+    @Min(value = TrainUtil.NUMBER_ONE, message = "节点个数在1~8之间")
+    @Max(value = TrainUtil.NUMBER_EIGHT, message = "节点个数在1~8之间")
+    private Integer resourcesPoolNode;
 
 }

@@ -26,8 +26,8 @@ import org.dubhe.constant.NumberConstant;
 import javax.validation.constraints.Min;
 
 /**
- * @description: 分页基类
- * @date: 2020-05-8
+ * @description 分页基类
+ * @date 2020-05-08
  */
 @Data
 @Accessors(chain = true)

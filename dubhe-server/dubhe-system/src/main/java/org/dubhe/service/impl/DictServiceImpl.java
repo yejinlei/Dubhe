@@ -30,9 +30,6 @@ import org.dubhe.utils.PageUtil;
 import org.dubhe.utils.WrapperHelp;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.cache.annotation.CacheConfig;
-import org.springframework.cache.annotation.CacheEvict;
-import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -41,11 +38,10 @@ import java.io.IOException;
 import java.util.*;
 
 /**
- * @Description :字典服务 实现类
- * @Date 2020-06-01
+ * @description 字典服务 实现类
+ * @date 2020-06-01
  */
 @Service
-@CacheConfig(cacheNames = "dict")
 public class DictServiceImpl implements DictService {
 
     @Autowired
@@ -66,7 +62,6 @@ public class DictServiceImpl implements DictService {
      * @return java.util.Map<java.lang.String, java.lang.Object> 字典分页实例
      */
     @Override
-    @Cacheable
     public Map<String, Object> queryAll(DictQueryDTO criteria, Page<Dict> page) {
         IPage<Dict> dicts = dictMapper.selectCollPage(page, WrapperHelp.getWrapper(criteria));
         return PageUtil.toPage(dicts, dictConvert::toDto);
@@ -92,7 +87,6 @@ public class DictServiceImpl implements DictService {
      * @return org.dubhe.domain.dto.DictDTO 字典实例
      */
     @Override
-    @Cacheable(key = "#p0")
     public DictDTO findById(Long id) {
         Dict dict = dictMapper.selectCollById(id);
         return dictConvert.toDto(dict);
@@ -105,7 +99,6 @@ public class DictServiceImpl implements DictService {
      * @return org.dubhe.domain.dto.DictDTO 字典实例
      */
     @Override
-    @Cacheable(key = "#p0")
     public DictDTO findByName(String name) {
         Dict dict = dictMapper.selectCollByName(name);
         return dictConvert.toDto(dict);
@@ -118,7 +111,6 @@ public class DictServiceImpl implements DictService {
      * @return org.dubhe.domain.dto.DictDTO 字典实例
      */
     @Override
-    @CacheEvict(allEntries = true)
     @Transactional(rollbackFor = Exception.class)
     public DictDTO create(DictCreateDTO resources) {
         if (dictMapper.selectCollByName(resources.getName()) != null) {
@@ -143,7 +135,6 @@ public class DictServiceImpl implements DictService {
      * @return void
      */
     @Override
-    @CacheEvict(allEntries = true)
     @Transactional(rollbackFor = Exception.class)
     public void update(DictUpdateDTO resources) {
         Dict dict = dictMapper.selectCollByName(resources.getName());
@@ -167,7 +158,6 @@ public class DictServiceImpl implements DictService {
 
 
     @Override
-    @CacheEvict(allEntries = true)
     @Transactional(rollbackFor = Exception.class)
     /**
      * 字典批量删除

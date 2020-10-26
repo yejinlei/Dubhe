@@ -20,8 +20,8 @@ package org.dubhe.utils;
 import org.dubhe.base.MagicNumConstant;
 
 /**
- * @description: 计算工具类
- * @create: 2020/6/4 14:53
+ * @description 计算工具类
+ * @date 2020-06-04
  */
 public class MathUtils {
 

@@ -26,7 +26,7 @@ import java.io.Serializable;
 import java.sql.Timestamp;
 
 /**
- * @description: 返回训练版本查询详情
+ * @description 返回训练版本查询详情
  * @date 2020-04-27
  */
 @Data
@@ -74,8 +74,8 @@ public class PtTrainJobDetailVO implements Serializable {
     @ApiModelProperty("可视化日志路径")
     private String visualizedLogPath;
 
-    @ApiModelProperty("规格ID")
-    private Integer trainJobSpecsId;
+    @ApiModelProperty("规格名称")
+    private String trainJobSpecsName;
 
     @ApiModelProperty("类型(0为CPU，1为GPU)")
     private Integer resourcesPoolType;
@@ -134,4 +134,42 @@ public class PtTrainJobDetailVO implements Serializable {
     @ApiModelProperty("P4推理速度（ms）")
     private Integer p4InferenceSpeed;
 
+    @ApiModelProperty(value = "算法文件路径")
+    private String algorithmCodeDir;
+
+    @ApiModelProperty("训练类型")
+    private Integer trainType;
+
+    @ApiModelProperty("验证数据来源名称")
+    private String valDataSourceName;
+
+    @ApiModelProperty("验证数据来源路径")
+    private String valDataSourcePath;
+
+    @ApiModelProperty("是否验证数据集")
+    private Integer valType;
+
+    @ApiModelProperty("训练延时启动倒计时，单位：分钟")
+    private Integer delayCreateCountDown;
+
+    @ApiModelProperty("训练自动停止倒计时，单位：分钟")
+    private Integer delayDeleteCountDown;
+
+    @ApiModelProperty("模型路径")
+    private String modelLoadPathDir;
+
+    @ApiModelProperty(value = "是否打开模型选择")
+    private Integer modelType;
+
+    @ApiModelProperty(value = "模型类型(0我的模型1预置模型)")
+    private Integer modelResource;
+
+    @ApiModelProperty(value = "模型名称")
+    private String modelName;
+
+    @ApiModelProperty(value = "模型id")
+    private Integer modelId;
+
+    @ApiModelProperty(value = "训练信息(失败信息)")
+    private String trainMsg;
 }

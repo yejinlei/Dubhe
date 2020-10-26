@@ -273,4 +273,41 @@ public class StringUtils extends org.apache.commons.lang3.StringUtils {
         matcher.appendTail(sb);
         return sb.toString();
     }
+
+
+    /**
+     * 字符串截取前
+     * @param str
+     * @return
+     */
+    public static String substringBefore(String str, String separator){
+
+        if (!isEmpty(str) && separator != null) {
+            if (separator.isEmpty()) {
+                return "";
+            } else {
+                int pos = str.indexOf(separator);
+                return pos == -1 ? str : str.substring(0, pos);
+            }
+        } else {
+            return str;
+        }
+    }
+
+    /**
+     * 字符串截取后
+     * @param str
+     * @return
+     */
+    public static String substringAfter(String str, String separator){
+
+        if (isEmpty(str)) {
+            return str;
+        } else if (separator == null) {
+            return "";
+        } else {
+            int pos = str.indexOf(separator);
+            return pos == -1 ? "" : str.substring(pos + separator.length());
+        }
+    }
 }

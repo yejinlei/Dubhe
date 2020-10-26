@@ -26,7 +26,7 @@ import org.springframework.test.web.servlet.result.MockMvcResultHandlers;
 import org.springframework.util.MultiValueMap;
 
 /**
- * @date: 2020-05-15
+ * @date 2020-05-15
  */
 @Slf4j
 public class MockUtil {

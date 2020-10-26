@@ -21,6 +21,7 @@ import cn.hutool.core.codec.Base64;
 import cn.hutool.core.collection.CollectionUtil;
 import cn.hutool.core.util.RandomUtil;
 import cn.hutool.core.util.StrUtil;
+import com.alibaba.fastjson.JSON;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Maps;
 import io.fabric8.kubernetes.api.model.Container;
@@ -55,17 +56,21 @@ import org.dubhe.enums.LogEnum;
 import org.dubhe.k8s.api.JupyterResourceApi;
 import org.dubhe.k8s.api.NodeApi;
 import org.dubhe.k8s.api.PersistentVolumeClaimApi;
+import org.dubhe.k8s.cache.ResourceCache;
 import org.dubhe.k8s.constant.K8sLabelConstants;
 import org.dubhe.k8s.constant.K8sParamConstants;
 import org.dubhe.k8s.domain.PtBaseResult;
 import org.dubhe.k8s.domain.bo.PtJupyterResourceBO;
 import org.dubhe.k8s.domain.bo.PtPersistentVolumeClaimBO;
+import org.dubhe.k8s.domain.bo.TaskYamlBO;
+import org.dubhe.k8s.domain.entity.K8sTask;
 import org.dubhe.k8s.domain.resource.BizPersistentVolumeClaim;
 import org.dubhe.k8s.domain.vo.PtJupyterDeployVO;
 import org.dubhe.k8s.enums.ImagePullPolicyEnum;
 import org.dubhe.k8s.enums.K8sKindEnum;
 import org.dubhe.k8s.enums.K8sResponseEnum;
 import org.dubhe.k8s.enums.LackOfResourcesEnum;
+import org.dubhe.k8s.service.K8sTaskService;
 import org.dubhe.k8s.utils.K8sUtils;
 import org.dubhe.k8s.utils.LabelUtils;
 import org.dubhe.k8s.utils.YamlUtils;
@@ -73,7 +78,7 @@ import org.dubhe.utils.LogUtil;
 import org.dubhe.utils.NfsUtil;
 import org.dubhe.utils.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
-
+import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -83,6 +88,10 @@ import java.util.Map;
 import java.util.Optional;
 
 import static java.util.stream.Collectors.toList;
+import static org.dubhe.base.MagicNumConstant.SIXTY_LONG;
+import static org.dubhe.base.MagicNumConstant.THOUSAND_LONG;
+import static org.dubhe.base.MagicNumConstant.ZERO;
+import static org.dubhe.base.MagicNumConstant.ZERO_LONG;
 
 /**
  * @description JupyterResourceApi 实现类
@@ -98,6 +107,11 @@ public class JupyterResourceApiImpl implements JupyterResourceApi {
     private NfsUtil nfsUtil;
     @Autowired
     private NodeApi nodeApi;
+    @Autowired
+    private K8sTaskService k8sTaskService;
+    @Autowired
+    private ResourceCache resourceCache;
+
 
     private static final String DATASET = "/dataset";
     private static final String WORKSPACE = "/workspace";
@@ -135,11 +149,12 @@ public class JupyterResourceApiImpl implements JupyterResourceApi {
             if (!nfsUtil.createDirs(true, bo.getWorkspaceDir(), bo.getDatasetDir())) {
                 return new PtJupyterDeployVO().error(K8sResponseEnum.INTERNAL_SERVER_ERROR.getCode(), K8sResponseEnum.INTERNAL_SERVER_ERROR.getMessage());
             }
+            resourceCache.deletePodCacheByResourceName(bo.getNamespace(),bo.getName());
             PtJupyterDeployVO result = new JupyterDeployer(bo).buildNfsVolumes().deploy();
             LogUtil.info(LogEnum.BIZ_K8S, "Return value of creating Notebook create:{}", result);
             return result;
         } catch (KubernetesClientException e) {
-            LogUtil.error(LogEnum.BIZ_K8S, "JupyterResourceApiImpl.create error, param:{} error:", bo, e);
+            LogUtil.error(LogEnum.BIZ_K8S, "JupyterResourceApiImpl.create error, param:{} error:{}", bo, e);
             return new PtJupyterDeployVO().error(String.valueOf(e.getCode()), e.getMessage());
         }
     }
@@ -167,15 +182,16 @@ public class JupyterResourceApiImpl implements JupyterResourceApi {
             BizPersistentVolumeClaim bizPersistentVolumeClaim = (StringUtils.isEmpty(bo.getWorkspaceDir())) ? persistentVolumeClaimApi.createDynamicNfs(new PtPersistentVolumeClaimBO(bo)) : persistentVolumeClaimApi.createWithNfsPv(new PtPersistentVolumeClaimBO(bo));
             if (K8sResponseEnum.SUCCESS.getCode().equals(bizPersistentVolumeClaim.getCode())) {
                 bo.setWorkspacePvcName(bizPersistentVolumeClaim.getName());
+                resourceCache.deletePodCacheByResourceName(bo.getNamespace(),bo.getName());
                 PtJupyterDeployVO result = new JupyterDeployer(bo).buildNfsPvcVolumes().deploy();
                 LogUtil.info(LogEnum.BIZ_K8S, "Return value of creating Notebook--createWithPvc:{}", result);
                 return result;
             } else {
-                LogUtil.info(LogEnum.BIZ_K8S, "Notebook--createWithPvc error:", bizPersistentVolumeClaim.getMessage());
+                LogUtil.info(LogEnum.BIZ_K8S, "Notebook--createWithPvc error:{}", bizPersistentVolumeClaim.getMessage());
                 return new PtJupyterDeployVO().error(bizPersistentVolumeClaim.getCode(), bizPersistentVolumeClaim.getMessage());
             }
         } catch (KubernetesClientException e) {
-            LogUtil.error(LogEnum.BIZ_K8S, "JupyterResourceApiImpl.createWithPvc error, param:{} error:", bo, e);
+            LogUtil.error(LogEnum.BIZ_K8S, "JupyterResourceApiImpl.createWithPvc error, param:{} error:{}", bo, e);
             return new PtJupyterDeployVO().error(String.valueOf(e.getCode()), e.getMessage());
         }
     }
@@ -200,7 +216,7 @@ public class JupyterResourceApiImpl implements JupyterResourceApi {
                 return K8sResponseEnum.REPEAT.toPtBaseResult();
             }
         } catch (KubernetesClientException e) {
-            LogUtil.error(LogEnum.BIZ_K8S, "JupyterResourceApiImpl.delete error:", e);
+            LogUtil.error(LogEnum.BIZ_K8S, "JupyterResourceApiImpl.delete error:{}", e);
             return new PtBaseResult(String.valueOf(e.getCode()), e.getMessage());
         }
     }
@@ -244,7 +260,7 @@ public class JupyterResourceApiImpl implements JupyterResourceApi {
             Secret secret = CollectionUtil.isEmpty(secretList.getItems()) ? null : secretList.getItems().get(0);
             return new PtJupyterDeployVO(secret, statefulSet, svc, ingress);
         } catch (KubernetesClientException e) {
-            LogUtil.error(LogEnum.BIZ_K8S, "JupyterResourceApiImpl.get error:", e);
+            LogUtil.error(LogEnum.BIZ_K8S, "JupyterResourceApiImpl.get error:{}", e);
             return new PtJupyterDeployVO().error(String.valueOf(e.getCode()), e.getMessage());
         }
     }
@@ -280,9 +296,11 @@ public class JupyterResourceApiImpl implements JupyterResourceApi {
         private String baseUrl;
         private String secondaryDomain;
         private String businessLabel;
+        private Integer delayDelete;
 
         private List<VolumeMount> volumeMounts;
         private List<Volume> volumes;
+        private TaskYamlBO taskYamlBO;
 
         private JupyterDeployer(PtJupyterResourceBO bo) {
             this.baseName = bo.getName();
@@ -308,6 +326,7 @@ public class JupyterResourceApiImpl implements JupyterResourceApi {
             this.nfs = k8sUtils.getNfs();
             this.host = k8sUtils.getHost();
             this.businessLabel = bo.getBusinessLabel();
+            this.delayDelete = bo.getDelayDeleteTime();
             this.baseLabels = LabelUtils.getBaseLabels(baseName, businessLabel);
             this.podLabels = LabelUtils.getChildLabels(baseName, statefulSetName, K8sKindEnum.STATEFULSET.getKind(), businessLabel);
             //生成附属资源的名称
@@ -320,6 +339,7 @@ public class JupyterResourceApiImpl implements JupyterResourceApi {
             this.datasetReadOnly = true;
             this.volumeMounts = new ArrayList();
             this.volumes = new ArrayList();
+            this.taskYamlBO = new TaskYamlBO();
         }
 
         /**
@@ -329,16 +349,30 @@ public class JupyterResourceApiImpl implements JupyterResourceApi {
          */
         public PtJupyterDeployVO deploy() {
             //部署secret
-            Secret secret = deploySecret(Base64.encode(defaultJupyterPwd), Base64.encode(baseUrl));
+            Secret secret = deploySecret(Base64.encode(defaultJupyterPwd), Base64.encode(baseUrl),delayDelete);
             LogUtil.info(LogEnum.BIZ_K8S, YamlUtils.dumpAsYaml(secret));
             //部署statefulset
-            StatefulSet statefulSet = deployStatefulSet();
+            StatefulSet statefulSet = deployStatefulSet(delayDelete);
 
             //部署svc
-            Service service = deployService();
+            Service service = deployService(delayDelete);
 
             //部署ingress
-            Ingress ingress = deployIngress();
+            Ingress ingress = deployIngress(delayDelete);
+            if (delayDelete != null && delayDelete > ZERO && CollectionUtil.isNotEmpty(taskYamlBO.getYamlList())){
+                long stopUnixTime = System.currentTimeMillis()/THOUSAND_LONG + delayDelete * SIXTY_LONG;
+                Timestamp stopDisplayTime = new Timestamp(stopUnixTime * THOUSAND_LONG);
+                K8sTask k8sTask = new K8sTask(){{
+                   setNamespace(namespace);
+                   setResourceName(baseName);
+                   setTaskYaml(JSON.toJSONString(taskYamlBO));
+                   setBusiness(businessLabel);
+                   setStopUnixTime(stopUnixTime);
+                   setStopDisplayTime(stopDisplayTime);
+                   setStopStatus(MagicNumConstant.ONE);
+                }};
+                k8sTaskService.createOrUpdateTask(k8sTask);
+            }
 
             return new PtJupyterDeployVO(secret, statefulSet, service, ingress);
         }
@@ -346,17 +380,20 @@ public class JupyterResourceApiImpl implements JupyterResourceApi {
         /**
          * 部署secret
          *
-         * @param base64Pwd
-         * @param base64BaseUrl
-         * @return Secret
+         * @param base64Pwd base64密码
+         * @param base64BaseUrl base64路径
+         * @return Secret 加密后的密码
          */
-        private Secret deploySecret(String base64Pwd, String base64BaseUrl) {
+        private Secret deploySecret(String base64Pwd, String base64BaseUrl, Integer delayDelete) {
             Secret secret = null;
             SecretList list = client.secrets().inNamespace(namespace).withLabels(LabelUtils.withEnvResourceName(baseName)).list();
             if (CollectionUtil.isNotEmpty(list.getItems())) {
                 secret = list.getItems().get(0);
                 secretName = secret.getMetadata().getName();
                 LogUtil.info(LogEnum.BIZ_K8S, "Skip creating secret, {} already exists", secretName);
+                if (delayDelete != null && delayDelete > ZERO){
+                    taskYamlBO.append(secret);
+                }
                 return secret;
             }
             secret = new SecretBuilder()
@@ -367,6 +404,9 @@ public class JupyterResourceApiImpl implements JupyterResourceApi {
                     .endMetadata()
                     .addToData(ImmutableMap.of(K8sParamConstants.SECRET_PWD_KEY, base64Pwd, K8sParamConstants.SECRET_URL_KEY, base64BaseUrl))
                     .build();
+            if (delayDelete != null && delayDelete > ZERO){
+                taskYamlBO.append(secret);
+            }
             LogUtil.info(LogEnum.BIZ_K8S, "Ready to deploy {}", secretName);
             secret = client.secrets().create(secret);
             LogUtil.info(LogEnum.BIZ_K8S, "{} deployed successfully", secretName);
@@ -462,15 +502,18 @@ public class JupyterResourceApiImpl implements JupyterResourceApi {
         /**
          * 部署statefulset
          *
-         * @return StatefulSet
+         * @return StatefulSet 类
          */
-        private StatefulSet deployStatefulSet() {
+        private StatefulSet deployStatefulSet(Integer delayDelete) {
             StatefulSet statefulSet = null;
             StatefulSetList list = client.apps().statefulSets().inNamespace(namespace).withLabels(LabelUtils.withEnvResourceName(baseName)).list();
             if (CollectionUtil.isNotEmpty(list.getItems())) {
                 statefulSet = list.getItems().get(0);
                 statefulSetName = statefulSet.getMetadata().getName();
                 LogUtil.info(LogEnum.BIZ_K8S, "Skip creating statefulSet, {} already exists", statefulSetName);
+                if (delayDelete != null && delayDelete > 0){
+                    taskYamlBO.append(statefulSet);
+                }
                 return statefulSet;
             }
             LabelSelector labelSelector = new LabelSelector();
@@ -528,14 +571,18 @@ public class JupyterResourceApiImpl implements JupyterResourceApi {
                                 .withNamespace(namespace)
                             .endMetadata()
                             .withNewSpec()
+                                .withTerminationGracePeriodSeconds(ZERO_LONG)
                                 .addToNodeSelector(gpuLabel)
-                                .withTerminationGracePeriodSeconds(MagicNumConstant.SIXTY_LONG)
+                                .withTerminationGracePeriodSeconds(SIXTY_LONG)
                                 .addToContainers(container)
                                 .addToVolumes(volumes.toArray(new Volume[0]))
                             .endSpec()
                         .endTemplate()
                     .endSpec()
                     .build();
+            if (delayDelete != null && delayDelete > 0){
+                taskYamlBO.append(statefulSet);
+            }
             LogUtil.info(LogEnum.BIZ_K8S, "Ready to deploy {}, yaml信息为{}", statefulSetName, YamlUtils.dumpAsYaml(statefulSet));
             statefulSet = client.apps().statefulSets().create(statefulSet);
             LogUtil.info(LogEnum.BIZ_K8S, "{} deployed successfully", statefulSetName);
@@ -545,15 +592,18 @@ public class JupyterResourceApiImpl implements JupyterResourceApi {
         /**
          * 部署service
          *
-         * @return Service
+         * @return Service 类
          */
-        private Service deployService() {
+        private Service deployService(Integer delayDelete) {
             Service svc = null;
             ServiceList list = client.services().inNamespace(namespace).withLabels(LabelUtils.withEnvResourceName(baseName)).list();
             if (CollectionUtil.isNotEmpty(list.getItems())) {
                 svc = list.getItems().get(0);
                 svcName = svc.getMetadata().getName();
                 LogUtil.info(LogEnum.BIZ_K8S, "Skip creating service, {} already exists", svcName);
+                if (delayDelete != null && delayDelete > 0){
+                    taskYamlBO.append(svc);
+                }
                 return svc;
             }
             svc = new ServiceBuilder()
@@ -572,6 +622,9 @@ public class JupyterResourceApiImpl implements JupyterResourceApi {
                         .withSelector(podLabels)
                     .endSpec()
                     .build();
+            if (delayDelete != null && delayDelete > 0){
+                taskYamlBO.append(svc);
+            }
             LogUtil.info(LogEnum.BIZ_K8S, "Ready to deploy {}, yaml信息为{}", svcName, YamlUtils.dumpAsYaml(svc));
             svc = client.services().create(svc);
             LogUtil.info(LogEnum.BIZ_K8S, "{} deployed successfully", svcName);
@@ -581,15 +634,18 @@ public class JupyterResourceApiImpl implements JupyterResourceApi {
         /**
          * 部署ingress
          *
-         * @return Ingress
+         * @return Ingress 类
          */
-        private Ingress deployIngress() {
+        private Ingress deployIngress(Integer delayDelete) {
             Ingress ingress = null;
             IngressList list = client.extensions().ingresses().inNamespace(namespace).withLabels(LabelUtils.withEnvResourceName(baseName)).list();
             if (CollectionUtil.isNotEmpty(list.getItems())) {
                 ingress = list.getItems().get(0);
                 ingressName = ingress.getMetadata().getName();
                 LogUtil.info(LogEnum.BIZ_K8S, "Skip creating ingress, {} already exists", ingressName);
+                if (delayDelete != null && delayDelete > 0){
+                    taskYamlBO.append(ingress);
+                }
                 return ingress;
             }
             ingress = new IngressBuilder()
@@ -615,6 +671,9 @@ public class JupyterResourceApiImpl implements JupyterResourceApi {
                         .endRule()
                     .endSpec()
                     .build();
+            if (delayDelete != null && delayDelete > 0){
+                taskYamlBO.append(ingress);
+            }
             LogUtil.info(LogEnum.BIZ_K8S, "Ready to deploy {}, yaml信息为{}", ingressName, YamlUtils.dumpAsYaml(ingress));
             ingress = client.extensions().ingresses().create(ingress);
             LogUtil.info(LogEnum.BIZ_K8S, "{} deployed successfully", ingressName);

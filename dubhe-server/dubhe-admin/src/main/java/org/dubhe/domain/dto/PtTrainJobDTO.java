@@ -50,4 +50,5 @@ public class PtTrainJobDTO implements Serializable {
     private Timestamp createTime;
     private Timestamp updateTime;
     private Boolean deleted;
+    private Long originUserId;
 }

@@ -40,4 +40,7 @@ public class PtImageQueryDTO extends PageQueryBase implements Serializable {
     @ApiModelProperty(value = "镜像状态，0为制作中，1位制作成功，2位制作失败")
     private Integer imageStatus;
 
+    @ApiModelProperty(value = "镜像名称或id")
+    private String imageNameOrId;
+
 }

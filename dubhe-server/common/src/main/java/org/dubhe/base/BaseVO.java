@@ -24,8 +24,8 @@ import java.io.Serializable;
 import java.sql.Timestamp;
 
 /**
- * @description: VO基础类
- * @date: 2020-05-22
+ * @description VO基础类
+ * @date 2020-05-22
  */
 @Data
 public class BaseVO implements Serializable {

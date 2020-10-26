@@ -20,7 +20,6 @@ package org.dubhe.utils;
 import cn.hutool.core.util.ObjectUtil;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import lombok.extern.slf4j.Slf4j;
-import lombok.val;
 import org.dubhe.annotation.Query;
 
 import java.lang.reflect.Field;
@@ -31,7 +30,7 @@ import java.util.List;
 
 /**
  * @description  构建Wrapper
- * @date 2020-03-15 13:52:30
+ * @date 2020-03-15
  */
 @Slf4j
 public class WrapperHelp {

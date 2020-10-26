@@ -70,7 +70,7 @@ public class LimitRangeApiImpl implements LimitRangeApi {
             LogUtil.info(LogEnum.BIZ_K8S, "Output {}", bizLimitRange);
             return bizLimitRange;
         } catch (KubernetesClientException e) {
-            LogUtil.error(LogEnum.BIZ_K8S, "LimitRangeApiImpl.create error, param:{} error:", bo, e);
+            LogUtil.error(LogEnum.BIZ_K8S, "LimitRangeApiImpl.create error, param:{} error:{}", bo, e);
             return new BizLimitRange().error(String.valueOf(e.getCode()), e.getMessage());
         }
     }

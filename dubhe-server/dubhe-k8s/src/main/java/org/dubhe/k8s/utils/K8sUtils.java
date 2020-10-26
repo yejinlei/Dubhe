@@ -110,7 +110,7 @@ public class K8sUtils implements ApplicationContextAware {
      * 导出成yaml字符串
      *
      * @param resource 任意对象
-     * @return String
+     * @return String 转换后的yaml字符串
      */
     public String convertToYaml(Object resource) {
         return YamlUtils.convertToYaml(resource);
@@ -121,7 +121,6 @@ public class K8sUtils implements ApplicationContextAware {
      *
      * @param resource 任意对象
      * @param filePath 文件路径
-     * @rerurn void
      */
     public void dumpToYaml(Object resource, String filePath) {
         YamlUtils.dumpToYaml(resource, filePath);

@@ -29,9 +29,8 @@ import org.dubhe.data.service.DatasetService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
-
 import javax.servlet.http.HttpServletResponse;
-
+import java.util.List;
 import static org.dubhe.constant.Permissions.DATA;
 
 /**
@@ -67,6 +66,13 @@ public class DatasetController {
         return new DataResponseBody(datasetService.get(datasetId));
     }
 
+    @ApiOperation(value = "数据集进度")
+    @GetMapping(value = "/progress")
+    @RequiresPermissions(DATA)
+    public DataResponseBody progress(@RequestParam List<Long> datasetIds) {
+        return new DataResponseBody(datasetService.progress(datasetIds));
+    }
+
     @ApiOperation(value = "数据集修改")
     @PutMapping(value = "/{datasetId}")
     @RequiresPermissions(DATA)
@@ -94,7 +100,7 @@ public class DatasetController {
     @GetMapping(value = "/versions/filter")
     @RequiresPermissions(DATA)
     public DataResponseBody queryConfirmDatasetVersion(Page page, DatasetIsVersionDTO datasetIsVersionDTO) {
-        return new DataResponseBody(datasetService.dataVersionlistVO(page, datasetIsVersionDTO));
+        return new DataResponseBody(datasetService.dataVersionListVO(page, datasetIsVersionDTO));
     }
 
     @ApiOperation(value = "数据集增强")
@@ -105,17 +111,18 @@ public class DatasetController {
         return new DataResponseBody();
     }
 
-    @ApiOperation(value = "数据增强完成(算法回调)")
-    @PostMapping(value = "/enhance/finish")
-    public DataResponseBody enhanceFinish(@RequestBody DatasetEnhanceFinishDTO datasetEnhanceFinishDTO) {
-        return new DataResponseBody(datasetService.enhanceFinish(datasetEnhanceFinishDTO));
-    }
-
     @ApiOperation(value = "查询公共和个人数据集的数量")
     @GetMapping(value = "/count")
     @RequiresPermissions(DATA)
     public DataResponseBody queryDatasetsCount() {
         return new DataResponseBody(datasetService.queryDatasetsCount());
+    }
+
+    @ApiOperation(value = "查询数据集状态")
+    @GetMapping(value = "/status")
+    @RequiresPermissions(DATA)
+    public DataResponseBody determineIfTheDatasetIsAnImport(@RequestParam List<Long> datasetIds) {
+        return new DataResponseBody(datasetService.determineIfTheDatasetIsAnImport(datasetIds));
     }
 
     @ApiOperation(value = "导入用户自定义数据集")
@@ -124,5 +131,14 @@ public class DatasetController {
     public DataResponseBody importDataset(@RequestBody DatasetCustomCreateDTO datasetCustomCreateDTO) {
         return new DataResponseBody(datasetService.importDataset(datasetCustomCreateDTO));
     }
+
+    @ApiOperation(value = "数据集置顶")
+    @GetMapping(value = "/{datasetId}/top")
+    @RequiresPermissions(DATA)
+    public DataResponseBody topDataset(@PathVariable(name = "datasetId") Long datasetId) {
+        datasetService.topDataset(datasetId);
+        return new DataResponseBody();
+    }
+
 
 }

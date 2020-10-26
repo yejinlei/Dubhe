@@ -45,8 +45,9 @@ public enum DatatypeEnum {
 
     /**
      * 数据类型校验 用户web端接口调用时参数校验
+     *
      * @param value 数据类型
-     * @return
+     * @return      参数校验结果
      */
     public static boolean isValid(Integer value) {
         for (DatatypeEnum datatypeEnum : DatatypeEnum.values()) {

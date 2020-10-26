@@ -19,6 +19,7 @@ package org.dubhe.k8s.service.impl;
 
 import cn.hutool.core.collection.CollectionUtil;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
 import org.dubhe.enums.LogEnum;
 import org.dubhe.k8s.constant.K8sLabelConstants;
 import org.dubhe.k8s.dao.K8sResourceMapper;
@@ -95,6 +96,7 @@ public class K8sResourceServiceImpl implements K8sResourceService {
                 .eq("namespace", namespace)
                 .eq("resource_name", resourceName)
                 .eq("env", SpringContextHolder.getActiveProfile())
+                .eq("deleted", 0)
                 .orderByDesc("create_time");
         return k8sResourceMapper.selectList(queryK8sResourceJonWrapper);
     }
@@ -117,7 +119,45 @@ public class K8sResourceServiceImpl implements K8sResourceService {
                 .eq("namespace", namespace)
                 .eq("name", name)
                 .eq("env", SpringContextHolder.getActiveProfile())
+                .eq("deleted", 0)
                 .orderByDesc("create_time");
         return k8sResourceMapper.selectList(queryK8sResourceJonWrapper);
+    }
+
+    /**
+     * 根据resourceName删除
+     * @param kind 资源类型
+     * @param namespace 命名空间
+     * @param resourceName 资源名称
+     * @return int 删除数量
+     */
+    @Override
+    public int deleteByResourceName(String kind, String namespace, String resourceName) {
+        if (StringUtils.isEmpty(kind) || StringUtils.isEmpty(namespace) || StringUtils.isEmpty(resourceName)) {
+            return 0;
+        }
+        UpdateWrapper<K8sResource> updateK8sResourceJonWrapper = new UpdateWrapper<>();
+        updateK8sResourceJonWrapper.eq("kind", kind)
+                .eq("namespace", namespace)
+                .eq("resource_name", resourceName)
+                .eq("env", SpringContextHolder.getActiveProfile())
+                .eq("deleted", 0).set("deleted", 1);
+
+        return k8sResourceMapper.update(null,updateK8sResourceJonWrapper);
+    }
+
+    @Override
+    public int deleteByName(String kind, String namespace, String name) {
+        if (StringUtils.isEmpty(kind) || StringUtils.isEmpty(namespace) || StringUtils.isEmpty(name)) {
+            return 0;
+        }
+        UpdateWrapper<K8sResource> updateK8sResourceJonWrapper = new UpdateWrapper<>();
+        updateK8sResourceJonWrapper.eq("kind", kind)
+                .eq("namespace", namespace)
+                .eq("name", name)
+                .eq("env", SpringContextHolder.getActiveProfile())
+                .eq("deleted", 0).set("deleted", 1);
+
+        return k8sResourceMapper.update(null,updateK8sResourceJonWrapper);
     }
 }

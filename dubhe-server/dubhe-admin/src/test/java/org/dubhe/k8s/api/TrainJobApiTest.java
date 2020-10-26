@@ -60,7 +60,7 @@ public class TrainJobApiTest {
     @Test
     public void create()  {
         PtJupyterJobBO bo = new PtJupyterJobBO();
-        bo.setNamespace("xxx")
+        bo.setNamespace("namespace-1")
                 .setName("train5")
                 .setCpuNum(500)
                 .setGpuNum(1)
@@ -70,9 +70,12 @@ public class TrainJobApiTest {
                 .setNfsMounts(new HashMap<String, PtMountDirBO>(){{
                     put("/dataset",new PtMountDirBO("/nfs/xxx/dataset"));
                     put("/workspace",new PtMountDirBO("/nfs/xxx/dataset"));
+                    put("/valdataset",new PtMountDirBO("/nfs/xxx/dataset"));
                 }})
                 .setImage("tensorflow/tensorflow:latest")
-                .setBusinessLabel("train");
+                .setBusinessLabel("train")
+                .setDelayDeleteTime(10)
+                .setDelayCreateTime(10);
         System.out.println("before create");
         PtJupyterJobVO result = trainJobApi.create(bo);
         System.out.println("after create");

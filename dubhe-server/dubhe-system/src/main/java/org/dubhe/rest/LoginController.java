@@ -19,7 +19,8 @@ import cn.hutool.core.util.BooleanUtil;
 import cn.hutool.core.util.IdUtil;
 import cn.hutool.crypto.asymmetric.KeyType;
 import cn.hutool.crypto.asymmetric.RSA;
-import com.google.code.kaptcha.impl.DefaultKaptcha;
+import com.wf.captcha.SpecCaptcha;
+import com.wf.captcha.base.Captcha;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import lombok.extern.slf4j.Slf4j;
@@ -48,12 +49,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
-import javax.imageio.ImageIO;
 import javax.validation.Valid;
-import javax.xml.bind.DatatypeConverter;
-import java.awt.image.BufferedImage;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
@@ -79,14 +75,20 @@ public class LoginController {
     @Value("${loginCode.expiration}")
     private Long expiration;
 
+    @Value("${loginCode.width}")
+    private Integer width;
+
+    @Value("${loginCode.height}")
+    private Integer height;
+
+    @Value("${loginCode.length}")
+    private Integer length;
+
     @Value("${loginCode.codeKey}")
     private String codeKey;
 
     @Value("${spring.profiles.active}")
     private String profileActive;
-
-    @Autowired
-    private DefaultKaptcha kaptcha;
 
     @Autowired
     private RedisUtils redisUtils;
@@ -101,7 +103,7 @@ public class LoginController {
         RSA rsa = new RSA(privateKey, null);
         String password = new String(rsa.decrypt(authUserDTO.getPassword(), KeyType.PrivateKey));
         UsernamePasswordCaptchaToken userToken = new UsernamePasswordCaptchaToken(authUserDTO.getUsername(), password);
-        if(!StringConstant.PROFILE_ACTIVE_TEST.equals(profileActive)){
+        if (!StringConstant.PROFILE_ACTIVE_TEST.equals(profileActive)) {
             validateCode(authUserDTO.getCode(), authUserDTO.getUuid());
         }
         userToken.setRememberMe(true);
@@ -116,7 +118,7 @@ public class LoginController {
             String token = JwtUtils.sign(authUserDTO.getUsername());
             Set<String> permissions = userService.queryPermissionByUserId(userDto.getId());
             // 返回 token 与 用户信息
-            Map<String, Object> authInfo = new HashMap<String, Object>(2) {{
+            Map<String, Object> authInfo = new HashMap<String, Object>(4) {{
                 put("token", token);
                 put("user", userDto);
                 put("permissions", permissions);
@@ -148,25 +150,17 @@ public class LoginController {
     @ApiOperation("获取验证码")
     @GetMapping(value = "/code")
     public DataResponseBody getCode() {
-        byte[] verByte = null;
-        try {
-            ByteArrayOutputStream jpegOutputStream = new ByteArrayOutputStream();
-            String createText = kaptcha.createText();
-            BufferedImage challenge = kaptcha.createImage(createText);
-            ImageIO.write(challenge, "jpg", jpegOutputStream);
-            String uuid = codeKey + IdUtil.simpleUUID();
-            // 保存
-            redisUtils.set(uuid, createText, expiration, TimeUnit.MINUTES);
-            // 验证码信息
-            Map<String, Object> imgResult = new HashMap<String, Object>(2) {{
-                put("img", "data:image/png;base64," + DatatypeConverter.printBase64Binary(jpegOutputStream.toByteArray()));
-                put("uuid", uuid);
-            }};
-            return new DataResponseBody(imgResult);
-        } catch (IOException e) {
-            throw new CaptchaException(e);
-        }
-
+        Captcha captcha = new SpecCaptcha(width, height, length);
+        String createText = captcha.text();
+        String uuid = codeKey + IdUtil.simpleUUID();
+        // 保存
+        redisUtils.set(uuid, createText, expiration, TimeUnit.MINUTES);
+        // 验证码信息
+        Map<String, Object> imgResult = new HashMap<String, Object>(4) {{
+            put("img", captcha.toBase64());
+            put("uuid", uuid);
+        }};
+        return new DataResponseBody(imgResult);
     }
 
     private void validateCode(String loginCaptcha, String uuid) {
@@ -176,8 +170,7 @@ public class LoginController {
         }
 
         String sessionCaptcha = (String) redisUtils.get(uuid);
-        System.out.println("loginCaptcha=" + sessionCaptcha + "," + loginCaptcha);
-        if (!loginCaptcha.equals(sessionCaptcha)) {
+        if (!loginCaptcha.equalsIgnoreCase(sessionCaptcha)) {
             throw new CaptchaException("验证码错误");
         }
 
@@ -230,10 +223,10 @@ public class LoginController {
     public DataResponseBody getPublicKey() {
         return new DataResponseBody(publicKey);
     }
-    
+
     @ApiOperation(value = "获取用户信息 供第三方平台使用", notes = "获取用户信息 供第三方平台使用")
     @GetMapping("/userinfo")
-    public Map<String,Object> userinfo() {
+    public Map<String, Object> userinfo() {
         return userService.userinfo();
     }
 
@@ -254,6 +247,5 @@ public class LoginController {
         }
         return true;
     }
-
 
 }

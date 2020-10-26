@@ -34,7 +34,7 @@ import org.springframework.util.MultiValueMap;
 import org.springframework.web.context.WebApplicationContext;
 
 /**
- * @date: 2020-05-14
+ * @date 2020-05-14
  */
 @SpringBootTest
 @RunWith(SpringRunner.class)

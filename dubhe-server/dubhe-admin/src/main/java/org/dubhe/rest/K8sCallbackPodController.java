@@ -17,20 +17,21 @@
 
 package org.dubhe.rest;
 
-import javax.annotation.Resource;
-
+import io.swagger.annotations.Api;
+import io.swagger.annotations.ApiOperation;
+import io.swagger.annotations.ApiParam;
 import org.dubhe.base.DataResponseBody;
-import org.dubhe.factory.DataResponseFactory;
 import org.dubhe.dto.callback.AlgorithmK8sPodCallbackCreateDTO;
 import org.dubhe.dto.callback.NotebookK8sPodCallbackCreateDTO;
+import org.dubhe.factory.DataResponseFactory;
 import org.dubhe.service.PodCallbackAsyncService;
 import org.dubhe.utils.K8sCallBackTool;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiOperation;
-import io.swagger.annotations.ApiParam;
+import javax.annotation.Resource;
+
+import static org.dubhe.constant.StringConstant.K8S_CALLBACK_URI;
 
 /**
  * @description k8s Pod 异步回调处理类
@@ -39,7 +40,7 @@ import io.swagger.annotations.ApiParam;
  */
 @Api(tags = "k8s回调：Pod")
 @RestController
-@RequestMapping("/api/k8s/callback/pod")
+@RequestMapping(K8S_CALLBACK_URI)
 public class K8sCallbackPodController {
 
     @Resource(name = "noteBookAsyncServiceImpl")
@@ -72,7 +73,7 @@ public class K8sCallbackPodController {
      */
     @PostMapping(value = "/algorithm")
     @ApiOperation("算法管理 pod 回调")
-    public DataResponseBody notebookPodCallBack(@ApiParam(type = "head") @RequestHeader(name= K8sCallBackTool.K8S_CALLBACK_TOKEN) String k8sToken
+    public DataResponseBody algorithmPodCallBack(@ApiParam(type = "head") @RequestHeader(name= K8sCallBackTool.K8S_CALLBACK_TOKEN) String k8sToken
             ,@Validated @RequestBody AlgorithmK8sPodCallbackCreateDTO k8sPodCallbackReq) {
         algorithmAsyncServiceImpl.podCallBack(k8sPodCallbackReq);
         return DataResponseFactory.success("算法管理异步回调处理方法中");

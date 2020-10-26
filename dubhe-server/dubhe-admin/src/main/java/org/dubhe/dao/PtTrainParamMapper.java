@@ -17,6 +17,7 @@
 
 package org.dubhe.dao;
 
+import org.dubhe.annotation.DataPermission;
 import org.dubhe.domain.entity.PtTrainParam;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 
@@ -24,6 +25,7 @@ import com.baomidou.mybatisplus.core.mapper.BaseMapper;
  * @description 任务参数 Mapper 接口
  * @date 2020-04-27
  */
+@DataPermission(ignoresMethod = "insert")
 public interface PtTrainParamMapper extends BaseMapper<PtTrainParam> {
 
 }

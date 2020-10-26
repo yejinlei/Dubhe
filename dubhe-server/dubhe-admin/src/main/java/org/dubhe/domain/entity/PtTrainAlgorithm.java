@@ -18,10 +18,7 @@
 package org.dubhe.domain.entity;
 
 import com.alibaba.fastjson.JSONObject;
-import com.baomidou.mybatisplus.annotation.IdType;
-import com.baomidou.mybatisplus.annotation.TableField;
-import com.baomidou.mybatisplus.annotation.TableId;
-import com.baomidou.mybatisplus.annotation.TableName;
+import com.baomidou.mybatisplus.annotation.*;
 import com.baomidou.mybatisplus.extension.handlers.FastjsonTypeHandler;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -126,4 +123,15 @@ public class PtTrainAlgorithm extends BaseEntity {
     @TableField(value = "is_visualized_log")
     private Boolean isVisualizedLog;
 
+    /**
+     * 算法状态
+     */
+    @TableField(value = "algorithm_status")
+    private Integer algorithmStatus;
+
+    /**
+     * 资源拥有者ID
+     */
+    @TableField(value = "origin_user_id",fill = FieldFill.INSERT)
+    private Long originUserId;
 }

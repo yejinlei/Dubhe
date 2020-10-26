@@ -17,4 +17,29 @@
             data_dataset_label dataset_label inner join data_label label on dataset_label.label_id = label.id
         where dataset_label.dataset_id = #{datasetId}
     </select>
+
+
+    <insert id="insertBatch" useGeneratedKeys="true"
+            keyProperty="id">
+        INSERT INTO data_dataset_label
+        (name,
+        color,
+        create_user_id,
+        create_time,
+        update_user_id,
+        update_time,
+        deleted,
+        label_group_id,
+        type
+        )
+        VALUES
+        <foreach item="item" collection="list" separator=",">
+            (#{item.name}, #{item.color},
+            #{item.createUserId}, #{item.createTime},
+            #{item.updateUserId}, #{item.updateTime},
+            #{item.deleted}, #{item.labelGroupId},
+            #{item.type})
+        </foreach >
+    </insert>
+
 </mapper>

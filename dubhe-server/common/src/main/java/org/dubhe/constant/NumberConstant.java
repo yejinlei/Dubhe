@@ -18,8 +18,8 @@
 package org.dubhe.constant;
 
 /**
- * @Description 数字常量
- * @Date 2020-6-9
+ * @description 数字常量
+ * @date 2020-06-09
  */
 public class NumberConstant {
 
@@ -32,6 +32,8 @@ public class NumberConstant {
     public final static int NUMBER_30 = 30;
     public final static int NUMBER_50 = 50;
     public final static int NUMBER_60 = 60;
+    public final static int NUMBER_1024 = 1024;
+    public final static int NUMBER_1000 = 1000;
     public final static int HOUR_SECOND = 60 * 60;
     public final static int DAY_SECOND = 60 * 60 * 24;
     public final static int WEEK_SECOND = 60 * 60 * 24 * 7;

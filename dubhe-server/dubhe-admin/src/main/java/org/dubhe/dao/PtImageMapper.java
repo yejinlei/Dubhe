@@ -19,12 +19,14 @@ package org.dubhe.dao;
 
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
+import org.dubhe.annotation.DataPermission;
 import org.dubhe.domain.entity.PtImage;
 
 /**
  * @description 镜像 Mapper 接口
  * @date 2020-04-27
  */
+@DataPermission(ignoresMethod = {"insert"})
 public interface PtImageMapper extends BaseMapper<PtImage> {
 
 }

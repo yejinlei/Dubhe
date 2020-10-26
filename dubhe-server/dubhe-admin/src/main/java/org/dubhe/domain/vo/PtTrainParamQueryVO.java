@@ -26,8 +26,8 @@ import org.dubhe.base.BaseVO;
 import java.io.Serializable;
 
 /**
- * @description: 任务参数查询返回查询结果
- * @date: 2020-04-27
+ * @description 任务参数查询返回查询结果
+ * @date 2020-04-27
  */
 @EqualsAndHashCode(callSuper = true)
 @Data
@@ -74,13 +74,40 @@ public class PtTrainParamQueryVO extends BaseVO implements Serializable {
     @ApiModelProperty("运行参数(算法来源为我的算法时为调优参数，算法来源为预置算法时为运行参数)")
     private JSONObject runParams;
 
-    @ApiModelProperty("规格ID")
-    private Integer trainJobSpecsId;
+    @ApiModelProperty("规格名称")
+    private String trainJobSpecsName;
 
     @ApiModelProperty("类型(0为CPU，1为GPU)")
     private Integer resourcesPoolType;
 
+    @ApiModelProperty("训练类型")
+    private Integer trainType;
+
     @ApiModelProperty("节点个数")
     private Integer resourcesPoolNode;
+
+    @ApiModelProperty("验证数据来源名称")
+    private String valDataSourceName;
+
+    @ApiModelProperty("验证数据来源路径")
+    private String valDataSourcePath;
+
+    @ApiModelProperty("是否验证数据集")
+    private Integer valType;
+
+    @ApiModelProperty(value = "是否打开模型选择")
+    private Integer modelType;
+
+    @ApiModelProperty(value = "模型类型(0我的模型1预置模型)")
+    private Integer modelResource;
+
+    @ApiModelProperty(value = "模型名称")
+    private String modelName;
+
+    @ApiModelProperty(value = "模型加载路径")
+    private String modelLoadPathDir;
+
+    @ApiModelProperty(value = "模型id")
+    private Integer modelId;
 
 }

@@ -18,14 +18,12 @@
 package org.dubhe.domain.vo;
 
 import cn.hutool.core.date.DatePattern;
-import com.baomidou.mybatisplus.annotation.TableField;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 import lombok.Data;
 
-import javax.validation.constraints.Size;
 import java.io.Serializable;
 import java.util.Date;
 
@@ -112,4 +110,6 @@ public class NoteBookVO implements Serializable {
     @ApiModelProperty("算法ID")
     private Long algorithmId;
 
+    @ApiModelProperty("资源拥有者ID")
+    private Long originUserId;
 }

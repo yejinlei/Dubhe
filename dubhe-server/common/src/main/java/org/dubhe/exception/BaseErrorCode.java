@@ -54,6 +54,7 @@ public enum BaseErrorCode implements ErrorCode {
     SYSTEM_USER_CANNOT_DELETE(20014, "系统默认用户不可删除!"),
     SYSTEM_ROLE_CANNOT_DELETE(20015, "系统默认角色不可删除!"),
 
+    DATASET_ADMIN_PERMISSION_ERROR(1310,"无此权限,请联系管理员"),
 
     ;
 

@@ -28,6 +28,11 @@ import java.util.List;
  */
 public interface DatasetLabelService {
 
+    /**
+     * 批量保存标签
+     *
+     * @param datasetLabels 数据集标签信息
+     */
     void saveList(List<DatasetLabel> datasetLabels);
 
     /**
@@ -62,4 +67,18 @@ public interface DatasetLabelService {
      */
     List<Label> listLabelByDatasetId(Long datasetId);
 
+    /**
+     * 查询标签是否正在使用
+     *
+     * @param labels    需要查询的标签
+     * @return Boolean  标签是否使用
+     */
+    Boolean isLabelGroupInUse(List<Label> labels);
+
+    /**
+     * 新增数据集标签数据
+     *
+     * @param datasetLabel 数据标签实体
+     */
+    void insert(DatasetLabel datasetLabel);
 }

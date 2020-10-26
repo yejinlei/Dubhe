@@ -94,7 +94,7 @@ public class NodeApiTest {
     @Test
     public void isAllocatable(){
         LackOfResourcesEnum flag;
-        flag = nodeApi.isAllocatable(500000,300000 ,30 );
+        flag = nodeApi.isAllocatable(10000,300000 ,30 );
         System.out.println(flag.getMessage());
     }
 

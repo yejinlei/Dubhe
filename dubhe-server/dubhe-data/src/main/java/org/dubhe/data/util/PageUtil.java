@@ -25,6 +25,14 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
  */
 public class PageUtil {
 
+    /**
+     * 构建分页
+     *
+     * @param current 当前页码
+     * @param size    总页数
+     * @param <T>     当前页数据
+     * @return        Page
+     */
     public static <T> Page<T> build(Integer current, Integer size) {
         Page<T> page = new Page<>();
         if (current != null) {

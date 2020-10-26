@@ -41,7 +41,7 @@ public interface TrainJobApi {
      *
      * @param namespace 命名空间
      * @param resourceName 资源名称
-     * @return Boolean
+     * @return Boolean true删除成功 false删除失败
      */
     Boolean delete(String namespace, String resourceName);
 

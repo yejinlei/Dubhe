@@ -55,7 +55,7 @@ public class PtImageUploadDTO implements Serializable {
     @Pattern(regexp = TrainUtil.REGEXP_TAG, message = "镜像版本号支持字母、数字、英文横杠、英文.号和下划线")
     private String imageTag;
 
-    @ApiModelProperty("备注")
-    @Length(max = TrainUtil.NUMBER_ONE_THOUSAND_AND_TWENTY_FOUR, message = "备注-输入长度不能超过1024个字符")
+    @ApiModelProperty("镜像描述")
+    @Length(max = TrainUtil.NUMBER_ONE_THOUSAND_AND_TWENTY_FOUR, message = "镜像描述-输入长度不能超过1024个字符")
     private String remark;
 }

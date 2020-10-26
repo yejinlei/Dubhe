@@ -18,7 +18,8 @@
 package org.dubhe.base;
 
 /**
- * @date: 2020-05-14
+ * @description 常用常量类
+ * @date 2020-05-14
  */
 public final class MagicNumConstant {
 
@@ -86,6 +87,7 @@ public final class MagicNumConstant {
 
     public static final long TWELVE_LONG = 12L;
     public static final long SIXTY_LONG = 60L;
+    public static final long THOUSAND_LONG = 1000L;
     public static final long TEN_THOUSAND_LONG = 10000L;
     public static final long ONE_ZERO_ONE_ZERO_ONE_ZERO_LONG = 101010L;
     public static final long NINE_ZERO_NINE_ZERO_NINE_ZERO_LONG = 909090L;

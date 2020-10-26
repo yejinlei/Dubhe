@@ -44,6 +44,14 @@ public class BaseK8sPodCallbackCreateDTO {
     @NotEmpty(message = "podName 不能为空！")
     private String podName;
 
+    @ApiModelProperty(required = true,value = "k8s pod parent type")
+    @NotEmpty(message = "podParentType 不能为空！")
+    private String podParentType;
+
+    @ApiModelProperty(required = true,value = "k8s pod parent name")
+    @NotEmpty(message = "podParentName 不能为空！")
+    private String podParentName;
+
     @ApiModelProperty(value = "k8s pod phase",notes = "对应PodPhaseEnum")
     @NotEmpty(message = "phase 不能为空！")
     private String phase;
@@ -55,10 +63,12 @@ public class BaseK8sPodCallbackCreateDTO {
 
     }
 
-    public BaseK8sPodCallbackCreateDTO(String namespace,String resourceName,String podName,String phase,String messages){
+    public BaseK8sPodCallbackCreateDTO(String namespace,String resourceName,String podName,String podParentType,String podParentName,String phase,String messages){
         this.namespace = namespace;
         this.resourceName = resourceName;
         this.podName = podName;
+        this.podParentType = podParentType;
+        this.podParentName = podParentName;
         this.phase = phase;
         this.messages = messages;
     }
@@ -69,6 +79,8 @@ public class BaseK8sPodCallbackCreateDTO {
                 "namespace='" + namespace + '\'' +
                 ", resourceName='" + resourceName + '\'' +
                 ", podName='" + podName + '\'' +
+                ", podParentType='" + podParentType + '\'' +
+                ", podParentName='" + podParentName + '\'' +
                 ", phase='" + phase + '\'' +
                 ", messages=" + messages +
                 '}';

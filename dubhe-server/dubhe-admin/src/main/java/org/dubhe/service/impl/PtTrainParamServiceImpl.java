@@ -21,16 +21,22 @@ import cn.hutool.core.util.StrUtil;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import org.dubhe.annotation.DataPermissionMethod;
 import org.dubhe.base.MagicNumConstant;
 import org.dubhe.base.ResponseCode;
-import org.dubhe.constant.TrainJobConstant;
+import org.dubhe.constant.SymbolConstant;
+import org.dubhe.config.TrainJobConfig;
+import org.dubhe.dao.ModelQueryMapper;
 import org.dubhe.dao.PtTrainAlgorithmMapper;
 import org.dubhe.dao.PtTrainParamMapper;
 import org.dubhe.data.constant.Constant;
 import org.dubhe.domain.dto.*;
+import org.dubhe.domain.entity.ModelQuery;
+import org.dubhe.domain.entity.ModelQueryBrance;
 import org.dubhe.domain.entity.PtTrainAlgorithm;
 import org.dubhe.domain.entity.PtTrainParam;
 import org.dubhe.domain.vo.PtTrainParamQueryVO;
+import org.dubhe.enums.DatasetTypeEnum;
 import org.dubhe.enums.LogEnum;
 import org.dubhe.exception.BusinessException;
 import org.dubhe.service.PtTrainParamService;
@@ -59,6 +65,8 @@ public class PtTrainParamServiceImpl implements PtTrainParamService {
     @Autowired
     private ImageUtil imageUtil;
 
+    @Autowired
+    private ModelQueryMapper modelQueryMapper;
     /**
      * 参数列表展示
      *
@@ -66,6 +74,7 @@ public class PtTrainParamServiceImpl implements PtTrainParamService {
      * @return Map<String, Object>  任务参数列表分页数据
      **/
     @Override
+    @DataPermissionMethod(dataType = DatasetTypeEnum.PUBLIC)
     public Map<String, Object> getTrainParam(PtTrainParamQueryDTO ptTrainParamQueryDTO) {
         //从会话中获取用户信息
         UserDTO user = JwtUtils.getCurrentUserDto();
@@ -73,7 +82,6 @@ public class PtTrainParamServiceImpl implements PtTrainParamService {
         Page page = ptTrainParamQueryDTO.toPage();
         //查询任务参数列表
         QueryWrapper<PtTrainParam> query = new QueryWrapper<>();
-        query.eq("create_user_id", user.getId());
         //根据任务参数名称模糊搜索
         if (ptTrainParamQueryDTO.getParamName() != null) {
             query.like("param_name", ptTrainParamQueryDTO.getParamName());
@@ -84,7 +92,7 @@ public class PtTrainParamServiceImpl implements PtTrainParamService {
         }
         IPage<PtTrainParam> ptTrainParams;
         try {
-            if (ptTrainParamQueryDTO.getSort() == null || ptTrainParamQueryDTO.getSort().equalsIgnoreCase(TrainJobConstant.ALGORITHM_NAME)) {
+            if (ptTrainParamQueryDTO.getSort() == null || ptTrainParamQueryDTO.getSort().equalsIgnoreCase(TrainJobConfig.ALGORITHM_NAME)) {
                 query.orderByDesc(Constant.ID);
             } else {
                 if (Constant.SORT_ASC.equalsIgnoreCase(ptTrainParamQueryDTO.getOrder())) {
@@ -129,6 +137,7 @@ public class PtTrainParamServiceImpl implements PtTrainParamService {
      **/
     @Override
     @Transactional(rollbackFor = Exception.class)
+    @DataPermissionMethod(dataType = DatasetTypeEnum.PUBLIC)
     public List<Long> createTrainParam(PtTrainParamCreateDTO ptTrainParamCreateDTO) {
         //从会话中获取用户信息
         UserDTO user = JwtUtils.getCurrentUserDto();
@@ -139,9 +148,23 @@ public class PtTrainParamServiceImpl implements PtTrainParamService {
         Integer algorithmSource = ptTrainAlgorithm.getAlgorithmSource();
         //保存任务参数
         PtTrainParam ptTrainParam = new PtTrainParam();
+        //模型名称
+        ModelQuery modelName = modelQueryMapper.findModelNameById(ptTrainParamCreateDTO.getModelId());
+        //模型版本
+        ModelQueryBrance modelVersion = modelQueryMapper.findModelVersionByUrl(ptTrainParamCreateDTO.getModelLoadPathDir());
+        if(modelName!=null){
+            String name = modelName.getName();
+            if(modelVersion!=null){
+                ptTrainParamCreateDTO.setModelName(name+ SymbolConstant.COLON +modelVersion.getVersion());
+            }else {
+                //设置预置模型的url路径
+                ptTrainParamCreateDTO.setModelLoadPathDir(modelName.getUrl());
+                ptTrainParamCreateDTO.setModelName(name);
+            }
+        }
         BeanUtils.copyProperties(ptTrainParamCreateDTO, ptTrainParam);
         //获取镜像
-        String images = imageUtil.getImages(ptTrainParamCreateDTO, user);
+        String images = imageUtil.getImageUrl(ptTrainParamCreateDTO, user);
         ptTrainParam.setImageName(images).setAlgorithmSource(algorithmSource).setCreateUserId(user.getId());
         int insertResult = ptTrainParamMapper.insert(ptTrainParam);
         //任务参数未保存成功，抛出异常，并返回失败信息
@@ -162,6 +185,7 @@ public class PtTrainParamServiceImpl implements PtTrainParamService {
      **/
     @Override
     @Transactional(rollbackFor = Exception.class)
+    @DataPermissionMethod(dataType = DatasetTypeEnum.PUBLIC)
     public List<Long> updateTrainParam(PtTrainParamUpdateDTO ptTrainParamUpdateDTO) {
         //从会话中获取用户信息
         UserDTO user = JwtUtils.getCurrentUserDto();
@@ -170,10 +194,26 @@ public class PtTrainParamServiceImpl implements PtTrainParamService {
         checkUpdateTrainParam(ptTrainParamUpdateDTO, user);
         //修改任务参数
         PtTrainParam ptTrainParam = new PtTrainParam();
+        //模型名称
+        ModelQuery modelName = modelQueryMapper.findModelNameById(ptTrainParamUpdateDTO.getModelId());
+        //模型版本
+        ModelQueryBrance modelVersion = modelQueryMapper.findModelVersionByUrl(ptTrainParamUpdateDTO.getModelLoadPathDir());
+        //设置版本
+        if(modelName!=null){
+           String name=modelName.getName();
+           if(modelVersion!=null){
+               ptTrainParamUpdateDTO.setModelName(name+SymbolConstant.COLON+modelVersion.getVersion());
+           }else {
+               //设置预置模型的url值
+               ptTrainParamUpdateDTO.setModelLoadPathDir(modelName.getUrl());
+               ptTrainParamUpdateDTO.setModelName(name);
+           }
+        }
+
         BeanUtils.copyProperties(ptTrainParamUpdateDTO, ptTrainParam);
         ptTrainParam.setUpdateUserId(user.getId());
         //获取镜像url
-        String images = imageUtil.getImages(ptTrainParamUpdateDTO, user);
+        String images = imageUtil.getImageUrl(ptTrainParamUpdateDTO, user);
         //添加镜像url
         ptTrainParam.setImageName(images);
         try {
@@ -196,6 +236,7 @@ public class PtTrainParamServiceImpl implements PtTrainParamService {
      **/
     @Override
     @Transactional(rollbackFor = Exception.class)
+    @DataPermissionMethod(dataType = DatasetTypeEnum.PUBLIC)
     public void deleteTrainParam(PtTrainParamDeleteDTO ptTrainParamDeleteDTO) {
         //从会话中获取用户信息
         UserDTO user = JwtUtils.getCurrentUserDto();
@@ -246,7 +287,6 @@ public class PtTrainParamServiceImpl implements PtTrainParamService {
         //任务参数名称校验
         QueryWrapper<PtTrainParam> query = new QueryWrapper<>();
         query.eq("param_name", ptTrainParamCreateDTO.getParamName());
-        query.eq("create_user_id", user.getId());
         Integer trainParamCountResult = ptTrainParamMapper.selectCount(query);
         if (trainParamCountResult > 0) {
             LogUtil.error(LogEnum.BIZ_TRAIN, "The task parameter name ({}) already exists", ptTrainParamCreateDTO.getParamName());
@@ -275,7 +315,7 @@ public class PtTrainParamServiceImpl implements PtTrainParamService {
         }
         //权限校验
         QueryWrapper<PtTrainParam> queryWrapper = new QueryWrapper<>();
-        queryWrapper.eq("id", ptTrainParamUpdateDTO.getId()).eq("create_user_id", user.getId());
+        queryWrapper.eq("id", ptTrainParamUpdateDTO.getId());
         Integer countResult = ptTrainParamMapper.selectCount(queryWrapper);
         if (countResult < 1) {
             LogUtil.error(LogEnum.BIZ_TRAIN, "The user {} failed to modify the task parameters and has no permission to modify the corresponding data in the pt_train_param table", user.getUsername());
@@ -283,7 +323,7 @@ public class PtTrainParamServiceImpl implements PtTrainParamService {
         }
         //任务参数名称校验
         QueryWrapper<PtTrainParam> query = new QueryWrapper<>();
-        query.eq("param_name", ptTrainParamUpdateDTO.getParamName()).eq("create_user_id", user.getId());
+        query.eq("param_name", ptTrainParamUpdateDTO.getParamName());
         PtTrainParam trainParam = ptTrainParamMapper.selectOne(query);
         if (trainParam != null && !ptTrainParamUpdateDTO.getId().equals(trainParam.getId())) {
             LogUtil.error(LogEnum.BIZ_TRAIN, "The task parameter name ({}) already exists", ptTrainParamUpdateDTO.getParamName());
@@ -307,7 +347,6 @@ public class PtTrainParamServiceImpl implements PtTrainParamService {
         }
         //权限校验
         QueryWrapper<PtTrainParam> query = new QueryWrapper<>();
-        query.eq("create_user_id", user.getId());
         query.in("id", idList);
         Integer queryCountResult = ptTrainParamMapper.selectCount(query);
         if (queryCountResult < idList.size()) {

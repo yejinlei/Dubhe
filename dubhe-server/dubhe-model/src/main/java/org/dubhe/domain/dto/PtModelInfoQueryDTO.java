@@ -46,4 +46,7 @@ public class PtModelInfoQueryDTO extends PageQueryBase {
     @Min(value = PtModelUtil.NUMBER_ZERO, message = "模型来源错误")
     @Max(value = PtModelUtil.NUMBER_ONE, message = "模型来源错误")
     private Integer modelResource;
+
+    @ApiModelProperty("是否进行过滤")
+    private Boolean filter;
 }

@@ -20,6 +20,7 @@ import org.apache.commons.io.IOUtils;
 import org.dubhe.enums.LogEnum;
 
 
+
 import javax.net.ssl.HttpsURLConnection;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLSocketFactory;
@@ -31,13 +32,13 @@ import java.io.InputStreamReader;
 import java.net.URL;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
-
+import org.apache.commons.codec.binary.Base64;
 import static org.dubhe.constant.StringConstant.UTF8;
 import static org.dubhe.constant.SymbolConstant.BLANK;
 
 /**
- * @description: httpClient工具类，不校验SSL证书
- * @date: 2020-5-21
+ * @description httpClient工具类，不校验SSL证书
+ * @date 2020-05-21
  */
 public class HttpClientUtils {
 
@@ -45,7 +46,7 @@ public class HttpClientUtils {
         InputStream inputStream = null;
         BufferedReader bufferedReader = null;
         InputStreamReader inputStreamReader = null;
-        StringBuilder stringBuider = new StringBuilder();
+        StringBuilder stringBuilder = new StringBuilder();
         String result = BLANK;
         HttpsURLConnection con = null;
         try {
@@ -59,10 +60,10 @@ public class HttpClientUtils {
 
             String str = null;
             while ((str = bufferedReader.readLine()) != null) {
-                stringBuider.append(str);
+                stringBuilder.append(str);
             }
 
-            result = stringBuider.toString();
+            result = stringBuilder.toString();
             LogUtil.info(LogEnum.BIZ_SYS,"Request path:{}, SUCCESS, result:{}", path, result);
 
         } catch (Exception e) {
@@ -74,16 +75,53 @@ public class HttpClientUtils {
 
         return result;
     }
+    public static String sendHttpsDelete(String path,String username,String password) {
+        InputStream inputStream = null;
+        BufferedReader bufferedReader = null;
+        InputStreamReader inputStreamReader = null;
+        StringBuilder stringBuilder = new StringBuilder();
+        String result = BLANK;
+        HttpsURLConnection con = null;
+        try {
+            con = getConnection(path);
+            String input =username+ ":" +password;
+            String encoding=Base64.encodeBase64String(input.getBytes());
+            con.setRequestProperty(JwtUtils.AUTH_HEADER, "Basic " + encoding);
+            con.setRequestMethod("DELETE");
+            con.connect();
+            /**将返回的输入流转换成字符串**/
+            inputStream = con.getInputStream();
+            inputStreamReader = new InputStreamReader(inputStream, UTF8);
+            bufferedReader = new BufferedReader(inputStreamReader);
+
+            String str = null;
+            while ((str = bufferedReader.readLine()) != null) {
+                stringBuilder.append(str);
+            }
+
+            result = stringBuilder.toString();
+            LogUtil.info(LogEnum.BIZ_SYS,"Request path:{}, SUCCESS, result:{}", path, result);
+
+        } catch (Exception e) {
+            LogUtil.error(LogEnum.BIZ_SYS,"Request path:{}, ERROR, exception:{}", path, e);
+            return result;
+        } finally {
+            closeResource(bufferedReader,inputStreamReader,inputStream,con);
+        }
+
+        return result;
+    }
 
     private static void closeResource(BufferedReader bufferedReader,InputStreamReader inputStreamReader,InputStream inputStream,HttpsURLConnection con) {
-
-        IOUtils.closeQuietly(bufferedReader);
+        if (inputStream != null) {
+            IOUtils.closeQuietly(inputStream);
+        }
 
         if (inputStreamReader != null) {
             IOUtils.closeQuietly(inputStreamReader);
         }
-        if (inputStream != null) {
-            IOUtils.closeQuietly(inputStream);
+        if (bufferedReader != null) {
+            IOUtils.closeQuietly(bufferedReader);
         }
         if (con != null) {
             con.disconnect();

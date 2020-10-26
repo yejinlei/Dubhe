@@ -25,7 +25,7 @@ import lombok.experimental.Accessors;
 import java.io.Serializable;
 
 /**
- * @description: 训练作业规格
+ * @description 训练作业规格
  * @date 2020-05-06
  */
 @Data

@@ -81,7 +81,7 @@ public class ResourceQuotaApiImpl implements ResourceQuotaApi {
             LogUtil.info(LogEnum.BIZ_K8S,"Output {}", bizResourceQuota);
             return bizResourceQuota;
         } catch (KubernetesClientException e) {
-            LogUtil.error(LogEnum.BIZ_K8S, "ResourceQuotaApiImpl.create error, param:{} error:", bo, e);
+            LogUtil.error(LogEnum.BIZ_K8S, "ResourceQuotaApiImpl.create error, param:{} error:{}", bo, e);
             return new BizResourceQuota().error(String.valueOf(e.getCode()),e.getMessage());
         }
     }
@@ -106,7 +106,7 @@ public class ResourceQuotaApiImpl implements ResourceQuotaApi {
                 return bizResourceQuotaList;
             }
         }catch (KubernetesClientException e) {
-            LogUtil.error(LogEnum.BIZ_K8S, "ResourceQuotaApiImpl.list error, param:[namespace]={},error:", namespace,e);
+            LogUtil.error(LogEnum.BIZ_K8S, "ResourceQuotaApiImpl.list error, param:[namespace]={},error:{}", namespace,e);
             return Collections.EMPTY_LIST;
         }
     }
@@ -131,7 +131,7 @@ public class ResourceQuotaApiImpl implements ResourceQuotaApi {
                 return K8sResponseEnum.REPEAT.toPtBaseResult();
             }
         } catch (KubernetesClientException e) {
-            LogUtil.error(LogEnum.BIZ_K8S, "ResourceQuotaApiImpl.delete error, param:[namespace]={}, [name]={}, error:",namespace, name, e);
+            LogUtil.error(LogEnum.BIZ_K8S, "ResourceQuotaApiImpl.delete error, param:[namespace]={}, [name]={}, error:{}",namespace, name, e);
             return new PtBaseResult(String.valueOf(e.getCode()),e.getMessage());
         }
     }

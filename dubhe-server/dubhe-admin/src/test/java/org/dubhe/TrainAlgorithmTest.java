@@ -28,8 +28,8 @@ import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
 
 /**
- * @description: 算法管理模块算法管理单元测试
- * @date: 2020-06-18
+ * @description 算法管理模块算法管理单元测试
+ * @date 2020-06-18
  */
 public class TrainAlgorithmTest extends BaseTest {
 

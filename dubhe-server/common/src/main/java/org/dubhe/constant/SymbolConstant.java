@@ -19,7 +19,7 @@ package org.dubhe.constant;
 
 /**
  * @description 符号常量
- * @Date 2020-5-29
+ * @date 2020-5-29
  */
 public class SymbolConstant {
 	public static final String SLASH = "/";
@@ -39,6 +39,8 @@ public class SymbolConstant {
 	public static final String BACKSLASH_MARK= "\\\"";
 	public static final String DOUBLE_MARK= "\"\"";
 	public static final String MARK= "\"";
+
+	public static final String FLAG_EQUAL = "=";
 
 	private SymbolConstant() {
 	}

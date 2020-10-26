@@ -19,8 +19,6 @@ package org.dubhe.data.service;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
-import org.dubhe.data.constant.FileStatusEnum;
-import org.dubhe.data.domain.bo.FileBO;
 import org.dubhe.data.domain.bo.TaskSplitBO;
 import org.dubhe.data.domain.dto.FileCreateDTO;
 import org.dubhe.data.domain.entity.Dataset;
@@ -29,6 +27,7 @@ import org.dubhe.data.domain.entity.Task;
 import org.dubhe.data.domain.vo.FileQueryCriteriaVO;
 import org.dubhe.data.domain.vo.FileVO;
 import org.dubhe.data.domain.vo.ProgressVO;
+import org.dubhe.data.machine.enums.FileStateEnum;
 
 import java.util.Collection;
 import java.util.List;
@@ -45,9 +44,10 @@ public interface FileService {
      * 文件详情
      *
      * @param fileId 文件id
+     * @param datasetId 数据集id
      * @return FileVO 文件详情
      */
-    FileVO get(Long fileId);
+    FileVO get(Long fileId,Long datasetId);
 
     /**
      * 文件查询
@@ -64,7 +64,7 @@ public interface FileService {
      *
      * @param datasetId 数据集id
      * @param offset    offset
-     * @param limit     limit
+     * @param limit     页容量
      * @param page      分页条件
      * @param type      文件类型
      * @return Page<File> 文件查询列表
@@ -95,15 +95,16 @@ public interface FileService {
      *
      * @return Map<String, String> minio账户密码加密map
      */
-    Map<String, String> getMinIOInfo() throws Throwable;
+    Map<String, String> getMinIOInfo();
 
     /**
      * 获取文件对应所有增强文件
      *
      * @param fileId 文件id
+     * @param datasetId 数据集id
      * @return List<File> 获取文件对应所有增强文件列表
      */
-    List<File> getEnhanceFileList(Long fileId);
+    List<File> getEnhanceFileList(Long fileId,Long datasetId);
 
     /**
      * 视频采样任务
@@ -117,7 +118,7 @@ public interface FileService {
      * @param fileStatusEnum 文件状态
      * @return int 更新结果是否成功
      */
-    int update(Collection<File> files, FileStatusEnum fileStatusEnum);
+    int update(Collection<File> files, FileStateEnum fileStatusEnum);
 
     /**
      * 根据文件ID获取文件内容
@@ -125,48 +126,49 @@ public interface FileService {
      * @param fileId 文件ID
      * @return
      */
-    File selectById(Long fileId);
+    File selectById(Long fileId, Long datasetId);
 
     /**
      * 根据查询条件获取第一个文件
      *
-     * @param queryWrapper
-     * @return
+     * @param queryWrapper  查询条件
+     * @return              文件详情
      */
     File selectOne(QueryWrapper<File> queryWrapper);
 
     /**
      * 文件完成自动标注
      *
-     * @param files file文件
-     * @return boolean 文件完成自动标注是否成功
+     * @param dataset       数据集
+     * @param files         文件
+     * @return boolean      文件完成自动标注是否成功
      */
     boolean finishAnnotation(Dataset dataset, Set<Long> files);
 
     /**
      * 如果ids为空，则返回空
      *
-     * @param fileIds 文件id集合
-     * @return Set<File> 获取到的文件
+     * @param fileIds       文件id集合
+     * @return Set<File>    获取到的文件
      */
-    Set<File> get(List<Long> fileIds);
+    Set<File> get(List<Long> fileIds, Long datasetId);
 
     /**
      * 保存文件
      *
-     * @param fileId 文件id
-     * @param files  file文件
-     * @return List<Long> 保存文件数量
+     * @param fileId        文件id
+     * @param files         file文件
+     * @return List<Long>   保存文件数量
      */
     List<Long> saveFiles(Long fileId, List<FileCreateDTO> files);
 
     /**
      * 数据集标注进度
      *
-     * @param datasetIds 数据集id
+     * @param datasets 数据集
      * @return Map<Long, ProgressVO> 数据集标注进度
      */
-    Map<Long, ProgressVO> listStatistics(Collection<Long> datasetIds);
+    Map<Long, ProgressVO> listStatistics( List<Dataset> datasets);
 
     /**
      * 删除文件
@@ -194,16 +196,6 @@ public interface FileService {
     void saveVideoFiles(Long fileId, List<FileCreateDTO> files, int type, Long pid, Long userId);
 
     /**
-     * 取过滤后的文件
-     *
-     * @param datasetIds 数据集id集合
-     * @param status     按状态过滤
-     * @param need       需要还是不需要，true为需要status中的状态，false为不要其中的状态
-     * @return Set<File> 过滤后的文件
-     */
-    Set<File> toFiles(List<Long> datasetIds, Dataset dataset, Collection<Integer> status, boolean need);
-
-    /**
      * 判断是否存在手动标注中的文件
      *
      * @param datasetId 数据集id
@@ -227,5 +219,20 @@ public interface FileService {
      * @return
      */
     List<File> listFile(QueryWrapper<File> wrapper);
+
+    /**
+     * 批量获取数据集文件
+     *
+     * @param datasetId  数据集ID
+     * @param offset     偏移量
+     * @param batchSize  批大小
+     * @return 文件列表
+     */
+    List<File> listBatchFile(Long datasetId, int offset, int batchSize);
+
+    /**
+     * 采样任务过期
+     */
+    void expireSampleTask();
 
 }

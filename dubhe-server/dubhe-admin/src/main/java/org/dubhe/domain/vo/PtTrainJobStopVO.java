@@ -23,8 +23,8 @@ import lombok.Data;
 import java.io.Serializable;
 
 /**
- * @description: 返回停止训练任务结果
- * @date: 2020-04-28
+ * @description 返回停止训练任务结果
+ * @date 2020-04-28
  */
 @Data
 public class PtTrainJobStopVO implements Serializable {

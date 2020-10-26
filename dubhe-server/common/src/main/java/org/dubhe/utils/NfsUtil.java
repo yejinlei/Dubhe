@@ -17,6 +17,7 @@
 
 package org.dubhe.utils;
 
+import cn.hutool.core.util.StrUtil;
 import com.emc.ecs.nfsclient.nfs.io.Nfs3File;
 import com.emc.ecs.nfsclient.nfs.io.NfsFileInputStream;
 import com.emc.ecs.nfsclient.nfs.io.NfsFileOutputStream;
@@ -31,7 +32,6 @@ import org.dubhe.exception.NfsBizException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.util.CollectionUtils;
-import org.springframework.util.FileCopyUtils;
 
 import java.io.*;
 import java.util.ArrayList;
@@ -130,14 +130,14 @@ public class NfsUtil {
     }
 
     /**
-     * 校验文件或文件夹是否存在
+     * 校验文件或文件夹是否不存在
      *
      * @param path 文件路径
      * @return boolean
      */
     public boolean fileOrDirIsEmpty(String path) {
         if (!StringUtils.isEmpty(path)) {
-            path = formatPath(path);
+            path = formatPath(path.startsWith(nfsConfig.getRootDir()) ? path.replaceFirst(nfsConfig.getRootDir(), StrUtil.SLASH) : path);
             Nfs3File nfs3File = getNfs3File(path);
             try {
                 if (nfs3File.exists()) {
@@ -401,30 +401,6 @@ public class NfsUtil {
     /**
      * NFS 复制目录到指定目录下  多个文件  包含目录与文件并存情况
      *
-     * 通过本地文件复制方式
-     *
-     * @param sourcePath 需要复制的文件目录  例如：/abc/def
-     * @param targetPath 需要放置的目标目录 例如：/abc/dd
-     * @return boolean
-     */
-    public boolean copyPath(String sourcePath, String targetPath) {
-        if (StringUtils.isEmpty(sourcePath) || StringUtils.isEmpty(targetPath)) {
-            return false;
-        }
-        sourcePath = formatPath(sourcePath);
-        targetPath = formatPath(targetPath);
-        try {
-            return copyLocalPath(nfsConfig.getRootDir() + sourcePath, nfsConfig.getRootDir() + targetPath);
-        } catch (Exception e) {
-            LogUtil.error(LogEnum.NFS_UTIL, " copyPath 复制失败: ", e);
-            return false;
-        }
-    }
-
-
-    /**
-     * NFS 复制目录到指定目录下  多个文件  包含目录与文件并存情况
-     *
      * 通过NFS文件复制方式  可能存在NFS RPC协议超时情况
      *
      * @param sourcePath 需要复制的文件目录  例如：/abc/def
@@ -468,126 +444,15 @@ public class NfsUtil {
         }
     }
 
-
-    /**
-     * 复制文件到指定目录下  单个文件
-     *
-     * @param sourcePath 需要复制的文件  例如：/abc/def/cc.txt
-     * @param targetPath 需要放置的目标目录 例如：/abc/dd
-     * @return boolean
-     */
-    public boolean copyLocalFile(String sourcePath, String targetPath) {
-        LogUtil.info(LogEnum.NFS_UTIL, "复制文件原路径: {} ,目标路径： {}", sourcePath, targetPath);
-        if (StringUtils.isEmpty(sourcePath) || StringUtils.isEmpty(targetPath)) {
-            return false;
-        }
-        sourcePath = formatPath(sourcePath);
-        targetPath = formatPath(targetPath);
-        LogUtil.info(LogEnum.NFS_UTIL, "过滤后文件原路径: {} ,目标路径：{}", sourcePath, targetPath);
-        try (InputStream input = new FileInputStream(sourcePath);
-             FileOutputStream output = new FileOutputStream(targetPath)) {
-            FileCopyUtils.copy(input, output);
-            LogUtil.info(LogEnum.NFS_UTIL, "复制文件成功");
-            return true;
-        } catch (IOException e) {
-            LogUtil.error(LogEnum.NFS_UTIL, " copyLocalFile 复制失败: ", e);
-            return false;
-        }
-    }
-
-
-    /**
-     * 复制文件 到指定目录下  多个文件  包含目录与文件并存情况
-     *
-     * @param sourcePath 需要复制的文件目录  例如：/abc/def
-     * @param targetPath 需要放置的目标目录 例如：/abc/dd
-     * @return boolean
-     */
-    public boolean copyLocalPath(String sourcePath, String targetPath) {
-        if (!StringUtils.isEmpty(sourcePath) && !StringUtils.isEmpty(targetPath)) {
-            sourcePath = formatPath(sourcePath);
-            if (sourcePath.endsWith(FILE_SEPARATOR)) {
-                sourcePath = sourcePath.substring(MagicNumConstant.ZERO, sourcePath.lastIndexOf(FILE_SEPARATOR));
-            }
-            targetPath = formatPath(targetPath);
-            LogUtil.info(LogEnum.NFS_UTIL, "复制文件夹 原路径: {} , 目标路径 ： {}  ", sourcePath, targetPath);
-            File[] files = new File(sourcePath).listFiles();
-            LogUtil.info(LogEnum.NFS_UTIL, "需要复制的文件数量为: {}", files.length);
-            if (files.length != 0) {
-                for (File file : files) {
-                    try {
-                        if (file.isDirectory()) {
-                            LogUtil.info(LogEnum.NFS_UTIL, "需要复制夹: {}", file.getAbsolutePath());
-                            LogUtil.info(LogEnum.NFS_UTIL, "目标文件夹: {}", targetPath + FILE_SEPARATOR + file.getName());
-                            File fileDir = new File(targetPath + FILE_SEPARATOR + file.getName());
-                            if(!fileDir.exists()){
-                                fileDir.mkdirs();
-                            }
-                            copyLocalPath(sourcePath + FILE_SEPARATOR + file.getName(), targetPath + FILE_SEPARATOR + file.getName());
-                        }
-                        if (file.isFile()) {
-                            File fileTargetPath = new File(targetPath);
-                            if(!fileTargetPath.exists()){
-                                fileTargetPath.mkdirs();
-                            }
-                            LogUtil.info(LogEnum.NFS_UTIL, "需要复制文件: {}", file.getAbsolutePath());
-                            LogUtil.info(LogEnum.NFS_UTIL, "需要复制文件名称: {}", file.getName());
-                            copyLocalFile(file.getAbsolutePath() , targetPath + FILE_SEPARATOR + file.getName());
-                        }
-                    }catch (Exception e){
-                        LogUtil.error(LogEnum.NFS_UTIL, "复制文件夹失败: {}", e);
-                        return false;
-                    }
-                }
-            }
-            return true;
-        }
-        return false;
-    }
-
-    /**
-     * 解压前清理同路径下其他文件(目前只支持路径下无文件夹，文件均为zip文件)
-     * 上传路径垃圾文件清理
-     *
-     * @param zipFilePath zip源文件 例如：/abc/z.zip
-     * @param path        文件夹 例如：/abc/
-     * @return boolean
-     */
-    public boolean cleanPath(String zipFilePath, String path) {
-        if (!StringUtils.isEmpty(zipFilePath) && !StringUtils.isEmpty(path) && zipFilePath.toLowerCase().endsWith(ZIP)) {
-            zipFilePath = formatPath(zipFilePath);
-            path = formatPath(path);
-            Nfs3File nfs3Files = getNfs3File(path);
-            try {
-                String zipName = zipFilePath.substring(zipFilePath.lastIndexOf(FILE_SEPARATOR) + MagicNumConstant.ONE);
-                if (!StringUtils.isEmpty(zipName)) {
-                    List<Nfs3File> nfs3FilesList = nfs3Files.listFiles();
-                    if (!CollectionUtils.isEmpty(nfs3FilesList)) {
-                        for (Nfs3File nfs3File : nfs3FilesList) {
-                            if (!zipName.equals(nfs3File.getName())) {
-                                nfs3File.delete();
-                            }
-                        }
-                        return true;
-                    }
-                }
-            } catch (Exception e) {
-                LogUtil.error(LogEnum.NFS_UTIL, "路径{}清理失败，错误原因为：{} ", path, e);
-                return false;
-            } finally {
-                nfsPool.revertNfs(nfs3Files.getNfs());
-            }
-        }
-        return false;
-    }
-
     /**
      * zip解压并删除压缩文件
-     *
+     * 当压缩包文件较多时，可能会因为RPC超时而解压失败
+     * 该方法已废弃，请使用org.dubhe.utils.LocalFileUtil类的unzipLocalPath方法来替代
      * @param sourcePath zip源文件 例如：/abc/z.zip
      * @param targetPath 解压后的目标文件夹 例如：/abc/
      * @return boolean
      */
+    @Deprecated
     public boolean unzip(String sourcePath, String targetPath) {
         if (StringUtils.isEmpty(sourcePath) || StringUtils.isEmpty(targetPath)) {
             return false;
@@ -894,11 +759,15 @@ public class NfsUtil {
      * @param path
      * @return String
      */
-    private String formatPath(String path) {
+    public String formatPath(String path) {
         if (!StringUtils.isEmpty(path)) {
             return path.replaceAll("///*", FILE_SEPARATOR);
         }
         return path;
+    }
+
+    public String getAbsolutePath(String relativePath) {
+        return nfsConfig.getRootDir() + nfsConfig.getBucket() + relativePath;
     }
 
 }

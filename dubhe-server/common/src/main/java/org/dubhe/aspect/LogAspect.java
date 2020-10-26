@@ -15,8 +15,7 @@
  */
 package org.dubhe.aspect;
 
-import java.util.UUID;
-
+import lombok.extern.slf4j.Slf4j;
 import org.aspectj.lang.JoinPoint;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.Around;
@@ -28,10 +27,11 @@ import org.slf4j.MDC;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 
-import lombok.extern.slf4j.Slf4j;
+import java.util.UUID;
 
 /**
- * @date 2020/04/10
+ * @description 日志切面
+ * @date 2020-04-10
  */
 @Component
 @Aspect
@@ -54,7 +54,7 @@ public class LogAspect {
 	public void taskAspect() {
 	}
 
-	@Pointcut(" serviceAspect() || taskAspect() ")
+	@Pointcut(" serviceAspect() ")
 	public void aroundAspect() {
 	}
 

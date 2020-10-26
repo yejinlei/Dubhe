@@ -28,6 +28,8 @@ import lombok.EqualsAndHashCode;
 import lombok.experimental.Accessors;
 import org.dubhe.base.BaseEntity;
 
+import java.sql.Timestamp;
+
 /**
  * @description job运行参数及结果
  * @date 2020-04-27
@@ -97,5 +99,17 @@ public class PtJobParam extends BaseEntity {
      */
     @TableField(value = "param_accuracy")
     private String paramAccuracy;
+
+    /**
+     *训练延时启动时间
+     */
+    @TableField(value = "delay_create_time")
+    private Timestamp delayCreateTime;
+
+    /**
+     *训练自动停止时间
+     */
+    @TableField(value = "delay_delete_time")
+    private Timestamp delayDeleteTime;
 
 }

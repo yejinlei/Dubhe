@@ -23,7 +23,6 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.dubhe.annotation.Query;
 
-
 /**
  * @description 数据集二进制转换条件查询
  * @date 2020-06-08

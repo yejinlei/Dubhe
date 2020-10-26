@@ -21,6 +21,7 @@ import cn.hutool.core.collection.CollectionUtil;
 import io.fabric8.kubernetes.api.model.*;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.batch.Job;
+import org.dubhe.k8s.domain.cr.DistributeTrain;
 import org.dubhe.k8s.domain.resource.*;
 
 import java.util.List;
@@ -64,7 +65,6 @@ public class BizConvertUtils {
         }
         return bizPod;
     }
-
     /**
      * 将List<Deployment> 转为 List<BizDeployment>
      *
@@ -74,7 +74,6 @@ public class BizConvertUtils {
     public static List<BizDeployment> toBizDeploymentList(List<Deployment> deploymentList) {
         return deploymentList.parallelStream().map(obj -> toBizDeployment(obj)).collect(Collectors.toList());
     }
-
     /**
      * 将Deployment 转为 BizDeployment
      *
@@ -84,7 +83,6 @@ public class BizConvertUtils {
     public static BizDeployment toBizDeployment(Deployment deployment) {
         return MappingUtils.mappingTo(deployment, BizDeployment.class);
     }
-
     /**
      * 将List<Job> 转为 List<BizJob>
      *
@@ -94,7 +92,6 @@ public class BizConvertUtils {
     public static List<BizJob> toBizJobList(List<Job> jobList) {
         return jobList.parallelStream().map(obj -> toBizJob(obj)).collect(Collectors.toList());
     }
-
     /**
      * 将Job 转为 BizJob
      *
@@ -104,7 +101,6 @@ public class BizConvertUtils {
     public static BizJob toBizJob(Job job) {
         return MappingUtils.mappingTo(job, BizJob.class);
     }
-
     /**
      * 将Namespace 转为 BizNamespace
      *
@@ -114,7 +110,6 @@ public class BizConvertUtils {
     public static BizNamespace toBizNamespace(Namespace namespace) {
         return MappingUtils.mappingTo(namespace, BizNamespace.class);
     }
-
     /**
      * 将Node 转为 BizNode
      *
@@ -124,11 +119,10 @@ public class BizConvertUtils {
     public static BizNode toBizNode(Node node) {
         return MappingUtils.mappingTo(node, BizNode.class);
     }
-
     /**
      * 将PersistentVolumeClaim 转为 BizPersistentVolumeClaim
      *
-     * @param persistentVolumeClaim
+     * @param persistentVolumeClaim 对象
      * @return BizPersistentVolumeClaim PersistentVolumeClaim实体类
      */
     public static BizPersistentVolumeClaim toBizPersistentVolumeClaim(PersistentVolumeClaim persistentVolumeClaim) {
@@ -138,7 +132,7 @@ public class BizConvertUtils {
     /**
      * 将ResourceQuota 转为 BizResourceQuota
      *
-     * @param resourceQuota
+     * @param resourceQuota 资源对象
      * @return BizResourceQuota resourceQuota业务类
      */
     public static BizResourceQuota toBizResourceQuota(ResourceQuota resourceQuota) {
@@ -148,10 +142,17 @@ public class BizConvertUtils {
     /**
      * 将LimitRange 转为 BizLimitRange
      *
-     * @param limitRange
+     * @param limitRange 对象
      * @return BizLimitRange BizLimitRange实体类
      */
     public static BizLimitRange toBizLimitRange(LimitRange limitRange) {
         return MappingUtils.mappingTo(limitRange, BizLimitRange.class);
+    }
+    public static BizDistributeTrain toBizDistributeTrain(DistributeTrain distributeTrain){
+        return MappingUtils.mappingTo(distributeTrain,BizDistributeTrain.class);
+    }
+    public static List<BizDistributeTrain> toBizDistributeTrainList(List<DistributeTrain> distributeTrainList){
+        List<BizDistributeTrain> distributeTrains = distributeTrainList.parallelStream().map(obj -> toBizDistributeTrain(obj)).collect(Collectors.toList());
+       return distributeTrains;
     }
 }

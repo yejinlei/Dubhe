@@ -68,9 +68,9 @@ public class MinioUtil {
         try {
             client = new MinioClient(url, accessKey, secretKey);
         } catch (InvalidEndpointException e) {
-            LogUtil.warn(LogEnum.BIZ_DATASET, "MinIO endpoint invalid. e:", e);
+            LogUtil.warn(LogEnum.BIZ_DATASET, "MinIO endpoint invalid. e, {}", e);
         } catch (InvalidPortException e) {
-            LogUtil.warn(LogEnum.BIZ_DATASET, "MinIO endpoint port invalid. e:", e);
+            LogUtil.warn(LogEnum.BIZ_DATASET, "MinIO endpoint port invalid. e, {}", e);
         }
     }
 
@@ -94,7 +94,7 @@ public class MinioUtil {
     /**
      * 读取文件
      *
-     * @param bucket
+     * @param bucket       桶
      * @param fullFilePath 文件存储的全路径，包括文件名，非'/'开头. e.g. dataset/12/annotation/test.txt
      * @return String
      */
@@ -107,7 +107,7 @@ public class MinioUtil {
     /**
      * 文件删除
      *
-     * @param bucket
+     * @param bucket       桶
      * @param fullFilePath 文件存储的全路径，包括文件名，非'/'开头. e.g. dataset/12/annotation/test.txt
      */
     public void del(String bucket, String fullFilePath) throws Exception {
@@ -125,8 +125,8 @@ public class MinioUtil {
     /**
      * 批量删除文件
      *
-     * @param bucket
-     * @param objectNames
+     * @param bucket       桶
+     * @param objectNames  对象名称
      */
     public void delFiles(String bucket,List<String> objectNames) throws Exception{
         Iterable<Result<DeleteError>> results = client.removeObjects(bucket, objectNames);
@@ -138,6 +138,10 @@ public class MinioUtil {
     /**
      * 获取对象名称
      *
+     * @param bucketName  桶名称
+     * @param prefix      前缀
+     * @return
+     * @throws Exception
      */
     public List<String> getObjects(String bucketName, String prefix)throws Exception{
         List<String> fileNames = new ArrayList<>();
@@ -152,6 +156,10 @@ public class MinioUtil {
     /**
      * 获取文件流
      *
+     * @param bucket     桶
+     * @param objectName 对象名称
+     * @return
+     * @throws Exception
      */
     public InputStream getObjectInputStream(String bucket,String objectName)throws Exception{
         return client.getObject(bucket, objectName);
@@ -160,9 +168,9 @@ public class MinioUtil {
     /**
      * 文件夹复制
      *
-     * @param bucket
+     * @param bucket      桶
      * @param sourceFiles 源文件
-     * @param targetDir 目标文件夹
+     * @param targetDir   目标文件夹
      */
     public void copyDir(String bucket, List<String> sourceFiles, String targetDir) {
         sourceFiles.forEach(sourceFile -> {
@@ -211,10 +219,10 @@ public class MinioUtil {
         /**
          * 生成文件下载请求参数方法
          *
-         * @param bucketName
-         * @param prefix
-         * @param objects
-         * @return MinioDownloadDto
+         * @param bucketName  桶名称
+         * @param prefix      前缀
+         * @param objects     对象名称
+         * @return MinioDownloadDto 下载请求参数
          */
         public MinioDownloadDto getDownloadParam(String bucketName, String prefix, List<String> objects, String zipName) {
             String paramTemplate = "{\"id\":%d,\"jsonrpc\":\"%s\",\"params\":{\"username\":\"%s\",\"password\":\"%s\"},\"method\":\"%s\"}";

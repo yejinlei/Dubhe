@@ -25,9 +25,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
- * @description: 唯一码生成器 （依赖时间轴）
- *
- * @date 2020.05.08
+ * @description 唯一码生成器 （依赖时间轴）
+ * @date 2020-05-08
  */
 public class UniqueKeyGenerator {
 

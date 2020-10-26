@@ -18,11 +18,26 @@
 package org.dubhe.dao;
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
+import org.apache.ibatis.annotations.Param;
+import org.apache.ibatis.annotations.Select;
+import org.dubhe.annotation.DataPermission;
 import org.dubhe.domain.PtModelInfo;
+
+import java.util.List;
 
 /**
  * @description 模型管理
  * @date 2020-04-02
  */
+@DataPermission(ignoresMethod = {"insert"})
 public interface PtModelInfoMapper extends BaseMapper<PtModelInfo> {
+    /**
+     * 根据模型来源和创建者id查询模型详情
+     *
+     * @param modelResource 模型来源
+     * @param originUserId 创建者id
+     * @return  List<PtModelInfo> 模型详情的集合
+     */
+    @Select("select name,id from pt_model_info where deleted=0 and model_resource=#{modelResource} and origin_user_id=#{origin_user_id} and (model_version is not null and LENGTH(TRIM(model_version))>0)")
+    List<PtModelInfo> findModelByResource(@Param("modelResource") Integer modelResource, @Param("origin_user_id") Long originUserId);
 }

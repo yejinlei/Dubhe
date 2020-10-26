@@ -1,12 +1,12 @@
 /**
  * Copyright 2020 Zhejiang Lab. All Rights Reserved.
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  * http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -20,26 +20,31 @@ package org.dubhe.k8s.config;
 import cn.hutool.core.util.StrUtil;
 import com.alibaba.fastjson.JSONObject;
 import org.apache.http.HttpHost;
+import org.apache.http.client.config.RequestConfig;
 import org.dubhe.enums.LogEnum;
 import org.dubhe.k8s.api.DeploymentApi;
+import org.dubhe.k8s.api.DistributeTrainApi;
 import org.dubhe.k8s.api.JupyterResourceApi;
 import org.dubhe.k8s.api.LimitRangeApi;
 import org.dubhe.k8s.api.LogMonitoringApi;
 import org.dubhe.k8s.api.MetricsApi;
 import org.dubhe.k8s.api.ModelOptJobApi;
 import org.dubhe.k8s.api.NamespaceApi;
+import org.dubhe.k8s.api.NativeResourceApi;
 import org.dubhe.k8s.api.NodeApi;
 import org.dubhe.k8s.api.PersistentVolumeClaimApi;
 import org.dubhe.k8s.api.PodApi;
 import org.dubhe.k8s.api.ResourceQuotaApi;
 import org.dubhe.k8s.api.TrainJobApi;
 import org.dubhe.k8s.api.impl.DeploymentApiImpl;
+import org.dubhe.k8s.api.impl.DistributeTrainApiImpl;
 import org.dubhe.k8s.api.impl.JupyterResourceApiImpl;
 import org.dubhe.k8s.api.impl.LimitRangeApiImpl;
 import org.dubhe.k8s.api.impl.LogMonitoringApiImpl;
 import org.dubhe.k8s.api.impl.MetricsApiImpl;
 import org.dubhe.k8s.api.impl.ModelOptJobApiImpl;
 import org.dubhe.k8s.api.impl.NamespaceApiImpl;
+import org.dubhe.k8s.api.impl.NativeResourceApiImpl;
 import org.dubhe.k8s.api.impl.NodeApiImpl;
 import org.dubhe.k8s.api.impl.PersistentVolumeClaimApiImpl;
 import org.dubhe.k8s.api.impl.PodApiImpl;
@@ -50,6 +55,7 @@ import org.dubhe.k8s.properties.ClusterProperties;
 import org.dubhe.k8s.utils.K8sUtils;
 import org.dubhe.utils.LogUtil;
 import org.elasticsearch.client.RestClient;
+import org.elasticsearch.client.RestClientBuilder;
 import org.elasticsearch.client.RestHighLevelClient;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -60,6 +66,7 @@ import org.springframework.context.annotation.Configuration;
 import java.io.IOException;
 
 import static org.apache.http.HttpVersion.HTTP;
+import static org.dubhe.base.MagicNumConstant.TEN_THOUSAND;
 import static org.dubhe.base.MagicNumConstant.ZERO;
 import static org.dubhe.constant.SymbolConstant.COLON;
 import static org.dubhe.constant.SymbolConstant.COMMA;
@@ -150,6 +157,11 @@ public class K8sConfig {
     }
 
     @Bean
+    public NativeResourceApi nativeResourceApi(K8sUtils k8sUtils) {
+        return new NativeResourceApiImpl(k8sUtils);
+    }
+
+    @Bean
     public DeploymentApi deploymentApi(K8sUtils k8sUtils) {
         return new DeploymentApiImpl(k8sUtils);
     }
@@ -157,6 +169,11 @@ public class K8sConfig {
     @Bean
     public ModelOptJobApi jobApi(K8sUtils k8sUtils) {
         return new ModelOptJobApiImpl(k8sUtils);
+    }
+
+    @Bean
+    public DistributeTrainApi distributeTrainApi(K8sUtils k8sUtils) {
+        return new DistributeTrainApiImpl(k8sUtils);
     }
 
     @Bean
@@ -168,6 +185,13 @@ public class K8sConfig {
             String item = hosts[i];
             httpHostArray[i] = new HttpHost(item.split(COLON)[ZERO], Integer.parseInt(item.split(COLON)[1]), HTTP);
         }
-        return new RestHighLevelClient(RestClient.builder(httpHostArray));
+        return new RestHighLevelClient(RestClient.builder(httpHostArray).setRequestConfigCallback(new RestClientBuilder.RequestConfigCallback() {
+            @Override
+            public RequestConfig.Builder customizeRequestConfig(RequestConfig.Builder builder) {
+                builder.setSocketTimeout(TEN_THOUSAND);
+                return builder;
+
+            }
+        }));
     }
 }

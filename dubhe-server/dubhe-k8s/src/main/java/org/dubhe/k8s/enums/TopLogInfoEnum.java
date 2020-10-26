@@ -21,7 +21,7 @@ import lombok.Getter;
 import org.dubhe.utils.StringUtils;
 
 /**
- * @description: TopLogInfoEnum枚举类
+ * @description TopLogInfoEnum枚举类
  * @date 2020-06-30
  */
 @Getter

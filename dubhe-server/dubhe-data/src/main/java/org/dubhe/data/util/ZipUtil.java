@@ -41,7 +41,7 @@ public class ZipUtil {
     /**
      * 压缩数据集文件夹中的标注、原始文件
      *
-     * @param datasetDir
+     * @param datasetDir  数据集文件夹
      * @return String 压缩数据集文件夹中的标注、原始文件路径
      */
     @Log

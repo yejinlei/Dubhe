@@ -84,7 +84,7 @@ public class NodeApiImpl implements NodeApi {
             LogUtil.info(LogEnum.BIZ_K8S, "Output {}", bizNode);
             return bizNode;
         } catch (KubernetesClientException e) {
-            LogUtil.error(LogEnum.BIZ_K8S, "NodeApiImpl.get error, param:[nodeName]={}, error:", nodeName, e);
+            LogUtil.error(LogEnum.BIZ_K8S, "NodeApiImpl.get error, param:[nodeName]={}, error:{}", nodeName, e);
             return new BizNode().error(String.valueOf(e.getCode()), e.getMessage());
         }
     }
@@ -105,7 +105,7 @@ public class NodeApiImpl implements NodeApi {
             LogUtil.info(LogEnum.BIZ_K8S, "Output {}", bizNodeList);
             return bizNodeList;
         } catch (KubernetesClientException e) {
-            LogUtil.error(LogEnum.BIZ_K8S, "NodeApiImpl.listAll error:", e);
+            LogUtil.error(LogEnum.BIZ_K8S, "NodeApiImpl.listAll error:{}", e);
             return Collections.EMPTY_LIST;
         }
     }
@@ -128,7 +128,7 @@ public class NodeApiImpl implements NodeApi {
             client.nodes().withName(nodeName).edit().editMetadata().addToLabels(labelKey, labelValue).endMetadata().done();
             return new PtBaseResult();
         } catch (KubernetesClientException e) {
-            LogUtil.error(LogEnum.BIZ_K8S, "NodeApiImpl.addLabel error, param:[nodeName]={}, [labelKey]={}, [labelValue]={}, error:", nodeName, labelKey, labelValue, e);
+            LogUtil.error(LogEnum.BIZ_K8S, "NodeApiImpl.addLabel error, param:[nodeName]={}, [labelKey]={}, [labelValue]={}, error:{}", nodeName, labelKey, labelValue, e);
             return new PtBaseResult(String.valueOf(e.getCode()), e.getMessage());
         }
     }
@@ -150,7 +150,7 @@ public class NodeApiImpl implements NodeApi {
             client.nodes().withName(nodeName).edit().editMetadata().addToLabels(labels).endMetadata().done();
             return new PtBaseResult();
         } catch (KubernetesClientException e) {
-            LogUtil.error(LogEnum.BIZ_K8S, "NodeApiImpl.addLabels error, param:[nodeName]={}, [labels]={},error:",nodeName, JSON.toJSONString(labels), e);
+            LogUtil.error(LogEnum.BIZ_K8S, "NodeApiImpl.addLabels error, param:[nodeName]={}, [labels]={},error:{}",nodeName, JSON.toJSONString(labels), e);
             return new PtBaseResult(String.valueOf(e.getCode()), e.getMessage());
         }
     }
@@ -172,7 +172,7 @@ public class NodeApiImpl implements NodeApi {
             client.nodes().withName(nodeName).edit().editMetadata().removeFromLabels(labelKey).endMetadata().done();
             return new PtBaseResult();
         } catch (KubernetesClientException e) {
-            LogUtil.error(LogEnum.BIZ_K8S, "NodeApiImpl.deleteLabel error, param:[nodeName]={}, [labelKey]={},error:",nodeName, labelKey, e);
+            LogUtil.error(LogEnum.BIZ_K8S, "NodeApiImpl.deleteLabel error, param:[nodeName]={}, [labelKey]={},error:{}",nodeName, labelKey, e);
             return new PtBaseResult(String.valueOf(e.getCode()), e.getMessage());
         }
     }
@@ -199,7 +199,7 @@ public class NodeApiImpl implements NodeApi {
             client.nodes().withName(nodeName).edit().editMetadata().removeFromLabels(map).endMetadata().done();
             return new PtBaseResult();
         } catch (KubernetesClientException e) {
-            LogUtil.error(LogEnum.BIZ_K8S, "NodeApiImpl.deleteLabelS error, param:[nodeName]={}, [labels]={},error:", nodeName, JSON.toJSONString(labels), e);
+            LogUtil.error(LogEnum.BIZ_K8S, "NodeApiImpl.deleteLabelS error, param:[nodeName]={}, [labels]={},error:{}", nodeName, JSON.toJSONString(labels), e);
             return new PtBaseResult(String.valueOf(e.getCode()), e.getMessage());
         }
     }
@@ -226,7 +226,7 @@ public class NodeApiImpl implements NodeApi {
             client.nodes().withName(nodeName).replace(node);
             return new PtBaseResult();
         } catch (KubernetesClientException e) {
-            LogUtil.error(LogEnum.BIZ_K8S, "NodeApiImpl.schedulable error:", e);
+            LogUtil.error(LogEnum.BIZ_K8S, "NodeApiImpl.schedulable error:{}", e);
             return new PtBaseResult(String.valueOf(e.getCode()), e.getMessage());
         }
     }

@@ -58,8 +58,12 @@ public class DatasetVO implements Serializable {
     private String currentVersionName;
     private boolean isImport;
     private Integer decompressState;
+    private boolean isTop;
+    private Long labelGroupId;
+    private String labelGroupName;
+    private Integer labelGroupType;
 
-    public static DatasetVO from(Dataset dataset) {
+    public static DatasetVO from(Dataset dataset,String labelGroupName,Integer labelGroupType) {
         DatasetVO datasetVO = new DatasetVO();
         if (dataset == null) {
             return null;
@@ -75,6 +79,11 @@ public class DatasetVO implements Serializable {
         datasetVO.setStatus(dataset.getStatus());
         datasetVO.setDecompressState(dataset.getDecompressState());
         datasetVO.setImport(dataset.isImport());
+        datasetVO.setTop(dataset.isTop());
+        datasetVO.setLabelGroupId(dataset.getLabelGroupId());
+        datasetVO.setLabelGroupName(labelGroupName);
+        datasetVO.setLabelGroupType(labelGroupType);
+        datasetVO.setCurrentVersionName(dataset.getCurrentVersionName());
         return datasetVO;
     }
 

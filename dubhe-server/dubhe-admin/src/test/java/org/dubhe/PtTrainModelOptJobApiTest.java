@@ -53,7 +53,7 @@ public class PtTrainModelOptJobApiTest extends BaseTest {
         ptTrainJobCreateDTO.setDataSourceName("dataset/68");
         ptTrainJobCreateDTO.setDataSourcePath("dataset/68");
         ptTrainJobCreateDTO.setDescription("job描述");
-        ptTrainJobCreateDTO.setTrainJobSpecsId(1).setRunCommand("python p.py").setImageName("tensorflow").setImageTag("latest");
+        ptTrainJobCreateDTO.setTrainJobSpecsName("11111111111111").setRunCommand("python p.py").setImageName("tensorflow").setImageTag("latest");
         JSONObject runParams = new JSONObject();
         runParams.put("key1", 33);
         runParams.put("key2", 33);
@@ -147,7 +147,7 @@ public class PtTrainModelOptJobApiTest extends BaseTest {
         ptTrainJobUpdateDTO.setAlgorithmId(91L);
         ptTrainJobUpdateDTO.setDataSourceName("dataset/68");
         ptTrainJobUpdateDTO.setDataSourcePath("dataset/68");
-        ptTrainJobUpdateDTO.setTrainJobSpecsId(1).setRunCommand("python p.py").setImageName("tensorflow").setImageTag("latest");
+        ptTrainJobUpdateDTO.setTrainJobSpecsName("").setRunCommand("python p.py").setImageName("tensorflow").setImageTag("latest");
         mockMvcTest(MockMvcRequestBuilders.put("/api/v1/trainJob"), JSON.toJSONString(ptTrainJobUpdateDTO),
                 MockMvcResultMatchers.status().is2xxSuccessful(), 200);
 

@@ -17,16 +17,14 @@
 
 package org.dubhe.domain.entity;
 
-import com.baomidou.mybatisplus.annotation.IdType;
-import com.baomidou.mybatisplus.annotation.TableField;
-import com.baomidou.mybatisplus.annotation.TableId;
-import com.baomidou.mybatisplus.annotation.TableName;
+import com.baomidou.mybatisplus.annotation.*;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import io.swagger.annotations.ApiModelProperty;
 import lombok.Data;
+import org.dubhe.base.BaseEntity;
 
-import javax.validation.constraints.*;
-import java.io.Serializable;
+import javax.validation.constraints.NotNull;
+import javax.validation.constraints.Size;
 import java.util.Date;
 
 /**
@@ -35,13 +33,13 @@ import java.util.Date;
  */
 @Data
 @TableName("notebook")
-public class NoteBook implements Serializable {
+public class NoteBook extends BaseEntity {
 
     @TableId(value = "id", type = IdType.AUTO)
     @ApiModelProperty(hidden = true)
     private Long id;
 
-    @TableField(value = "user_id")
+    @TableField(value = "origin_user_id",fill = FieldFill.INSERT)
     @ApiModelProperty(hidden = true)
     private Long userId;
 
@@ -55,7 +53,8 @@ public class NoteBook implements Serializable {
     @TableField(value = "description")
     private String description;
 
-    @TableField(value = "url")
+    public final static String COLUMN_URL = "url";
+    @TableField(value = COLUMN_URL)
     @ApiModelProperty(hidden = true)
     private String url;
 
@@ -79,10 +78,12 @@ public class NoteBook implements Serializable {
     @ApiModelProperty(value = "硬盘内存大小")
     private Integer diskMemNum;
 
+
+    public final static String COLUMN_STATUS = "status";
     /**
      * 0运行中，1停止, 2删除, 3启动中，4停止中，5删除中，6运行异常（暂未启用）
      */
-    @TableField(value = "status")
+    @TableField(value = COLUMN_STATUS)
     @ApiModelProperty(hidden = true)
     private Integer status;
 
@@ -130,26 +131,6 @@ public class NoteBook implements Serializable {
     @ApiModelProperty(hidden = true)
     private String k8sPvcPath;
 
-    @TableField(value = "create_time")
-    @ApiModelProperty(hidden = true)
-    private Date createTime;
-
-    @TableField(value = "create_user_id")
-    @ApiModelProperty(hidden = true)
-    private Long createUserId;
-
-    @TableField(value = "update_time")
-    @ApiModelProperty(hidden = true)
-    private Date updateTime;
-
-    @TableField(value = "update_user_id")
-    @ApiModelProperty(hidden = true)
-    private Long updateUserId;
-
-    @TableField(value = "deleted")
-    @ApiModelProperty(hidden = true)
-    private Integer deleted;
-
     @TableField(value = "data_source_name")
     @ApiModelProperty(hidden = true)
     @Size(max = 255, message = "数据集名称超长")
@@ -189,11 +170,6 @@ public class NoteBook implements Serializable {
                 ", k8sImageName='" + k8sImageName + '\'' +
                 ", k8sMountPath='" + k8sMountPath + '\'' +
                 ", k8sPvcPath='" + k8sPvcPath + '\'' +
-                ", createTime=" + createTime +
-                ", createUserId=" + createUserId +
-                ", updateTime=" + updateTime +
-                ", updateUserId=" + updateUserId +
-                ", deleted=" + deleted +
                 ", dataSourceName='" + dataSourceName + '\'' +
                 ", dataSourcePath='" + dataSourcePath + '\'' +
                 ", algorithmId=" + algorithmId +

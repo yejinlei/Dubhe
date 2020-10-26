@@ -24,8 +24,8 @@ import lombok.Data;
 import java.io.Serializable;
 
 /**
- * @description: 我的训练任务统计
- * @date: 2020-07-15
+ * @description 我的训练任务统计
+ * @date 2020-07-15
  */
 @Data
 @ApiModel(description = "我的训练任务统计结果")

@@ -72,7 +72,7 @@ public class NamespaceApiImpl implements NamespaceApi {
             Namespace res = client.namespaces().create(ns);
             return BizConvertUtils.toBizNamespace(res);
         } catch (KubernetesClientException e) {
-            LogUtil.error(LogEnum.BIZ_K8S, "NamespaceApiImpl.create error, param:[namespace]={}, [labels]={},error:",namespace, labels, e);
+            LogUtil.error(LogEnum.BIZ_K8S, "NamespaceApiImpl.create error, param:[namespace]={}, [labels]={},error:{}",namespace, labels, e);
             return new BizNamespace().error(String.valueOf(e.getCode()), e.getMessage());
         }
     }
@@ -165,7 +165,7 @@ public class NamespaceApiImpl implements NamespaceApi {
                 return K8sResponseEnum.REPEAT.toPtBaseResult();
             }
         } catch (KubernetesClientException e) {
-            LogUtil.error(LogEnum.BIZ_K8S, "NamespaceApiImpl.delete error, param:[namespace]={}, error:", namespace, e);
+            LogUtil.error(LogEnum.BIZ_K8S, "NamespaceApiImpl.delete error, param:[namespace]={}, error:{}", namespace, e);
             return new PtBaseResult(String.valueOf(e.getCode()), e.getMessage());
         }
     }
@@ -191,7 +191,7 @@ public class NamespaceApiImpl implements NamespaceApi {
                     .done();
             return new PtBaseResult();
         } catch (KubernetesClientException e) {
-            LogUtil.error(LogEnum.BIZ_K8S, "NamespaceApiImpl.removeLabel error, param:[namespace]={}, [labelKey]={}, error:", namespace, labelKey, e);
+            LogUtil.error(LogEnum.BIZ_K8S, "NamespaceApiImpl.removeLabel error, param:[namespace]={}, [labelKey]={}, error:{}", namespace, labelKey, e);
             return new PtBaseResult(String.valueOf(e.getCode()), e.getMessage());
         }
     }
@@ -223,7 +223,7 @@ public class NamespaceApiImpl implements NamespaceApi {
                     .done();
             return new PtBaseResult();
         } catch (KubernetesClientException e) {
-            LogUtil.error(LogEnum.BIZ_K8S, "NamespaceApiImpl.removeLabel error, param:[namespace]={}, [labels]={},error:", namespace, labels, e);
+            LogUtil.error(LogEnum.BIZ_K8S, "NamespaceApiImpl.removeLabel error, param:[namespace]={}, [labels]={},error:{}", namespace, labels, e);
             return new PtBaseResult(String.valueOf(e.getCode()), e.getMessage());
         }
     }
@@ -245,7 +245,7 @@ public class NamespaceApiImpl implements NamespaceApi {
             client.namespaces().withName(namespace).edit().editMetadata().addToLabels(labelKey, labelValue).endMetadata().done();
             return new PtBaseResult();
         } catch (KubernetesClientException e) {
-            LogUtil.error(LogEnum.BIZ_K8S, "NamespaceApiImpl.addLabel error, param:[namespace]={}, [labelKey]={}, [labelValue]={}, error:", namespace, labelKey, labelValue, e);
+            LogUtil.error(LogEnum.BIZ_K8S, "NamespaceApiImpl.addLabel error, param:[namespace]={}, [labelKey]={}, [labelValue]={}, error:{}", namespace, labelKey, labelValue, e);
             return new PtBaseResult(String.valueOf(e.getCode()), e.getMessage());
         }
     }
@@ -266,7 +266,7 @@ public class NamespaceApiImpl implements NamespaceApi {
             client.namespaces().withName(namespace).edit().editMetadata().addToLabels(labels).endMetadata().done();
             return new PtBaseResult();
         } catch (KubernetesClientException e) {
-            LogUtil.error(LogEnum.BIZ_K8S, "NamespaceApiImpl.addLabels error, param:[namespace]={}, [labels]={},error:",namespace, JSON.toJSONString(labels), e);
+            LogUtil.error(LogEnum.BIZ_K8S, "NamespaceApiImpl.addLabels error, param:[namespace]={}, [labels]={},error:{}",namespace, JSON.toJSONString(labels), e);
             return new PtBaseResult(String.valueOf(e.getCode()), e.getMessage());
         }
     }
@@ -300,7 +300,7 @@ public class NamespaceApiImpl implements NamespaceApi {
      *
      * @param namespace 命名空间
      * @param quota 资源限制参数类
-     * @return boolean
+     * @return boolean  true成功 false失败
      */
     @Override
     public boolean removeResourceQuota(String namespace, ResourceQuota quota) {

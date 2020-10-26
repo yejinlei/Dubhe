@@ -38,7 +38,7 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 
 /**
- * @description: Notebook 工具测试类
+ * @description Notebook 工具测试类
  *
  * @date 2020.04.27
  */

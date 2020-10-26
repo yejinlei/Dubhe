@@ -41,7 +41,7 @@ public class FileQueryCriteriaVO {
     private Set<Long> ids;
 
     @Query(type = Query.Type.IN)
-    private Set<Integer> status;
+    private Integer status;
 
     @Query(type = Query.Type.LIKE)
     private String name;
@@ -60,8 +60,5 @@ public class FileQueryCriteriaVO {
 
     @Query(type = Query.Type.EQ, propName = "file_type")
     private Integer fileType;
-
-    @Query(type = Query.Type.IN, propName = "create_user_id")
-    private Set<Long> createUserIds;
 
 }

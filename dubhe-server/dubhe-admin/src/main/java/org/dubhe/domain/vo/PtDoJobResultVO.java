@@ -21,8 +21,8 @@ import lombok.Data;
 import lombok.experimental.Accessors;
 
 /**
- * @description: doJob返回封装
- * @Date:2020-07-03
+ * @description doJob返回封装
+ * @date 2020-07-03
  */
 @Data
 @Accessors(chain = true)

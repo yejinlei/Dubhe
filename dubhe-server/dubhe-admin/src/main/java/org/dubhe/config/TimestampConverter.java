@@ -24,7 +24,7 @@ import org.springframework.stereotype.Component;
 import java.sql.Timestamp;
 
 /**
- * @description: 转换时间戳类型
+ * @description 转换时间戳类型
  * @date 2020-05-22
  */
 @Component

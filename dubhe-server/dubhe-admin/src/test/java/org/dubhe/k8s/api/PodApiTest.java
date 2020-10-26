@@ -83,12 +83,6 @@ public class PodApiTest {
     }
 
     @Test
-    public void getPodMetricsGrafanaUrl() {
-        String podMetricsGrafanaUrl = podApi.getPodMetricsGrafanaUrl("namespace-1", "pod1");
-        System.out.println(JSON.toJSONString(podMetricsGrafanaUrl));
-    }
-
-    @Test
     public void getWithNamespace() {
         List<BizPod> podList = podApi.getWithNamespace("namespace-1");
         System.out.println(JSON.toJSONString(podList));
@@ -121,5 +115,10 @@ public class PodApiTest {
     @Test
     public void listAllRuningPodGroupByNodeName(){
         System.out.println(JSON.toJSONString(podApi.listAllRuningPodGroupByNodeName()));
+    }
+    @Test
+    public void findByDtName(){
+        List<BizPod> bizPodList = podApi.findByDtName("sun");
+        System.out.println(bizPodList);
     }
 }

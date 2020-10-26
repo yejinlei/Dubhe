@@ -52,9 +52,14 @@ public class DefaultThreadFactoryImpl implements ThreadFactory {
         this("default", false, 0);
     }
 
+    /**
+     *  创建新线程
+     * @param runnable 线程接口实现类
+     * @return
+     */
     @Override
-    public Thread newThread(Runnable r) {
-        Thread t = new Thread(group, r, namePrefix + threadNumber.getAndIncrement(), stackSize);
+    public Thread newThread(Runnable runnable) {
+        Thread t = new Thread(group, runnable, namePrefix + threadNumber.getAndIncrement(), stackSize);
         t.setDaemon(isDaemon);
         t.setUncaughtExceptionHandler(exceptionHandler);
         if (t.getPriority() != Thread.NORM_PRIORITY) {

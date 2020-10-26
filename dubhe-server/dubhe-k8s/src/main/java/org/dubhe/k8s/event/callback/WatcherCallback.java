@@ -17,6 +17,7 @@
 
 package org.dubhe.k8s.event.callback;
 
+import cn.hutool.core.collection.CollectionUtil;
 import cn.hutool.http.HttpRequest;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONException;
@@ -27,6 +28,7 @@ import org.dubhe.enums.LogEnum;
 import org.dubhe.k8s.cache.ResourceCache;
 import org.dubhe.k8s.constant.K8sLabelConstants;
 import org.dubhe.k8s.domain.resource.BizPod;
+import org.dubhe.k8s.enums.ContainerStatusesStateEnum;
 import org.dubhe.k8s.enums.PodPhaseEnum;
 import org.dubhe.k8s.enums.WatcherActionEnum;
 import org.dubhe.k8s.service.K8sResourceService;
@@ -36,8 +38,9 @@ import org.dubhe.utils.SpringContextHolder;
 import org.dubhe.utils.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
-
 import java.util.Observable;
+import static org.dubhe.base.MagicNumConstant.ZERO;
+import static org.dubhe.constant.SymbolConstant.BLANK;
 
 /**
  * @description watcher回调
@@ -72,11 +75,13 @@ public class WatcherCallback extends Observable {
             }
             String businessLabel = pod.getBusinessLabel();
             LogUtil.info(LogEnum.BIZ_K8S,"watch pod {} action:{} phase:{}",pod.getName(),watcherActionEnum.getAction(),pod.getPhase());
+            dealWithAdded(watcherActionEnum,pod);
             setChanged();
             notifyObservers(pod);
             if (StringUtils.isNotEmpty(businessLabel) && needCallback(watcherActionEnum,pod)){
+                String waitingReason = dealWithWaiting(watcherActionEnum, pod);
                 dealWithDeleted(watcherActionEnum,pod);
-                BaseK8sPodCallbackCreateDTO baseK8sPodCallbackCreateDTO = new BaseK8sPodCallbackCreateDTO(pod.getNamespace(), pod.getLabel(K8sLabelConstants.BASE_TAG_SOURCE),pod.getName(), pod.getPhase(), pod.getContainerStateMessages());
+                BaseK8sPodCallbackCreateDTO baseK8sPodCallbackCreateDTO = new BaseK8sPodCallbackCreateDTO(pod.getNamespace(), pod.getLabel(K8sLabelConstants.BASE_TAG_SOURCE),pod.getName(), pod.getLabel(K8sLabelConstants.BASE_TAG_P_KIND), pod.getLabel(K8sLabelConstants.BASE_TAG_P_NAME), pod.getPhase(), waitingReason);
                 String url = k8sCallBackTool.getPodCallbackUrl(businessLabel);
                 String token = k8sCallBackTool.generateToken();
                 String response = HttpRequest.post(url)
@@ -104,13 +109,44 @@ public class WatcherCallback extends Observable {
     }
 
     /**
+     * 处理pod添加事件，添加时将podName缓存到redis
+     *
+     * @param watcherActionEnum 监控枚举类
+     * @param pod Pod对象
+     */
+    private void dealWithAdded(WatcherActionEnum watcherActionEnum, BizPod pod) {
+        if (WatcherActionEnum.ADDED.getAction().equals(watcherActionEnum.getAction())){
+            resourceCache.cachePod(pod.getLabel(K8sLabelConstants.BASE_TAG_SOURCE),pod.getName());
+        }
+    }
+
+    /**
+     * 处理pod Waiting
+     *
+     * @param watcherActionEnum 监控枚举类
+     * @param pod Pod对象
+     */
+    private String dealWithWaiting(WatcherActionEnum watcherActionEnum, BizPod pod) {
+        if (WatcherActionEnum.DELETED != watcherActionEnum
+                && CollectionUtil.isNotEmpty(pod.getContainerStatuses())
+                && null != pod.getContainerStatuses().get(ZERO).getWaiting()){
+            String waitingReason = pod.getContainerStatuses().get(ZERO).getWaiting().getReason();
+            if(waitingReason != null && !ContainerStatusesStateEnum.CONTAINER_CREATING.getReason().equals(waitingReason)){
+                pod.setPhase(PodPhaseEnum.FAILED.getPhase());
+                return waitingReason;
+            }
+        }
+        return BLANK;
+    }
+
+    /**
      * 处理pod删除
      *
      * @param watcherActionEnum 监控枚举类
      * @param pod Pod对象
      */
     private void dealWithDeleted(WatcherActionEnum watcherActionEnum, BizPod pod) {
-        if (WatcherActionEnum.DELETED.getAction().equals(watcherActionEnum.getAction())){
+        if (WatcherActionEnum.DELETED == watcherActionEnum){
             pod.setPhase(PodPhaseEnum.DELETED.getPhase());
             resourceCache.cachePod(pod.getLabel(K8sLabelConstants.BASE_TAG_SOURCE),pod.getName());
             k8sResourceService.create(pod);
@@ -118,7 +154,7 @@ public class WatcherCallback extends Observable {
     }
 
     /**
-     * 非删除的pending,Unknown状态不回调
+     * 非删除的Unknown状态不回调
      *
      * @param watcherActionEnum 监控枚举类
      * @param pod Pod对象
@@ -132,7 +168,7 @@ public class WatcherCallback extends Observable {
         if (WatcherActionEnum.DELETED.getAction().equals(watcherActionEnum.getAction())) {
             return true;
         } else {
-            return !(PodPhaseEnum.PENDING.getPhase().equals(pod.getPhase()) || PodPhaseEnum.UNKNOWN.getPhase().equals(pod.getPhase()));
+            return !(PodPhaseEnum.UNKNOWN.getPhase().equals(pod.getPhase()));
         }
     }
 }

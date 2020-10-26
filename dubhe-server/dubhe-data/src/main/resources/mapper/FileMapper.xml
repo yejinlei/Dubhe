@@ -2,16 +2,14 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
 
 <mapper namespace="org.dubhe.data.dao.FileMapper">
-    <insert id="saveList" parameterType="java.util.List" useGeneratedKeys="true" keyProperty="files.id">
-        insert into data_file (`name`,dataset_id,status,url,enhance_type,width,height,pid
-        <if test="userId==1 or userId==null">
-            ,create_user_id
-        </if>
+    <insert id="saveList" parameterType="java.util.List">
+        insert into data_file (id,
+        `name`,dataset_id,status,url,enhance_type,width,height,file_type,frame_interval,pid,create_user_id,origin_user_id
         )
         values
         <foreach collection="files" item="file" separator=",">
-            (#{file.name}, #{file.datasetId},#{file.status},
-            #{file.url},#{file.enhanceType},#{file.width},#{file.height}
+            (#{file.id},#{file.name}, #{file.datasetId},#{file.status},
+            #{file.url},#{file.enhanceType},#{file.width},#{file.height},#{file.fileType},#{file.frameInterval}
             <choose>
                 <when test="file.pid != null">
                     ,#{file.pid}
@@ -20,12 +18,14 @@
                     ,0
                 </otherwise>
             </choose>
-            <if test="userId==1">
-                ,#{userId}
-            </if>
-            <if test="userId==null">
-                ,#{datasetUserId}
-            </if>
+            <choose>
+                <when test="userId == null">
+                    ,#{datasetUserId} ,#{datasetUserId}
+                </when>
+                <otherwise>
+                    ,#{userId},#{datasetUserId}
+                </otherwise>
+            </choose>
             )
         </foreach>
     </insert>

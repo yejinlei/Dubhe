@@ -33,8 +33,8 @@ import javax.annotation.Resource;
 import java.util.List;
 
 /**
- * @description: JupyterResourceApiTest测试类
- * @date: 2020-04-14
+ * @description JupyterResourceApiTest测试类
+ * @date 2020-04-14
  */
 @SpringBootTest
 @RunWith(SpringRunner.class)
@@ -78,7 +78,8 @@ public class JupyterResourceApiTest {
                 .setWorkspaceDir("/nfs/namespace/workspace1")
                 .setWorkspaceMountPath("/workspace")
                 .setWorkspaceRequest("100Mi")
-                .setWorkspaceLimit("200Mi");
+                .setWorkspaceLimit("200Mi")
+                .setDelayDeleteTime(20);
         PtJupyterDeployVO result = jupyterResourceApi.create(bo);
         System.out.println(JSON.toJSONString(result));
         int i = 0;
@@ -132,7 +133,8 @@ public class JupyterResourceApiTest {
                 .setWorkspaceMountPath("/workspace")
                 .setWorkspaceRequest("100Mi")
                 .setWorkspaceLimit("200Mi")
-                .setBusinessLabel("notebook");
+                .setBusinessLabel("notebook")
+                .setDelayDeleteTime(10);
         PtJupyterDeployVO result = jupyterResourceApi.createWithPvc(bo);
         System.out.println(JSON.toJSONString(result));
         System.out.println(podApi.getUrlByResourceName("namespace","myhfb"));

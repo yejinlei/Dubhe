@@ -41,6 +41,7 @@ import lombok.experimental.Accessors;
 @Accessors(chain = true)
 @TableName("data_task")
 @ApiModel(value = "Task对象", description = "标注任务信息")
+@Getter
 public class Task implements Serializable {
 
     private static final long serialVersionUID = 1L;
@@ -57,8 +58,14 @@ public class Task implements Serializable {
     @ApiModelProperty(value = "已完成的文件数")
     private Integer finished;
 
+    @ApiModelProperty(value = "失败的文件数")
+    private Integer failed;
+
     @ApiModelProperty(value = "文件id数组")
     private String files;
+
+    @ApiModelProperty(value = "数据集ID")
+    private Long datasetId;
 
     @ApiModelProperty(value = "数据集id数组")
     private String datasets;
@@ -82,5 +89,17 @@ public class Task implements Serializable {
     private Integer dataType;
 
     private String labels;
+
+    @ApiModelProperty(value = "任务类型 0.自动标注 1.ofrecord 2.imageNet 3.数据增强 4.目标跟踪 5.视频采样")
+    private Integer type;
+
+    @ApiModelProperty(value = "数据集版本ID")
+    private Long datasetVersionId;
+
+    private String enhanceType;
+
+    private String url;
+
+    private Integer frameInterval;
 
 }

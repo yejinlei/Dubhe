@@ -23,24 +23,29 @@ package org.dubhe.constant;
  */
 public final class StringConstant {
 
-	public static final String MSIE = "MSIE";
-	public static final String MOZILLA = "Mozilla";
+    public static final String MSIE = "MSIE";
+    public static final String MOZILLA = "Mozilla";
+    public static final String REQUEST_METHOD_GET = "GET";
 
-	/**
-	 * 公共字段
-	 */
-	public static final String CREATE_TIME = "createTime";
-	public static final String UPDATE_TIME = "updateTime";
-	public static final String UPDATE_USER_ID = "updateUserId";
-	public static final String CREATE_USER_ID = "createUserId";
-	public static final String DELETED = "deleted";
-	public static final String UTF8 = "utf-8";
+    /**
+     * 公共字段
+     */
+    public static final String CREATE_TIME = "createTime";
+    public static final String UPDATE_TIME = "updateTime";
+    public static final String UPDATE_USER_ID = "updateUserId";
+    public static final String CREATE_USER_ID = "createUserId";
+    public static final String ORIGIN_USER_ID = "originUserId";
+    public static final String DELETED = "deleted";
+    public static final String UTF8 = "utf-8";
+    public static final String JSON_REQUEST = "application/json";
+    public static final String K8S_CALLBACK_URI = "/api/k8s/callback/pod";
+    public static final String MULTIPART = "multipart/form-data";
 
-	/**
-	 * 测试环境
-	 */
-	public static final String PROFILE_ACTIVE_TEST = "test";
+    /**
+     * 测试环境
+     */
+    public static final String PROFILE_ACTIVE_TEST = "test";
 
-	private StringConstant() {
-	}
+    private StringConstant() {
+    }
 }

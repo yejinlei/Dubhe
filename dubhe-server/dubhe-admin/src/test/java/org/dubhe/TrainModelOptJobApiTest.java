@@ -30,8 +30,8 @@ import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
 
 /**
- * @description:
- * @date: 2020-04-17
+ * @description
+ * @date 2020-04-17
  */
 public class TrainModelOptJobApiTest extends BaseTest {
 
@@ -106,7 +106,7 @@ public class TrainModelOptJobApiTest extends BaseTest {
         dto.setDataSourcePath("dataset/68");
         dto.setTrainName("test-train"+System.currentTimeMillis());
         dto.setTrainParamDesc("test-train");
-        dto.setTrainJobSpecsId(1).setRunCommand("python p.py").setImageName("tensorflow").setImageTag("latest");
+        dto.setTrainJobSpecsName("11111").setRunCommand("python p.py").setImageName("tensorflow").setImageTag("latest");
 
         MockHttpServletResponse response = this.mockMvc.perform(
                 MockMvcRequestBuilders.

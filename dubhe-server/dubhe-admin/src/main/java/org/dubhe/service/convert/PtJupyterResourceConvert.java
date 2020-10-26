@@ -37,9 +37,11 @@ public class PtJupyterResourceConvert {
      *  NoteBook 转换为 PtJupyterResourceBO
      *
      * @param noteBook
+     * @param k8sNameTool
+     * @param notebookDelayDeleteTime
      * @return PtJupyterResourceBO
      */
-    public static PtJupyterResourceBO toPtJupyterResourceBo(NoteBook noteBook,K8sNameTool k8sNameTool){
+    public static PtJupyterResourceBO toPtJupyterResourceBo(NoteBook noteBook, K8sNameTool k8sNameTool, Integer notebookDelayDeleteTime){
         if (noteBook == null){
             return null;
         }
@@ -59,6 +61,7 @@ public class PtJupyterResourceConvert {
                 .setDatasetDir(k8sNameTool.getAbsoluteNfsPath(noteBook.getDataSourcePath()))
                 .setDatasetMountPath(k8sNameTool.getDatasetPath())
                 .setDatasetReadOnly(true)
+                .setDelayDeleteTime(notebookDelayDeleteTime)
         ;
         return bo;
     }

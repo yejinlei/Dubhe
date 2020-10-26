@@ -17,42 +17,33 @@
 
 package org.dubhe.utils;
 
-
-import lombok.extern.slf4j.Slf4j;
-
-import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Date;
 
-/**
- * @description: UTC时间转换CST时间工具类
- * @create: 2020/5/20 12:10
- */
-@Slf4j
-public class TimeTransferUtil {
-    /**
-     * @param utcTime
-     * @return cstTime
-     */
-    public static String cstTransfer(String utcTime){
-        Date utcDate = null;
-        /**2020-05-20T03:13:22Z 对应的时间格式 yyyy-MM-dd'T'HH:mm:ss'Z'**/
-        SimpleDateFormat utcSimpleDateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'");
+import static org.dubhe.base.MagicNumConstant.EIGHT;
 
-        try {
-            utcDate = utcSimpleDateFormat.parse(utcTime);
-        } catch (ParseException e) {
-            log.info(e.getMessage());
-            return null;
-        }
-        /**System.out.println("UTC时间："+date);**/
+/**
+ * @description 时间格式转换工具类
+ * @date 2020-05-20
+ */
+public class TimeTransferUtil {
+
+    private static final String UTC_FORMAT = "yyyy-MM-dd'T'HH:mm:ss.sss'Z'";
+
+    /**
+     * Date转换为UTC时间
+     *
+     * @param date
+     * @return utcTime
+     */
+    public static String dateTransferToUtc(Date date){
         Calendar calendar = Calendar.getInstance();
-        calendar.setTime(utcDate);
-        calendar.set(Calendar.HOUR,calendar.get(Calendar.HOUR)+8);
-        SimpleDateFormat cstSimpleDateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-        Date cstDate = calendar.getTime();
-        String cstTime = cstSimpleDateFormat.format(calendar.getTime());
-        return cstTime;
+        calendar.setTime(date);
+        /**UTC时间与CST时间相差8小时**/
+        calendar.set(Calendar.HOUR,calendar.get(Calendar.HOUR) - EIGHT);
+        SimpleDateFormat utcSimpleDateFormat = new SimpleDateFormat(UTC_FORMAT);
+        Date utcDate = calendar.getTime();
+        return utcSimpleDateFormat.format(utcDate);
     }
 }

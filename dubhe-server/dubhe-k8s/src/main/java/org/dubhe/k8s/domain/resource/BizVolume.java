@@ -30,4 +30,8 @@ import lombok.experimental.Accessors;
 public class BizVolume {
     @K8sField("name")
     private String name;
+    @K8sField("nfs:path")
+    private String path;
+    @K8sField("nfs:server")
+    private String server;
 }

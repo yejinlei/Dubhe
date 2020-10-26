@@ -17,17 +17,17 @@
 
 package org.dubhe.dao;
 
+import org.dubhe.annotation.DataPermission;
 import org.dubhe.domain.entity.PtTrainAlgorithmUsage;
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 
 /**
  * 
- *  用户辅助信息Mapper 接口
- * </p>
- *
- * @since 2020-06-23
+ * @description 用户辅助信息Mapper 接口
+ * @date 2020-06-23
  */
+@DataPermission(ignoresMethod = "insert")
 public interface PtTrainAlgorithmUsageMapper extends BaseMapper<PtTrainAlgorithmUsage> {
 
 }

@@ -24,9 +24,10 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.dubhe.base.MagicNumConstant;
 import org.dubhe.constant.NumberConstant;
-import org.dubhe.data.constant.FileStatusEnum;
 import org.dubhe.data.domain.entity.File;
+import org.dubhe.data.machine.constant.FileStateCodeConstant;
 
 import javax.validation.constraints.Min;
 import javax.validation.constraints.NotEmpty;
@@ -76,6 +77,7 @@ public class FileCreateDTO implements Serializable {
     @ApiModelProperty(value = "文件名")
     private String name;
 
+
     public FileCreateDTO(String url, Long pid, Integer status, Integer enhanceType, Long userId, Integer width, Integer height) {
         this.url = url;
         this.pid = pid;
@@ -86,18 +88,20 @@ public class FileCreateDTO implements Serializable {
         this.height = height;
     }
 
-    public static File toFile(FileCreateDTO dto, long id) {
+    public static File toFile(FileCreateDTO dto, long id, long datasetUserId) {
         File file = File.builder()
                 .name(FileUtil.mainName(dto.getUrl()))
                 .datasetId(id)
-                .status(FileStatusEnum.INIT.getValue())
+                .status(FileStateCodeConstant.NOT_ANNOTATION_FILE_STATE)
                 .url(dto.getUrl())
                 .pid(dto.getPid())
                 .enhanceType(dto.getEnhanceType())
                 .width(dto.width)
                 .height(dto.height)
+                .frameInterval(MagicNumConstant.ZERO)
                 .build();
         file.setCreateUserId(dto.getCreateUserId());
+        file.setOriginUserId(datasetUserId);
         return file;
     }
 
@@ -105,13 +109,12 @@ public class FileCreateDTO implements Serializable {
         return File.builder()
                 .name(FileUtil.mainName(dto.getUrl()))
                 .datasetId(id)
-                .status(FileStatusEnum.INIT.getValue())
+                .status(FileStateCodeConstant.NOT_ANNOTATION_FILE_STATE)
                 .url(dto.getUrl())
                 .fileType(type)
                 .pid(pid)
                 .frameInterval(dto.getFrameInterval())
                 .build();
     }
-
 
 }

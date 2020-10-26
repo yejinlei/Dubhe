@@ -17,12 +17,15 @@
 
 package org.dubhe.service;
 
+import org.dubhe.domain.dto.PtImageDeleteDTO;
 import org.dubhe.domain.dto.PtImageQueryDTO;
+import org.dubhe.domain.dto.PtImageUpdateDTO;
 import org.dubhe.domain.dto.PtImageUploadDTO;
 import org.dubhe.domain.entity.HarborProject;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * @description 镜像服务service
@@ -48,12 +51,6 @@ public interface PtImageService {
 
 
     /**
-     * 定时到harbor同步imageName
-     */
-    void harborImageNameSync();
-
-
-    /**
      * 通过imageName查询所含镜像版本信息
      *
      * @param imageName 镜像名
@@ -68,4 +65,27 @@ public interface PtImageService {
      * @return List<HarborProject> harbor镜像集合
      **/
     List<HarborProject> getHarborProjectList();
+
+
+    /**
+     * 删除镜像
+     *
+     * @param imageDeleteDTO 删除镜像条件参数
+     */
+    void deleteTrainImage(PtImageDeleteDTO imageDeleteDTO);
+
+    /**
+     * 修改镜像信息
+     *
+     * @param imageUpdateDTO 修改的镜像信息
+     */
+    void updateTrainImage(PtImageUpdateDTO imageUpdateDTO);
+
+
+    /**
+     * 获取镜像名称列表
+     *
+     * @return Set<String> 镜像列表
+     */
+    Set<String> getImageNameList();
 }

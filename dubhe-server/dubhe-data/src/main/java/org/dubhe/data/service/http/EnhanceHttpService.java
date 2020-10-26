@@ -39,8 +39,8 @@ public class EnhanceHttpService {
     /**
      * 调用算法接口执行数据增强
      *
-     * @param enhanceTaskSplitBO
-     * @return String 返回信息
+     * @param enhanceTaskSplitBO    增强任务
+     * @return String               返回信息
      */
     public String enhance(EnhanceTaskSplitBO enhanceTaskSplitBO) {
         try {

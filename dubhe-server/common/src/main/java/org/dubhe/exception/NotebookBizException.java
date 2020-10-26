@@ -20,8 +20,7 @@ package org.dubhe.exception;
 import lombok.Getter;
 
 /**
- * @description: Notebook 业务处理异常
- *
+ * @description Notebook 业务处理异常
  * @date 2020.04.27
  */
 @Getter

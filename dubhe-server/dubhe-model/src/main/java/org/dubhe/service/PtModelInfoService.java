@@ -17,14 +17,17 @@
 
 package org.dubhe.service;
 
+import org.dubhe.domain.PtModelInfo;
 import org.dubhe.domain.dto.PtModelInfoCreateDTO;
 import org.dubhe.domain.dto.PtModelInfoDeleteDTO;
 import org.dubhe.domain.dto.PtModelInfoQueryDTO;
 import org.dubhe.domain.dto.PtModelInfoUpdateDTO;
 import org.dubhe.domain.vo.PtModelInfoCreateVO;
 import org.dubhe.domain.vo.PtModelInfoDeleteVO;
+import org.dubhe.domain.vo.PtModelInfoQueryVO;
 import org.dubhe.domain.vo.PtModelInfoUpdateVO;
 
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -64,4 +67,11 @@ public interface PtModelInfoService {
      * @return PtModelInfoDeleteVO 模型管理返回删除VO
      */
     PtModelInfoDeleteVO deleteAll(PtModelInfoDeleteDTO ptModelInfoDeleteDTO);
+    /**
+     * 根据模型来源查询模型信息
+     *
+     * @param ptModelInfoQueryDTO 模型查询对象
+     * @return  PtModelInfoQueryVO 模型管理返回查询VO
+     */
+    List<PtModelInfoQueryVO> findModelByResource(PtModelInfoQueryDTO ptModelInfoQueryDTO);
 }

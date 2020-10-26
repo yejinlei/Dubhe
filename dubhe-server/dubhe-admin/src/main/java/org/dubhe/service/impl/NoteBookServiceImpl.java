@@ -34,10 +34,7 @@ import org.dubhe.domain.dto.SourceNoteBookDTO;
 import org.dubhe.domain.entity.NoteBook;
 import org.dubhe.domain.entity.NoteBookModel;
 import org.dubhe.domain.vo.NoteBookVO;
-import org.dubhe.enums.BizEnum;
-import org.dubhe.enums.BizNfsEnum;
-import org.dubhe.enums.LogEnum;
-import org.dubhe.enums.NoteBookStatusEnum;
+import org.dubhe.enums.*;
 import org.dubhe.exception.NotebookBizException;
 import org.dubhe.harbor.api.HarborApi;
 import org.dubhe.k8s.api.PodApi;
@@ -60,6 +57,7 @@ import org.dubhe.utils.NumberUtil;
 import org.dubhe.utils.PageUtil;
 import org.dubhe.utils.WrapperHelp;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -106,6 +104,9 @@ public class NoteBookServiceImpl implements NoteBookService {
     @Autowired
     private HarborProjectService harborProjectService;
 
+    @Value("${delay.notebook.delete}")
+    private Integer notebookDelayDeleteTime;
+
     private static final String BLANK = SymbolConstant.BLANK;
 
     /**
@@ -117,10 +118,28 @@ public class NoteBookServiceImpl implements NoteBookService {
      */
     @Override
     public Map<String, Object> getNoteBookList(Page page, NoteBookListQueryDTO noteBookListQueryDTO) {
-        IPage<NoteBook> noteBookPage = noteBookMapper.selectPage(page, WrapperHelp.getWrapper(noteBookListQueryDTO)
-                .ne(true, "status", NoteBookStatusEnum.DELETE.getCode())
-                .ne(true, "deleted", NoteBookStatusEnum.STOP.getCode())
-                .orderBy(true, false, "id"));
+        QueryWrapper<NoteBook> queryWrapper = WrapperHelp.getWrapper(noteBookListQueryDTO);
+        queryWrapper.ne(true, NoteBook.COLUMN_STATUS, NoteBookStatusEnum.DELETE.getCode())
+                .ne(true, "deleted", NoteBookStatusEnum.STOP.getCode());
+        if (noteBookListQueryDTO.getStatus() != null){
+            if (noteBookListQueryDTO.getStatus().equals(NoteBookStatusEnum.RUN.getCode())){
+                //运行中的notebook必须有url
+                queryWrapper.eq(NoteBook.COLUMN_STATUS, NoteBookStatusEnum.RUN.getCode())
+                        .ne(NoteBook.COLUMN_URL,SymbolConstant.BLANK);
+            }else if (noteBookListQueryDTO.getStatus().equals(NoteBookStatusEnum.STARTING.getCode())){
+                //启动中的notebook还包括运行中但没有url
+                queryWrapper.and((qw)->
+                        qw.eq(NoteBook.COLUMN_STATUS, NoteBookStatusEnum.RUN.getCode()).eq(NoteBook.COLUMN_URL, SymbolConstant.BLANK)
+                                .or()
+                                .eq(NoteBook.COLUMN_STATUS,NoteBookStatusEnum.STARTING.getCode())
+                );
+            }else {
+                // 其他状态照常
+                queryWrapper.eq(NoteBook.COLUMN_STATUS, NoteBookStatusEnum.RUN.getCode());
+            }
+        }
+        queryWrapper.orderBy(true, false, "id");
+        IPage<NoteBook> noteBookPage = noteBookMapper.selectPage(page, queryWrapper);
         return PageUtil.toPage(noteBookPage, noteBookConvert::toDto);
     }
 
@@ -166,13 +185,13 @@ public class NoteBookServiceImpl implements NoteBookService {
     @Override
     @Transactional(rollbackFor = Exception.class)
     public NoteBookVO createNoteBook(NoteBook noteBook) {
-        if (noteBookMapper.findByNameAndUserId(noteBook.getNoteBookName(), noteBook.getCreateUserId(),NoteBookStatusEnum.DELETE.getCode()) != null) {
+        if (noteBookMapper.findByNameAndStatus(noteBook.getNoteBookName(),NoteBookStatusEnum.DELETE.getCode()) != null) {
             throw new NotebookBizException("Notebook名称已使用过！请重新提交。");
         }
         if (StringUtils.isEmpty(noteBook.getName())) {
             noteBook.setName(k8sNameTool.getK8sName());
         }
-        noteBook.setK8sNamespace(k8sNameTool.generateNameSpace(noteBook.getCreateUserId()));
+        noteBook.setK8sNamespace(k8sNameTool.generateNamespace(noteBook.getCreateUserId()));
         noteBook.setK8sResourceName(k8sNameTool.generateResourceName(BizEnum.NOTEBOOK, noteBook.getName()));
         if (StringUtils.isBlank(noteBook.getK8sPvcPath())) {
             //20200618 修改为 使用训练路劲
@@ -368,7 +387,7 @@ public class NoteBookServiceImpl implements NoteBookService {
         if (initNameSpace(noteBook, null)) {
             try {
                 //20200618 修改为 创建时不创建PVC
-                PtJupyterDeployVO result = jupyterResourceApi.create(PtJupyterResourceConvert.toPtJupyterResourceBo(noteBook, k8sNameTool));
+                PtJupyterDeployVO result = jupyterResourceApi.create(PtJupyterResourceConvert.toPtJupyterResourceBo(noteBook, k8sNameTool, notebookDelayDeleteTime));
                 noteBook.setK8sStatusCode(result.getCode() == null ? BLANK : result.getCode());
                 noteBook.setK8sStatusInfo(NotebookUtil.getK8sStatusInfo(result));
                 return HttpUtils.isSuccess(result.getCode());
@@ -556,7 +575,7 @@ public class NoteBookServiceImpl implements NoteBookService {
         noteBook.setDescription(bizNfsEnum.getBizName());
         noteBook.setName(k8sNameTool.getK8sName());
         String notebookName = NotebookUtil.generateName(bizNfsEnum, sourceNoteBookDTO.getSourceId());
-        if (noteBookMapper.findByNameAndUserId(notebookName, noteBook.getCreateUserId(),NoteBookStatusEnum.DELETE.getCode()) != null) {
+        if (noteBookMapper.findByNameAndStatus(notebookName,NoteBookStatusEnum.DELETE.getCode()) != null) {
             // 重名随机符号拼接
             notebookName += RandomUtil.randomString(MagicNumConstant.TWO);
         }
@@ -611,7 +630,7 @@ public class NoteBookServiceImpl implements NoteBookService {
     @Override
     public String deletePvc(NoteBook noteBook) {
         noteBook.setStatus(NoteBookStatusEnum.DELETE.getCode());
-        noteBook.setDeleted(MagicNumConstant.ONE);
+        noteBook.setDeleted(true);
         return NoteBookStatusEnum.DELETE.getDescription();
     }
 
@@ -637,12 +656,11 @@ public class NoteBookServiceImpl implements NoteBookService {
     /**
      * 获取正在运行的notebook数量
      *
-     * @param curUserId
      * @return int
      */
     @Override
-    public int getNoteBookRunNumber(long curUserId) {
-        return noteBookMapper.selectRunNoteBookNum(curUserId,NoteBookStatusEnum.RUN.getCode());
+    public int getNoteBookRunNumber() {
+        return noteBookMapper.selectRunNoteBookNum(NoteBookStatusEnum.RUN.getCode());
     }
 
     /**
@@ -720,8 +738,7 @@ public class NoteBookServiceImpl implements NoteBookService {
     public List<NoteBookVO> getNotebookDetail(Set<Long> noteBookIds) {
         QueryWrapper<NoteBook> queryWrapper = new QueryWrapper<>();
         queryWrapper.in("id",noteBookIds);
-        queryWrapper.eq("user_id",NotebookUtil.getCurUserId());
-        queryWrapper.ne("status",NoteBookStatusEnum.DELETE.getCode());
+        queryWrapper.ne(NoteBook.COLUMN_STATUS,NoteBookStatusEnum.DELETE.getCode());
         List<NoteBook> noteBookList =  noteBookMapper.selectList(queryWrapper);
         return noteBookConvert.toDto(noteBookList);
     }

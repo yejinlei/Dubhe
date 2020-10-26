@@ -23,9 +23,8 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * @desc:  业务模块
- *
- * @date 2020.05.25
+ * @description 业务模块
+ * @date 2020-05-25
  */
 @Getter
 public enum BizEnum {
@@ -38,6 +37,10 @@ public enum BizEnum {
      * 算法管理
      */
     ALGORITHM("算法管理","algorithm",1),
+    /**
+     * 模型管理
+     */
+    MODEL("模型管理","model",2),
     ;
 
     /**

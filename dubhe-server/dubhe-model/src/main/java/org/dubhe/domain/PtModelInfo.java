@@ -103,6 +103,12 @@ public class PtModelInfo extends BaseEntity {
     @TableField(value = "total_num")
     private Integer totalNum;
 
+    /**
+     * 资源拥有者ID
+     */
+    @TableField(value = "origin_user_id",fill = FieldFill.INSERT)
+    private Long originUserId;
+
     public void copy(PtModelInfo source) {
         BeanUtil.copyProperties(source, this, CopyOptions.create().setIgnoreNullValue(true));
     }

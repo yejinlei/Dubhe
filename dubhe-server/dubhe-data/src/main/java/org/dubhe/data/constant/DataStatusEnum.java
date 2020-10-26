@@ -48,4 +48,5 @@ public enum DataStatusEnum {
 
     private int value;
     private String msg;
+
 }

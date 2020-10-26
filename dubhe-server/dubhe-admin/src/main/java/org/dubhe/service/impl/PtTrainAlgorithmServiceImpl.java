@@ -24,10 +24,13 @@ import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.collections4.map.HashedMap;
+import org.dubhe.annotation.DataPermissionMethod;
+import org.dubhe.async.TrainAlgorithmUploadAsync;
 import org.dubhe.base.MagicNumConstant;
 import org.dubhe.base.ResponseCode;
 import org.dubhe.config.NfsConfig;
 import org.dubhe.constant.AlgorithmSourceEnum;
+import org.dubhe.config.RecycleConfig;
 import org.dubhe.constant.TrainAlgorithmConstant;
 import org.dubhe.dao.NoteBookMapper;
 import org.dubhe.dao.PtImageMapper;
@@ -38,13 +41,11 @@ import org.dubhe.domain.entity.NoteBook;
 import org.dubhe.domain.entity.PtImage;
 import org.dubhe.domain.entity.PtTrainAlgorithm;
 import org.dubhe.domain.vo.PtTrainAlgorithmQueryVO;
-import org.dubhe.enums.BizNfsEnum;
-import org.dubhe.enums.ImageSourceEnum;
-import org.dubhe.enums.ImageStateEnum;
-import org.dubhe.enums.LogEnum;
+import org.dubhe.enums.*;
 import org.dubhe.exception.BusinessException;
 import org.dubhe.service.NoteBookService;
 import org.dubhe.service.PtTrainAlgorithmService;
+import org.dubhe.service.RecycleTaskService;
 import org.dubhe.utils.*;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -75,6 +76,9 @@ public class PtTrainAlgorithmServiceImpl implements PtTrainAlgorithmService {
     private NfsUtil nfsUtil;
 
     @Autowired
+    private LocalFileUtil localFileUtil;
+
+    @Autowired
     private K8sNameTool k8sNameTool;
 
     @Autowired
@@ -89,10 +93,19 @@ public class PtTrainAlgorithmServiceImpl implements PtTrainAlgorithmService {
     @Autowired
     private NoteBookMapper noteBookMapper;
 
-    public final static List<String> filedNames;
+    @Autowired
+    private TrainAlgorithmUploadAsync algorithmUpdateAsync;
+
+    @Autowired
+    private RecycleTaskService recycleTaskService;
+
+    @Autowired
+    private RecycleConfig recycleConfig;
+
+    public final static List<String> FIELD_NAMES;
 
     static {
-        filedNames = ReflectionUtils.getFieldNames(PtTrainAlgorithmQueryVO.class);
+        FIELD_NAMES = ReflectionUtils.getFieldNames(PtTrainAlgorithmQueryVO.class);
     }
 
     /**
@@ -102,6 +115,7 @@ public class PtTrainAlgorithmServiceImpl implements PtTrainAlgorithmService {
      * @return Map<String, Object>  返回查询数据
      */
     @Override
+    @DataPermissionMethod(dataType = DatasetTypeEnum.PUBLIC)
     public Map<String, Object> queryAll(PtTrainAlgorithmQueryDTO ptTrainAlgorithmQueryDTO) {
         //从会话中获取用户信息
         UserDTO user = JwtUtils.getCurrentUserDto();
@@ -128,7 +142,7 @@ public class PtTrainAlgorithmServiceImpl implements PtTrainAlgorithmService {
         Page page = ptTrainAlgorithmQueryDTO.toPage();
         IPage<PtTrainAlgorithm> ptTrainAlgorithms;
         try {
-            if (ptTrainAlgorithmQueryDTO.getSort() != null && filedNames.contains(ptTrainAlgorithmQueryDTO.getSort())) {
+            if (ptTrainAlgorithmQueryDTO.getSort() != null && FIELD_NAMES.contains(ptTrainAlgorithmQueryDTO.getSort())) {
                 if (Constant.SORT_ASC.equalsIgnoreCase(ptTrainAlgorithmQueryDTO.getOrder())) {
                     wrapper.orderByAsc(StringUtils.humpToLine(ptTrainAlgorithmQueryDTO.getSort()));
                 } else {
@@ -166,14 +180,9 @@ public class PtTrainAlgorithmServiceImpl implements PtTrainAlgorithmService {
         //从会话中获取用户信息
         UserDTO user = JwtUtils.getCurrentUserDto();
         LogUtil.info(LogEnum.BIZ_TRAIN, "Save the new algorithm and receive the parameter {}", ptTrainAlgorithmCreateDTO);
-        // 校验path
-        if (!(k8sNameTool.validateBizNfsPath(ptTrainAlgorithmCreateDTO.getCodeDir(), BizNfsEnum.ALGORITHM))) {
-            LogUtil.error(LogEnum.BIZ_TRAIN, "The user {} passed in the path {} is not valid", user.getUsername(), ptTrainAlgorithmCreateDTO.getCodeDir());
-            throw new BusinessException("路径名称不合法");
-        }
         //获取镜像url
         if (StringUtils.isNotBlank(ptTrainAlgorithmCreateDTO.getImageName()) && StringUtils.isNotBlank(ptTrainAlgorithmCreateDTO.getImageTag())) {
-            ptTrainAlgorithmCreateDTO.setImageName(getImages(ptTrainAlgorithmCreateDTO, user));
+            ptTrainAlgorithmCreateDTO.setImageName(getImageUrl(ptTrainAlgorithmCreateDTO, user));
         }
         //创建算法校验DTO并设置默认值
         setAlgorithmDtoDefault(ptTrainAlgorithmCreateDTO);
@@ -192,7 +201,6 @@ public class PtTrainAlgorithmServiceImpl implements PtTrainAlgorithmService {
         //算法名称校验
         QueryWrapper<PtTrainAlgorithm> queryWrapper = new QueryWrapper<>();
         queryWrapper.eq("algorithm_name", ptTrainAlgorithmCreateDTO.getAlgorithmName());
-        queryWrapper.eq("create_user_id", user.getId());
         Integer countResult = ptTrainAlgorithmMapper.selectCount(queryWrapper);
         //如果是通过【保存至算法】接口创建算法，名称重复可用随机数生成新算法名，待后续客户自主修改
         if (countResult > 0) {
@@ -208,28 +216,12 @@ public class PtTrainAlgorithmServiceImpl implements PtTrainAlgorithmService {
         if (path.toLowerCase().endsWith(Constant.COMPRESS_ZIP)) {
             unZip(user, path, ptTrainAlgorithm);
         }
-        //校验创建算法来源(true:由fork创建算法，false：其它创建算法方式),若为true则拷贝预置算法文件至新路径
-        if (ptTrainAlgorithmCreateDTO.getFork()) {
-            //生成算法相对路径
-            String algorithmPath = k8sNameTool.getNfsPath(BizNfsEnum.ALGORITHM, user.getId());
-            //拷贝预置算法文件夹
-            boolean copyResult = nfsUtil.copyPath(path, nfsConfig.getBucket() + algorithmPath);
-            if (!copyResult) {
-                LogUtil.error(LogEnum.BIZ_TRAIN, "The user {} copied the preset algorithm path {} successfully", user.getUsername(), path);
-                throw new BusinessException("内部错误");
-            }
-            ptTrainAlgorithm.setCodeDir(algorithmPath);
-        }
-
         try {
             //算法未保存成功，抛出异常，并返回失败信息
             ptTrainAlgorithmMapper.insert(ptTrainAlgorithm);
 
-            //保存算法根据notbookId更新算法id
-            if (ptTrainAlgorithmCreateDTO.getNoteBookId() != null) {
-                LogUtil.info(LogEnum.BIZ_TRAIN, "Save algorithm Update algorithm ID :{} according to notBookId:{}", ptTrainAlgorithmCreateDTO.getNoteBookId(), ptTrainAlgorithm.getId());
-                noteBookService.updateTrainIdByNoteBookId(ptTrainAlgorithmCreateDTO.getNoteBookId(), ptTrainAlgorithm.getId());
-            }
+            //上传算法异步处理
+            algorithmUpdateAsync.createTrainAlgorithm(user, ptTrainAlgorithm, ptTrainAlgorithmCreateDTO);
         } catch (Exception e) {
             LogUtil.error(LogEnum.BIZ_TRAIN, "The user {} saving algorithm was not successful. Failure reason :{}", user.getUsername(), e.getMessage());
             throw new BusinessException("算法未保存成功");
@@ -263,7 +255,6 @@ public class PtTrainAlgorithmServiceImpl implements PtTrainAlgorithmService {
             //算法名称校验
             QueryWrapper<PtTrainAlgorithm> queryWrapper = new QueryWrapper<>();
             queryWrapper.eq("algorithm_name", ptTrainAlgorithmUpdateDTO.getAlgorithmName())
-                    .eq("create_user_id", currentUser.getId())
                     .ne("id", ptTrainAlgorithmUpdateDTO.getId());
             Integer countResult = ptTrainAlgorithmMapper.selectCount(queryWrapper);
             if (countResult > 0) {
@@ -300,28 +291,22 @@ public class PtTrainAlgorithmServiceImpl implements PtTrainAlgorithmService {
     }
 
     /**
-     *  解压缩zip压缩包
+     * 解压缩zip压缩包
      *
-     * @param user              用户
-     * @param path              文件路径
-     * @param ptTrainAlgorithm  算法参数
+     * @param user             用户
+     * @param path             文件路径
+     * @param ptTrainAlgorithm 算法参数
      */
     private void unZip(UserDTO user, String path, PtTrainAlgorithm ptTrainAlgorithm) {
-        String[] pathArray = path.split(StrUtil.SLASH);
-        String pathSuffix = pathArray[pathArray.length - 1];
-        String targetPath = path.replace(pathSuffix, "");
-        //上传路径垃圾文件清理
-        Boolean aBoolean = nfsUtil.cleanPath(path, targetPath);
-        if (!aBoolean) {
-            LogUtil.error(LogEnum.BIZ_TRAIN, "User {} failed to clean up {} garbage", user.getUsername(), targetPath);
-        }
-        Boolean unzip = nfsUtil.unzip(path, targetPath);
+        //目标路径
+        String targetPath = k8sNameTool.getNfsPath(BizNfsEnum.ALGORITHM, user.getId());
+        boolean unzip = localFileUtil.unzipLocalPath(path, nfsConfig.getBucket() + targetPath);
         if (!unzip) {
             LogUtil.error(LogEnum.BIZ_TRAIN, "User {} failed to unzip", user.getUsername());
             throw new BusinessException("内部错误");
         }
         //算法路径
-        ptTrainAlgorithm.setCodeDir(StrUtil.SLASH + path.replace(nfsConfig.getBucket(), "").replace(pathSuffix, ""));
+        ptTrainAlgorithm.setCodeDir(targetPath);
     }
 
     /**
@@ -331,6 +316,7 @@ public class PtTrainAlgorithmServiceImpl implements PtTrainAlgorithmService {
      */
     @Override
     @Transactional(rollbackFor = Exception.class)
+    @DataPermissionMethod(dataType = DatasetTypeEnum.PUBLIC)
     public void deleteAll(PtTrainAlgorithmDeleteDTO ptTrainAlgorithmDeleteDTO) {
         //从会话中获取用户信息
         UserDTO user = JwtUtils.getCurrentUserDto();
@@ -338,10 +324,9 @@ public class PtTrainAlgorithmServiceImpl implements PtTrainAlgorithmService {
         Set<Long> idList = ptTrainAlgorithmDeleteDTO.getIds();
         //权限校验
         QueryWrapper<PtTrainAlgorithm> query = new QueryWrapper<>();
-        query.eq("create_user_id", user.getId());
         query.in("id", idList);
-        Integer queryCountResult = ptTrainAlgorithmMapper.selectCount(query);
-        if (queryCountResult < idList.size()) {
+        List<PtTrainAlgorithm> algorithmList = ptTrainAlgorithmMapper.selectList(query);
+        if (algorithmList.size() < idList.size()) {
             LogUtil.error(LogEnum.BIZ_TRAIN, "User {} delete algorithm failed, no permission to delete the corresponding data in the algorithm table", user.getUsername());
             throw new BusinessException(ResponseCode.SUCCESS, "您删除的ID不存在或已被删除");
         }
@@ -352,7 +337,6 @@ public class PtTrainAlgorithmServiceImpl implements PtTrainAlgorithmService {
         }
         //同步更新noteBook表中algorithmId=0
         QueryWrapper<NoteBook> queryWrapper = new QueryWrapper<>();
-        queryWrapper.eq("user_id", user.getId());
         queryWrapper.in("algorithm_id", idList);
         List<NoteBook> noteBookList = noteBookMapper.selectList(queryWrapper);
         if (!CollectionUtils.isEmpty(noteBookList)) {
@@ -360,6 +344,17 @@ public class PtTrainAlgorithmServiceImpl implements PtTrainAlgorithmService {
                 noteBookService.updateTrainIdByNoteBookId(noteBook.getId(), null);
             });
         }
+        //定时任务删除相应的算法文件
+        for (PtTrainAlgorithm algorithm : algorithmList) {
+            RecycleTaskCreateDTO recycleTask = new RecycleTaskCreateDTO();
+            recycleTask.setRecycleModule(RecycleModuleEnum.BIZ_ALGORITHM.getValue())
+                    .setRecycleType(RecycleTypeEnum.FILE.getCode())
+                    .setRecycleDelayDate(recycleConfig.getAlgorithmValid())
+                    .setRecycleCondition(nfsUtil.formatPath(nfsConfig.getRootDir() + nfsConfig.getBucket() + algorithm.getCodeDir()))
+                    .setRecycleNote("删除算法文件");
+            recycleTaskService.createRecycleTask(recycleTask);
+        }
+
         LogUtil.info(LogEnum.BIZ_TRAIN, "User {} delete algorithm end, delete algorithm ID array IDS ={}", user.getUsername(), idList);
     }
 
@@ -374,7 +369,6 @@ public class PtTrainAlgorithmServiceImpl implements PtTrainAlgorithmService {
         UserDTO user = JwtUtils.getCurrentUserDto();
         LogUtil.info(LogEnum.BIZ_TRAIN, "The user {} queries his algorithm number", user.getUsername());
         QueryWrapper<PtTrainAlgorithm> wrapper = new QueryWrapper();
-        wrapper.eq("create_user_id", user.getId());
         wrapper.eq("algorithm_source", AlgorithmSourceEnum.MINE.getStatus());
         Integer countResult = ptTrainAlgorithmMapper.selectCount(wrapper);
         return new HashedMap() {{
@@ -385,8 +379,8 @@ public class PtTrainAlgorithmServiceImpl implements PtTrainAlgorithmService {
     /**
      * 获取镜像名称与版本
      *
-     * @param trainAlgorithm                       镜像URL
-     * @param ptTrainAlgorithmQueryVO              镜像名称与版本
+     * @param trainAlgorithm          镜像URL
+     * @param ptTrainAlgorithmQueryVO 镜像名称与版本
      */
     private void getImageNameAndImageTag(PtTrainAlgorithm trainAlgorithm, PtTrainAlgorithmQueryVO ptTrainAlgorithmQueryVO) {
         if (StringUtils.isNotBlank(trainAlgorithm.getImageName())) {
@@ -426,37 +420,22 @@ public class PtTrainAlgorithmServiceImpl implements PtTrainAlgorithmService {
     /**
      * 获取镜像url
      *
-     * @param ptTrainAlgorithmCreateDTO   获取镜像
-     * @param user                        用户
+     * @param ptTrainAlgorithmCreateDTO 获取镜像
+     * @param user                      用户
      * @return String  返回镜像路径
      **/
-    private String getImages(PtTrainAlgorithmCreateDTO ptTrainAlgorithmCreateDTO, UserDTO user) {
+    private String getImageUrl(PtTrainAlgorithmCreateDTO ptTrainAlgorithmCreateDTO, UserDTO user) {
         //获取镜像url
         QueryWrapper<PtImage> queryWrapper = new QueryWrapper<>();
-        queryWrapper.eq("image_name", ptTrainAlgorithmCreateDTO.getImageName());
-        queryWrapper.eq("image_tag", ptTrainAlgorithmCreateDTO.getImageTag());
-        queryWrapper.eq("image_status", ImageStateEnum.SUCCESS.getCode());
-        List<PtImage> ptImages = ptImageMapper.selectList(queryWrapper);
-        if (CollectionUtils.isEmpty(ptImages)) {
+        queryWrapper.eq("image_name", ptTrainAlgorithmCreateDTO.getImageName())
+                .eq("image_tag", ptTrainAlgorithmCreateDTO.getImageTag())
+                .eq("image_status", ImageStateEnum.SUCCESS.getCode()).last(" limit 1 ");
+        ;
+        PtImage ptImage = ptImageMapper.selectOne(queryWrapper);
+        if (ptImage == null || StringUtils.isBlank(ptImage.getImageUrl())) {
             LogUtil.error(LogEnum.BIZ_TRAIN, "User {} gets image ,the imageName is {}, the imageTag is {}, and the result of query image table (PT_image) is empty", user.getUsername(), ptTrainAlgorithmCreateDTO.getImageName(), ptTrainAlgorithmCreateDTO.getImageTag());
             throw new BusinessException("镜像不存在");
         }
-        //获取镜像为用户自定义镜像或预置镜像，且两者自身不能重复
-        if (ptImages.size() > MagicNumConstant.TWO) {
-            LogUtil.error(LogEnum.BIZ_TRAIN, "User {} got more images than scheduled, the imageName provided is {} and the imageTag is {}. The parameters are illegal", user.getUsername(), ptTrainAlgorithmCreateDTO.getImageName(), ptTrainAlgorithmCreateDTO.getImageTag());
-            throw new BusinessException("镜像不合法");
-        }
-        for (PtImage ptImage : ptImages) {
-            if (ImageSourceEnum.PRE.getCode().equals(ptImage.getImageResource())) {
-                ptTrainAlgorithmCreateDTO.setImageName(ptImage.getImageUrl());
-            } else if (user.getId().equals(ptImage.getCreateUserId())) {
-                ptTrainAlgorithmCreateDTO.setImageName(ptImage.getImageUrl());
-            }
-        }
-        if (StringUtils.isBlank(ptTrainAlgorithmCreateDTO.getImageName())) {
-            LogUtil.error(LogEnum.BIZ_TRAIN, "User {} gets image, the imageName provided is {} and the imageTag is {}. The parameters are illegal", user.getUsername(), ptTrainAlgorithmCreateDTO.getImageName(), ptTrainAlgorithmCreateDTO.getImageTag());
-            throw new BusinessException("镜像不合法");
-        }
-        return ptTrainAlgorithmCreateDTO.getImageName();
+        return ptImage.getImageUrl();
     }
 }

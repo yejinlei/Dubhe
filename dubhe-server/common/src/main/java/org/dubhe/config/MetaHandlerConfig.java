@@ -1,12 +1,12 @@
 /**
  * Copyright 2020 Zhejiang Lab. All Rights Reserved.
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  * http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -30,21 +30,17 @@ import java.util.Objects;
 
 /**
  * @description 处理新增和更新的基础数据填充，配合BaseEntity和MyBatisPlusConfig使用
- * @date 2020-6-10
+ * @date 2020-06-10
  */
 @Component
 public class MetaHandlerConfig implements MetaObjectHandler {
 
 
-    private final String LOCK_USER_ID = "LOCK_USER_ID";
-
-
     /**
      * 新增数据执行
      *
-     * @param metaObject
+     * @param metaObject 基础数据
      */
-
     @Override
     public void insertFill(MetaObject metaObject) {
         if (Objects.isNull(getFieldValByName(StringConstant.CREATE_TIME, metaObject))) {
@@ -53,13 +49,14 @@ public class MetaHandlerConfig implements MetaObjectHandler {
         if (Objects.isNull(getFieldValByName(StringConstant.UPDATE_TIME, metaObject))) {
             this.setFieldValByName(StringConstant.UPDATE_TIME, DateUtil.getCurrentTimestamp(), metaObject);
         }
-        synchronized (LOCK_USER_ID){
-            if (Objects.isNull(getFieldValByName(StringConstant.UPDATE_USER_ID, metaObject))) {
-                this.setFieldValByName(StringConstant.UPDATE_USER_ID, getUserId(), metaObject);
-            }
-            if (Objects.isNull(getFieldValByName(StringConstant.CREATE_USER_ID, metaObject))) {
-                this.setFieldValByName(StringConstant.CREATE_USER_ID, getUserId(), metaObject);
-            }
+        if (Objects.isNull(getFieldValByName(StringConstant.UPDATE_USER_ID, metaObject))) {
+            this.setFieldValByName(StringConstant.UPDATE_USER_ID, getUserId(), metaObject);
+        }
+        if (Objects.isNull(getFieldValByName(StringConstant.CREATE_USER_ID, metaObject))) {
+            this.setFieldValByName(StringConstant.CREATE_USER_ID, getUserId(), metaObject);
+        }
+        if (Objects.isNull(getFieldValByName(StringConstant.ORIGIN_USER_ID, metaObject))) {
+            this.setFieldValByName(StringConstant.ORIGIN_USER_ID, getUserId(), metaObject);
         }
         if (Objects.isNull(getFieldValByName(StringConstant.DELETED, metaObject))) {
             this.setFieldValByName(StringConstant.DELETED, SwitchEnum.getBooleanValue(SwitchEnum.OFF.getValue()), metaObject);
@@ -69,7 +66,7 @@ public class MetaHandlerConfig implements MetaObjectHandler {
     /**
      * 更新数据执行
      *
-     * @param metaObject
+     * @param metaObject 基础数据
      */
     @Override
     public void updateFill(MetaObject metaObject) {

@@ -24,7 +24,7 @@ import java.io.Serializable;
 import java.sql.Timestamp;
 
 /**
- * @description: 算法用途返回列表
+ * @description 算法用途返回列表
  * @date 2020-06-23
  */
 @Data
@@ -35,17 +35,11 @@ public class PtTrainAlgorithmUsageQueryVO implements Serializable {
     @ApiModelProperty(value = "ID")
     private Long id;
 
-    @ApiModelProperty(value = "用户ID")
-    private Long userId;
-
     @ApiModelProperty(value = "类型")
     private String type;
 
     @ApiModelProperty(value = "辅助信息")
     private String auxInfo;
-
-    @ApiModelProperty(value = "辅助信息")
-    private Boolean deleted;
 
     @ApiModelProperty(value = "创建时间")
     private Timestamp createTime;

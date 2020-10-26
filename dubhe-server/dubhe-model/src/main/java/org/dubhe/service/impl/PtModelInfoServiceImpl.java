@@ -19,24 +19,37 @@ package org.dubhe.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import org.dubhe.annotation.DataPermissionMethod;
+import org.dubhe.config.NfsConfig;
+import org.dubhe.config.RecycleConfig;
 import org.dubhe.dao.PtModelBranchMapper;
 import org.dubhe.dao.PtModelInfoMapper;
 import org.dubhe.domain.PtModelBranch;
 import org.dubhe.domain.PtModelInfo;
 import org.dubhe.domain.dto.*;
-import org.dubhe.domain.vo.*;
+import org.dubhe.domain.vo.PtModelInfoCreateVO;
+import org.dubhe.domain.vo.PtModelInfoDeleteVO;
+import org.dubhe.domain.vo.PtModelInfoQueryVO;
+import org.dubhe.domain.vo.PtModelInfoUpdateVO;
+import org.dubhe.enums.DatasetTypeEnum;
 import org.dubhe.enums.LogEnum;
+import org.dubhe.enums.RecycleModuleEnum;
+import org.dubhe.enums.RecycleTypeEnum;
 import org.dubhe.exception.BusinessException;
 import org.dubhe.service.PtModelBranchService;
 import org.dubhe.service.PtModelInfoService;
+import org.dubhe.service.RecycleTaskService;
 import org.dubhe.utils.*;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
@@ -55,16 +68,22 @@ public class PtModelInfoServiceImpl implements PtModelInfoService {
     @Autowired
     private PtModelBranchService ptModelBranchService;
 
-    private static final String SORT_ASC = "asc";
+    @Autowired
+    private NfsConfig nfsConfig;
 
-    private static final String SORT_DESC = "desc";
+    @Autowired
+    private NfsUtil nfsUtil;
 
-    private static final String ID = "id";
+    @Autowired
+    private RecycleTaskService recycleTaskService;
 
-    public final static List<String> filedNames;
+    @Autowired
+    private RecycleConfig recycleConfig;
+
+    public final static List<String> FIELD_NAMES;
 
     static {
-        filedNames = ReflectionUtils.getFieldNames(PtModelInfoQueryVO.class);
+        FIELD_NAMES = ReflectionUtils.getFieldNames(PtModelInfoQueryVO.class);
     }
 
     /**
@@ -74,6 +93,7 @@ public class PtModelInfoServiceImpl implements PtModelInfoService {
      * @return Map<String, Object> 模型管理分页对象
      */
     @Override
+    @DataPermissionMethod(dataType = DatasetTypeEnum.PUBLIC)
     public Map<String, Object> queryAll(PtModelInfoQueryDTO ptModelInfoQueryDTO) {
         //从会话中获取用户信息
         UserDTO user = JwtUtils.getCurrentUserDto();
@@ -81,29 +101,25 @@ public class PtModelInfoServiceImpl implements PtModelInfoService {
                 , null == ptModelInfoQueryDTO.getSize() ? 10 : ptModelInfoQueryDTO.getSize());
         LogUtil.info(LogEnum.BIZ_MODEL, "用户{}查询模型管理列表展示开始, 接收的参数为{}，Page{}", user.getUsername(), ptModelInfoQueryDTO, page);
         QueryWrapper<PtModelInfo> wrapper = new QueryWrapper<>();
-        wrapper.eq("create_user_id", user.getId());
 
         if (!StringUtils.isEmpty(ptModelInfoQueryDTO.getName())) {
             wrapper.and(qw -> qw.eq("id", ptModelInfoQueryDTO.getName()).or().like("name",
                     ptModelInfoQueryDTO.getName()));
         }
-
         if (ptModelInfoQueryDTO.getModelResource() == null || ptModelInfoQueryDTO.getModelResource() == PtModelUtil.NUMBER_ZERO) {
             wrapper.eq("model_resource", PtModelUtil.NUMBER_ZERO);
         } else {
             wrapper.eq("model_resource", ptModelInfoQueryDTO.getModelResource());
         }
-
         if (!StringUtils.isEmpty(ptModelInfoQueryDTO.getModelClassName())) {
             wrapper.and(qw -> qw.like("model_type", ptModelInfoQueryDTO.getModelClassName()));
         }
-
         IPage<PtModelInfo> ptModelInfos = null;
         try {
-            String order = null == ptModelInfoQueryDTO.getOrder() ? SORT_DESC : ptModelInfoQueryDTO.getOrder();
-            if (ptModelInfoQueryDTO.getSort() != null && filedNames.contains(ptModelInfoQueryDTO.getSort())) {
+            String order = null == ptModelInfoQueryDTO.getOrder() ? PtModelUtil.SORT_DESC : ptModelInfoQueryDTO.getOrder();
+            if (ptModelInfoQueryDTO.getSort() != null && FIELD_NAMES.contains(ptModelInfoQueryDTO.getSort())) {
                 switch (order.toLowerCase()) {
-                    case SORT_ASC:
+                    case PtModelUtil.SORT_ASC:
                         wrapper.orderByAsc(StringUtils.humpToLine(ptModelInfoQueryDTO.getSort()));
                         break;
                     default:
@@ -111,7 +127,7 @@ public class PtModelInfoServiceImpl implements PtModelInfoService {
                         break;
                 }
             } else {
-                wrapper.orderByDesc(ID);
+                wrapper.orderByDesc(PtModelUtil.ID);
             }
             ptModelInfos = ptModelInfoMapper.selectPage(page, wrapper);
         } catch (Exception e) {
@@ -180,7 +196,6 @@ public class PtModelInfoServiceImpl implements PtModelInfoService {
         //权限校验
         QueryWrapper wrapper = new QueryWrapper<>();
         wrapper.eq("id", ptModelInfoUpdateDTO.getId());
-        wrapper.eq("create_user_id", user.getId());
         if (ptModelInfoMapper.selectCount(wrapper) < 1) {
             LogUtil.error(LogEnum.BIZ_MODEL, "用户{}修改模型未成功,没有权限在模型表中修改对应数据", user.getUsername());
             throw new BusinessException("您修改的ID不存在请重新输入");
@@ -218,7 +233,6 @@ public class PtModelInfoServiceImpl implements PtModelInfoService {
 
         //权限校验
         QueryWrapper query = new QueryWrapper<>();
-        query.eq("create_user_id", user.getId());
         query.in("id", ids);
         if (ptModelInfoMapper.selectCount(query) < ids.size()) {
             LogUtil.error(LogEnum.BIZ_MODEL, "用户{}删除模型列表未成功,没有权限在模型管理表中删除对应数据", user.getUsername());
@@ -244,6 +258,16 @@ public class PtModelInfoServiceImpl implements PtModelInfoService {
                 LogUtil.error(LogEnum.BIZ_MODEL, "用户{}删除模型版本未成功,根据id数组{}进行模型版本表删除操作失败", user.getUsername(), ids);
                 throw new BusinessException("模型删除失败");
             }
+            //定时任务删除相应的模型文件
+            RecycleTaskCreateDTO recycleTask = new RecycleTaskCreateDTO();
+            for (PtModelBranch ptModelBranch : ptModelBranches) {
+                recycleTask.setRecycleModule(RecycleModuleEnum.BIZ_MODEL.getValue())
+                        .setRecycleType(RecycleTypeEnum.FILE.getCode())
+                        .setRecycleDelayDate(recycleConfig.getModelValid())
+                        .setRecycleCondition(nfsUtil.formatPath(nfsConfig.getRootDir() + nfsConfig.getBucket() + ptModelBranch.getModelAddress()))
+                        .setRecycleNote("删除模型文件");
+                recycleTaskService.createRecycleTask(recycleTask);
+            }
         }
 
         //返回删除的模型管理参数id数组
@@ -252,4 +276,28 @@ public class PtModelInfoServiceImpl implements PtModelInfoService {
         LogUtil.info(LogEnum.BIZ_MODEL, "用户{}删除模型列表结束, 返回删除模型列表数组ids={}", user.getUsername(), ids);
         return ptModelInfoDeleteVO;
     }
+
+    /**
+     * 根据模型来源查询模型信息
+     *
+     * @param ptModelInfoQueryDTO 模型查询对象
+     * @return  PtModelInfoQueryVO 模型管理返回查询VO
+     */
+    @Override
+    @DataPermissionMethod(dataType = DatasetTypeEnum.PUBLIC)
+    public List<PtModelInfoQueryVO> findModelByResource(PtModelInfoQueryDTO ptModelInfoQueryDTO) {
+        UserDTO userDto = JwtUtils.getCurrentUserDto();
+        List<PtModelInfo> modelInfos = ptModelInfoMapper.findModelByResource(ptModelInfoQueryDTO.getModelResource(),userDto.getId());
+        ArrayList<PtModelInfoQueryVO> ptModelInfoQueryVOS=new ArrayList<>();
+        if(modelInfos!=null && modelInfos.size()!=0){
+            modelInfos.stream().forEach(ptModelInfo -> {
+                PtModelInfoQueryVO ptModelInfoQueryVO=new PtModelInfoQueryVO();
+                ptModelInfoQueryVO.setName(ptModelInfo.getName());
+                ptModelInfoQueryVO.setId(ptModelInfo.getId());
+                ptModelInfoQueryVOS.add(ptModelInfoQueryVO);
+            });
+        }
+        return ptModelInfoQueryVOS;
+    }
+
 }

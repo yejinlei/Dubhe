@@ -20,6 +20,7 @@ package org.dubhe.service;
 import java.util.List;
 
 import org.dubhe.domain.dto.PtTrainLogQueryDTO;
+import org.dubhe.k8s.domain.vo.PodVO;
 import org.dubhe.domain.vo.PtTrainLogQueryVO;
 
 /**
@@ -43,4 +44,12 @@ public interface PtTrainLogService {
      * @return String  字符串
      */
 	String getTrainLogString(List<String> content);
+
+    /**
+     * 获取训练任务的Pod
+     *
+     * @param id 训练作业job表 id
+     * @return 训练任务的Pod
+     */
+    List<PodVO> getPods(Long id);
 }

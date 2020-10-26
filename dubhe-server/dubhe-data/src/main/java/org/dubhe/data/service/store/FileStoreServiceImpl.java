@@ -34,7 +34,7 @@ public class FileStoreServiceImpl implements IStoreService {
      * read
      *
      * @param path 文件路径
-     * @return: String 读取的文件
+     * @return String 读取的文件
      */
     @Override
     public String read(String path) {

@@ -76,10 +76,13 @@ public class PtTrainJobCreateDTO extends BaseImageDTO {
     @NotNull(message = "类型(0为CPU，1为GPU)不能为空")
     private Integer resourcesPoolType;
 
-    @ApiModelProperty(value = "规格类型Id", required = true)
-    @NotNull(message = "规格类型id不能为空")
-    @Min(value = TrainUtil.NUMBER_ONE, message = "规格类型id必须不小于1")
-    private Integer trainJobSpecsId;
+    @ApiModelProperty(value = "规格名称", required = true)
+    @NotNull(message = "规格名称不能为空")
+    private String trainJobSpecsName;
+
+    @ApiModelProperty(value = "规格信息", required = true)
+    @NotNull(message = "规格信息不能为空")
+    private String trainJobSpecsInfo;
 
     @ApiModelProperty("true代表保存作业参数")
     private Boolean saveParams;
@@ -93,4 +96,55 @@ public class PtTrainJobCreateDTO extends BaseImageDTO {
     @Length(max = TrainUtil.NUMBER_TWO_HUNDRED_AND_FIFTY_FIVE, message = "作业参数描述-输入长度不能超过255个字符")
     private String trainParamDesc;
 
+    @ApiModelProperty(value = "训练类型 0：普通训练，1：分布式训练", required = true)
+    @Min(value = TrainUtil.NUMBER_ZERO, message = "训练类型错误")
+    @Max(value = TrainUtil.NUMBER_ONE, message = "训练类型错误")
+    @NotNull(message = "训练类型(0为普通训练，1为分布式训练)不能为空")
+    private Integer trainType;
+
+    @ApiModelProperty(value = "节点个数", required = true)
+    @Min(value = TrainUtil.NUMBER_ONE, message = "节点个数在1~8之间")
+    @Max(value = TrainUtil.NUMBER_EIGHT, message = "节点个数在1~8之间")
+    @NotNull(message = "节点个数")
+    private Integer resourcesPoolNode;
+
+    @ApiModelProperty("验证数据来源名称")
+    private String valDataSourceName;
+
+    @ApiModelProperty("验证数据来源路径")
+    private String valDataSourcePath;
+
+    @ApiModelProperty("是否验证数据集")
+    private Integer valType;
+
+    @ApiModelProperty(value = "训练延时启动时长，单位为小时")
+    @Min(value = TrainUtil.NUMBER_ZERO, message = "训练延时启动时长不能小于0小时")
+    @Max(value = TrainUtil.NUMBER_ONE_HUNDRED_AND_SIXTY_EIGHT, message = "训练延时启动时长不能大于168小时即时长不能超过一周（7*24小时）")
+    private Integer delayCreateTime;
+
+    @ApiModelProperty(value = "训练自动停止时长，单位为小时")
+    @Min(value = TrainUtil.NUMBER_ZERO, message = "训练自动停止时长不能小于0小时")
+    @Max(value = TrainUtil.NUMBER_ONE_HUNDRED_AND_SIXTY_EIGHT, message = "训练自动停止时长不能大于168小时即时长不能超过一周（7*24小时）")
+    private Integer delayDeleteTime;
+
+    @ApiModelProperty("资源拥有者ID")
+    private Long originUserId;
+
+    @ApiModelProperty(value = "训练信息(失败信息)")
+    private String trainMsg;
+
+    @ApiModelProperty(value = "是否打开模型选择")
+    private Integer modelType;
+
+    @ApiModelProperty(value = "模型类型(0我的模型1预置模型)")
+    private Integer modelResource;
+
+    @ApiModelProperty(value = "模型id")
+    private Integer modelId;
+
+    @ApiModelProperty(value = "模型路径")
+    private String modelLoadPathDir;
+
+    @ApiModelProperty(value = "模型名称")
+    private String modelName;
 }

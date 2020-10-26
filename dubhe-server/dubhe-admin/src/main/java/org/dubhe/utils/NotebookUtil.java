@@ -24,7 +24,6 @@ import cn.hutool.core.util.RandomUtil;
 import org.dubhe.constant.SymbolConstant;
 import org.dubhe.enums.BizNfsEnum;
 import org.dubhe.enums.LogEnum;
-import org.dubhe.exception.NotebookBizException;
 import org.dubhe.k8s.domain.PtBaseResult;
 import org.apache.shiro.UnavailableSecurityManagerException;
 import org.dubhe.domain.dto.UserDTO;
@@ -32,7 +31,7 @@ import org.dubhe.domain.dto.UserDTO;
 import java.util.Date;
 
 /**
- * @description: Notebook 工具类
+ * @description Notebook 工具类
  * @date 2020-04-27
  */
 public class NotebookUtil {

@@ -16,6 +16,7 @@
         <module>dubhe-data</module>
         <module>dubhe-model</module>
         <module>dubhe-k8s</module>
+        <module>dubhe-task</module>
     </modules>
     <name>之江天枢一站式人工智能开源平台</name>
     <parent>
@@ -42,11 +43,10 @@
         <mybatis-plus.version>3.3.1</mybatis-plus.version>
         <elasticsearch.version>7.4.2</elasticsearch.version>
         <docker.version>3.2.0</docker.version>
+        <captcha.version>1.6.2</captcha.version>
     </properties>
 
     <dependencies>
-        <!--Spring boot start-->
-
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-web</artifactId>
@@ -219,7 +219,25 @@
             <!-- use latest version https://github.com/docker-java/docker-java/releases -->
             <version>${docker.version}</version>
         </dependency>
+
+        <!-- for spring boot -->
+        <dependency>
+            <groupId>org.apache.shardingsphere</groupId>
+            <artifactId>sharding-jdbc-spring-boot-starter</artifactId>
+            <version>4.0.0-RC1</version>
+        </dependency>
+
     </dependencies>
+
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>com.github.whvcse</groupId>
+                <artifactId>easy-captcha</artifactId>
+                <version>${captcha.version}</version>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
 
     <build>
         <plugins>

@@ -35,9 +35,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
-
 import java.util.List;
-
 import static org.dubhe.constant.Permissions.DATA;
 
 /**
@@ -101,21 +99,21 @@ public class FileController {
         return new DataResponseBody();
     }
 
-    @ApiOperation(value = "文件详情", notes = "状态:0-未标注，1-标注中，2-自动标注完成，3-已标注完成")
-    @GetMapping(value = "/files/{fileId}/info")
+    @ApiOperation(value = "文件详情", notes = "状态:101-未标注，102-标注中，104-自动标注完成，105-已标注完成")
+    @GetMapping(value = "/files/{datasetId}/{fileId}/info")
     @RequiresPermissions(DATA)
-    public DataResponseBody get(@PathVariable(name = "fileId") Long fileId) {
-        return new DataResponseBody(fileService.get(fileId));
+    public DataResponseBody get(@PathVariable(name = "fileId") Long fileId,@PathVariable(name = "datasetId") Long datasetId) {
+        return new DataResponseBody(fileService.get(fileId,datasetId));
     }
 
-    @ApiOperation(value = "文件查询", notes = "状态:0-未标注，1-标注中，2-自动标注完成，3-已标注完成")
+    @ApiOperation(value = "文件查询", notes = "状态:101-未标注，102-标注中，104-自动标注完成，105-已标注完成")
     @GetMapping(value = "/{datasetId}/files")
     @RequiresPermissions(DATA)
     public DataResponseBody query(@PathVariable(name = "datasetId") Long datasetId, Page page, FileQueryCriteriaVO fileQueryCriteria) {
         return new DataResponseBody(fileService.listVO(datasetId, page, fileQueryCriteria));
     }
 
-    @ApiOperation(value = "文件查询，物体检测标注页面使用", notes = "状态:0-未标注，1-标注中，2-自动标注完成，3-已标注完成")
+    @ApiOperation(value = "文件查询，物体检测标注页面使用", notes = "状态:101-未标注，102-标注中，104-自动标注完成，105-已标注完成")
     @GetMapping(value = "/{datasetId}/files/detection")
     @RequiresPermissions(DATA)
     public DataResponseBody query(@PathVariable(name = "datasetId") Long datasetId,
@@ -167,15 +165,15 @@ public class FileController {
 
     @ApiOperation("获取MinIO相关信息")
     @GetMapping(value = "/minio/info")
-    public DataResponseBody getMinIOInfo() throws Throwable {
+    public DataResponseBody getMinIOInfo() {
         return new DataResponseBody(fileService.getMinIOInfo());
     }
 
     @ApiOperation("获取文件对应增强文件列表")
-    @GetMapping(value = "/{fileId}/enhanceFileList")
+    @GetMapping(value = "/{datasetId}/{fileId}/enhanceFileList")
     @RequiresPermissions(DATA)
-    public DataResponseBody getEnhanceFileList(@PathVariable(value = "fileId") Long fileId) {
-        return new DataResponseBody(fileService.getEnhanceFileList(fileId));
+    public DataResponseBody getEnhanceFileList(@PathVariable(value = "fileId") Long fileId,@PathVariable(value = "datasetId") Long datasetId) {
+        return new DataResponseBody(fileService.getEnhanceFileList(fileId,datasetId));
     }
 
 }

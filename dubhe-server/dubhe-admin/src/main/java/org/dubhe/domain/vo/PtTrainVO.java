@@ -25,7 +25,7 @@ import java.io.Serializable;
 import java.sql.Timestamp;
 
 /**
- * @description: 训练查询结果
+ * @description 训练查询结果
  * @date 2020-04-27
  */
 @Data
@@ -63,4 +63,7 @@ public class PtTrainVO implements Serializable {
 
     @ApiModelProperty("数据来源名称")
     private String dataSourceName;
+
+    @ApiModelProperty("资源拥有者ID")
+    private Long originUserId;
 }

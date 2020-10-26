@@ -16,15 +16,14 @@
  */
 
 package org.dubhe.domain.entity;
-import java.io.Serializable;
-
-import org.dubhe.base.MagicNumConstant;
-
-import com.alibaba.fastjson.annotation.JSONField;
 
 import cn.hutool.core.date.DateUtil;
+import com.alibaba.fastjson.annotation.JSONField;
 import lombok.Data;
 import lombok.experimental.Accessors;
+import org.dubhe.base.MagicNumConstant;
+
+import java.io.Serializable;
 
 /**
  * @description 日志对象封装类
@@ -34,31 +33,27 @@ import lombok.experimental.Accessors;
 @Accessors(chain = true)
 public class LogInfo implements Serializable {
 
-	@JSONField(ordinal = MagicNumConstant.ONE)
-	private String traceId;
+    private static final long serialVersionUID = 5250395474667395607L;
 
-	@JSONField(ordinal = MagicNumConstant.TWO)
-	private String type;
+    @JSONField(ordinal = MagicNumConstant.ONE)
+    private String traceId;
 
-	@JSONField(ordinal = MagicNumConstant.THREE)
-	private String level;
+    @JSONField(ordinal = MagicNumConstant.TWO)
+    private String type;
 
-	@JSONField(ordinal = MagicNumConstant.FOUR)
-	private String cName;
+    @JSONField(ordinal = MagicNumConstant.THREE)
+    private String level;
 
-	@JSONField(ordinal = MagicNumConstant.FIVE)
-	private String mName;
-	
-	@JSONField(ordinal = MagicNumConstant.SIX)
-	private String line;
-	
-	@JSONField(ordinal = MagicNumConstant.SEVEN)
-	private String time = DateUtil.now();
+    @JSONField(ordinal = MagicNumConstant.FOUR)
+    private String location;
 
-	@JSONField(ordinal = MagicNumConstant.EIGHT)
-	private Object info;
+    @JSONField(ordinal = MagicNumConstant.FIVE)
+    private String time = DateUtil.now();
 
-	public void setInfo(Object info) {
-		this.info = info;
-	}
+    @JSONField(ordinal = MagicNumConstant.SIX)
+    private Object info;
+
+    public void setInfo(Object info) {
+        this.info = info;
+    }
 }

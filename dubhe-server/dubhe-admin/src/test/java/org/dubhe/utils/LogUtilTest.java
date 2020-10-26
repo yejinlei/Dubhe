@@ -24,7 +24,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.junit4.SpringRunner;
 
 /**
- * @description: LogUtil 工具测试类
+ * @description LogUtil 工具测试类
  * @date 2020-6-19
  */
 @RunWith(SpringRunner.class)

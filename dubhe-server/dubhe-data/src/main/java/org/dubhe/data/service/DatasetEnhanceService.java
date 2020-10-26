@@ -42,7 +42,7 @@ public interface DatasetEnhanceService {
     /**
      * 增强任务完成
      *
-     * @param datasetEnhanceFinishDTO 增强任务参数
+     * @param datasetEnhanceFinishDTO 数据集增强完成详情
      */
     void enhanceFinish(DatasetEnhanceFinishDTO datasetEnhanceFinishDTO);
 

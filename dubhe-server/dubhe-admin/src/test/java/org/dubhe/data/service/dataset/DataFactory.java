@@ -17,14 +17,14 @@
 
 package org.dubhe.data.service.dataset;
 
-import org.dubhe.data.constant.DatasetTypeEnum;
+import org.dubhe.enums.DatasetTypeEnum;
 import org.dubhe.data.domain.dto.DatasetCreateDTO;
 import org.dubhe.data.domain.dto.DatasetVersionCreateDTO;
 import java.util.UUID;
 
 /**
- * 使用简单工厂模式 生成测试数据
- * @create: 2020-05-15 09:42
+ * @description 使用简单工厂模式 生成测试数据
+ * @date 2020-05-15 09:42
  */
 public class DataFactory {
 
@@ -47,9 +47,9 @@ public class DataFactory {
 
     /**
      * 数据集版本发布用
-     * @param id
-     * @param versionNum
-     * @param versionNote
+     * @param id           数据集ID
+     * @param versionNum   版本名称
+     * @param versionNote  版本说明
      * @return
      */
     public static DatasetVersionCreateDTO datasetVersionPublish(Long id, String versionNum, String versionNote) {

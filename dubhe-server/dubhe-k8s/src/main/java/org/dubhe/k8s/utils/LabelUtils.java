@@ -130,7 +130,7 @@ public class LabelUtils {
      *
      * @param key 标签健
      * @param value 标签值
-     * @return
+     * @return Map<String, String> map
      */
     public static Map<String, String> withEnvLabel(String key, String value) {
         Map<String, String> labels = withEnvResourceName();

@@ -14,31 +14,28 @@
  * limitations under the License.
  * =============================================================
  */
-
 package org.dubhe.annotation;
 
+/**
+ * @description  数据权限注解
+ * @date 2020-09-24
+ */
 import java.lang.annotation.*;
 
-/**
- * 数据权限过滤Mapper拦截
- *
- * @date 2020-06-22
- */
 @Target({ElementType.METHOD, ElementType.TYPE})
 @Retention(RetentionPolicy.RUNTIME)
 @Documented
 public @interface DataPermission {
 
     /**
-     * 不需要数据权限的方法名
-     */
-    String[] ignores() default {};
-
-    /**
-     * 只在方法的注解上使用，代表方法的数据权限类型，如果不加注解，只会识别带"select"方法名的方法
-     *
+     * 只在类的注解上使用，代表方法的数据权限类型
      * @return
      */
-    String[] permission() default {};
+    String permission() default "";
 
+    /**
+     * 不需要数据权限的方法名
+     * @return
+     */
+    String[] ignoresMethod() default {};
 }

@@ -24,7 +24,7 @@ import lombok.experimental.Accessors;
 import java.util.List;
 
 /**
- * @description: 训练日志 查询VO
+ * @description 训练日志 查询VO
  * @date 2020-05-08
  */
 @Data
@@ -44,7 +44,7 @@ public class PtTrainLogQueryVO {
     @ApiModelProperty(value = "结束行")
     private Integer endLine;
 
-    @ApiModelProperty(value = "lines")
+    @ApiModelProperty(value = "查询行数")
     private Integer lines;
 
 }

@@ -48,6 +48,5 @@ output/
 .classpath
 logs/
 /dubhe-k8s/src/main/resources/kubeconfig
-/dubhe-k8s/src/main/resources
 *.log
 /dubhe-admin/kubeconfig

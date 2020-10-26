@@ -1,12 +1,12 @@
 /**
  * Copyright 2020 Zhejiang Lab. All Rights Reserved.
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  * http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -26,14 +26,17 @@ import java.io.Serializable;
 import java.sql.Timestamp;
 
 /**
- * @description: 根据jobId查询训练任务详情返回结果
- * @date: 2020-06-12
+ * @description 根据jobId查询训练任务详情返回结果
+ * @date 2020-06-12
  */
 @Data
 @Accessors(chain = true)
 public class PtTrainJobDetailQueryVO implements Serializable {
 
     private static final long serialVersionUID = 1L;
+
+    @ApiModelProperty("训练作业名")
+    private String trainName;
 
     @ApiModelProperty("jobID")
     private Long id;
@@ -71,8 +74,8 @@ public class PtTrainJobDetailQueryVO implements Serializable {
     @ApiModelProperty("可视化日志路径")
     private String visualizedLogPath;
 
-    @ApiModelProperty("规格ID")
-    private Integer trainJobSpecsId;
+    @ApiModelProperty("规格名称")
+    private String trainJobSpecsName;
 
     @ApiModelProperty("类型(0为CPU，1为GPU)")
     private Integer resourcesPoolType;
@@ -131,5 +134,33 @@ public class PtTrainJobDetailQueryVO implements Serializable {
     @ApiModelProperty("P4推理速度（ms）")
     private Integer p4InferenceSpeed;
 
+    @ApiModelProperty(value = "算法文件路径")
+    private String algorithmCodeDir;
 
+    @ApiModelProperty("训练类型 0：普通训练，1：分布式训练")
+    private Integer trainType;
+
+    @ApiModelProperty("验证数据来源名称")
+    private String valDataSourceName;
+
+    @ApiModelProperty("验证数据来源路径")
+    private String valDataSourcePath;
+
+    @ApiModelProperty("是否验证数据集")
+    private Integer valType;
+
+    @ApiModelProperty("训练延时启动倒计时，单位：分钟")
+    private Integer delayCreateCountDown;
+
+    @ApiModelProperty("训练自动停止倒计时，单位：分钟")
+    private Integer delayDeleteCountDown;
+
+    @ApiModelProperty("资源拥有者ID")
+    private Long originUserId;
+
+    @ApiModelProperty("训练信息(失败信息)")
+    private String trainMsg;
+
+    @ApiModelProperty("模型名称")
+    private String modelName;
 }

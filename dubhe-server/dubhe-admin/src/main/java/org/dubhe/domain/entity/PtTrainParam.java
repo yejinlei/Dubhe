@@ -18,10 +18,7 @@
 package org.dubhe.domain.entity;
 
 import com.alibaba.fastjson.JSONObject;
-import com.baomidou.mybatisplus.annotation.IdType;
-import com.baomidou.mybatisplus.annotation.TableField;
-import com.baomidou.mybatisplus.annotation.TableId;
-import com.baomidou.mybatisplus.annotation.TableName;
+import com.baomidou.mybatisplus.annotation.*;
 import com.baomidou.mybatisplus.extension.handlers.FastjsonTypeHandler;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -111,10 +108,10 @@ public class PtTrainParam extends BaseEntity {
     private String logPath;
 
     /**
-     * 规格Id
+     * 规格名称
      */
-    @TableField(value = "train_job_specs_id")
-    private Integer trainJobSpecsId;
+    @TableField(value = "train_job_specs_name")
+    private String trainJobSpecsName;
 
     /**
      * 类型(0为CPU，1为GPU)
@@ -127,4 +124,61 @@ public class PtTrainParam extends BaseEntity {
      */
     @TableField(value = "resources_pool_node")
     private Integer resourcesPoolNode;
+
+    /**
+     * 验证数据集来源名称
+     */
+    @TableField(value = "val_data_source_name")
+    private String valDataSourceName;
+
+    /**
+     * 验证数据集来源路径
+     */
+    @TableField(value = "val_data_source_path")
+    private String valDataSourcePath;
+
+    /**
+     * 是否验证数据集
+     */
+    @TableField(value = "val_type")
+    private Integer valType;
+    /**
+     * 模型名称
+     */
+    @TableField(value = "model_name")
+    private String modelName;
+    /**
+     * 模型id
+     */
+    @TableField(value = "model_id")
+    private Integer modelId;
+    /**
+     * 模型来源
+     */
+    @TableField(value = "model_resource")
+    private Integer modelResource;
+    /**
+     * 模型类型
+     */
+    @TableField(value = "model_type")
+    private Integer modelType;
+    /**
+     * 模型路径
+     */
+    @TableField(value = "model_load_dir")
+    private String modelLoadPathDir;
+
+    /**
+     * 训练类型,0:普通训练，1：分布式训练
+     */
+    @TableField(value = "train_type")
+    private Integer trainType;
+
+    /**
+     * 资源拥有者ID
+     */
+    @TableField(value = "origin_user_id",fill = FieldFill.INSERT)
+    private Long originUserId;
+
 }
+

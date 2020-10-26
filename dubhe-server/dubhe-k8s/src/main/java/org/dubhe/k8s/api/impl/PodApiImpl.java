@@ -28,7 +28,6 @@ import io.fabric8.kubernetes.api.model.PodList;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClientException;
 import org.dubhe.constant.SymbolConstant;
-import org.dubhe.enums.TrainJobStatusEnum;
 import org.dubhe.enums.LogEnum;
 import org.dubhe.k8s.api.JupyterResourceApi;
 import org.dubhe.k8s.api.MetricsApi;
@@ -47,7 +46,6 @@ import org.dubhe.utils.LogUtil;
 import org.dubhe.utils.RegexUtil;
 import org.dubhe.utils.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -73,9 +71,6 @@ public class PodApiImpl implements PodApi {
     @Autowired
     private MetricsApi metricsApi;
 
-    @Value("${k8s.pod.metrics.grafanaUrl}")
-    private String k8sPodMetricsGrafanaUrl;
-
     public PodApiImpl(K8sUtils k8sUtils) {
         this.k8sUtils = k8sUtils;
         this.client = k8sUtils.getClient();
@@ -100,7 +95,7 @@ public class PodApiImpl implements PodApi {
             LogUtil.info(LogEnum.BIZ_K8S,"Output {}", bizPod);
             return bizPod;
         }catch (KubernetesClientException e) {
-            LogUtil.error(LogEnum.BIZ_K8S, "PodApiImpl.get error, param:[namespace]={}, [podName]={}, error:",namespace, podName, e);
+            LogUtil.error(LogEnum.BIZ_K8S, "PodApiImpl.get error, param:[namespace]={}, [podName]={}, error:{}",namespace, podName, e);
             return new BizPod().error(String.valueOf(e.getCode()),e.getMessage());
         }
     }
@@ -128,7 +123,7 @@ public class PodApiImpl implements PodApi {
             LogUtil.info(LogEnum.BIZ_K8S,"Output {}", bizPod);
             return bizPod;
         }catch (KubernetesClientException e) {
-            LogUtil.error(LogEnum.BIZ_K8S, "PodApiImpl.getWithResourceName error, param:[namespace]={}, [resourceName]={}, error:",namespace, resourceName, e);
+            LogUtil.error(LogEnum.BIZ_K8S, "PodApiImpl.getWithResourceName error, param:[namespace]={}, [resourceName]={}, error:{}",namespace, resourceName, e);
             return new BizPod().error(String.valueOf(e.getCode()),e.getMessage());
         }
     }
@@ -155,7 +150,7 @@ public class PodApiImpl implements PodApi {
             LogUtil.info(LogEnum.BIZ_K8S,"Output {}", bizPodList);
             return bizPodList;
         }catch (KubernetesClientException e) {
-            LogUtil.error(LogEnum.BIZ_K8S, "PodApiImpl.getWithResourceName error, param:[namespace]={}, [resourceName]={}, error:",namespace, resourceName, e);
+            LogUtil.error(LogEnum.BIZ_K8S, "PodApiImpl.getWithResourceName error, param:[namespace]={}, [resourceName]={}, error:{}",namespace, resourceName, e);
             return Collections.EMPTY_LIST;
         }
     }
@@ -178,7 +173,7 @@ public class PodApiImpl implements PodApi {
             LogUtil.info(LogEnum.BIZ_K8S,"Output {}", bizPodList);
             return bizPodList;
         }catch (KubernetesClientException e) {
-            LogUtil.error(LogEnum.BIZ_K8S, "PodApiImpl.getWithNamespace error, param:[namespace]={}, error:",namespace, e);
+            LogUtil.error(LogEnum.BIZ_K8S, "PodApiImpl.getWithNamespace error, param:[namespace]={}, error:{}",namespace, e);
             return Collections.EMPTY_LIST;
         }
 
@@ -202,6 +197,33 @@ public class PodApiImpl implements PodApi {
     }
 
     /**
+     *根据dtname查询pod信息
+     *
+     * @param dtname 自定义dt的名称
+     * @return List<BizPod> pod业务类集合
+     */
+    @Override
+    public List<BizPod> findByDtName(String dtname) {
+        List<Pod> items = client.pods().list().getItems();
+        LogUtil.info(LogEnum.BIZ_K8S,"Output {}",items);
+        List<BizPod> bizPods = new ArrayList<>();
+        if (!(CollectionUtil.isEmpty(items))) {
+            items.stream().forEach(pod -> {
+                Map<String, String> labels = pod.getMetadata().getLabels();
+                if (labels != null) {
+                    String dtName = labels.get("dt-name");
+                    if (dtName != null) {
+                        if (dtName.equals(dtname)) {
+                            bizPods.add(BizConvertUtils.toBizPod(pod));
+                        }
+                    }
+                }
+            });
+        }
+        return bizPods;
+    }
+
+    /**
      * 根据Node分组获得所有运行中的Pod
      *
      * @return Map<String, List<BizPod>> 键为Node名称，值为Pod业务类集合
@@ -214,7 +236,7 @@ public class PodApiImpl implements PodApi {
             LogUtil.info(LogEnum.BIZ_K8S,"Output {}", map);
             return map;
         }catch (KubernetesClientException e) {
-            LogUtil.error(LogEnum.BIZ_K8S, "PodApiImpl.listAllRunningPodGroupByNodeName error:", e);
+            LogUtil.error(LogEnum.BIZ_K8S, "PodApiImpl.listAllRunningPodGroupByNodeName error:{}", e);
             return Collections.EMPTY_MAP;
         }
     }
@@ -232,36 +254,11 @@ public class PodApiImpl implements PodApi {
             LogUtil.info(LogEnum.BIZ_K8S,"Output {}", map);
             return map;
         }catch (KubernetesClientException e) {
-            LogUtil.error(LogEnum.BIZ_K8S, "PodApiImpl.getPods error:", e);
+            LogUtil.error(LogEnum.BIZ_K8S, "PodApiImpl.getPods error:{}", e);
             return Collections.EMPTY_MAP;
         }
     }
 
-
-    /**
-     * 获取Pod的CPU使用率,Memory使用量,GPU使用率,并用grafana展示出来
-     *
-     * @param namespace 命名空间
-     * @param resourceName 资源名称
-     * @return String podGrafanaUrl
-     */
-    @Override
-    public String getPodMetricsGrafanaUrl(String namespace, String resourceName) {
-        LogUtil.info(LogEnum.BIZ_K8S, "Starting obtain grafanaUrl of Pod, params:[namespace]={}, [resourceName]={}", namespace, resourceName);
-        String podGrafanaUrl = null;
-        try {
-            BizPod bizPod = getWithResourceName(namespace, resourceName);
-            if(bizPod.isSuccess() && bizPod.getPhase().equalsIgnoreCase(TrainJobStatusEnum.RUNNING.getMessage())){
-                podGrafanaUrl = k8sPodMetricsGrafanaUrl.concat(bizPod.getName());
-            }
-        } catch (Exception e) {
-            LogUtil.info(LogEnum.BIZ_K8S, "Failed to obtain grafanaUrl of Pod, params:[namespace]={}, [resourceName]={}, error:",
-                    namespace, resourceName, e);
-        }
-        LogUtil.info(LogEnum.BIZ_K8S, "Obtaining grafanaUrl of Pod ended , params:[namespace]={}, [resourceName]={}, return value:{}",
-                namespace, resourceName, podGrafanaUrl);
-        return podGrafanaUrl;
-    }
 
     /**
      * 根据label查询Pod集合
@@ -337,7 +334,7 @@ public class PodApiImpl implements PodApi {
             String podLog = client.pods().inNamespace(namespace).withName(podName).getLog();
             return RegexUtil.getMatcher(podLog, TOKEN_REGEX);
         } catch (KubernetesClientException e) {
-            LogUtil.error(LogEnum.BIZ_K8S, "PodApiImpl.getToken error params:[namespace]={}, [podName]={}, error:",namespace, podName, e);
+            LogUtil.error(LogEnum.BIZ_K8S, "PodApiImpl.getToken error params:[namespace]={}, [podName]={}, error:{}",namespace, podName, e);
         }
         return "";
     }
@@ -359,7 +356,7 @@ public class PodApiImpl implements PodApi {
             }
             return "";
         } catch (Exception e) {
-            LogUtil.error(LogEnum.BIZ_K8S, "PodApiImpl.getTokenByResourceName error, params:[namespace]={}, [resourceName]={}, error:",namespace, resourceName, e);
+            LogUtil.error(LogEnum.BIZ_K8S, "PodApiImpl.getTokenByResourceName error, params:[namespace]={}, [resourceName]={}, error:{}",namespace, resourceName, e);
         }
         return "";
     }
@@ -392,7 +389,7 @@ public class PodApiImpl implements PodApi {
      * 验证访问Notebook的url
      *
      * @param jupyterUrl 访问Notebook的url
-     * @return String jupyterUrl
+     * @return String jupyterUrl jupyter路径
      */
     private String validateJupyterUrl(String jupyterUrl) {
         if (StringUtils.isBlank(jupyterUrl) || !jupyterUrl.contains(SymbolConstant.QUESTION+ K8sParamConstants.TOKEN)){
@@ -417,4 +414,5 @@ public class PodApiImpl implements PodApi {
         }
         return "";
     }
+
 }

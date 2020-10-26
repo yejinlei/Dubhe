@@ -73,9 +73,7 @@ public class DatasetQueryDTO extends PageQueryBase {
     public void timeConvert() {
         if (!CollectionUtils.isEmpty(this.createTime)) {
             createTimeSearch = new ArrayList<>(createTime.size());
-            createTime.stream().forEach(aLong -> {
-                createTimeSearch.add(new Timestamp(aLong));
-            });
+            createTime.forEach(aLong -> createTimeSearch.add(new Timestamp(aLong)));
         }
     }
 

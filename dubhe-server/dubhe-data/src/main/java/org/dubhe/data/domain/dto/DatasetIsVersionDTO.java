@@ -34,4 +34,5 @@ public class DatasetIsVersionDTO {
 
     @ApiModelProperty(value = "数据标注类型 图像分类 目标检测 目标跟踪")
     private String annotateType;
+
 }

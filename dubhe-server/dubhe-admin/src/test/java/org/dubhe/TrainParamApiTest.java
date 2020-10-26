@@ -31,8 +31,8 @@ import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
- * @description: 训练任务管理模块任务参数管理单元测试
- * @date: 2020-5-11
+ * @description 训练任务管理模块任务参数管理单元测试
+ * @date 2020-5-11
  */
 @RunWith(SpringRunner.class)
 @SpringBootTest

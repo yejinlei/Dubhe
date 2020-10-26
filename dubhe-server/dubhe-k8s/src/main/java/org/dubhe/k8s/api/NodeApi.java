@@ -100,4 +100,7 @@ public interface NodeApi {
      * @return LackOfResourcesEnum 资源缺乏枚举类
      */
     LackOfResourcesEnum isAllocatable(Integer cpuNum, Integer memNum, Integer gpuNum);
+
+
+
 }

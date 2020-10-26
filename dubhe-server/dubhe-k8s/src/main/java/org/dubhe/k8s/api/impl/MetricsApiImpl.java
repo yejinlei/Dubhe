@@ -77,7 +77,7 @@ public class MetricsApiImpl implements MetricsApi {
             );
             return list;
         } catch (KubernetesClientException e) {
-            LogUtil.error(LogEnum.BIZ_K8S, "MetricsApiImpl.getNodeMetrics error:", e);
+            LogUtil.error(LogEnum.BIZ_K8S, "MetricsApiImpl.getNodeMetrics error:{}", e);
             return Collections.EMPTY_LIST;
         }
     }
@@ -179,7 +179,7 @@ public class MetricsApiImpl implements MetricsApi {
 
             return list;
         } catch (KubernetesClientException e) {
-            LogUtil.error(LogEnum.BIZ_K8S, "MetricsApiImpl.getPodMetricsRealTime error:", e);
+            LogUtil.error(LogEnum.BIZ_K8S, "MetricsApiImpl.getPodMetricsRealTime error:{}", e);
             return Collections.EMPTY_LIST;
         }
     }
@@ -198,7 +198,7 @@ public class MetricsApiImpl implements MetricsApi {
         try {
             return getContainerMetrics(client.top().pods().metrics(namespace).getItems());
         } catch (KubernetesClientException e) {
-            LogUtil.error(LogEnum.BIZ_K8S, "MetricsApiImpl.getContainerMetrics error:", e);
+            LogUtil.error(LogEnum.BIZ_K8S, "MetricsApiImpl.getContainerMetrics error:{}", e);
             return Collections.EMPTY_LIST;
         }
     }
@@ -213,7 +213,7 @@ public class MetricsApiImpl implements MetricsApi {
         try {
             return getContainerMetrics(client.top().pods().metrics().getItems());
         } catch (KubernetesClientException e) {
-            LogUtil.error(LogEnum.BIZ_K8S, "MetricsApiImpl.getContainerMetrics error:", e);
+            LogUtil.error(LogEnum.BIZ_K8S, "MetricsApiImpl.getContainerMetrics error:{}", e);
             return Collections.EMPTY_LIST;
         }
     }
@@ -240,7 +240,7 @@ public class MetricsApiImpl implements MetricsApi {
             );
             return list;
         } catch (KubernetesClientException e) {
-            LogUtil.error(LogEnum.BIZ_K8S, "MetricsApiImpl.getContainerMetrics error, param:{} error:", pods, e);
+            LogUtil.error(LogEnum.BIZ_K8S, "MetricsApiImpl.getContainerMetrics error, param:{} error:{}", pods, e);
             return Collections.EMPTY_LIST;
         }
     }

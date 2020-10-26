@@ -18,19 +18,27 @@
 package org.dubhe.data.domain.dto;
 
 import io.swagger.annotations.ApiModelProperty;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
+import lombok.ToString;
 import org.dubhe.constant.NumberConstant;
-
 import javax.validation.constraints.Min;
 import javax.validation.constraints.NotNull;
 import java.io.Serializable;
 import java.util.List;
+
 
 /**
  * @description 数据增强请求 DTO
  * @date 2020-06-29
  */
 @Data
+@Builder
+@ToString
+@NoArgsConstructor
+@AllArgsConstructor
 public class DatasetEnhanceRequestDTO implements Serializable {
 
     @ApiModelProperty(value = "数据集ID")

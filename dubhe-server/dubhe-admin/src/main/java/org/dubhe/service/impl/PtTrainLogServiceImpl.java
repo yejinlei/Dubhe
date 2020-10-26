@@ -17,7 +17,9 @@
 
 package org.dubhe.service.impl;
 
+import cn.hutool.core.util.StrUtil;
 import org.dubhe.constant.NumberConstant;
+import org.dubhe.constant.SymbolConstant;
 import org.dubhe.dao.PtTrainJobMapper;
 import org.dubhe.domain.dto.PtTrainLogQueryDTO;
 import org.dubhe.domain.dto.UserDTO;
@@ -27,20 +29,25 @@ import org.dubhe.enums.LogEnum;
 import org.dubhe.exception.BusinessException;
 import org.dubhe.k8s.api.LogMonitoringApi;
 import org.dubhe.k8s.domain.bo.LogMonitoringBO;
+import org.dubhe.k8s.domain.dto.PodQueryDTO;
 import org.dubhe.k8s.domain.vo.LogMonitoringVO;
+import org.dubhe.k8s.domain.vo.PodVO;
+import org.dubhe.k8s.service.PodService;
 import org.dubhe.service.PtTrainLogService;
 import org.dubhe.utils.JwtUtils;
 import org.dubhe.utils.K8sNameTool;
 import org.dubhe.utils.LogUtil;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 
+import java.util.Collections;
 import java.util.List;
 
 
 /**
- * @description: 训练日志 服务实现类
+ * @description 训练日志 服务实现类
  * @date 2020-05-08
  */
 
@@ -56,6 +63,9 @@ public class PtTrainLogServiceImpl implements PtTrainLogService {
     @Autowired
     private K8sNameTool k8sNameTool;
 
+    @Autowired
+    private PodService podService;
+
     /**
      * 查询训练任务运行日志
      *
@@ -68,7 +78,7 @@ public class PtTrainLogServiceImpl implements PtTrainLogService {
 
         //从会话中获取用户信息
         UserDTO user = JwtUtils.getCurrentUserDto();
-        String nameSpace = k8sNameTool.generateNameSpace(user.getId());
+        String namespace = k8sNameTool.generateNamespace(user.getId());
 
         PtTrainJob ptTrainJob = ptTrainJobMapper.selectById(ptTrainLogQueryDTO.getJobId());
         if (null == ptTrainJob || !user.getId().equals(ptTrainJob.getCreateUserId())) {
@@ -82,15 +92,15 @@ public class PtTrainLogServiceImpl implements PtTrainLogService {
         Integer lines = null == ptTrainLogQueryDTO.getLines() ? NumberConstant.NUMBER_50 : ptTrainLogQueryDTO.getLines();
         /** 拼接请求es的参数 **/
         LogMonitoringBO logMonitoringBo = new LogMonitoringBO();
-        logMonitoringBo.setNamespace(nameSpace)
+        logMonitoringBo.setNamespace(namespace)
                 .setResourceName(ptTrainJob.getJobName());
 
         PtTrainLogQueryVO ptTrainLogQueryVO = new PtTrainLogQueryVO();
 
-        LogMonitoringVO result = logMonitoringApi.searchLog(startLine, lines, logMonitoringBo);
+        LogMonitoringVO result = logMonitoringApi.searchLogByResName(startLine, lines, logMonitoringBo);
         List<String> list = result.getLogs();
 
-        if (result == null || CollectionUtils.isEmpty(list)) {
+        if (CollectionUtils.isEmpty(list)) {
             ptTrainLogQueryVO.setContent(list);
             ptTrainLogQueryVO.setStartLine(startLine);
             ptTrainLogQueryVO.setEndLine(startLine - 1);
@@ -113,13 +123,27 @@ public class PtTrainLogServiceImpl implements PtTrainLogService {
      */
     @Override
     public String getTrainLogString(List<String> content) {
-        String strContent = "";
-        if (content != null) {
-            for (String str : content) {
-                strContent = strContent.concat(str).concat("\r\n");
-            }
+        if (content == null) {
+            return SymbolConstant.BLANK;
         }
+        return StringUtils.join(content,StrUtil.CRLF);
+    }
 
-        return strContent;
+    /**
+     * 获取训练任务的Pod
+     *
+     * @param id 训练作业job表 id
+     * @return 训练节点信息
+     */
+    @Override
+    public List<PodVO> getPods(Long id) {
+        PtTrainJob ptTrainJob = ptTrainJobMapper.selectById(id);
+        if (ptTrainJob == null){
+            return Collections.emptyList();
+        }
+        //从会话中获取用户信息
+        UserDTO user = JwtUtils.getCurrentUserDto();
+        String nameSpace = k8sNameTool.generateNamespace(user.getId());
+        return podService.getPods(new PodQueryDTO(nameSpace,ptTrainJob.getJobName()));
     }
 }

@@ -17,6 +17,7 @@
 
 package org.dubhe.k8s.api.impl;
 
+import com.alibaba.fastjson.JSON;
 import com.baomidou.mybatisplus.core.toolkit.CollectionUtils;
 import io.fabric8.kubernetes.api.model.DoneablePod;
 import io.fabric8.kubernetes.api.model.Pod;
@@ -31,6 +32,7 @@ import org.dubhe.k8s.domain.vo.LogMonitoringVO;
 import org.dubhe.k8s.utils.K8sUtils;
 import org.dubhe.utils.LogUtil;
 import org.dubhe.utils.StringUtils;
+import org.dubhe.utils.TimeTransferUtil;
 import org.elasticsearch.action.bulk.BulkRequest;
 import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.action.search.SearchRequest;
@@ -38,6 +40,7 @@ import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.client.RequestOptions;
 import org.elasticsearch.client.RestHighLevelClient;
 import org.elasticsearch.index.query.BoolQueryBuilder;
+import org.elasticsearch.index.query.Operator;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.SearchHits;
@@ -56,10 +59,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
-
-import static org.dubhe.base.MagicNumConstant.FIFTY;
+import static org.dubhe.base.MagicNumConstant.ONE;
 import static org.dubhe.base.MagicNumConstant.TEN_THOUSAND;
 import static org.dubhe.base.MagicNumConstant.ZERO;
+import static org.dubhe.base.MagicNumConstant.ZERO_LONG;
 import static org.dubhe.constant.SymbolConstant.BLANK;
 import static org.dubhe.constant.SymbolConstant.COMMA;
 import static org.dubhe.constant.SymbolConstant.LINEBREAK;
@@ -84,15 +87,15 @@ public class LogMonitoringApiImpl implements LogMonitoringApi {
 
     private KubernetesClient kubernetesClient;
     private static final String INDEX_NAME = "logstash-*";
+    private static final String INDEX_PREFIX = "logstash-";
     private static final String POD_NAME_KEY = "kubernetes.pod_name.keyword";
     private static final String POD_NAME = "kubernetes.pod_name";
     private static final String NAMESPACE_KEY = "kubernetes.namespace_name.keyword";
     private static final String NAMESPACE = "kubernetes.namespace_name";
     private static final String TIMESTAMP = "@timestamp";
-    private static final String MESSAGE = "message";
+    private static final String MESSAGE = "log";
     private static final String LOG_PREFIX = "[Dubhe Service Log] ";
     private static final String INDEX_FORMAT = "yyyy.MM.dd";
-    private static final String TIMESTAMP_FORMAT = "yyyy-MM-dd'T'HH:mm:ss.sssssssss+'08:00'";
 
     public LogMonitoringApiImpl(K8sUtils k8sUtils) {
         this.kubernetesClient = k8sUtils.getClient();
@@ -100,7 +103,7 @@ public class LogMonitoringApiImpl implements LogMonitoringApi {
 
 
     /**
-     * 添加日志到ES
+     * 添加Pod日志到ES,无日志参数，默认从k8s集群查询日志添加到ES
      *
      * @param podName Pod名称
      * @param namespace 命名空间
@@ -113,9 +116,8 @@ public class LogMonitoringApiImpl implements LogMonitoringApi {
             LogUtil.error(LogEnum.BIZ_K8S, "LogMonitoringApiImpl.addLogsToEs error: param [podName] and [namespace] are required");
             return false;
         }
-
-        List<String> logList = searchLogInfoByEs(ZERO, FIFTY, new LogMonitoringBO().setPodName(podName).setNamespace(namespace));
-        if (CollectionUtils.isNotEmpty(logList)){
+        List<String> logList = searchLogInfoByEs(ZERO, ONE, new LogMonitoringBO(namespace,podName));
+        if (CollectionUtils.isNotEmpty(logList)) {
             return true;
         }
 
@@ -124,30 +126,44 @@ public class LogMonitoringApiImpl implements LogMonitoringApi {
             LogUtil.info(LogEnum.BIZ_K8S, "LogMonitoringApiImpl.getLogInfoString could not get any log,no doc created in Elasticsearch");
             return false;
         }
+        logList = Arrays.asList(logInfoString.split(LINEBREAK)).stream().limit(TEN_THOUSAND).collect(Collectors.toList());
+        return addLogsToEs(podName, namespace, logList);
+    }
 
+    /**
+     * 添加Pod自定义日志到ES
+     *
+     * @param podName Pod名称
+     * @param namespace 命名空间
+     * @param logList 日志信息
+     * @return boolean 日志添加是否成功
+     */
+    @Override
+    public boolean addLogsToEs(String podName, String namespace, List<String> logList) {
         Date date = new Date();
         SimpleDateFormat indexFormat = new SimpleDateFormat(INDEX_FORMAT);
-        SimpleDateFormat timeStampFormat = new SimpleDateFormat(TIMESTAMP_FORMAT);
-        logList = Arrays.asList(logInfoString.split(LINEBREAK)).stream().limit(TEN_THOUSAND).collect(Collectors.toList());
+        String timestamp = TimeTransferUtil.dateTransferToUtc(date);
+        String index = indexFormat.format(date);
         BulkRequest bulkRequest = new BulkRequest();
-        for (int i = 0; i < logList.size(); i++) {
-            /**准备日志json数据**/
-            String logString = logList.get(i);
-            LinkedHashMap<String, Object> jsonMap = new LinkedHashMap() {{
-                put(POD_NAME, podName);
-                put(NAMESPACE, namespace);
-                put(MESSAGE, logString);
-                put(TIMESTAMP, timeStampFormat.format(date));
-            }};
-
-            /**添加索引创建对象到bulkRequest**/
-            bulkRequest.add(new IndexRequest("logstash-" + indexFormat.format(date)).source(jsonMap));
-        }
         try {
+            for (int i = 0; i < logList.size(); i++) {
+                /**准备日志json数据**/
+                String logString = logList.get(i);
+                LinkedHashMap<String, Object> jsonMap = new LinkedHashMap() {{
+                    put(POD_NAME, podName);
+                    put(NAMESPACE, namespace);
+                    put(MESSAGE, logString);
+                    put(TIMESTAMP, timestamp);
+                }};
+
+                /**添加索引创建对象到bulkRequest**/
+                bulkRequest.add(new IndexRequest(INDEX_PREFIX + index).source(jsonMap));
+            }
+
             /**通过restHighLevelClient发送http的请求批量创建文档**/
             restHighLevelClient.bulk(bulkRequest, RequestOptions.DEFAULT);
         } catch (IOException e) {
-            LogUtil.error(LogEnum.BIZ_K8S, "LogMonitoringApi.addLogsToEs error, param:[podName]={}, [namespace]={}, error:",podName, namespace, e);
+            LogUtil.error(LogEnum.BIZ_K8S, "LogMonitoringApi.addLogsToEs error:{}", e);
             return false;
         }
         return true;
@@ -162,28 +178,28 @@ public class LogMonitoringApiImpl implements LogMonitoringApi {
      * @return LogMonitoringVO 日志查询结果类
      */
     @Override
-    public LogMonitoringVO searchLog(int from, int size, LogMonitoringBO logMonitoringBo) {
-        LogMonitoringVO logMonitoringResult = new LogMonitoringVO();
+    public LogMonitoringVO searchLogByResName(int from, int size, LogMonitoringBO logMonitoringBo) {
         List<String> logList = new ArrayList<>();
-        /**处理查询范围参数起始值**/
-        from = from <= MagicNumConstant.ZERO ? MagicNumConstant.ZERO : --from;
-        size = size <= MagicNumConstant.ZERO || size > TEN_THOUSAND ? TEN_THOUSAND : size;
+        LogMonitoringVO logMonitoringResult = new LogMonitoringVO(ZERO_LONG, logList);
+        String namespace = logMonitoringBo.getNamespace();
+        String resourceName = logMonitoringBo.getResourceName();
+        if (StringUtils.isBlank(resourceName) || StringUtils.isBlank(namespace)) {
+            LogUtil.error(LogEnum.BIZ_K8S, "LogMonitoringApiImpl.searchLogByResName error: param [resourceName] and [namespace] are required");
+            return logMonitoringResult;
+        }
+
         Set<String> podNameSet = resourceCache.getPodNameByResourceName(logMonitoringBo.getNamespace(), logMonitoringBo.getResourceName());
 
         if (CollectionUtils.isEmpty(podNameSet)) {
-            logMonitoringResult.setLogs(logList);
-            logMonitoringResult.setTotalLogs(Long.valueOf(MagicNumConstant.ZERO));
             return logMonitoringResult;
         }
         /**遍历podNameSet,根据podName查询日志信息**/
         for (String podName : podNameSet) {
             logMonitoringBo.setPodName(podName);
-            /**通过k8s Api查询日志**/
-            List<String> logs = searchLogInfo(from, size, logMonitoringBo);
-            /**如果k8s Api查不到,则pod可能被删除，通过es查询**/
-            if (CollectionUtils.isEmpty(logs)) {
-                logs = searchLogInfoByEs(from, size, logMonitoringBo);
-            }
+
+            /**查询ES存储的日志信息**/
+            List<String> logs = searchLogInfoByEs(from, size, logMonitoringBo);
+
             if (!CollectionUtils.isEmpty(logs)) {
                 logList.addAll(MagicNumConstant.ZERO, logs);
             }
@@ -192,6 +208,42 @@ public class LogMonitoringApiImpl implements LogMonitoringApi {
         logMonitoringResult.setLogs(logList);
         logMonitoringResult.setTotalLogs(Long.valueOf(logList.size()));
         return logMonitoringResult;
+    }
+
+    /**
+     * 日志查询方法
+     *
+     * @param from 日志查询起始值，初始值为1，表示从第一条日志记录开始查询
+     * @param size 日志查询记录数
+     * @param logMonitoringBo 日志查询bo
+     * @return LogMonitoringVO 日志查询结果类
+     */
+    @Override
+    public LogMonitoringVO searchLogByPodName(int from, int size, LogMonitoringBO logMonitoringBo) {
+        LogMonitoringVO logMonitoringResult = new LogMonitoringVO();
+        List<String> logs = searchLogInfoByEs(from, size, logMonitoringBo);
+        logMonitoringResult.setLogs(logs);
+        logMonitoringResult.setTotalLogs(Long.valueOf(logs.size()));
+        return logMonitoringResult;
+
+    }
+
+    /**
+     * Pod 日志总量查询方法
+     *
+     * @param logMonitoringBo 日志查询bo
+     * @return long Pod 产生的日志总量
+     */
+    @Override
+    public long searchLogCountByPodName(LogMonitoringBO logMonitoringBo) {
+        SearchRequest searchRequest = buildSearchRequest(ZERO, ZERO, logMonitoringBo);
+        try {
+            /**执行搜索，获得响应结果**/
+            return restHighLevelClient.search(searchRequest, RequestOptions.DEFAULT).getHits().getTotalHits().value;
+        } catch (Exception e) {
+            LogUtil.error(LogEnum.BIZ_K8S, "LogMonitoringApiImpl.searchLogCountByPodName error,param:[logMonitoringBo]={}, error:{}", JSON.toJSONString(logMonitoringBo), e);
+            return ZERO_LONG;
+        }
     }
 
     /**
@@ -209,32 +261,12 @@ public class LogMonitoringApiImpl implements LogMonitoringApi {
             try {
                 return podResource.getLog();
             } catch (Exception e) {
-                LogUtil.error(LogEnum.BIZ_K8S, "LogMonitoringApi.getLogInfoString error, param:[podName]={}, [namespace]={}, error:",podName, namespace, e);
+                LogUtil.error(LogEnum.BIZ_K8S, "LogMonitoringApi.getLogInfoString error, param:[podName]={}, [namespace]={}, error:{}", podName, namespace, e);
             }
         }
         return null;
     }
 
-    /**
-     * 通过fabric8客户端查询日志
-     *
-     * @param from 日志查询起始值
-     * @param size 日志查询记录数
-     * @param logMonitoringBo 日志查询bo
-     * @return List<String> 日志集合
-     */
-    private List<String> searchLogInfo(int from, int size, LogMonitoringBO logMonitoringBo) {
-        List<String> logList = new ArrayList<>();
-
-        /**通过k8s客户端获取具体pod的日志监听类**/
-        String logInfoString = getLogInfoString(logMonitoringBo.getPodName(), logMonitoringBo.getNamespace());
-        if (StringUtils.isBlank(logInfoString)) {
-            return logList;
-        }
-        logList = Arrays.asList(logInfoString.split(LINEBREAK))
-                .stream().map(logString -> LOG_PREFIX + logString).skip(from).limit(size).collect(Collectors.toList());
-        return logList;
-    }
 
     /**
      * 从Elasticsearch查询日志
@@ -245,6 +277,7 @@ public class LogMonitoringApiImpl implements LogMonitoringApi {
      * @return List<String> 日志集合
      */
     private List<String> searchLogInfoByEs(int from, int size, LogMonitoringBO logMonitoringBo) {
+
         List<String> logList = new ArrayList<>();
 
         SearchRequest searchRequest = buildSearchRequest(from, size, logMonitoringBo);
@@ -252,8 +285,8 @@ public class LogMonitoringApiImpl implements LogMonitoringApi {
         SearchResponse searchResponse;
         try {
             searchResponse = restHighLevelClient.search(searchRequest, RequestOptions.DEFAULT);
-        } catch (IOException e) {
-            LogUtil.error(LogEnum.BIZ_K8S, "LogMonitoringApiImpl.searchLogInfoByEs error,param:{} error:", logMonitoringBo, e);
+        } catch (Exception e) {
+            LogUtil.error(LogEnum.BIZ_K8S, "LogMonitoringApiImpl.searchLogInfoByEs error,param:[logMonitoringBo]={}, error:{}", JSON.toJSONString(logMonitoringBo), e);
             return logList;
         }
         /**获取响应结果**/
@@ -288,13 +321,16 @@ public class LogMonitoringApiImpl implements LogMonitoringApi {
      * @return SearchRequest ES搜索请求对象
      */
     private SearchRequest buildSearchRequest(int from, int size, LogMonitoringBO logMonitoringBo) {
+
+        /**处理查询范围参数起始值**/
+        from = from <= MagicNumConstant.ZERO ? MagicNumConstant.ZERO : --from;
+        size = size <= MagicNumConstant.ZERO || size > TEN_THOUSAND ? TEN_THOUSAND : size;
+
         /**创建搜索请求对象**/
         SearchRequest searchRequest = new SearchRequest();
         searchRequest.indices(INDEX_NAME);
         SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder();
-        searchSourceBuilder.trackTotalHits(true);
-        searchSourceBuilder.from(from);
-        searchSourceBuilder.size(size);
+        searchSourceBuilder.trackTotalHits(true).from(from).size(size);
 
         /**根据时间戳排序**/
         searchSourceBuilder.sort(TIMESTAMP, SortOrder.ASC);
@@ -306,13 +342,34 @@ public class LogMonitoringApiImpl implements LogMonitoringApi {
         /**创建布尔查询对象**/
         BoolQueryBuilder boolQueryBuilder = QueryBuilders.boolQuery();
 
-        /**搜索条件**/
-        if (StringUtils.isNotEmpty(logMonitoringBo.getPodName())) {
-            boolQueryBuilder.must(QueryBuilders.matchQuery(POD_NAME_KEY, logMonitoringBo.getPodName()));
+        /**添加podName查询条件**/
+        String podName = logMonitoringBo.getPodName();
+        if (StringUtils.isNotEmpty(podName)) {
+            boolQueryBuilder.filter(QueryBuilders.matchQuery(POD_NAME_KEY, podName));
         }
-        if (StringUtils.isNotEmpty(logMonitoringBo.getNamespace())) {
-            boolQueryBuilder.must(QueryBuilders.matchQuery(NAMESPACE_KEY, logMonitoringBo.getNamespace()));
+        /**添加namespace查询条件**/
+        String namespace = logMonitoringBo.getNamespace();
+        if (StringUtils.isNotEmpty(namespace)) {
+            boolQueryBuilder.filter(QueryBuilders.matchQuery(NAMESPACE_KEY, namespace));
         }
+        /**添加关键字查询条件**/
+        String logKeyword = logMonitoringBo.getLogKeyword();
+        if (StringUtils.isNotEmpty(logKeyword)) {
+            boolQueryBuilder.filter(QueryBuilders.matchQuery(MESSAGE, logKeyword).operator(Operator.AND));
+        }
+        /**添加时间范围查询条件**/
+        Long beginTimeMillis = logMonitoringBo.getBeginTimeMillis();
+        Long endTimeMillis = logMonitoringBo.getEndTimeMillis();
+        if (beginTimeMillis != null || endTimeMillis != null){
+            beginTimeMillis = beginTimeMillis == null ? ZERO_LONG : beginTimeMillis;
+            endTimeMillis = endTimeMillis == null ? System.currentTimeMillis() : endTimeMillis;
+
+            /**将毫秒值转换为UTC时间**/
+            String beginUtcTime = TimeTransferUtil.dateTransferToUtc(new Date(beginTimeMillis));
+            String endUtcTime = TimeTransferUtil.dateTransferToUtc(new Date(endTimeMillis));
+            boolQueryBuilder.filter(QueryBuilders.rangeQuery(TIMESTAMP).gte(beginUtcTime).lte(endUtcTime));
+        }
+
 
         /**设置boolQueryBuilder到searchSourceBuilder**/
         searchSourceBuilder.query(boolQueryBuilder);

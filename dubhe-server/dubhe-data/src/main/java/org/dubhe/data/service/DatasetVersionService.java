@@ -94,7 +94,6 @@ public interface DatasetVersionService {
      */
     void datasetConvert();
 
-
     /**
      * 数据转换回调接口
      *
@@ -116,4 +115,22 @@ public interface DatasetVersionService {
      * @return Integer 原始文件数量
      */
     Integer getSourceFileCount(Long datasetId);
+
+    /**
+     * 获取数据集版本详情
+     *
+     * @param datasetVersionId 数据集版本ID
+     * @return 数据集版本详情
+     */
+    DatasetVersion detail(Long datasetVersionId);
+
+    /**
+     * 更新数据集版本状态
+     *
+     * @param id            数据集ID
+     * @param sourceStatus  原状态
+     * @param targetStatus  目标状态
+     */
+    void update(Long id, Integer sourceStatus, Integer targetStatus);
+
 }

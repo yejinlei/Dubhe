@@ -49,12 +49,12 @@ public class K8sNameToolTest {
 
     @Test
     public void generateNameSpace(){
-        Assert.assertEquals("namespace-0", k8sNameTool.generateNameSpace(0L));
+        Assert.assertEquals("namespace-0", k8sNameTool.generateNamespace(0L));
     }
 
     @Test
     public void getUserIdFromNameSpace(){
-        Assert.assertSame(0L, k8sNameTool.getUserIdFromNameSpace("namespace-0"));
+        Assert.assertSame(0L, k8sNameTool.getUserIdFromNamespace("namespace-0"));
     }
 
 

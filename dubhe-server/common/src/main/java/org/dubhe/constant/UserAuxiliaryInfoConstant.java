@@ -17,15 +17,12 @@
 
 package org.dubhe.constant;
 
-import org.springframework.stereotype.Component;
-
 import lombok.Data;
 
 /**
  * @description 算法用途
- * @date: 2020-06-23
+ * @date 2020-06-23
  */
-@Component
 @Data
 public class UserAuxiliaryInfoConstant {
 

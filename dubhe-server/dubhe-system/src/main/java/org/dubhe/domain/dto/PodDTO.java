@@ -23,7 +23,6 @@ import lombok.Data;
  * @description pod的实体类
  * @date 2020-06-03
  */
-
 @Data
 public class PodDTO {
 
@@ -40,7 +39,7 @@ public class PodDTO {
      */
     private String podCpu;
     /**
-     * pod的显卡
+     * pod的显卡  
      */
     private String podCard;
     /***

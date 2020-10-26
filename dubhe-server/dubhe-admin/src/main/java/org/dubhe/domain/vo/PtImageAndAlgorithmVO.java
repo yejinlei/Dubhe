@@ -24,7 +24,7 @@ import lombok.experimental.Accessors;
 import java.io.Serializable;
 
 /**
- * @description: 镜像
+ * @description 镜像
  * @date 2020-04-27
  */
 @Data

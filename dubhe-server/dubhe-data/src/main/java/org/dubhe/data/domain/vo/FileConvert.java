@@ -23,7 +23,6 @@ import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.ReportingPolicy;
 
-
 /**
  * @description 文件数据转换
  * @date 2020-04-17

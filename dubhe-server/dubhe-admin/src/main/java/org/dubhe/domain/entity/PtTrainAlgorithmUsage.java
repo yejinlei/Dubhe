@@ -17,10 +17,7 @@
 
 package org.dubhe.domain.entity;
 
-import com.baomidou.mybatisplus.annotation.IdType;
-import com.baomidou.mybatisplus.annotation.TableField;
-import com.baomidou.mybatisplus.annotation.TableId;
-import com.baomidou.mybatisplus.annotation.TableName;
+import com.baomidou.mybatisplus.annotation.*;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.experimental.Accessors;
@@ -49,8 +46,8 @@ public class PtTrainAlgorithmUsage extends BaseEntity {
     /**
      * 用户id
      */
-    @TableField(value = "user_id")
-    private Long userId;
+    @TableField(value = "origin_user_id",fill = FieldFill.INSERT)
+    private Long originUserId;
 
     /**
      * 类型
@@ -63,12 +60,5 @@ public class PtTrainAlgorithmUsage extends BaseEntity {
      */
     @TableField(value = "aux_info")
     private String auxInfo;
-
-    /**
-     * 是否为默认值(0否，1是默认值)
-     */
-    @TableField(value = "is_default")
-    private Boolean isDefault;
-
 
 }

@@ -21,8 +21,8 @@ import org.dubhe.dao.PtModelBranchMapper;
 import org.dubhe.domain.PtModelBranch;
 import org.dubhe.enums.LogEnum;
 import org.dubhe.exception.BusinessException;
+import org.dubhe.utils.LocalFileUtil;
 import org.dubhe.utils.LogUtil;
-import org.dubhe.utils.NfsUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
@@ -35,7 +35,7 @@ import org.springframework.stereotype.Component;
 public class AsyncStorage {
 
     @Autowired
-    private NfsUtil nfsUtil;
+    private LocalFileUtil localFileUtil;
 
     /**
      * 文件拷贝
@@ -45,16 +45,15 @@ public class AsyncStorage {
      * @param ptModelBranchMapper   数据库
      * @param ptModelBranch         模型版本信息
      */
-    @Async(value="taskRunner")
+    @Async(value = "taskRunner")
     public void copyFileAsync(String sourcePath, String destPath, PtModelBranchMapper ptModelBranchMapper, PtModelBranch ptModelBranch) {
         LogUtil.info(LogEnum.BIZ_MODEL, "开始拷贝文件从{}到{}", sourcePath, destPath);
-        Boolean nfsCopy = nfsUtil.copyPath(sourcePath, destPath);
+        boolean nfsCopy = localFileUtil.copyPath(sourcePath, destPath);
 
         if (!nfsCopy) {
             LogUtil.info(LogEnum.BIZ_MODEL, "文件拷贝失败");
             ptModelBranch.setStatus(2);
-        }
-        else {
+        } else {
             LogUtil.info(LogEnum.BIZ_MODEL, "文件拷贝成功");
             ptModelBranch.setStatus(1);
         }

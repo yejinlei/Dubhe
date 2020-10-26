@@ -6,7 +6,7 @@ create table if not exists data_dataset
         primary key,
     name                 varchar(255)                           not null,
     remark               varchar(255)                           null,
-    type                 varchar(255) default '0'               not null comment '类型 0: private 私有数据,  1:team  团队数据  2:public 公开数据',
+    type                 tinyint(4)   default 0                 not null comment '类型 0: private 私有数据,  1:team  团队数据  2:public 公开数据',
     team_id              bigint                                 null,
     uri                  varchar(255) default ''                null comment '数据集存储位置',
     create_user_id       bigint                                 null,
@@ -23,6 +23,9 @@ create table if not exists data_dataset
     `archive_url`        varchar(255) DEFAULT NULL COMMENT '用户导入数据集压缩包地址',
     `decompress_state`   tinyint(2)   DEFAULT '0' COMMENT '解压状态: 0未解压 1解压中 2解压完成 3解压失败',
     `decompress_fail_reason` varchar(255) DEFAULT NULL COMMENT '解压失败原因',
+    label_group_id        bigint         NULL COMMENT '标签组ID',
+    `is_top` tinyint(1) NULL DEFAULT NULL COMMENT '是否为置顶',
+    origin_user_id        bigint         NULL COMMENT '资源用有人ID',
     constraint idx_name_unique
         unique (name) comment '数据集名称唯一'
 )
@@ -55,6 +58,7 @@ create table if not exists data_dataset_version
     version_source varchar(32)      null comment '来源版本号',
     version_url    varchar(255)     null comment '版本信息存储url',
     data_conversion int(1) NOT NULL DEFAULT 0 COMMENT '数据转换；0：未复制；1：已复制;2:转换完成,3:转换失败',
+    origin_user_id bigint         NULL COMMENT '资源用有人ID',
     constraint unique_version
         unique (dataset_id, version_name) comment '数据集版本号唯一'
 )
@@ -90,8 +94,11 @@ create table if not exists data_file
     md5            varchar(255)     default ''                not null comment '文件md5',
     file_type      tinyint          default 0                 null comment '文件类型  0-图片,1-视频',
     pid            bigint           default 0                 null comment '父文件id',
-    frame_interval int              default 0                 not null comment '帧间隔',
+    frame_interval int              default 0                 null comment '帧间隔',
+    width          int              default null              null comment '图片宽',
+    height         int              default null              null comment '图片高',
     enhance_type smallint(3) NULL DEFAULT NULL COMMENT '增强类型',
+    origin_user_id bigint         NULL COMMENT '资源用有人ID',
     constraint name_uniq
         unique (name, dataset_id, deleted)
 )
@@ -126,24 +133,29 @@ create table if not exists data_label
 create index dataset
     on data_label (name, deleted);
 
-create table if not exists data_task
-(
-    id             bigint unsigned zerofill auto_increment comment 'ID'
-        primary key,
-    total          int          default 0                 not null comment '任务需要处理的文件总数',
-    status         tinyint      default 1                 not null comment '任务状态，创建即为进行中。1进行中，2已完成',
-    finished       int          default 0                 not null comment '已完成的文件数',
-    files          varchar(255) default ''                null comment '文件id数组',
-    datasets       varchar(255) default ''                null comment '数据集id数组',
-    create_user_id bigint                                 null comment '创建用户ID',
-    create_time    datetime     default CURRENT_TIMESTAMP not null comment '创建时间',
-    update_time    datetime     default CURRENT_TIMESTAMP not null on update CURRENT_TIMESTAMP comment '更新时间',
-    deleted        bit          default b'0'              not null comment '0正常，1已删除',
-    annotate_type  tinyint      default 0                 not null comment '标注类型：0分类,1目标检测',
-    data_type      tinyint      default 0                 not null comment '数据类型:0图片，1视频',
-    labels         varchar(255)                           not null comment '该自动标注任务使用的标签数组，json串形式'
-)
-    comment '标注任务信息' charset = utf8;
+CREATE TABLE IF NOT EXISTS `data_task`  (
+  `id` bigint(20) UNSIGNED ZEROFILL NOT NULL AUTO_INCREMENT COMMENT 'ID',
+  `total` int(11) NOT NULL DEFAULT 0 COMMENT '任务需要处理的文件总数',
+  `status` tinyint(4) NOT NULL DEFAULT 0 COMMENT '任务状态 0.待分配 1.分配中 2.进行中 3.已完成 4.失败',
+  `finished` int(11) NOT NULL DEFAULT 0 COMMENT '已完成的文件数',
+  `failed` int(11) NOT NULL DEFAULT 0 COMMENT '失败文件数量',
+  `files` varchar(255) CHARACTER SET utf8 COLLATE utf8_general_ci NULL DEFAULT '' COMMENT '文件id数组',
+  `dataset_id` bigint(20) NULL DEFAULT NULL COMMENT '数据集ID',
+  `annotate_type` tinyint(4) NOT NULL DEFAULT 0 COMMENT '标注类型：0分类,1目标检测',
+  `data_type` tinyint(4) NOT NULL DEFAULT 0 COMMENT '数据类型:0图片，1视频',
+  `labels` text CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL COMMENT '该自动标注任务使用的标签数组，json串形式',
+  `deleted` bit(1) NOT NULL DEFAULT b'0' COMMENT '0正常，1已删除',
+  `datasets` varchar(255) CHARACTER SET utf8 COLLATE utf8_general_ci NULL DEFAULT '' COMMENT '数据集id数组',
+  `create_user_id` bigint(20) NULL DEFAULT NULL COMMENT '创建用户ID',
+  `create_time` datetime(0) NOT NULL DEFAULT CURRENT_TIMESTAMP(0) COMMENT '创建时间',
+  `update_time` datetime(0) NOT NULL DEFAULT CURRENT_TIMESTAMP(0) ON UPDATE CURRENT_TIMESTAMP(0) COMMENT '更新时间',
+  `type` smallint(3) NULL DEFAULT NULL COMMENT '任务类型 0.自动标注 1.ofrecord 2.imageNet 3.数据增强 4.目标跟踪 5.视频采样',
+  `dataset_version_id` bigint(20) NULL DEFAULT NULL COMMENT '数据集版本ID',
+  `enhance_type` text CHARACTER SET utf8 COLLATE utf8_general_ci NULL COMMENT '增强类型数组',
+  `url` varchar(255) CHARACTER SET utf8 COLLATE utf8_general_ci NULL DEFAULT NULL COMMENT '视频文件url',
+  `frame_interval` int(11) NULL DEFAULT NULL COMMENT '视频帧间隔',
+  PRIMARY KEY (`id`) USING BTREE
+) ENGINE = InnoDB AUTO_INCREMENT = 1 CHARACTER SET = utf8 COLLATE = utf8_general_ci COMMENT = '标注任务信息' ROW_FORMAT = Dynamic;
 
 create index deleted
     on data_task (deleted);
@@ -233,9 +245,9 @@ create table if not exists menu
 
 create table if not exists `notebook` (
 	`id` BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT COMMENT '主键ID',
-	`user_id` BIGINT(20) NOT NULL COMMENT '所属用户ID',
+	`origin_user_id` BIGINT(20) NOT NULL COMMENT '所属用户ID',
 	`name` VARCHAR(100) NOT NULL COMMENT 'notebook名称(供K8S使用)',
-    `notebook_name` VARCHAR(100) NOT NULL COMMENT 'notebook名称(供前端使用)',
+	`notebook_name` VARCHAR(100) NULL DEFAULT NULL COMMENT 'notebook名称(供前端使用)',
 	`description` VARCHAR(255) NULL DEFAULT NULL COMMENT '描述',
 	`url` VARCHAR(255) NULL DEFAULT NULL COMMENT '访问 notebook 在 Jupyter 里所需的url',
 	`total_run_min` INT(11) NOT NULL DEFAULT '0' COMMENT '运行总时间(分钟)',
@@ -243,11 +255,11 @@ create table if not exists `notebook` (
 	`gpu_num` TINYINT(4) NOT NULL DEFAULT '0' COMMENT 'GPU数量',
 	`mem_num` INT(11) NOT NULL DEFAULT '0' COMMENT '内存大小（G）',
 	`disk_mem_num` INT(11) NOT NULL DEFAULT '0' COMMENT '硬盘内存大小（G）',
-	`create_resource` TINYINT(4) NOT NULL DEFAULT '0' COMMENT '0 - notebook 创建 1- 其它系统创建',
-	`status` TINYINT(4) NOT NULL DEFAULT '1' COMMENT '0运行中，1停止, 2删除, 3启动中，4停止中，5删除中，6运行异常（暂未启用）',
+	`status` TINYINT(4) NOT NULL DEFAULT '1' COMMENT '0运行，1停止, 2删除, 3启动中，4停止中，5删除中，6运行异常（暂未启用）',
 	`last_start_time` TIMESTAMP NULL DEFAULT NULL COMMENT '上次启动执行时间',
 	`last_operation_timeout` BIGINT(20) NULL DEFAULT NULL COMMENT '上次操作对应超时时间点（20200603121212）',
 	`k8s_status_code` VARCHAR(100) NULL DEFAULT NULL COMMENT 'k8s响应状态码',
+	`create_resource` TINYINT(4) NOT NULL DEFAULT '0' COMMENT '0 - notebook 创建 1- 其它系统创建',
 	`k8s_status_info` VARCHAR(255) NULL DEFAULT NULL COMMENT 'k8s响应状态信息',
 	`k8s_namespace` VARCHAR(255) NOT NULL COMMENT 'k8s中namespace',
 	`k8s_resource_name` VARCHAR(255) NOT NULL COMMENT 'k8s中资源名称',
@@ -261,10 +273,10 @@ create table if not exists `notebook` (
 	`deleted` BIT(1) NULL DEFAULT b'0' COMMENT '0正常，1已删除',
 	`data_source_name` VARCHAR(255) NULL DEFAULT NULL COMMENT '数据集名称',
 	`data_source_path` VARCHAR(255) NULL DEFAULT NULL COMMENT '数据集路劲',
-	`algorithm_id` bigint(20) DEFAULT '0' COMMENT '算法ID',
+	`algorithm_id` BIGINT(20) NULL DEFAULT '0' COMMENT '算法ID',
 	PRIMARY KEY (`id`),
 	INDEX `status` (`status`),
-	INDEX `user_id` (`user_id`),
+	INDEX `user_id` (`origin_user_id`),
 	INDEX `name` (`name`),
 	INDEX `last_operation_timeout` (`last_operation_timeout`),
 	INDEX `k8s_namespace` (`k8s_namespace`),
@@ -274,6 +286,7 @@ COMMENT='notebook数据表'
 COLLATE='utf8_general_ci'
 ENGINE=InnoDB
 ;
+
 
 
 create table if not exists notebook_model
@@ -335,7 +348,10 @@ create table if not exists pt_job_param
     update_user_id bigint                  null comment '更新人',
     update_time    timestamp               null comment '更新时间',
     run_command    varchar(255) default '' null COMMENT '运行命令',
-    image_name     varchar(127) default '' null COMMENT '镜像名称'
+    image_name     varchar(127) default '' null COMMENT '镜像名称',
+    delay_create_time    timestamp         null comment '创建时间',
+    delay_delete_time    timestamp         null comment '创建时间'
+
 )
     comment 'job运行参数及结果表' charset = utf8mb4;
 
@@ -432,7 +448,8 @@ create table if not exists pt_train
     create_time    timestamp            null     comment '创建时间',
     update_user_id bigint               null     comment '更新人',
     update_time    timestamp            null     comment '更新时间',
-    train_key      varchar(32)          null
+    train_key      varchar(32)          null,
+    origin_user_id bigint               null     comment '资源拥有者ID'
 )
     comment '训练作业主表' charset = utf8mb4;
 
@@ -460,7 +477,8 @@ create table if not exists pt_train_algorithm
     image_name         varchar(127)            null,
     is_train_out       tinyint(1)   default 1  null comment '是否输出训练结果:1是，0否',
     is_train_log       tinyint(1)   default 1  null comment '是否输出训练日志:1是，0否',
-    is_visualized_log  tinyint(1)   default 0  null comment '是否输出可视化日志:1是，0否'
+    is_visualized_log  tinyint(1)   default 0  null comment '是否输出可视化日志:1是，0否',
+     origin_user_id    bigint                  null comment '资源拥有者ID'
 )
     comment '训练算法表' charset = utf8mb4;
 
@@ -480,6 +498,7 @@ create table if not exists pt_train_job
     resources_pool_specs varchar(128)                           null comment '规格',
     resources_pool_node  int(8)       default 1                 not null comment '节点个数',
     train_status         tinyint(1)   default 0                 not null comment '训练作业job状态, 0为待处理，1为运行中，2为运行完成，3为失败，4为停止，5为未知，6为删除，7为创建失败)',
+    `train_type` TINYINT(1) UNSIGNED ZEROFILL NULL DEFAULT '0' COMMENT '训练类型 0：普通训练，1：分布式训练',
     deleted              tinyint(1)   default 0                 null comment '删除(0正常，1已删除)',
     create_user_id       bigint                                 null comment '创建人',
     create_time          timestamp                              null comment '创建时间',
@@ -490,6 +509,11 @@ create table if not exists pt_train_job
     data_source_path     varchar(127)                           null comment '数据集路径',
     train_job_specs_id   int(6)       default null                   COMMENT '训练规格id',
     k8s_job_name         varchar(70)                            null comment 'k8s创建好的job名称',
+    val_data_source_name varchar(127)                           null comment '验证数据集名称',
+    val_data_source_path varchar(255)                           null comment '验证数据集路径',
+    val_type             tinyint(1)   default 0                 null comment '是否验证数据集',
+    origin_user_id       bigint                                 null comment '资源拥有者ID',
+    train_msg            varchar(128)                           null comment '训练信息(失败信息)',
     constraint inx_tran_id_version
         unique (train_id, train_version)
 )
@@ -536,7 +560,9 @@ create table if not exists pt_train_param
     data_source_path     varchar(127)            null comment '数据集路径',
     run_command          varchar(255) default '' null COMMENT '运行命令',
     image_name           varchar(127) default '' null COMMENT '镜像名称',
-    train_job_specs_id   int(6)       default null    COMMENT '训练规格id'
+    train_job_specs_id   int(6)       default    null COMMENT '训练规格id',
+    origin_user_id       bigint                  null comment '资源拥有者ID',
+    `train_type`         TINYINT(1) UNSIGNED ZEROFILL NULL DEFAULT '0' COMMENT '训练类型 0：普通训练，1：分布式训练'
 )
     comment '任务参数表' charset = utf8mb4;
 
@@ -660,9 +686,8 @@ create table if not exists users_roles
 
 create table if not exists  pt_auxiliary_info (
 	id                bigint(20)     not null auto_increment comment '主键id',
-	user_id           bigint(20)     not null                comment '用户id',
+	origin_user_id    bigint(20)     not null                comment '资源拥有者id',
 	type              varchar(20)    not null                comment '类型',
-	is_default        tinyint(1)     not null default '0'    comment '是否为默认值',
 	aux_info         varchar(50)     null     default NULL   comment '辅助信息',
 	deleted              tinyint(1)   default 0                 null comment '删除(0正常，1已删除)',
     create_user_id       bigint                                 null comment '创建人',
@@ -670,7 +695,7 @@ create table if not exists  pt_auxiliary_info (
     update_user_id       bigint                                 null comment '更新人',
     update_time          timestamp                              null comment '更新时间',
 	primary key (`id`),
-	index `inx_user_id_type` (`user_id`, `type`) USING BTREE
+	index `inx_user_id_type` (`origin_user_id`, `type`) USING BTREE
 )
 comment='用户的辅助信息表，通过类型进行区分' charset = utf8;
 
@@ -690,7 +715,8 @@ create table pt_image
     create_time    timestamp            null comment '创建时间',
     update_user_id bigint               null comment '更新人',
     update_time    timestamp            null comment '更新时间',
-    deleted        tinyint(1) default 0 null comment '删除(0正常，1已删除)'
+    deleted        tinyint(1) default 0 null comment '删除(0正常，1已删除)',
+    origin_user_id bigint               null comment '资源拥有者ID'
 )
     comment '镜像表' charset = utf8mb4;
 
@@ -715,3 +741,108 @@ CREATE TABLE  if not exists k8s_resource
 	constraint kind_namespace_name_uniq unique (kind,namespace,name) comment '资源唯一'
 )
     comment 'k8s资源表' charset = utf8mb4;
+
+-- k8s任务表
+CREATE TABLE  if not exists k8s_task
+(
+    id                   bigint auto_increment
+        primary key,
+    namespace 	   varchar(64)                 not null comment '命名空间',
+    resource_name  varchar(64)                 not null comment '资源名称',
+	task_yaml  json                            not null comment '资源清单',
+    business       varchar(32)                 null comment '所属业务模块',
+	apply_unix_time  bigint   default 0        not null comment '资源创建unix时间(精确到秒)',
+	apply_display_time        timestamp        null comment '资源创建展示时间',
+    apply_status   tinyint(1) default 0        not null comment '状态(0无需操作，1未创建，2已创建)',
+    stop_unix_time   bigint   default 0        not null comment '资源停止unix时间(精确到秒)',
+	stop_display_time         timestamp        null comment '资源停止展示时间',
+	stop_status    tinyint(1) default 0        not null comment '状态(0无需操作，1已停止，2已创建)',
+	create_time    timestamp  default CURRENT_TIMESTAMP null comment '创建时间',
+	create_user_id bigint(20) default 0        null comment '创建用户ID',
+    update_time    timestamp  default CURRENT_TIMESTAMP null on update CURRENT_TIMESTAMP comment '更新时间',
+    update_user_id bigint(20) default 0        null comment '更新用户ID',
+    deleted bit(1) default b'0' comment '0正常，1已删除',
+	INDEX apply_unix_time(apply_unix_time),
+	INDEX stop_unix_time(stop_unix_time),
+	KEY `apply_status` (`apply_status`) USING BTREE,
+    KEY `stop_status` (`stop_status`) USING BTREE,
+	UNIQUE resource_name_namespace (resource_name,namespace) comment '唯一索引'
+)
+    comment 'k8s任务表' charset = utf8mb4;
+
+    -- 垃圾回收任务表
+create table recycle_task
+(
+    id                 bigint auto_increment comment '主键'
+        primary key,
+    recycle_module     varchar(32)                          not null comment '回收模块',
+    recycle_type       tinyint(1) default 0                 not null comment '回收类型(0文件，1数据库表数据)',
+    recycle_custom     varchar(64)                          null comment '回收定制化方式',
+    recycle_condition  text                         not null comment '回收条件(回收表数据sql、回收文件绝对路径)',
+    recycle_delay_date date                                 null comment '回收日期',
+    recycle_status     tinyint    default 0                 null comment '回收状态(0:待回收，1:已回收，2:回收失败)',
+    create_user_id     bigint                               null comment '创建人ID',
+    update_user_id     bigint                               null comment '修改人ID',
+    create_time        datetime   default CURRENT_TIMESTAMP not null comment '创建时间',
+    update_time        datetime   default CURRENT_TIMESTAMP not null on update CURRENT_TIMESTAMP comment '修改时间',
+    recycle_note       varchar(512)                         null comment '回收备注',
+    deleted            tinyint(1) default 0                 not null comment '删除(0正常，1已删除)'
+)
+    comment '垃圾回收任务表' charset = utf8mb4;
+
+-- data_label_group  表 新建   字段 2020.09.22 陈啸天--
+create table if not exists data_label_group
+(
+    id             bigint primary key auto_increment,
+    `name`           varchar(255) default ''                not null COMMENT '标签组名称',
+    create_user_id bigint                                 null,
+    create_time    datetime     default CURRENT_TIMESTAMP not null,
+    update_user_id bigint                                 null,
+    update_time    datetime     default CURRENT_TIMESTAMP not null on update CURRENT_TIMESTAMP,
+    deleted        bit          default b'0'              not null,
+    remark         varchar(255)     null comment '描述',
+    `type` tinyint(1) NOT NULL DEFAULT 0  comment '类型 0: private 私有标签组,  1:public 公开标签组',
+    origin_user_id bigint         NULL COMMENT '资源用有人ID'
+)
+    comment '标签组' charset = utf8mb4;
+
+-- 创建系统版本控制表
+CREATE TABLE  if not exists system_version
+(
+	id INT(10) NOT NULL AUTO_INCREMENT COMMENT '主键',
+	version INT(10) NOT NULL DEFAULT '0' COMMENT '版本号',
+	create_time TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+	create_user_id BIGINT(20) NULL DEFAULT '0' COMMENT '创建用户ID',
+	update_time TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP COMMENT '更新时间',
+	update_user_id BIGINT(20) NULL DEFAULT '0' COMMENT '更新用户ID',
+	deleted BIT(1) NULL DEFAULT b'0' COMMENT '0正常，1已删除',
+	PRIMARY KEY (`id`) USING BTREE,
+	UNIQUE INDEX `version` (`version`) USING BTREE
+)
+    comment '统版本控制表' charset = utf8mb4;
+
+
+     -- data_sequence  自定义获取主键ID表
+        create table data_sequence
+        (
+            id            int         not null
+                primary key,
+            business_code varchar(50) not null,
+            start         int         not null,
+            step          int         not null
+        )
+            comment '自定义获取主键ID表' charset = utf8mb4;
+
+  -- data_group_label  标签组标签中间表表
+    create table if not exists data_group_label
+    (
+        id             bigint primary key auto_increment,
+        label_id bigint     NULL COMMENT '标签Id',
+        label_group_id bigint     NULL COMMENT '标签组Id',
+        create_user_id bigint                                 null,
+        create_time    datetime     default CURRENT_TIMESTAMP not null,
+        update_user_id bigint                                 null,
+        update_time    datetime     default CURRENT_TIMESTAMP not null on update CURRENT_TIMESTAMP,
+        deleted        bit          default b'0'              not null
+    )
+        comment '标签组标签中间表' charset = utf8mb4;

@@ -159,10 +159,9 @@ public interface NoteBookService {
     /**
      * 获取正在运行的notebook数量
      *
-     * @param curUserId
      * @return int
      */
-    int getNoteBookRunNumber(long curUserId);
+    int getNoteBookRunNumber();
 
     /**
      * 获取notebook模板

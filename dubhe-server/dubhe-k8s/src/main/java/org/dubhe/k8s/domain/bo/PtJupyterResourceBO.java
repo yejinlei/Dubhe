@@ -97,4 +97,8 @@ public class PtJupyterResourceBO {
      * 业务标签,用于标识业务模块
      **/
     private String businessLabel;
+    /**
+     * 定时删除时间，单位：分钟
+     **/
+    private Integer delayDeleteTime;
 }

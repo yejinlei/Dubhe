@@ -20,6 +20,7 @@ package org.dubhe.k8s.api.impl;
 import cn.hutool.core.collection.CollectionUtil;
 import cn.hutool.core.util.RandomUtil;
 import cn.hutool.core.util.StrUtil;
+import com.alibaba.fastjson.JSON;
 import com.google.common.collect.Maps;
 import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.EnvVar;
@@ -43,11 +44,14 @@ import org.dubhe.k8s.api.NodeApi;
 import org.dubhe.k8s.api.PersistentVolumeClaimApi;
 import org.dubhe.k8s.api.PodApi;
 import org.dubhe.k8s.api.TrainJobApi;
+import org.dubhe.k8s.cache.ResourceCache;
 import org.dubhe.k8s.constant.K8sLabelConstants;
 import org.dubhe.k8s.constant.K8sParamConstants;
 import org.dubhe.k8s.domain.bo.PtJupyterJobBO;
 import org.dubhe.k8s.domain.bo.PtMountDirBO;
 import org.dubhe.k8s.domain.bo.PtPersistentVolumeClaimBO;
+import org.dubhe.k8s.domain.bo.TaskYamlBO;
+import org.dubhe.k8s.domain.entity.K8sTask;
 import org.dubhe.k8s.domain.resource.BizJob;
 import org.dubhe.k8s.domain.resource.BizPersistentVolumeClaim;
 import org.dubhe.k8s.domain.resource.BizPod;
@@ -58,15 +62,16 @@ import org.dubhe.k8s.enums.K8sResponseEnum;
 import org.dubhe.k8s.enums.LackOfResourcesEnum;
 import org.dubhe.k8s.enums.RestartPolicyEnum;
 import org.dubhe.k8s.enums.ShellCommandEnum;
+import org.dubhe.k8s.service.K8sTaskService;
 import org.dubhe.k8s.utils.BizConvertUtils;
 import org.dubhe.k8s.utils.K8sUtils;
 import org.dubhe.k8s.utils.LabelUtils;
-import org.dubhe.k8s.utils.YamlUtils;
 import org.dubhe.utils.LogUtil;
 import org.dubhe.utils.NfsUtil;
 import org.dubhe.utils.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 
+import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -74,6 +79,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
+
+import static org.dubhe.base.MagicNumConstant.ONE;
+import static org.dubhe.base.MagicNumConstant.SIXTY_LONG;
+import static org.dubhe.base.MagicNumConstant.THOUSAND_LONG;
+import static org.dubhe.base.MagicNumConstant.ZERO;
+import static org.dubhe.base.MagicNumConstant.ZERO_LONG;
 
 /**
  * @description TrainJobApi实现类
@@ -95,6 +106,10 @@ public class TrainJobApiImpl implements TrainJobApi {
     private PodApi podApi;
     @Autowired
     private LogMonitoringApi logMonitoringApi;
+    @Autowired
+    private K8sTaskService k8sTaskService;
+    @Autowired
+    private ResourceCache resourceCache;
 
     public TrainJobApiImpl(K8sUtils k8sUtils) {
         this.k8sUtils = k8sUtils;
@@ -118,11 +133,12 @@ public class TrainJobApiImpl implements TrainJobApi {
             if(!nfsUtil.createDirs(true,bo.getDirList().toArray(new String[MagicNumConstant.ZERO]))){
                 return new PtJupyterJobVO().error(K8sResponseEnum.INTERNAL_SERVER_ERROR.getCode(),K8sResponseEnum.INTERNAL_SERVER_ERROR.getMessage());
             }
+            resourceCache.deletePodCacheByResourceName(bo.getNamespace(),bo.getName());
             PtJupyterJobVO result = new JupyterDeployer(bo).buildVolumes().deploy();
             LogUtil.info(LogEnum.BIZ_K8S,"Return value of creating Job--create:{}", result);
             return result;
         }catch (KubernetesClientException e) {
-            LogUtil.error(LogEnum.BIZ_K8S,"TrainJobApiImpl.create error, param:{} error:", bo, e);
+            LogUtil.error(LogEnum.BIZ_K8S,"TrainJobApiImpl.create error, param:{} error:{}", bo, e);
             return new PtJupyterJobVO().error(String.valueOf(e.getCode()),e.getMessage());
         }
     }
@@ -132,18 +148,15 @@ public class TrainJobApiImpl implements TrainJobApi {
      *
      * @param namespace 命名空间
      * @param resourceName 资源名称
-     * @return Boolean
+     * @return Boolean true成功 false失败
      */
     @Override
     public Boolean delete(String namespace, String resourceName){
         try {
-            List<BizPod> podList = podApi.getListByResourceName(namespace,resourceName);
-            if (CollectionUtil.isNotEmpty(podList)){
-                podList.forEach(pod->logMonitoringApi.addLogsToEs(pod.getName(),pod.getNamespace()));
-            }
+            LogUtil.info(LogEnum.BIZ_K8S,"Params of delete Job--namespace:{}, resourceName:{}",namespace, resourceName);
             return client.batch().jobs().inNamespace(namespace).withLabels(LabelUtils.withEnvResourceName(resourceName)).delete();
         }catch (KubernetesClientException e) {
-            LogUtil.error(LogEnum.BIZ_K8S, "TrainJobApiImpl.delete error, param:[namespace]={}, [resourceName]={}, error:",namespace, resourceName,e);
+            LogUtil.error(LogEnum.BIZ_K8S, "TrainJobApiImpl.delete error, param:[namespace]={}, [resourceName]={}, error:{}",namespace, resourceName,e);
             return false;
         }
     }
@@ -180,7 +193,7 @@ public class TrainJobApiImpl implements TrainJobApi {
             Job job = list.getItems().get(0);
             return BizConvertUtils.toBizJob(job);
         }catch (KubernetesClientException e) {
-            LogUtil.error(LogEnum.BIZ_K8S, "TrainJobApiImpl.get error, param:[namespace]={}, [resourceName]={}, error:",namespace, resourceName,e);
+            LogUtil.error(LogEnum.BIZ_K8S, "TrainJobApiImpl.get error, param:[namespace]={}, [resourceName]={}, error:{}",namespace, resourceName,e);
             return new BizJob().error(String.valueOf(e.getCode()),e.getMessage());
         }
     }
@@ -202,7 +215,9 @@ public class TrainJobApiImpl implements TrainJobApi {
         private List<VolumeMount> volumeMounts;
         private List<Volume> volumes;
         private String businessLabel;
-
+        private Integer delayCreate;
+        private Integer delayDelete;
+        private TaskYamlBO taskYamlBO;
         private String errCode;
         private String errMessage;
 
@@ -230,6 +245,9 @@ public class TrainJobApiImpl implements TrainJobApi {
 
             this.volumeMounts = new ArrayList<>();
             this.volumes = new ArrayList<>();
+            this.delayCreate = bo.getDelayCreateTime();
+            this.delayDelete = bo.getDelayDeleteTime();
+            this.taskYamlBO = new TaskYamlBO();
             this.errCode = K8sResponseEnum.SUCCESS.getCode();
             this.errMessage = SymbolConstant.BLANK;
         }
@@ -240,11 +258,34 @@ public class TrainJobApiImpl implements TrainJobApi {
          * @return PtJupyterJobVO 训练任务 Job 结果类
          */
         public PtJupyterJobVO deploy()  {
+            delayCreate = delayCreate == null || delayCreate <= 0 ? ZERO : delayCreate;
+            delayDelete = delayDelete == null || delayDelete <= 0 ? ZERO : delayDelete;
             if (!K8sResponseEnum.SUCCESS.getCode().equals(errCode)){
                 return new PtJupyterJobVO().error(errCode,errMessage);
             }
             //部署job
-            Job job = deployJob();
+            Job job = deployJob(delayCreate, delayDelete);
+            if (CollectionUtil.isNotEmpty(taskYamlBO.getYamlList()) && (delayCreate > ZERO || delayDelete > ZERO)){
+                long applyUnixTime = System.currentTimeMillis()/THOUSAND_LONG + delayCreate*SIXTY_LONG;
+                Timestamp applyDisplayTime = new Timestamp(applyUnixTime * THOUSAND_LONG);
+                long stopUnixTime = applyUnixTime + delayDelete* SIXTY_LONG;
+                Timestamp stopDisplayTime = new Timestamp(stopUnixTime * THOUSAND_LONG);
+                K8sTask k8sTask = new K8sTask(){{
+                    setNamespace(namespace);
+                    setResourceName(baseName);
+                    setTaskYaml(JSON.toJSONString(taskYamlBO));
+                    setBusiness(businessLabel);
+                    setApplyUnixTime(applyUnixTime);
+                    setApplyDisplayTime(applyDisplayTime);
+                    setApplyStatus(delayCreate == ZERO ? ZERO : ONE);
+                }};
+                if (delayDelete > ZERO){
+                    k8sTask.setStopUnixTime(stopUnixTime);
+                    k8sTask.setStopDisplayTime(stopDisplayTime);
+                    k8sTask.setStopStatus(ONE);
+                }
+                k8sTaskService.createOrUpdateTask(k8sTask);
+            }
 
             return PtJupyterJobVO.getInstance(job);
         }
@@ -278,7 +319,7 @@ public class TrainJobApiImpl implements TrainJobApi {
          * @param mountPath 挂载路径
          * @param dirBO 挂载路径参数
          * @param num 名称序号
-         * @return boolean
+         * @return boolean true成功 false失败
          */
         private boolean buildNfsVolumes(String mountPath,PtMountDirBO dirBO,int num){
             volumeMounts.add(new VolumeMountBuilder()
@@ -302,7 +343,7 @@ public class TrainJobApiImpl implements TrainJobApi {
          * @param mountPath 挂载路径
          * @param dirBO 挂载路径参数
          * @param i 名称序号
-         * @return boolean
+         * @return boolean true成功 false失败
          */
         private boolean buildNfsPvcVolumes(String mountPath,PtMountDirBO dirBO,int i){
             BizPersistentVolumeClaim bizPersistentVolumeClaim = persistentVolumeClaimApi.createWithNfsPv(new PtPersistentVolumeClaimBO(namespace,baseName,dirBO));
@@ -327,9 +368,12 @@ public class TrainJobApiImpl implements TrainJobApi {
         /**
          * 部署Job
          *
-         * @return Job
+         * @param delayCreate 创建
+         * @param delayDelete 删除
+         * @return Job job类
          */
-        private Job deployJob() {
+        private Job deployJob(Integer delayCreate, Integer delayDelete) {
+
             Job job = null;
             JobList list = client.batch().jobs().inNamespace(namespace).withLabels(LabelUtils.withEnvResourceName(baseName)).list();
             if(CollectionUtil.isNotEmpty(list.getItems())){
@@ -388,6 +432,7 @@ public class TrainJobApiImpl implements TrainJobApi {
                                 .withNamespace(namespace)
                             .endMetadata()
                             .withNewSpec()
+                                .withTerminationGracePeriodSeconds(ZERO_LONG)
                                 .addToNodeSelector(gpuLabel)
                                 .addToContainers(container)
                                 .addToVolumes(volumes.toArray(new Volume[0]))
@@ -396,10 +441,15 @@ public class TrainJobApiImpl implements TrainJobApi {
                         .endTemplate()
                     .endSpec()
                     .build();
-            System.out.println(YamlUtils.dumpAsYaml(job));
-            LogUtil.info(LogEnum.BIZ_K8S, "Ready to deploy {}", jobName);
-            job = client.batch().jobs().create(job);
-            LogUtil.info(LogEnum.BIZ_K8S, "{} deployed successfully", jobName);
+            if (delayCreate == null || delayCreate == ZERO){
+                LogUtil.info(LogEnum.BIZ_K8S, "Ready to deploy {}", jobName);
+                job = client.batch().jobs().create(job);
+                LogUtil.info(LogEnum.BIZ_K8S, "{} deployed successfully", jobName);
+            }
+            if (delayCreate > ZERO || delayDelete > ZERO){
+             taskYamlBO.append(job);
+            }
+
             return job;
         }
     }

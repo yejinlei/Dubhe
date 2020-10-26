@@ -99,7 +99,7 @@ public interface PersistentVolumeClaimApi {
      * 删除PV
      *
      * @param pvName PV名称
-     * @return boolean
+     * @return boolean true删除成功 false删除失败
      */
     boolean deletePv(String pvName);
 

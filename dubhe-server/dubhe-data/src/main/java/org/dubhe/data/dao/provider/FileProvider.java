@@ -29,8 +29,8 @@ public class FileProvider {
     /**
      * 获取数据集状态列表
      *
-     * @param para 查询参数
-     * @return String sql
+     * @param para       查询参数
+     * @return String    sql
      */
     public String listStatistics(Map<String, Object> para) {
         Collection<Long> ids = (Collection) para.get("ids");

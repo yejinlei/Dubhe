@@ -17,9 +17,8 @@
 package org.dubhe.enums;
 
 /**
- *@description 规格类型
- *@date: 2020-07-15
-
+ * @description 规格类型
+ * @date 2020-07-15
  */
 public enum ResourcesPoolTypeEnum {
 
@@ -48,6 +47,15 @@ public enum ResourcesPoolTypeEnum {
 
     public String getDescription() {
         return description;
+    }
+
+    /**
+     * 是否是GPU编码
+     * @param code
+     * @return true 是 ，false 否
+     */
+    public static boolean isGpuCode(Integer code){
+        return GPU.getCode().equals(code);
     }
 
 }

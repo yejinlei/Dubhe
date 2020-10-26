@@ -139,7 +139,7 @@ public interface NamespaceApi {
      *
      * @param namespace 命名空间
      * @param quota 资源限制参数类
-     * @return boolean
+     * @return boolean true删除成功 false删除失败
      */
     boolean removeResourceQuota(String namespace, ResourceQuota quota);
 }

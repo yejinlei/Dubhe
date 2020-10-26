@@ -23,10 +23,12 @@ import org.apache.shiro.authz.annotation.RequiresPermissions;
 import org.dubhe.base.DataResponseBody;
 import org.dubhe.data.constant.Constant;
 import org.dubhe.data.constant.DatasetLabelEnum;
+import org.dubhe.data.domain.dto.LabelCreateDTO;
 import org.dubhe.data.domain.entity.Label;
 import org.dubhe.data.service.DatasetService;
 import org.dubhe.data.service.LabelService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import static org.dubhe.constant.Permissions.DATA;
@@ -49,7 +51,8 @@ public class LabelController {
     @PostMapping(value = "/{datasetId}/labels")
     @RequiresPermissions(DATA)
     public DataResponseBody create(@RequestBody Label label, @PathVariable(name = "datasetId") Long datasetId) {
-        return new DataResponseBody(datasetService.saveLabel(label, datasetId));
+        datasetService.saveLabel(label, datasetId);
+        return new DataResponseBody();
     }
 
     @ApiOperation(value = "标签查询")
@@ -72,5 +75,21 @@ public class LabelController {
     public DataResponseBody getPresetLabels() {
         return new DataResponseBody(DatasetLabelEnum.getPresetLabels());
     }
+
+    @ApiOperation(value = "标签修改")
+    @PutMapping(value = "/labels/{labelId}")
+    @RequiresPermissions(DATA)
+    public DataResponseBody update(@PathVariable(name = "labelId") Long labelId,
+                                  @Validated @RequestBody LabelCreateDTO labelCreateDto) {
+        return new DataResponseBody(labelService.update(labelCreateDto, labelId));
+    }
+
+    @ApiOperation(value = "获取coco预置标签")
+    @GetMapping(value = "/pubLabels")
+    @RequiresPermissions(DATA)
+    public DataResponseBody getPubLabels() {
+        return new DataResponseBody(labelService.getPubLabels());
+    }
+
 
 }

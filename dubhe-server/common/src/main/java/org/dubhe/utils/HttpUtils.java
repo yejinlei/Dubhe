@@ -20,8 +20,8 @@ package org.dubhe.utils;
 import lombok.extern.slf4j.Slf4j;
 
 /**
- * @description: HttpUtil
- * @date 2020.04.30
+ * @description HttpUtil
+ * @date 2020-04-30
  */
 @Slf4j
 public class HttpUtils {

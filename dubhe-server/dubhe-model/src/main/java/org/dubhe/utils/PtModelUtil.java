@@ -23,8 +23,28 @@ package org.dubhe.utils;
  */
 public class PtModelUtil {
     public static final int NUMBER_ZERO = 0;
+
     public static final int NUMBER_ONE = 1;
+
     public static final int NUMBER_TWO = 2;
+
     public static final int NUMBER_ONE_HUNDRED_TWENTY_EIGHT = 128;
+
     public static final int NUMBER_TWO_HUNDRED_FIFTY_FIVE = 255;
+
+    public static final String ZIP = ".zip";
+
+    public static final String SORT_ASC = "asc";
+
+    public static final String SORT_DESC = "desc";
+
+    public static final String ID = "id";
+
+    public static final int USER_UPLOAD = 0;
+
+    public static final int TRAINING_IMPORT = 1;
+
+    public static final int MODEL_OPTIMIZATION = 2;
+
+    public static final int RANDOM_LENGTH = 4;
 }

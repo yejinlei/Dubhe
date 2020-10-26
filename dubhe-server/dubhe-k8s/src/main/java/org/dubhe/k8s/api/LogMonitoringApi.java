@@ -16,9 +16,10 @@
  */
 
 package org.dubhe.k8s.api;
-
 import org.dubhe.k8s.domain.bo.LogMonitoringBO;
 import org.dubhe.k8s.domain.vo.LogMonitoringVO;
+
+import java.util.List;
 
 
 /**
@@ -28,13 +29,23 @@ import org.dubhe.k8s.domain.vo.LogMonitoringVO;
 public interface LogMonitoringApi {
 
     /**
-     * 添加日志到ES
+     * 添加Pod日志到ES,无日志参数，默认从k8s集群查询日志添加到ES
      *
      * @param podName Pod名称
      * @param namespace 命名空间
      * @return boolean 日志添加是否成功
      */
     boolean addLogsToEs(String podName,String namespace);
+
+    /**
+     * 添加Pod自定义日志到ES
+     *
+     * @param podName Pod名称
+     * @param namespace 命名空间
+     * @param logList 日志信息
+     * @return boolean 日志添加是否成功
+     */
+    boolean addLogsToEs(String podName, String namespace, List<String> logList);
 
     /**
      * 日志查询方法
@@ -44,6 +55,24 @@ public interface LogMonitoringApi {
      * @param logMonitoringBo 日志查询bo
      * @return LogMonitoringVO 日志查询结果类
      */
-    LogMonitoringVO searchLog(int from, int size, LogMonitoringBO logMonitoringBo);
+    LogMonitoringVO searchLogByResName(int from, int size, LogMonitoringBO logMonitoringBo);
+
+    /**
+     * 日志查询方法
+     *
+     * @param from 日志查询起始值，初始值为1，表示从第一条日志记录开始查询
+     * @param size 日志查询记录数
+     * @param logMonitoringBo 日志查询bo
+     * @return LogMonitoringVO 日志查询结果类
+     */
+    LogMonitoringVO searchLogByPodName(int from, int size, LogMonitoringBO logMonitoringBo);
+
+    /**
+     * Pod 日志总量查询方法
+     *
+     * @param logMonitoringBo 日志查询bo
+     * @return long Pod 产生的日志总量
+     */
+    long searchLogCountByPodName(LogMonitoringBO logMonitoringBo);
 
 }

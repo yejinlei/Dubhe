@@ -17,6 +17,7 @@
 
 package org.dubhe.data.domain.dto;
 
+import com.baomidou.mybatisplus.annotation.TableField;
 import io.swagger.annotations.ApiModelProperty;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -25,17 +26,17 @@ import lombok.NoArgsConstructor;
 import org.dubhe.annotation.EnumValue;
 import org.dubhe.data.constant.AnnotateTypeEnum;
 import org.dubhe.data.constant.Constant;
-import org.dubhe.data.constant.DatasetStatusEnum;
-import org.dubhe.data.constant.DatasetTypeEnum;
 import org.dubhe.data.constant.DatatypeEnum;
 import org.dubhe.data.domain.entity.Dataset;
-import org.dubhe.data.domain.entity.Label;
+import org.dubhe.data.machine.constant.DataStateCodeConstant;
+import org.dubhe.enums.DatasetTypeEnum;
+import org.dubhe.utils.JwtUtils;
 
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
 import java.io.Serializable;
-import java.util.List;
+import java.util.Objects;
 
 /**
  * @description 数据集
@@ -55,6 +56,7 @@ public class DatasetCreateDTO implements Serializable {
 
     @ApiModelProperty(notes = "备注信息")
     private String remark;
+
     @ApiModelProperty(notes = "类型 0: private 私有数据,  1:team  团队数据  2:public 公开数据")
     @NotNull(message = "类型不能为空", groups = Create.class)
     @EnumValue(enumClass = DatasetTypeEnum.class, enumMethod = "isValid",
@@ -74,30 +76,38 @@ public class DatasetCreateDTO implements Serializable {
     @EnumValue(enumClass = AnnotateTypeEnum.class, enumMethod = "isValid", message = Constant.ANNOTATE_TYPE_RULE, groups = Create.class)
     private Integer annotateType;
 
-    @ApiModelProperty(notes = "标签列表")
-    private List<Label> labels;
+    @ApiModelProperty(notes = "标签组Id")
+    private Long labelGroupId;
 
     @ApiModelProperty(value = "预置标签类型 2:imageNet  3:MS COCO")
     private Integer presetLabelType;
+
+    @ApiModelProperty(value = "是否用户导入")
+    @TableField(value = "is_import")
+    private boolean isImport;
+
 
     public @interface Create {
     }
 
     /**
-     * 创建数据集
-     * @param datasetCreateDTO
-     * @return
+     * DatasetCreateDTO 转换Dataset
+     *
+     * @param datasetCreateDTO  数据集创建DTO
+     * @return  数据集
      */
     public static Dataset from(DatasetCreateDTO datasetCreateDTO) {
         Dataset dataset = new Dataset(datasetCreateDTO);
-        dataset.setStatus(DatasetStatusEnum.INIT.getValue());
+        dataset.setStatus(DataStateCodeConstant.NOT_ANNOTATION_STATE);
+        dataset.setOriginUserId(Objects.isNull(JwtUtils.getCurrentUserDto()) ? null : JwtUtils.getCurrentUserDto().getId());
         return dataset;
     }
 
     /**
      * 更新数据集
-     * @param datasetCreateDTO
-     * @return
+     *
+     * @param datasetCreateDTO 数据集创建DTO
+     * @return 数据集
      */
     public static Dataset update(DatasetCreateDTO datasetCreateDTO) {
         return new Dataset(datasetCreateDTO);

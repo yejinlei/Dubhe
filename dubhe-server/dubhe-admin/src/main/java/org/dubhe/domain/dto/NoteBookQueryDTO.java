@@ -42,7 +42,7 @@ public class NoteBookQueryDTO implements Serializable {
     @Query(propName = "k8s_pvc_path", type = Query.Type.EQ)
     private String k8sPvcPath;
 
-    @Query(propName = "user_id", type = Query.Type.EQ)
+    @Query(propName = "origin_user_id", type = Query.Type.EQ)
     private Long userId;
 
     @Query(propName = "last_operation_timeout", type = Query.Type.LT)

@@ -123,7 +123,7 @@ public class ValidationAspect {
         }
         /**递归校验父类属性**/
         if (argClass.getSuperclass() != Object.class) {
-            return validateArgResourceName(arg, arg.getClass().getSuperclass());
+            return validateArgResourceName(arg, argClass.getSuperclass());
         }
         return new ValidateResourceNameResult(true, null);
     }

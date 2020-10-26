@@ -44,8 +44,8 @@ import java.io.PrintWriter;
 
 
 /**
- * @Description 自定义的认证过滤器，用来拦截Header中携带 JWT token的请求
- * @Date 2020-06-01
+ * @description 自定义的认证过滤器，用来拦截Header中携带 JWT token的请求
+ * @date 2020-06-01
  */
 public class JwtFilter extends BasicHttpAuthenticationFilter {
 
@@ -167,8 +167,7 @@ public class JwtFilter extends BasicHttpAuthenticationFilter {
      */
     @Override
     protected boolean onLoginSuccess(AuthenticationToken token, Subject subject, ServletRequest request,
-                                     ServletResponse response) throws Exception {
-        System.out.println("login success");
+                                     ServletResponse response) {
         HttpServletResponse httpResponse = WebUtils.toHttp(response);
         String newToken = null;
         if (token instanceof JwtToken) {

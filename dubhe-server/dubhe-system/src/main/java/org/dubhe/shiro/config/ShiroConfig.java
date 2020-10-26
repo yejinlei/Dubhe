@@ -106,8 +106,6 @@ public class ShiroConfig {
 
         //自动标注
         filterRuleMap.put("/api/data/datasets/files/annotations/auto", "jwt");
-        //自动标注回调
-        filterRuleMap.put("/api/data/datasets/files/annotations/auto/**", "anon");
 
         //转换完成回调
         filterRuleMap.put("/api/data/datasets/versions/**/convert/finish","anon");

@@ -21,8 +21,8 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * @desc: 业务NFS路径枚举
- * @date 2020.05.13
+ * @description 业务NFS路径枚举
+ * @date 2020-05-13
  */
 public enum BizNfsEnum {
     /**
@@ -33,6 +33,10 @@ public enum BizNfsEnum {
      * 算法管理 NFS 路径命名
      */
     ALGORITHM(BizEnum.ALGORITHM, "algorithm-manage"),
+    /**
+     * 模型管理 NFS 路径命名
+     */
+    MODEL(BizEnum.MODEL, "model"),
     ;
 
     BizNfsEnum(BizEnum bizEnum, String bizNfsPath) {
@@ -81,11 +85,11 @@ public enum BizNfsEnum {
         return bizNfsPath;
     }
 
-    public BizEnum getBizEnum(){
+    public BizEnum getBizEnum() {
         return bizEnum;
     }
 
     public String getBizCode() {
-        return bizEnum == null ? null :bizEnum.getBizCode();
+        return bizEnum == null ? null : bizEnum.getBizCode();
     }
 }

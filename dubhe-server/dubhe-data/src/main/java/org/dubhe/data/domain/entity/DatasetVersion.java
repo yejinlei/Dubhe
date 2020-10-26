@@ -81,6 +81,9 @@ public class DatasetVersion {
     @TableField("deleted")
     private Boolean deleted = false;
 
+    @ApiModelProperty(value = "资源拥有人id")
+    private Long originUserId;
+
     public DatasetVersion() {
     }
 

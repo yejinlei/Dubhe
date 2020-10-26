@@ -62,4 +62,22 @@ public interface K8sResourceService {
      * @return List<K8sResource> K8sResource资源集合
      */
     List<K8sResource> selectByName(String kind, String namespace, String name);
+
+    /**
+     * 根据resourceName删除
+     * @param kind  资源类型
+     * @param namespace 命名空间
+     * @param resourceName 资源名称
+     * @return int 删除数量
+     */
+    int deleteByResourceName(String kind,String namespace,String resourceName);
+
+    /**
+     * 根据名称删除
+     * @param kind
+     * @param namespace
+     * @param name 比如kind 是 pod那name就对应 podName
+     * @return int 删除数量
+     */
+    int deleteByName(String kind,String namespace,String name);
 }

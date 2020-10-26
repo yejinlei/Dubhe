@@ -99,7 +99,7 @@ public class YamlUtils {
         try (Writer writer = new FileWriter(filePath)) {
             yaml.dump(resource, writer);
         } catch (IOException e) {
-            LogUtil.error(LogEnum.BIZ_K8S,"dumpToYaml error ",e);
+            LogUtil.error(LogEnum.BIZ_K8S,"dumpToYaml error:{}",e);
         }
     }
 
@@ -113,7 +113,7 @@ public class YamlUtils {
         try {
             return SerializationUtils.dumpAsYaml(obj);
         } catch (JsonProcessingException e) {
-            LogUtil.error(LogEnum.BIZ_K8S,"dumpAsYamle error ",e);
+            LogUtil.error(LogEnum.BIZ_K8S,"dumpAsYamle error:{}",e);
         }
         return SymbolConstant.BLANK;
     }

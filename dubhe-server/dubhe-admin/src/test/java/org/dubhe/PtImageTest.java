@@ -18,12 +18,16 @@
 package org.dubhe;
 
 import com.alibaba.fastjson.JSON;
+import org.dubhe.domain.dto.PtImageDeleteDTO;
+import org.dubhe.domain.dto.PtImageUpdateDTO;
 import org.dubhe.domain.dto.PtImageUploadDTO;
 import org.junit.Test;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
+
+import java.util.Arrays;
 
 /**
  * @description 镜像接口单元测试
@@ -41,8 +45,9 @@ public class PtImageTest extends BaseTest {
         params.add("size", "10");
         params.add("sort", "id");
         params.add("order", "desc");
-        params.add("imageResource", "1");
-        mockMvcWithNoRequestBody(mockMvc.perform(MockMvcRequestBuilders.get("/api/v1/ptImage/info").param("imageResource", "1"))
+        params.add("imageResource", "0");
+        params.add("imageNameOrId", "oneflow");
+        mockMvcWithNoRequestBody(mockMvc.perform(MockMvcRequestBuilders.get("/api/v1/ptImage/info").params(params))
                 .andExpect(MockMvcResultMatchers.status().isOk()).andReturn().getResponse(), 200);
     }
 
@@ -74,5 +79,40 @@ public class PtImageTest extends BaseTest {
                 MockMvcResultMatchers.status().is2xxSuccessful(), 200);
     }
 
+    /**
+     * 修改镜像信息
+     */
+    @Test
+    public void updateImageTest() throws Exception {
+        PtImageUpdateDTO imageUpdateDTO = new PtImageUpdateDTO();
+        imageUpdateDTO.setIds(Arrays.asList());
+        imageUpdateDTO.setRemark("");
+
+        mockMvcTest(MockMvcRequestBuilders.put("/api/v1/ptImage"), JSON.toJSONString(imageUpdateDTO),
+                MockMvcResultMatchers.status().is2xxSuccessful(), 200);
+    }
+
+    /**
+     * 删除镜像
+     */
+    @Test
+    public void deleteImageTest() throws Exception {
+        PtImageDeleteDTO imageDeleteDTO = new PtImageDeleteDTO();
+        imageDeleteDTO.setIds(Arrays.asList());
+
+        mockMvcTest(MockMvcRequestBuilders.delete("/api/v1/ptImage"), JSON.toJSONString(imageDeleteDTO),
+                MockMvcResultMatchers.status().is2xxSuccessful(), 200);
+    }
+
+
+    /**
+     *
+     * 获取镜像名称列表
+     */
+    @Test
+    public void getImageNameListTest() throws Exception {
+        mockMvcTest(MockMvcRequestBuilders.get("/api/v1/ptImage/imageNameList"), "",
+                MockMvcResultMatchers.status().is2xxSuccessful(), 200);
+    }
 }
 

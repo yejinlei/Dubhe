@@ -53,33 +53,37 @@ public class AnnotationController {
     private TaskService taskService;
 
     @ApiOperation(value = "标注保存")
-    @PostMapping(value = "/{fileId}/annotations")
+    @PostMapping(value = "/{datasetId}/{fileId}/annotations")
     @RequiresPermissions(DATA)
     public DataResponseBody save(@PathVariable(value = "fileId") Long fileId,
+                                 @PathVariable(value = "datasetId") Long datasetId,
                                  @Validated @RequestBody AnnotationInfoCreateDTO annotationInfoCreateDTO) {
-        return new DataResponseBody(annotationService.save(fileId, annotationInfoCreateDTO));
+        annotationService.save(fileId,datasetId, annotationInfoCreateDTO);
+        return new DataResponseBody();
     }
 
     @ApiOperation(value = "标注保存", notes = "状态直接转为完成，用于分类的批量保存")
-    @PostMapping(value = "/annotations")
+    @PostMapping(value = "/{datasetId}/annotations")
     @RequiresPermissions(DATA)
-    public DataResponseBody save(@Validated @RequestBody BatchAnnotationInfoCreateDTO batchAnnotationInfoCreateDTO) {
-        return new DataResponseBody(annotationService.save(batchAnnotationInfoCreateDTO));
+    public DataResponseBody save(@Validated @RequestBody BatchAnnotationInfoCreateDTO batchAnnotationInfoCreateDTO,@PathVariable(value = "datasetId") Long datasetId) {
+        annotationService.save(datasetId,batchAnnotationInfoCreateDTO);
+        return new DataResponseBody();
     }
 
     @ApiOperation(value = "标注完成")
-    @PostMapping(value = "/{fileId}/annotations/finish")
+    @PostMapping(value = "/{datasetId}/{fileId}/annotations/finish")
     @RequiresPermissions(DATA)
     public DataResponseBody finish(@PathVariable(value = "fileId") Long fileId,
-                                   @RequestBody AnnotationInfoCreateDTO annotationInfoCreateDTO) {
-        return new DataResponseBody(annotationService.finishManual(fileId, annotationInfoCreateDTO));
+                                   @RequestBody AnnotationInfoCreateDTO annotationInfoCreateDTO,@PathVariable(value = "datasetId") Long datasetId) {
+        annotationService.finishManual(fileId,datasetId,annotationInfoCreateDTO);
+        return new DataResponseBody();
     }
 
-    @ApiOperation(value = "标注清除", notes = "删除文件或数据集下所有文件的标注，自动标注中的数据集下的文件不允许清除")
+    @ApiOperation(value = "重新标注", notes = "删除文件或数据集下所有文件的标注，并且重新标注，自动标注中的数据集下的文件不允许清除")
     @DeleteMapping(value = "/annotations")
     @RequiresPermissions(DATA)
-    public DataResponseBody delete(@Validated @RequestBody AnnotationDeleteDTO annotationDeleteDTO) {
-        annotationService.delete(annotationDeleteDTO);
+    public DataResponseBody reAuto(@Validated @RequestBody AnnotationDeleteDTO annotationDeleteDTO) {
+        annotationService.reAuto(annotationDeleteDTO);
         return new DataResponseBody();
     }
 
@@ -103,10 +107,13 @@ public class AnnotationController {
         return new DataResponseBody(annotationService.getTaskPool());
     }
 
-    @ApiOperation(value = "自动目标追踪完成")
-    @PostMapping(value = "/annotations/auto/track/{datasetId}")
-    public DataResponseBody finishAutoTrack(@PathVariable(value = "datasetId") Long datasetId, @Validated @RequestBody AutoTrackCreateDTO autoTrackCreateDTO) {
-        annotationService.finishAutoTrack(datasetId, autoTrackCreateDTO);
+
+
+    @ApiOperation(value = "重新目标跟踪")
+    @GetMapping(value = "/annotations/auto/track/{datasetId}")
+    @RequiresPermissions(DATA)
+    public DataResponseBody track(@PathVariable(value = "datasetId") Long datasetId) {
+        annotationService.track(datasetId);
         return new DataResponseBody();
     }
 

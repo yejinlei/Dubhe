@@ -55,10 +55,11 @@ public class TrackHttpService {
     @Value("${minio.bucketName}")
     private String bucket;
 
-
     /**
-     * @param fileMap 文件信息
-     * @return: boolean 是否调用成功
+     * 数据集跟踪接口调用
+     *
+     * @param fileMap   文件信息
+     * @return boolean  是否调用成功
      */
     public boolean track(Map<Long, List<DatasetVersionFile>> fileMap) {
         try {

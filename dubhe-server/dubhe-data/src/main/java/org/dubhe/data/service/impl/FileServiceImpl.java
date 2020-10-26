@@ -20,12 +20,18 @@ package org.dubhe.data.service.impl;
 import cn.hutool.core.collection.CollectionUtil;
 import cn.hutool.core.util.ObjectUtil;
 import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.JSONObject;
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import org.apache.commons.lang3.StringUtils;
+import org.dubhe.annotation.DataPermissionMethod;
 import org.dubhe.base.MagicNumConstant;
+import org.dubhe.constant.NumberConstant;
 import org.dubhe.data.constant.*;
+import org.dubhe.data.dao.DatasetVersionFileMapper;
 import org.dubhe.data.dao.FileMapper;
 import org.dubhe.data.domain.bo.TaskSplitBO;
 import org.dubhe.data.domain.dto.FileCreateDTO;
@@ -33,19 +39,22 @@ import org.dubhe.data.domain.entity.Dataset;
 import org.dubhe.data.domain.entity.DatasetVersionFile;
 import org.dubhe.data.domain.entity.File;
 import org.dubhe.data.domain.entity.Task;
-import org.dubhe.data.domain.vo.FileConvert;
-import org.dubhe.data.domain.vo.FileQueryCriteriaVO;
-import org.dubhe.data.domain.vo.FileVO;
-import org.dubhe.data.domain.vo.ProgressVO;
-import org.dubhe.data.pool.BasePool;
+import org.dubhe.data.domain.vo.*;
+import org.dubhe.data.machine.constant.DataStateMachineConstant;
+import org.dubhe.data.machine.constant.FileStateCodeConstant;
+import org.dubhe.data.machine.dto.StateChangeDTO;
+import org.dubhe.data.machine.enums.DataStateEnum;
+import org.dubhe.data.machine.enums.FileStateEnum;
+import org.dubhe.data.machine.utils.StateMachineUtil;
 import org.dubhe.data.service.DatasetService;
 import org.dubhe.data.service.DatasetVersionFileService;
 import org.dubhe.data.service.FileService;
+import org.dubhe.data.service.TaskService;
 import org.dubhe.data.service.store.IStoreService;
 import org.dubhe.data.service.store.MinioStoreServiceImpl;
 import org.dubhe.data.util.FileUtil;
-import org.dubhe.data.util.JavaCvUtil;
-import org.dubhe.domain.dto.UserDTO;
+import org.dubhe.data.util.TaskUtils;
+import org.dubhe.enums.DatasetTypeEnum;
 import org.dubhe.enums.LogEnum;
 import org.dubhe.exception.BusinessException;
 import org.dubhe.utils.*;
@@ -53,15 +62,17 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.dao.DuplicateKeyException;
+import org.springframework.data.redis.core.ZSetOperations;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
 
 import javax.annotation.Resource;
+import java.math.BigDecimal;
+import java.security.NoSuchAlgorithmException;
 import java.util.*;
 import java.util.stream.Collectors;
 
-import static org.dubhe.constant.PermissionConstant.ADMIN_USER_ID;
 
 /**
  * @description 文件信息 服务实现类
@@ -107,30 +118,6 @@ public class FileServiceImpl extends ServiceImpl<FileMapper, File> implements Fi
     private String url;
 
     /**
-     * offset限制
-     */
-    private static final int OFFSET_DIRECT_QUERY_LIMIT = 10000;
-
-    /**
-     * 需要采样文件set
-     */
-    private static final Set<Integer> STATUS_NEED_SAMPLE = new HashSet<Integer>() {{
-        add(FileStatusEnum.INIT.getValue());
-    }};
-
-    /**
-     * 采样文件查询条件
-     */
-    private static final FileQueryCriteriaVO NEED_SAMPLE_QUERY = FileQueryCriteriaVO.builder()
-            .status(STATUS_NEED_SAMPLE).fileType(DatatypeEnum.VIDEO.getValue()).build();
-
-    /**
-     * 线程池
-     */
-    @Autowired
-    private BasePool pool;
-
-    /**
      * 文件转换
      */
     @Autowired
@@ -141,6 +128,13 @@ public class FileServiceImpl extends ServiceImpl<FileMapper, File> implements Fi
      */
     @Autowired
     private FileUtil fileUtil;
+
+    /**
+     * 任务类
+     */
+    @Autowired
+    @Lazy
+    private TaskService taskService;
 
     /**
      * 文件存储服务实现类
@@ -162,34 +156,53 @@ public class FileServiceImpl extends ServiceImpl<FileMapper, File> implements Fi
     @Lazy
     private DatasetVersionFileService datasetVersionFileService;
 
+    @Autowired
+    private TaskUtils taskUtils;
+
+    @Resource
+    private RedisUtils redisUtils;
+
+    /**
+     * 数据集版本文件服务实现类
+     */
+    @Resource
+    @Lazy
+    private FileMapper fileMapper;
+
+    private static final String SAMPLE_FINISHED_QUEUE_NAME = "videoSample_finished";
+
+    private static final String SAMPLE_FAILED_QUEUE_NAME = "videoSample_failed";
+
+    private static final String START_SAMPLE_QUEUE = "videoSample_processing";
+
+    private static final String SAMPLE_PENDING_QUEUE = "videoSample_unprocessed";
+
+    private static final String DETAIL_NAME = "videoSample_pictures:";
+
+    @Autowired
+    private GeneratorKeyUtil generatorKeyUtil;
+
+
     /**
      * 文件详情
      *
-     * @param fileId 文件id
+     * @param fileId 文件ID
      * @return FileVO 文件信息
      */
     @Override
-    public FileVO get(Long fileId) {
-        File fileOne = baseMapper.selectById(fileId);
-        Dataset dataset = datasetService.getOneById(fileOne.getDatasetId());
-        Set<Long> createUserIds = new HashSet<>();
-        createUserIds.add(dataset.getCreateUserId());
-        createUserIds.add(ADMIN_USER_ID);
-        QueryWrapper<File> fileQueryWrapper = new QueryWrapper<>();
-        fileQueryWrapper.in("create_user_id", createUserIds)
-                .eq("id", fileId);
-        File file = baseMapper.selectOne(fileQueryWrapper);
+    @DataPermissionMethod(dataType = DatasetTypeEnum.PUBLIC)
+    public FileVO get(Long fileId,Long datasetId) {
+        File file = fileMapper.selectFile(fileId,datasetId);
         if (file == null) {
             return null;
         }
-
         return fileConvert.toDto(file, getAnnotation(file.getDatasetId(), file.getName()));
     }
 
     /**
      * 获取标注信息
      *
-     * @param datasetId 数据集id
+     * @param datasetId 数据集ID
      * @param fileName  文件名
      * @return String
      */
@@ -201,7 +214,7 @@ public class FileServiceImpl extends ServiceImpl<FileMapper, File> implements Fi
     /**
      * 判断视频数据集是否已存在视频
      *
-     * @param datasetId 数据集id
+     * @param datasetId 数据集ID
      */
     @Override
     public void isExistVideo(Long datasetId) {
@@ -215,7 +228,7 @@ public class FileServiceImpl extends ServiceImpl<FileMapper, File> implements Fi
     /**
      * 删除文件
      *
-     * @param datasetId 数据集id
+     * @param datasetId 数据集ID
      */
     @Transactional(rollbackFor = Exception.class)
     @Override
@@ -228,82 +241,52 @@ public class FileServiceImpl extends ServiceImpl<FileMapper, File> implements Fi
     /**
      * 数据集标注进度
      *
-     * @param datasetIds 数据集id
+     * @param datasets 数据集
      * @return Map<Long, ProgressVO> 数据集标注进度map
      */
     @Override
-    public Map<Long, ProgressVO> listStatistics(Collection<Long> datasetIds) {
-        if (CollectionUtils.isEmpty(datasetIds)) {
+    public Map<Long, ProgressVO> listStatistics(List<Dataset> datasets) {
+        if (CollectionUtils.isEmpty(datasets)) {
             return Collections.emptyMap();
         }
-        Map<Long, ProgressVO> res = new HashMap<>(datasetIds.size());
+        Map<Long, ProgressVO> res = new HashMap<>(datasets.size());
+
         // 封装数据集版本数据
-        datasetIds.stream().forEach(aLong -> {
-            Dataset dataset = datasetService.getOneById(aLong);
-            List<DatasetVersionFile> datasetVersionFiles = datasetVersionFileService
-                    .getFilesByDatasetIdAndVersionName(dataset.getId(), dataset.getCurrentVersionName());
+        datasets.forEach(dataset -> {
+            Map<Integer, Integer> fileStatus = datasetVersionFileService.getDatasetVersionFileCount(dataset.getId(), dataset.getCurrentVersionName());
             ProgressVO progressVO = ProgressVO.builder().build();
-            datasetVersionFiles.stream().forEach(datasetVersionFile -> {
-                switch (datasetVersionFile.getAnnotationStatus()) {
-                    case 0:
-                    case 1:
-                        progressVO.setUnfinished(progressVO.getUnfinished() + MagicNumConstant.ONE);
-                        break;
-                    case 2:
-                        progressVO.setAutoFinished(progressVO.getAutoFinished() + MagicNumConstant.ONE);
-                        break;
-                    case 3:
-                        progressVO.setFinished(progressVO.getFinished() + MagicNumConstant.ONE);
-                        break;
-                    case 4:
-                        progressVO.setFinishAutoTrack(progressVO.getFinishAutoTrack() + MagicNumConstant.ONE);
-                        break;
-                    default:
+            if (fileStatus != null) {
+                for (Map.Entry<Integer, Integer> entry : fileStatus.entrySet()) {
+                    JSONObject jsonObject = JSON.parseObject(JSON.toJSONString(entry.getValue()));
+                    if (entry.getKey().equals(FileStateCodeConstant.NOT_ANNOTATION_FILE_STATE) || entry.getKey().equals(FileStateCodeConstant.MANUAL_ANNOTATION_FILE_STATE)) {
+                        progressVO.setUnfinished(progressVO.getUnfinished() + jsonObject.getInteger("count"));
+                    } else if (entry.getKey().equals(FileStateCodeConstant.AUTO_TAG_COMPLETE_FILE_STATE)) {
+                        progressVO.setAutoFinished(progressVO.getAutoFinished() + jsonObject.getInteger("count"));
+                    } else if (entry.getKey().equals(FileStateCodeConstant.ANNOTATION_COMPLETE_FILE_STATE)) {
+                        progressVO.setFinished(progressVO.getFinished() + jsonObject.getInteger("count"));
+                    } else if (entry.getKey().equals(FileStateCodeConstant.TARGET_COMPLETE_FILE_STATE)) {
+                        progressVO.setFinishAutoTrack(progressVO.getFinishAutoTrack() + jsonObject.getInteger("count"));
+                    } else if (entry.getKey().equals(FileStateCodeConstant.ANNOTATION_NOT_DISTINGUISH_FILE_STATE)) {
+                        progressVO.setAnnotationNotDistinguishFile(progressVO.getAnnotationNotDistinguishFile() + jsonObject.getInteger("count"));
+                    }
                 }
-            });
-            res.put(aLong, progressVO);
+            }
+            res.put(dataset.getId(), progressVO);
         });
         return res;
     }
 
     /**
-     * 取过滤后的文件
-     *
-     * @param datasetIds 数据集id集合
-     * @param status     按状态过滤
-     * @param need       需要还是不需要，true为需要status中的状态，false为不要其中的状态
-     * @return Set<File> file文件集合
-     */
-    @Override
-    public Set<File> toFiles(List<Long> datasetIds, Dataset dataset, Collection<Integer> status, boolean need) {
-        if (CollectionUtils.isEmpty(status) && need) {
-            return Collections.emptySet();
-        }
-
-        Set<File> files = new HashSet<File>() {{
-            addAll(getByDatasetIds(datasetIds, dataset));
-        }};
-
-        if (CollectionUtils.isEmpty(status)) {
-            return files;
-        }
-
-        return files.stream()
-                .filter(i -> (need == status.contains(i.getStatus()) && DatatypeEnum.IMAGE.getValue().equals(i.getFileType())))
-                .collect(Collectors.toSet());
-    }
-
-    /**
      * 判断是否存在手动标注中的数据集
      *
-     * @param id 数据集id
+     * @param id 数据集ID
      * @return boolean 判断是否存在手动标注中的数据集
      */
     @Override
     public boolean hasManualAnnotating(Long id) {
         QueryWrapper<File> fileQueryWrapper = new QueryWrapper<>();
         //状态等于标注中,排除视频文件
-        fileQueryWrapper.lambda().eq(File::getDatasetId, id).eq(File::getStatus, FileStatusEnum.ANNOTATING.getValue()).ne(File::getFileType, DatatypeEnum.VIDEO.getValue());
+        fileQueryWrapper.lambda().eq(File::getDatasetId, id).eq(File::getStatus, FileStateCodeConstant.MANUAL_ANNOTATION_FILE_STATE).ne(File::getFileType, DatatypeEnum.VIDEO.getValue());
         return getBaseMapper().selectCount(fileQueryWrapper) > MagicNumConstant.ZERO;
     }
 
@@ -331,23 +314,17 @@ public class FileServiceImpl extends ServiceImpl<FileMapper, File> implements Fi
     /**
      * 执行文件更新
      *
-     * @param ids            文件id
+     * @param ids            文件ID
      * @param fileStatusEnum 文件状态
      * @return int 更新结果
      */
-    public int doUpdate(Collection<Long> ids, FileStatusEnum fileStatusEnum) {
+    public int doUpdate(Collection<Long> ids, FileStateEnum fileStatusEnum) {
         if (CollectionUtils.isEmpty(ids)) {
             return MagicNumConstant.ZERO;
         }
-        File newObj = File.builder().status(fileStatusEnum.getValue()).build();
-        List<File> files = baseMapper.selectBatchIds(ids);
-        Dataset dataset = datasetService.getOneById(files.get(MagicNumConstant.ZERO).getDatasetId());
-        Set<Long> createUserIds = new HashSet<>();
-        createUserIds.add(dataset.getCreateUserId());
-        createUserIds.add(ADMIN_USER_ID);
+        File newObj = File.builder().status(fileStatusEnum.getCode()).build();
         QueryWrapper<File> queryWrapper = new QueryWrapper<>();
         queryWrapper.lambda().in(File::getId, ids);
-        queryWrapper.lambda().in(File::getCreateUserId, createUserIds);
         return baseMapper.update(newObj, queryWrapper);
     }
 
@@ -359,7 +336,7 @@ public class FileServiceImpl extends ServiceImpl<FileMapper, File> implements Fi
      * @return int 更新结果
      */
     @Override
-    public int update(Collection<File> files, FileStatusEnum fileStatusEnum) {
+    public int update(Collection<File> files, FileStateEnum fileStatusEnum) {
         Collection<Long> ids = toIds(files);
         if (CollectionUtils.isEmpty(files)) {
             return MagicNumConstant.ZERO;
@@ -380,15 +357,15 @@ public class FileServiceImpl extends ServiceImpl<FileMapper, File> implements Fi
     @Override
     public boolean finishAnnotation(Dataset dataset, Set<Long> files) {
         int count = datasetVersionFileService.updateAnnotationStatus(dataset.getId(), dataset.getCurrentVersionName(),
-                files, FileStatusEnum.INIT.getValue(), FileStatusEnum.AUTO_ANNOTATION.getValue());
+                files, FileStateCodeConstant.NOT_ANNOTATION_FILE_STATE, FileStateCodeConstant.AUTO_TAG_COMPLETE_FILE_STATE);
         return count > MagicNumConstant.ZERO;
     }
 
     /**
-     * 通过文件获取id
+     * 通过文件获取ID
      *
      * @param files file文件
-     * @return Collection<Long> 文件id
+     * @return Collection<Long> 文件ID
      */
     private Collection<Long> toIds(Collection<File> files) {
         if (CollectionUtils.isEmpty(files)) {
@@ -400,14 +377,14 @@ public class FileServiceImpl extends ServiceImpl<FileMapper, File> implements Fi
     /**
      * 更新文件
      *
-     * @param fileId         文件id
+     * @param fileId         文件ID
      * @param fileStatusEnum 文件状态
      * @return int 更行结果
      */
-    public int update(Long fileId, FileStatusEnum fileStatusEnum) {
+    public int update(Long fileId, FileStateEnum fileStatusEnum) {
         File newObj = File.builder()
                 .id(fileId)
-                .status(fileStatusEnum.getValue())
+                .status(fileStatusEnum.getCode())
                 .build();
         return baseMapper.updateById(newObj);
     }
@@ -415,29 +392,29 @@ public class FileServiceImpl extends ServiceImpl<FileMapper, File> implements Fi
     /**
      * 更新文件
      *
-     * @param fileId         文件id
+     * @param fileId         文件ID
      * @param fileStatusEnum 文件状态
      * @param originStatus   文件状态
      * @return boolean 更行结果
      */
-    public boolean update(Long fileId, FileStatusEnum fileStatusEnum, FileStatusEnum originStatus) {
+    public boolean update(Long fileId, FileStateEnum fileStatusEnum, FileStateEnum originStatus) {
         if (getById(fileId) == null) {
             return true;
         }
         UpdateWrapper<File> updateWrapper = new UpdateWrapper<>();
-        updateWrapper.lambda().eq(File::getId, fileId).eq(File::getStatus, originStatus.getValue())
-                .set(File::getId, fileId).set(File::getStatus, fileStatusEnum.getValue());
+        updateWrapper.lambda().eq(File::getId, fileId).eq(File::getStatus, originStatus.getCode())
+                .set(File::getId, fileId).set(File::getStatus, fileStatusEnum.getCode());
         return update(updateWrapper);
     }
 
     /**
      * 保存文件
      *
-     * @param fileId 文件id
+     * @param fileId 文件ID
      * @param files  file文件
      * @return List<Long> 保存的文件id集合
      */
-    @Override                 //datasetId
+    @Override
     public List<Long> saveFiles(Long fileId, List<FileCreateDTO> files) {
         Map<String, String> fail = new HashMap<>(files.size());
         List<Long> fileIds = new ArrayList<>();
@@ -447,16 +424,19 @@ public class FileServiceImpl extends ServiceImpl<FileMapper, File> implements Fi
         if (JwtUtils.getCurrentUserDto() != null) {
             userId = JwtUtils.getCurrentUserDto().getId();
         }
-        files.stream().map(file -> FileCreateDTO.toFile(file, fileId)).forEach(f -> {
+        files.stream().map(file -> FileCreateDTO.toFile(file, fileId, datasetUserId)).forEach(f -> {
             try {
                 newFiles.add(f);
             } catch (DuplicateKeyException e) {
                 fail.put(f.getName(), "the file already exists");
-                return;
             }
         });
         if (!CollectionUtils.isEmpty(fail)) {
             throw new BusinessException(ErrorEnum.FILE_EXIST, JSON.toJSONString(fail), null);
+        }
+        long startIndex = generatorKeyUtil.getSequenceByBusinessCode(Constant.DATA_FILE,newFiles.size());
+        for (File f: newFiles) {
+            f.setId(startIndex++);
         }
         baseMapper.saveList(newFiles, userId, datasetUserId);
         newFiles.forEach(f -> fileIds.add(f.getId()));
@@ -466,63 +446,31 @@ public class FileServiceImpl extends ServiceImpl<FileMapper, File> implements Fi
     /**
      * 保存视频文件
      *
-     * @param fileId 视频文件id
+     * @param fileId 视频文件ID
      * @param files  file文件
      * @param type   文件类型
-     * @param pid    文件父id
-     * @param userId 用户id
+     * @param pid    文件父ID
+     * @param userId 用户ID
      */
     @Override
     public void saveVideoFiles(Long fileId, List<FileCreateDTO> files, int type, Long pid, Long userId) {
         List<File> list = new ArrayList<>();
-        files.stream().map(file -> FileCreateDTO.toFile(file, fileId, type, pid)).forEach(fileCreate -> {
-            fileCreate.setCreateUserId(userId);
-            list.add(fileCreate);
+        Long createUserId = datasetService.getOneById(fileId).getCreateUserId();
+        files.forEach(fileCreateDTO -> {
+            File file = FileCreateDTO.toFile(fileCreateDTO, fileId, type, pid);
+            list.add(file);
         });
-        saveBatch(list);
-    }
-
-    /**
-     * 通过数据集ID获取文件(List<Long> datasetIds, Dataset dataset   二选一,如果都传默认使用 dataset)
-     *
-     * @param datasetIds 数据集id
-     * @return List<File> 通过数据集ID获取文件列表
-     */
-    private List<File> getByDatasetIds(List<Long> datasetIds, Dataset dataset) {
-        boolean datasetIdsFlag = !CollectionUtils.isEmpty(datasetIds);
-        boolean datasetFlag = !(dataset == null);
-        if (datasetIdsFlag || datasetFlag) {
-            if (datasetFlag) {
-                dataset = datasetService.getOneById(datasetIds.get(MagicNumConstant.ZERO));
-            }
-        } else {
-            return new LinkedList<>();
+        long startIndex = generatorKeyUtil.getSequenceByBusinessCode(Constant.DATA_FILE,list.size());
+        for (File f: list) {
+            f.setId(startIndex++);
         }
-        QueryWrapper<File> queryWrapper = new QueryWrapper<>();
-        if (dataset != null) {
-            // 获取数据集当前版本文件列表
-            List<DatasetVersionFile> datasetVersionFiles = datasetVersionFileService
-                    .getListByDatasetIdAndAnnotationStatus(datasetIds.get(MagicNumConstant.ZERO), dataset.getCurrentVersionName(), Arrays.asList(FileStatusEnum.INIT.getValue()));
-            queryWrapper.eq("dataset_id", datasetIds.get(MagicNumConstant.ZERO));
-            List<Long> fileIds = new ArrayList<>();
-            fileIds.add(MagicNumConstant.NEGATIVE_ONE__LONG);
-            if (CollectionUtil.isNotEmpty(datasetVersionFiles)) {
-                fileIds.addAll(datasetVersionFiles.stream()
-                        .map(DatasetVersionFile::getFileId).collect(Collectors.toList()));
-            }
-            queryWrapper.in("id", fileIds);
-            Set<Long> createUserIds = new HashSet<>();
-            createUserIds.add(dataset.getCreateUserId());
-            createUserIds.add(ADMIN_USER_ID);
-            queryWrapper.in("create_user_id", createUserIds);
-        }
-        return baseMapper.selectList(queryWrapper);
+        baseMapper.saveList(list, userId, createUserId);
     }
 
     /**
      * 返回文件分页信息
      *
-     * @param datasetId     数据集id
+     * @param datasetId     数据集ID
      * @param page          分页条件
      * @param queryCriteria 查询文件的条件
      * @return Page  文件分页信息
@@ -536,12 +484,13 @@ public class FileServiceImpl extends ServiceImpl<FileMapper, File> implements Fi
     /**
      * 文件查询
      *
-     * @param datasetId         数据集id
+     * @param datasetId         数据集ID
      * @param page              分页条件
      * @param fileQueryCriteria 查询条件
      * @return Map<String, Object> 文件查询列表
      */
     @Override
+    @DataPermissionMethod(dataType = DatasetTypeEnum.PUBLIC)
     public Map<String, Object> listVO(Long datasetId, Page page, FileQueryCriteriaVO fileQueryCriteria) {
         Page<File> filePage = list(datasetId, page, fileQueryCriteria);
         List<FileVO> vos = filePage.getRecords().stream()
@@ -550,45 +499,11 @@ public class FileServiceImpl extends ServiceImpl<FileMapper, File> implements Fi
         return org.dubhe.utils.PageUtil.toPage(filePage, vos);
     }
 
-    /**
-     * 分页查询
-     *
-     * @param page          分页条件
-     * @param queryCriteria 查询文件的条件
-     * @return Page 文件分页信息
-     */
-    private Page listPage(Page page, FileQueryCriteriaVO queryCriteria) {
-        Dataset dataset = datasetService.getOneById(queryCriteria.getDatasetId());
-        Set<Long> createUserIds = new HashSet<>();
-        createUserIds.add(dataset.getCreateUserId());
-        createUserIds.add(ADMIN_USER_ID);
-        queryCriteria.setCreateUserIds(createUserIds);
-        List<DatasetVersionFile> datasetVersionFiles = datasetVersionFileService
-                .getListByDatasetIdAndAnnotationStatus(dataset.getId(), dataset.getCurrentVersionName(), queryCriteria.getStatus());
-        Map<Long, Integer> fileStatus = new HashMap<>(MagicNumConstant.SIXTEEN);
-        if (!CollectionUtils.isEmpty(datasetVersionFiles)) {
-            queryCriteria.setIds(datasetVersionFiles.stream().map(datasetVersionFile -> datasetVersionFile.getFileId()).collect(Collectors.toSet()));
-            datasetVersionFiles.stream().forEach(datasetVersionFile -> {
-                fileStatus.put(datasetVersionFile.getFileId(), datasetVersionFile.getAnnotationStatus());
-            });
-        }
-        queryCriteria.setStatus(null);
-        if (CollectionUtils.isEmpty(queryCriteria.getIds())) {
-            Set<Long> ids = new HashSet<>();
-            ids.add(MagicNumConstant.NEGATIVE_ONE__LONG);
-            queryCriteria.setIds(ids);
-        }
-        Page<File> result = getBaseMapper().selectPage(page, WrapperHelp.getWrapper(queryCriteria));
-        result.getRecords().stream().forEach(file -> {
-            file.setStatus(fileStatus.get(file.getId()));
-        });
-        return result;
-    }
 
     /**
      * 创建查询
      *
-     * @param datasetId 数据集id
+     * @param datasetId 数据集ID
      * @param status    状态
      * @return QueryWrapper<File> 查询条件
      */
@@ -601,26 +516,144 @@ public class FileServiceImpl extends ServiceImpl<FileMapper, File> implements Fi
     /**
      * 获取offset
      *
-     * @param datasetId 数据集id
-     * @param fileId    文件id
+     * @param datasetId 数据集ID
+     * @param fileId    文件ID
      * @param type      数据集类型
      * @return Integer 获取到offset
      */
     @Override
     public Integer getOffset(Long fileId, Long datasetId, Integer type) {
+        Integer offset = datasetVersionFileService.getOffset(fileId, datasetId, type);
+        return offset == MagicNumConstant.ZERO ? null : offset - MagicNumConstant.ONE;
+    }
+
+
+    /**
+     * 文件查询，物体检测标注页面使用
+     *
+     * @param datasetId 数据集ID
+     * @param offset    Offset
+     * @param limit     页容量
+     * @param page      分页条件
+     * @param type      数据集类型
+     * @return Page<File> 文件查询分页列表
+     */
+    @Override
+    @DataPermissionMethod(dataType = DatasetTypeEnum.PUBLIC)
+    public Page<File> listByLimit(Long datasetId, Long offset, Integer limit, Integer page, Integer type) {
+        if (page == null) {
+            page = MagicNumConstant.ONE;
+        }
+        if (offset == null) {
+            offset = getDefaultOffset();
+        }
+        if (limit == null) {
+            limit = defaultFilePageSize;
+        }
+        //查询数据集
         Dataset dataset = datasetService.getOneById(datasetId);
+        //查询当前数据集下所有的文件（中间表）
         List<DatasetVersionFile> datasetVersionFiles = datasetVersionFileService
-                .getListByDatasetIdAndAnnotationStatus(datasetId, dataset.getCurrentVersionName(), FileTypeEnum.getStatus(type));
-        if (CollectionUtils.isEmpty(datasetVersionFiles)) {
-            return null;
+                .getListByDatasetIdAndAnnotationStatus(dataset.getId(), dataset.getCurrentVersionName(), type, offset, limit);
+        if (datasetVersionFiles == null || datasetVersionFiles.isEmpty()) {
+            Page<File> filePage = new Page<>();
+            filePage.setCurrent(page);
+            filePage.setSize(limit);
+            filePage.setTotal(NumberConstant.NUMBER_0);
+            return filePage;
         }
-        int count = MagicNumConstant.ZERO;
-        for (DatasetVersionFile datasetVersionFile : datasetVersionFiles) {
-            if (datasetVersionFile.getFileId() <= fileId) {
-                count++;
-            }
+        QueryWrapper<File> queryWrapper = new QueryWrapper<>();
+        queryWrapper.in("id", datasetVersionFiles
+                        .stream()
+                        .map(DatasetVersionFile::getFileId)
+                        .collect(Collectors.toSet())).eq("dataset_id", dataset.getId());
+        List<File> files = baseMapper.selectList(queryWrapper);
+        //将所有文件的状态放入
+        files.forEach(v -> {
+            datasetVersionFiles.forEach(d -> {
+                if (v.getId().equals(d.getFileId())) {
+                    v.setStatus(d.getAnnotationStatus());
+                }
+            });
+        });
+        Page<File> pages = new Page<>();
+        pages.setTotal(
+                datasetVersionFileService.selectCount(
+                        new LambdaQueryWrapper<DatasetVersionFile>() {{
+                            eq(DatasetVersionFile::getDatasetId, datasetId);
+                            in(DatasetVersionFile::getStatus, DataStatusEnum.ADD.getValue(), DataStatusEnum.NORMAL.getValue());
+                            if (type != null) {
+                                in(DatasetVersionFile::getAnnotationStatus, FileTypeEnum.getStatus(type));
+                            }
+                            if (StringUtils.isBlank(dataset.getCurrentVersionName())) {
+                                isNull(DatasetVersionFile::getVersionName);
+                            } else {
+                                eq(DatasetVersionFile::getVersionName, dataset.getCurrentVersionName());
+                            }
+                        }}
+                )
+        );
+        pages.setRecords(files);
+        pages.setSize(limit);
+        pages.setCurrent(page);
+        return pages;
+    }
+
+    /**
+     * 分页查询
+     *
+     * @param page          分页条件
+     * @param queryCriteria 查询文件的条件
+     * @return Page 文件分页信息
+     */
+    private Page<File> listPage(Page page, FileQueryCriteriaVO queryCriteria) {
+        //查询数据集
+        Dataset dataset = datasetService.getOneById(queryCriteria.getDatasetId());
+        //根据数据集ID和版本名称以及状态查询出当前数据集的所有文件
+        List<DatasetVersionFile> datasetVersionFiles = datasetVersionFileService
+                .getListByDatasetIdAndAnnotationStatus(dataset.getId(), dataset.getCurrentVersionName(), queryCriteria.getStatus(), (page.getCurrent() - 1) * page.getSize(), (int) page.getSize());
+        if (datasetVersionFiles == null || datasetVersionFiles.isEmpty()) {
+            return new Page<File>() {{
+                setCurrent(page.getCurrent());
+                setSize(page.getSize());
+                setTotal(NumberConstant.NUMBER_0);
+            }};
         }
-        return count == MagicNumConstant.ZERO ? null : count - MagicNumConstant.ONE;
+        Set<Long> set = datasetVersionFiles
+                .stream()
+                .map(DatasetVersionFile::getFileId)
+                .collect(Collectors.toSet());
+        QueryWrapper queryWrapper = new QueryWrapper<>().in("id", set).eq("dataset_id", dataset.getId());
+        List<File> files = baseMapper.selectList(queryWrapper);
+        //将所有文件的状态放入
+        files.forEach(v -> {
+            datasetVersionFiles.forEach(d -> {
+                if (v.getId().equals(d.getFileId())) {
+                    v.setStatus(d.getAnnotationStatus());
+                }
+            });
+        });
+        Page<File> pages = new Page<>();
+        pages.setTotal(
+                datasetVersionFileService.selectCount(
+                        new LambdaQueryWrapper<DatasetVersionFile>() {{
+                            eq(DatasetVersionFile::getDatasetId, dataset.getId());
+                            in(DatasetVersionFile::getStatus, DataStatusEnum.ADD.getValue(), DataStatusEnum.NORMAL.getValue());
+                            if (queryCriteria.getStatus() != null) {
+                                in(DatasetVersionFile::getAnnotationStatus, FileTypeEnum.getStatus(queryCriteria.getStatus()));
+                            }
+                            if (StringUtils.isBlank(dataset.getCurrentVersionName())) {
+                                isNull(DatasetVersionFile::getVersionName);
+                            } else {
+                                eq(DatasetVersionFile::getVersionName, dataset.getCurrentVersionName());
+                            }
+                        }}
+                )
+        );
+        pages.setRecords(files);
+        pages.setSize(page.getSize());
+        pages.setCurrent(page.getCurrent());
+        return pages;
     }
 
     /**
@@ -631,6 +664,7 @@ public class FileServiceImpl extends ServiceImpl<FileMapper, File> implements Fi
      * @return Long 首个文件Id
      */
     @Override
+    @DataPermissionMethod(dataType = DatasetTypeEnum.PUBLIC)
     public Long getFirst(Long datasetId, Integer type) {
         Dataset dataset = datasetService.getOneById(datasetId);
         DatasetVersionFile datasetVersionFile = datasetVersionFileService
@@ -638,99 +672,6 @@ public class FileServiceImpl extends ServiceImpl<FileMapper, File> implements Fi
         return datasetVersionFile == null ? null : datasetVersionFile.getFileId();
     }
 
-    /**
-     * 获取首个文件
-     *
-     * @param queryWrapper 条件构造器
-     * @return Long 首个文件Id
-     */
-    public Long getFirst(QueryWrapper<File> queryWrapper) {
-        queryWrapper.lambda().select(File::getId).last("limit 1");
-        List<File> files = getBaseMapper().selectList(queryWrapper);
-        return files.size() > MagicNumConstant.ZERO ? files.get(MagicNumConstant.ZERO).getId() : null;
-    }
-
-    /**
-     * 这里的ge字段必须要与 #buildQuery中的排序字段同步，否则会造成顺序混乱。先从此接口取offset，再访问listByLimit取相应的数据
-     *
-     * @param fileId           文件id
-     * @param fileQueryWrapper 条件构造器
-     * @return Integer 获取到的Offset
-     */
-    public Integer getOffset(Long fileId, QueryWrapper<File> fileQueryWrapper) {
-        File file = getById(fileId);
-        if (file == null) {
-            throw new BusinessException(ErrorEnum.FILE_ABSENT, "id:" + fileId, null);
-        }
-        fileQueryWrapper.lambda().select(File::getId).le(File::getId, file.getId());
-        int count = getBaseMapper().selectCount(fileQueryWrapper);
-        return count == MagicNumConstant.ZERO ? null : count - MagicNumConstant.ONE;
-    }
-
-    /**
-     * 文件查询，物体检测标注页面使用
-     *
-     * @param datasetId 数据集id
-     * @param offset    Offset
-     * @param limit     limit
-     * @param page      分页条件
-     * @param type      数据集类型
-     * @return Page<File> 文件查询分页列表
-     */
-    @Override
-    public Page<File> listByLimit(Long datasetId, Long offset, Integer limit, Integer page, Integer type) {
-        if (page == null) {
-            page = MagicNumConstant.ONE;
-        }
-        QueryWrapper<File> fileQueryWrapper = buildQuery(datasetId, FileTypeEnum.getStatus(type));
-        Dataset dataset = datasetService.getOneById(datasetId);
-        List<DatasetVersionFile> datasetVersionFiles = datasetVersionFileService
-                .getListByDatasetIdAndAnnotationStatus(dataset.getId(), dataset.getCurrentVersionName(), FileTypeEnum.getStatus(type));
-        Map<Long, Integer> fileIds = new HashMap<>(MagicNumConstant.SIXTEEN);
-        datasetVersionFiles.stream().forEach(datasetVersionFile -> {
-            fileIds.put(datasetVersionFile.getFileId(), datasetVersionFile.getAnnotationStatus());
-        });
-        fileIds.put(MagicNumConstant.NEGATIVE_ONE__LONG, MagicNumConstant.NEGATIVE_ONE);
-        if (fileIds.size() > MagicNumConstant.ZERO) {
-            fileQueryWrapper.in("id", fileIds.keySet());
-        }
-        Set<Long> createUserIds = new HashSet<>();
-        createUserIds.add(dataset.getCreateUserId());
-        createUserIds.add(ADMIN_USER_ID);
-        fileQueryWrapper.in("create_user_id", createUserIds);
-        Page<File> files = listByLimit(offset, limit, fileQueryWrapper);
-        files.getRecords().stream().forEach(file -> {
-            file.setStatus(fileIds.get(file.getId()));
-        });
-        files.setCurrent(page);
-        return files;
-    }
-
-    /**
-     * 根据条件获取文件
-     *
-     * @param offset       offset
-     * @param limit        limit
-     * @param queryWrapper 条件构造器
-     * @return Page<File> 文件查询分页结果
-     */
-    public Page<File> listByLimit(Long offset, Integer limit, QueryWrapper<File> queryWrapper) {
-        if (offset == null) {
-            offset = getDefaultOffset();
-        }
-        if (limit == null) {
-            limit = defaultFilePageSize;
-        }
-
-        Integer total = getBaseMapper().selectCount(queryWrapper);
-        Page<File> page = new Page<>();
-        page.setTotal(total);
-
-        List<File> files = doListByLimit(offset, limit, queryWrapper);
-        page.setRecords(files);
-        page.setSize(limit);
-        return page;
-    }
 
     /**
      * 默认offset
@@ -742,104 +683,112 @@ public class FileServiceImpl extends ServiceImpl<FileMapper, File> implements Fi
     }
 
     /**
-     * 根据条件获取文件
-     *
-     * @param offset       offset
-     * @param limit        limit
-     * @param queryWrapper 条件构造器
-     * @return List<File> 文件列表
-     */
-    public List<File> doListByLimit(Long offset, int limit, QueryWrapper<File> queryWrapper) {
-        if (offset < OFFSET_DIRECT_QUERY_LIMIT) {
-            return getBaseMapper().selectListByLimit(offset, limit, queryWrapper);
-        }
-        queryWrapper.lambda().select(File::getId);
-        List<File> files = getBaseMapper().selectListByLimit(offset, limit, queryWrapper);
-        Set<Long> ids = files.stream().mapToLong(File::getId).boxed().collect(Collectors.toSet());
-        if (CollectionUtils.isEmpty(ids)) {
-            return new LinkedList<>();
-        }
-        return getBaseMapper().selectBatchIds(ids);
-    }
-
-    /**
      * 如果ids为空，则返回空
      *
-     * @param fileids 文件id集合
+     * @param fileIds 文件id集合
      * @return Set<File> 文件集合
      */
     @Override
-    public Set<File> get(List<Long> fileids) {
-        if (CollectionUtils.isEmpty(fileids)) {
+    public Set<File> get(List<Long> fileIds, Long datasetId) {
+        if (CollectionUtils.isEmpty(fileIds)) {
             return new HashSet<>();
         }
-        File fileOne = baseMapper.selectById(fileids.get(MagicNumConstant.ZERO));
+        QueryWrapper<File> queryWrapper = new QueryWrapper<>();
+        queryWrapper.eq("dataset_id", datasetId);
+        queryWrapper.eq("id", fileIds.get(MagicNumConstant.ZERO));
+        File fileOne = baseMapper.selectOne(queryWrapper);
         if (fileOne == null) {
             return new HashSet<>();
         }
-        Dataset dataset = datasetService.getOneById(fileOne.getDatasetId());
-        Set<Long> createUserIds = new HashSet<>();
-        createUserIds.add(dataset.getCreateUserId());
-        createUserIds.add(ADMIN_USER_ID);
         QueryWrapper<File> fileQueryWrapper = new QueryWrapper<>();
-        fileQueryWrapper.in("id", fileids)
-                .in("create_user_id", createUserIds);
+        fileQueryWrapper.eq("dataset_id", fileOne.getDatasetId());
+        fileQueryWrapper.in("id", fileIds);
         return new HashSet(baseMapper.selectList(fileQueryWrapper));
-    }
-
-    /**
-     * 获取指定数据集有效状态的文件列表
-     *
-     * @param datasetId 数据集id
-     * @return List<File> 指定数据集有效状态的文件列表
-     */
-    public List<File> getFilesByDatasetId(Long datasetId) {
-        QueryWrapper<File> queryWrapper = new QueryWrapper();
-        queryWrapper.eq("dataset_id", datasetId);
-        queryWrapper.eq("deleted", MagicNumConstant.ZERO);
-        return baseMapper.selectList(queryWrapper);
     }
 
     /**
      * 视频采样任务
      */
     @Override
+    @Transactional(rollbackFor = Exception.class)
     public void videoSample() {
-        List<File> files = list(WrapperHelp.getWrapper(NEED_SAMPLE_QUERY));
-        if (files == null) {
-            return;
-        }
-        files.forEach(f -> {
-            int updateFlag = getBaseMapper().updateSampleStatus(f.getId(), FileStatusEnum.INIT.getValue());
-            if (updateFlag != MagicNumConstant.ZERO) {
-                try {
-                    pool.getExecutor().submit(() -> videoSample(f));
-                } catch (Exception e) {
-                    f.setStatus(FileStatusEnum.INIT.getValue());
-                    getBaseMapper().updateById(f);
-                    LogUtil.error(LogEnum.BIZ_DATASET, "sample task is refused", e);
+        //处理失败任务，将数据集改为采样失败
+        List<Object> failedIdKeys = redisUtils.lGet(SAMPLE_FAILED_QUEUE_NAME, 0, -1);
+        failedIdKeys.forEach(failedIdKey -> {
+            String failedId = JSON.parseObject(JSON.toJSONString(failedIdKey)).getString("datasetIdKey");
+            Long datasetId = Long.valueOf(StringUtils.substringBefore(String.valueOf(failedId), ":"));
+            //创建入参请求体
+            StateChangeDTO stateChangeDTO = new StateChangeDTO();
+            //创建需要执行事件的方法的传入参数
+            Object[] objects = new Object[1];
+            objects[0] = datasetId.intValue();
+            stateChangeDTO.setObjectParam(objects);
+            //添加需要执行的状态机类
+            stateChangeDTO.setStateMachineType(DataStateMachineConstant.DATA_STATE_MACHINE);
+            //采样失败事件
+            stateChangeDTO.setEventMethodName(DataStateMachineConstant.DATA_SAMPLING_FAILURE_EVENT);
+            StateMachineUtil.stateChange(stateChangeDTO);
+            taskUtils.finishedTask(SAMPLE_FAILED_QUEUE_NAME, JSON.parseObject(failedIdKey.toString()).toJSONString()
+                    , DETAIL_NAME, failedId);
+            //将任务改成失败
+        });
+        //处理已经完成的任务
+        List<Object> datasetIdKeyObjects = redisUtils.lGet(SAMPLE_FINISHED_QUEUE_NAME, 0, -1);
+        datasetIdKeyObjects.forEach(datasetIdKeyObject -> {
+            String datasetIdKey = JSON.parseObject(JSON.toJSONString(datasetIdKeyObject)).getString("datasetIdKey");
+            Long datasetId = Long.valueOf(StringUtils.substringBefore(String.valueOf(datasetIdKey), ":"));
+            List<Object> picNameObjects = redisUtils.lGet(DETAIL_NAME + datasetIdKey, 0, -1);
+            QueryWrapper<Task> taskQueryWrapper = new QueryWrapper<>();
+            taskQueryWrapper.lambda().eq(Task::getDatasetId, datasetId)
+                    .eq(Task::getType, MagicNumConstant.FIVE);
+            Task task = taskService.selectOne(taskQueryWrapper);
+            Integer segment = Integer.valueOf(StringUtils.substringAfter(String.valueOf(datasetIdKey), ":"));
+            if (segment.equals(task.getFinished() + MagicNumConstant.ONE)) {
+                List<String> picNames = new ArrayList<>();
+                picNameObjects.forEach(picNameObject -> {
+                    String pictureName = JSON.parseObject(JSON.toJSONString(picNameObject)).getString("pictureName");
+                    picNames.add(pictureName);
+                });
+                QueryWrapper<File> queryWrapper = new QueryWrapper<>();
+                queryWrapper.lambda().eq(File::getDatasetId, datasetId).eq(File::getFileType, MagicNumConstant.ONE);
+                File file = getBaseMapper().selectOne(queryWrapper);
+                saveVideoPic(picNames, file);
+                task.setFinished(task.getFinished() + MagicNumConstant.ONE);
+                taskService.updateByTaskId(task);
+                //单个视频采样完成
+                if (task.getTotal().equals(task.getFinished())) {
+                    file.setStatus(FileStateCodeConstant.AUTO_TAG_COMPLETE_FILE_STATE);
+                    getBaseMapper().updateFileStatus(file.getDatasetId(), file.getId(), file.getStatus());
+                    FileQueryCriteriaVO fileQueryCriteria = FileQueryCriteriaVO.builder()
+                            .datasetId(file.getDatasetId())
+                            .fileType(DatatypeEnum.IMAGE.getValue())
+                            .build();
+                    List<File> files = list(WrapperHelp.getWrapper(fileQueryCriteria));
+                    List<DatasetVersionFile> list = new ArrayList<>();
+                    files.forEach(fileOne -> {
+                        DatasetVersionFile datasetVersionFile = new DatasetVersionFile(file.getDatasetId(), null, fileOne.getId());
+                        list.add(datasetVersionFile);
+                    });
+                    if (MagicNumConstant.ZERO != list.size()) {
+                        datasetVersionFileService.insertList(list);
+                    }
+                    //创建入参请求体
+                    StateChangeDTO stateChangeDTO = new StateChangeDTO();
+                    //创建需要执行事件的方法的传入参数
+                    Object[] objects = new Object[1];
+                    objects[0] = file.getDatasetId().intValue();
+                    stateChangeDTO.setObjectParam(objects);
+                    //添加需要执行的状态机类
+                    stateChangeDTO.setStateMachineType(DataStateMachineConstant.DATA_STATE_MACHINE);
+                    //采样事件
+                    stateChangeDTO.setEventMethodName(DataStateMachineConstant.DATA_SAMPLING_EVENT);
+                    StateMachineUtil.stateChange(stateChangeDTO);
                 }
+                //从已完成队列中删除
+                taskUtils.finishedTask(SAMPLE_FINISHED_QUEUE_NAME, JSON.toJSONString(datasetIdKeyObject)
+                        , DETAIL_NAME, datasetIdKey);
             }
         });
-    }
-
-    /**
-     * 视频采样
-     *
-     * @param file 视频文件
-     */
-    public void videoSample(File file) {
-        String path = file.getUrl();
-        path = prefixPath + path;
-        try {
-            int space = file.getFrameInterval();
-            List<String> picNames = JavaCvUtil.getVideoPic(path, space);
-            saveVideoPic(picNames, file);
-        } catch (Exception e) {
-            file.setStatus(FileStatusEnum.INIT.getValue());
-            getBaseMapper().updateById(file);
-            LogUtil.error(LogEnum.BIZ_DATASET, "VideoSample fail:", e);
-        }
     }
 
     /**
@@ -850,6 +799,7 @@ public class FileServiceImpl extends ServiceImpl<FileMapper, File> implements Fi
      */
     @Transactional(rollbackFor = Exception.class)
     public void saveVideoPic(List<String> picNames, File file) {
+        Collections.reverse(picNames);
         List<FileCreateDTO> fileCreateDTOS = new ArrayList<>();
         picNames.forEach(picName -> {
             picName = StringUtils.substringAfter(picName, prefixPath);
@@ -859,23 +809,6 @@ public class FileServiceImpl extends ServiceImpl<FileMapper, File> implements Fi
             fileCreateDTOS.add(f);
         });
         saveVideoFiles(file.getDatasetId(), fileCreateDTOS, DatatypeEnum.IMAGE.getValue(), file.getId(), file.getCreateUserId());
-        file.setStatus(FileStatusEnum.AUTO_ANNOTATION.getValue());
-        getBaseMapper().updateById(file);
-        Dataset ds = datasetService.getOneById(file.getDatasetId());
-        FileQueryCriteriaVO fileQueryCriteria = FileQueryCriteriaVO.builder()
-                .datasetId(file.getDatasetId())
-                .fileType(DatatypeEnum.IMAGE.getValue())
-                .build();
-        List<File> files = list(WrapperHelp.getWrapper(fileQueryCriteria));
-        List<DatasetVersionFile> list = new ArrayList<>();
-        files.forEach(fileOne -> {
-            DatasetVersionFile datasetVersionFile = new DatasetVersionFile(file.getDatasetId(), null, fileOne.getId());
-            list.add(datasetVersionFile);
-        });
-        if (MagicNumConstant.ZERO != list.size()) {
-            datasetVersionFileService.insertList(list);
-        }
-        datasetService.transferStatus(ds, DatasetStatusEnum.INIT);
     }
 
     /**
@@ -884,14 +817,14 @@ public class FileServiceImpl extends ServiceImpl<FileMapper, File> implements Fi
      * @param datasetVersionFiles 文件列表
      * @param init                更新结果
      */
-    public void updateStatus(List<DatasetVersionFile> datasetVersionFiles, FileStatusEnum init) {
+    public void updateStatus(List<DatasetVersionFile> datasetVersionFiles, FileStateEnum init) {
         List<Long> fileIds = datasetVersionFiles
-                .stream().map((files) -> files.getFileId())
+                .stream().map(DatasetVersionFile::getFileId)
                 .collect(Collectors.toList());
         UpdateWrapper<File> fileUpdateWrapper = new UpdateWrapper();
         fileUpdateWrapper.in("id", fileIds);
         File file = new File();
-        file.setStatus(init.getValue());
+        file.setStatus(init.getCode());
         baseMapper.update(file, fileUpdateWrapper);
     }
 
@@ -901,16 +834,20 @@ public class FileServiceImpl extends ServiceImpl<FileMapper, File> implements Fi
      * @return Map<String, String> 加密后minio账户密码
      */
     @Override
-    public Map<String, String> getMinIOInfo() throws Throwable {
-        Map<String, String> keyPair = RsaEncrypt.genKeyPair();
-        String publicKey = RsaEncrypt.getPublicKey(keyPair);
-        String privateKey = RsaEncrypt.getPrivateKey(keyPair);
-        return new HashMap<String, String>(MagicNumConstant.FOUR) {{
-            put("url", RsaEncrypt.encrypt(url, publicKey));
-            put("accessKey", RsaEncrypt.encrypt(accessKey, publicKey));
-            put("secretKey", RsaEncrypt.encrypt(secretKey, publicKey));
-            put("privateKey", privateKey);
-        }};
+    public Map<String, String> getMinIOInfo() {
+        try {
+            Map<String, String> keyPair = RsaEncrypt.genKeyPair();
+            String publicKey = RsaEncrypt.getPublicKey(keyPair);
+            String privateKey = RsaEncrypt.getPrivateKey(keyPair);
+            return new HashMap<String, String>(MagicNumConstant.FOUR) {{
+                put("url", RsaEncrypt.encrypt(url, publicKey));
+                put("accessKey", RsaEncrypt.encrypt(accessKey, publicKey));
+                put("secretKey", RsaEncrypt.encrypt(secretKey, publicKey));
+                put("privateKey", privateKey);
+            }};
+        } catch (Exception e) {
+            throw new BusinessException(ErrorEnum.DATA_ERROR);
+        }
     }
 
     /**
@@ -920,8 +857,10 @@ public class FileServiceImpl extends ServiceImpl<FileMapper, File> implements Fi
      * @return List<File> 文件对应所有增强文件
      */
     @Override
-    public List<File> getEnhanceFileList(Long fileId) {
-        File file = baseMapper.getOneById(fileId);
+    @DataPermissionMethod(dataType = DatasetTypeEnum.PUBLIC)
+    public List<File> getEnhanceFileList(Long fileId,Long datasetId) {
+        File file = baseMapper.getOneById(fileId,datasetId);
+
         if (ObjectUtil.isNull(file)) {
             throw new BusinessException(ErrorEnum.FILE_ABSENT);
         }
@@ -929,22 +868,80 @@ public class FileServiceImpl extends ServiceImpl<FileMapper, File> implements Fi
         if (ObjectUtil.isNull(dataset)) {
             throw new BusinessException(ErrorEnum.DATASET_ABSENT);
         }
-        return datasetVersionFileService.getEnhanceFileList(dataset.getId(), dataset.getCurrentVersionName(), fileId);
+        int enhanceFileCount = datasetVersionFileService.getEnhanceFileCount(dataset.getId(), dataset.getCurrentVersionName());
+        if (enhanceFileCount > 0) {
+            return datasetVersionFileService.getEnhanceFileList(dataset.getId(), dataset.getCurrentVersionName(), fileId);
+        }
+        return null;
     }
 
+    /**
+     * 获取文件详情
+     *
+     * @param fileId 文件ID
+     * @return File 文件详情
+     */
     @Override
-    public File selectById(Long fileId) {
-        return baseMapper.selectById(fileId);
+    public File selectById(Long fileId, Long datasetId) {
+        QueryWrapper<File> queryWrapper = new QueryWrapper<>();
+        queryWrapper.eq("dataset_id", datasetId);
+        queryWrapper.eq("id", fileId);
+        return baseMapper.selectOne(queryWrapper);
     }
 
+    /**
+     * 条件搜索获取文件详情
+     *
+     * @param queryWrapper 查询条件
+     * @return             文件详情
+     */
     @Override
     public File selectOne(QueryWrapper<File> queryWrapper) {
         return baseMapper.selectOne(queryWrapper);
     }
 
+    /**
+     * 获取文件列表
+     *
+     * @param wrapper 查询条件
+     * @return        文件列表
+     */
     @Override
     public List<File> listFile(QueryWrapper<File> wrapper) {
         return list(wrapper);
+    }
+
+    /**
+     * 批量获取文件列表
+     *
+     * @param datasetId 数据集ID
+     * @param offset    偏移量
+     * @param batchSize 批大小
+     * @return          文件列表
+     */
+    @Override
+    public List<File> listBatchFile(Long datasetId, int offset, int batchSize) {
+        DatasetVO datasetVO = datasetService.get(datasetId);
+        return baseMapper.selectListOne(datasetId, datasetVO.getCurrentVersionName(), offset, batchSize);
+    }
+
+    /**
+     * 判断执行中的采样任务是否过期
+     */
+    @Override
+    public void expireSampleTask() {
+        Set<ZSetOperations.TypedTuple<Object>> typedTuples = taskUtils.zGetWithScore(START_SAMPLE_QUEUE);
+        typedTuples.forEach(value -> {
+            String timestampString = new BigDecimal(JSON.toJSONString(value.getScore())).toPlainString();
+            long timestamp = Long.parseLong(timestampString);
+            String keyId = JSONObject.parseObject(JSON.toJSONString(value.getValue())).getString("datasetIdKey");
+            long timestampNow = System.currentTimeMillis() / 1000;
+            if (timestampNow - timestamp > MagicNumConstant.TWO_HUNDRED) {
+                LogUtil.info(LogEnum.BIZ_DATASET, "restart videoSample task keyId:{}", keyId);
+                taskUtils.restartTask(keyId, START_SAMPLE_QUEUE, SAMPLE_PENDING_QUEUE, DETAIL_NAME
+                        , JSON.toJSONString(value.getValue()));
+            }
+        });
     }
 
 }

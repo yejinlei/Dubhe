@@ -43,5 +43,7 @@ public class ProgressVO implements Serializable {
     private Long autoFinished = MagicNumConstant.ZERO_LONG;
     @Builder.Default
     private Long finishAutoTrack = MagicNumConstant.ZERO_LONG;
+    @Builder.Default
+    private Long annotationNotDistinguishFile = MagicNumConstant.ZERO_LONG;
 
 }

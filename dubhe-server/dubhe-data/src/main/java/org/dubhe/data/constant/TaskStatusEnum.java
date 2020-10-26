@@ -25,11 +25,22 @@ import lombok.Getter;
  */
 @Getter
 public enum TaskStatusEnum {
+
+    /**
+     * 未处理
+     */
+    INIT(0, "未处理"),
     /**
      * 进行中
      */
     ING(1, "进行中"),
+    /**
+     * 已完成
+     */
     FINISHED(2, "已完成"),
+    /**
+     * 失败
+     */
     FAIL(3, "失败"),
     ;
 
@@ -40,4 +51,5 @@ public enum TaskStatusEnum {
 
     private int value;
     private String msg;
+
 }

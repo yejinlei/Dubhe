@@ -26,6 +26,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.junit4.SpringRunner;
 
 import javax.annotation.Resource;
+import java.util.ArrayList;
 
 /**
  * @description LogMonitoringApiTest测试类
@@ -40,24 +41,56 @@ public class LogMonitoringApiTest {
 
     /**通过资源名称查找日志信息**/
     @Test
-    public void searchLog() {
+    public void searchLogByResName() {
         int from = 1;
         /**size为0表示无限制**/
         int size = 200;
+
         LogMonitoringBO logMonitoringBo = new LogMonitoringBO();
-        logMonitoringBo.setIndexName("logstash-*");
-        logMonitoringBo.setResourceName("train-1-20200713103822-v0013");
+        logMonitoringBo.setResourceName("train-1-20200803170114-v0033");
         logMonitoringBo.setNamespace("namespace-1");
 
-        LogMonitoringVO logMonitoringVO = logMonitoringApi.searchLog(from, size, logMonitoringBo);
+        LogMonitoringVO logMonitoringVO = logMonitoringApi.searchLogByResName(from, size, logMonitoringBo);
+
+    }
+
+    /**通过Pod名称查找日志信息**/
+    @Test
+    public void searchLogByPodName() {
+        int from = 1;
+        /**size为0表示无限制**/
+        int size = 200;
+
+        LogMonitoringBO logMonitoringBo = new LogMonitoringBO();
+        logMonitoringBo.setPodName("train-1-20200828135251-v0013-5zouu-master-8npcd-95d96");
+        logMonitoringBo.setNamespace("namespace-1");
+        logMonitoringBo.setBeginTimeMillis(0L);
+        logMonitoringBo.setLogKeyword("training mission begins");
+        logMonitoringBo.setEndTimeMillis(1601347634000L);
+
+        LogMonitoringVO logMonitoringVO = logMonitoringApi.searchLogByPodName(from, size, logMonitoringBo);
 
     }
 
     @Test
     public void addlog(){
 
-        logMonitoringApi.addLogsToEs("podName", "namespace");
+        //logMonitoringApi.addLogsToEs("podName", "namespace");
+        logMonitoringApi.addLogsToEs("train-1-20200915103934-v0055-3ppzh-master-untg7-ndnq8", "namespace-1",new ArrayList(){{
+            add("Container is being created");
+            add("Container is being created");
+        }
+        });
 
+    }
+
+    @Test
+    public void searchLogCountByPodName(){
+        LogMonitoringBO logMonitoringBo = new LogMonitoringBO();
+        logMonitoringBo.setPodName("train-1-20200828135251-v0013-5zouu-master-8npcd-95d96");
+        logMonitoringBo.setNamespace("namespace-1");
+        Long count = logMonitoringApi.searchLogCountByPodName(logMonitoringBo);
+        System.out.println(count);
     }
 
 }

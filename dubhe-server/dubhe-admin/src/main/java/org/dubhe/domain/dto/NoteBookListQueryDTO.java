@@ -30,7 +30,6 @@ import java.io.Serializable;
 @Data
 public class NoteBookListQueryDTO implements Serializable {
 
-    @Query(propName = "status", type = Query.Type.EQ)
     @ApiModelProperty("0运行中，1停止, 2删除, 3启动中，4停止中，5删除中，6运行异常（暂未启用）")
     private Integer status;
 
@@ -38,7 +37,7 @@ public class NoteBookListQueryDTO implements Serializable {
     @ApiModelProperty("notebook名称")
     private String noteBookName;
 
-    @Query(propName = "user_id", type = Query.Type.EQ)
+    @Query(propName = "origin_user_id", type = Query.Type.EQ)
     @ApiModelProperty(value = "所属用户ID", hidden = true)
     private Long userId;
 

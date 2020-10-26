@@ -33,4 +33,7 @@ public class PtJobMetricsGrafanaVO implements Serializable {
 
     @ApiModelProperty("job监控地址")
     private String jobMetricsGrafanaUrl;
+
+    @ApiModelProperty("job对应k8s中的podName")
+    private String jobPodName;
 }

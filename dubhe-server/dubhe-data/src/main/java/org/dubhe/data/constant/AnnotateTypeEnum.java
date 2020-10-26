@@ -17,13 +17,10 @@
 
 package org.dubhe.data.constant;
 
-
 import lombok.Getter;
 
 /**
- * 标注类型枚举类
- *
- * @description 标注类型
+ * @description 标注类型枚举类
  * @date 2020-05-21
  */
 @Getter
@@ -54,7 +51,7 @@ public enum AnnotateTypeEnum {
      * 标注类型校验 用户web端接口调用时参数校验
      *
      * @param value 标注类型Integer值
-     * @return
+     * @return      参数校验结果
      */
     public static boolean isValid(Integer value) {
         for (AnnotateTypeEnum annotateTypeEnum : AnnotateTypeEnum.values()) {
@@ -68,8 +65,8 @@ public enum AnnotateTypeEnum {
     /**
      * 根据标注类型获取类型code值
      *
-     * @param annotate
-     * @return 类型code值
+     * @param annotate 标注类型
+     * @return         类型code值
      */
     public static Integer getConvertAnnotateType(String annotate) {
         for (AnnotateTypeEnum annotateTypeEnum : AnnotateTypeEnum.values()) {

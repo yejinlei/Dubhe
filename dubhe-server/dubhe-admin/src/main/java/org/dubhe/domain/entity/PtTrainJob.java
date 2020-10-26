@@ -17,10 +17,7 @@
 
 package org.dubhe.domain.entity;
 
-import com.baomidou.mybatisplus.annotation.IdType;
-import com.baomidou.mybatisplus.annotation.TableField;
-import com.baomidou.mybatisplus.annotation.TableId;
-import com.baomidou.mybatisplus.annotation.TableName;
+import com.baomidou.mybatisplus.annotation.*;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.experimental.Accessors;
@@ -104,10 +101,10 @@ public class PtTrainJob extends BaseEntity {
     private String logPath;
 
     /**
-     * 规格Id
+     * 规格名称
      */
-    @TableField(value = "train_job_specs_id")
-    private Integer trainJobSpecsId;
+    @TableField(value = "train_job_specs_name")
+    private String trainJobSpecsName;
 
     /**
      * 类型(0为CPU，1为GPU)
@@ -144,5 +141,67 @@ public class PtTrainJob extends BaseEntity {
      */
     @TableField(value = "k8s_job_name")
     private String k8sJobName;
+
+    /**
+     * 训练类型,0:普通训练，1：分布式训练
+     */
+    @TableField(value = "train_type")
+    private Integer trainType;
+
+    /**
+     * 验证数据集来源名称
+     */
+    @TableField(value = "val_data_source_name")
+    private String valDataSourceName;
+
+    /**
+     * 验证数据集来源路径
+     */
+    @TableField(value = "val_data_source_path")
+    private String valDataSourcePath;
+
+    /**
+     * 是否验证数据集
+     */
+    @TableField(value = "val_type")
+    private Integer valType;
+
+    /**
+     * 资源拥有者ID
+     */
+    @TableField(value = "origin_user_id",fill = FieldFill.INSERT)
+    private Long originUserId;
+
+    /**
+     * 是否打开模型原则
+     */
+    @TableField(value = "model_type")
+    private Integer modelType;
+    /**
+     * 模型来源
+     */
+    @TableField(value = "model_resource")
+    private Integer modelResource;
+    /**
+     * 模型加载路径
+     */
+    @TableField(value = "model_load_dir")
+    private String modelLoadPathDir;
+    /**
+     * 模型名称
+     */
+    @TableField(value = "model_name")
+    private String modelName;
+    /**
+     * 模型id
+     */
+    @TableField(value = "model_id")
+    private Integer modelId;
+
+    /**
+     * 训练信息(失败信息)
+     */
+    @TableField(value = "train_msg")
+    private String trainMsg;
 
 }

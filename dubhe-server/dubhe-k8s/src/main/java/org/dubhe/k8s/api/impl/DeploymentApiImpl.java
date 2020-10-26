@@ -38,6 +38,7 @@ import org.dubhe.base.MagicNumConstant;
 import org.dubhe.enums.LogEnum;
 import org.dubhe.k8s.api.DeploymentApi;
 import org.dubhe.k8s.api.NodeApi;
+import org.dubhe.k8s.cache.ResourceCache;
 import org.dubhe.k8s.constant.K8sLabelConstants;
 import org.dubhe.k8s.constant.K8sParamConstants;
 import org.dubhe.k8s.domain.PtBaseResult;
@@ -77,6 +78,8 @@ public class DeploymentApiImpl implements DeploymentApi {
     private NfsUtil nfsUtil;
     @Autowired
     private NodeApi nodeApi;
+    @Autowired
+    private ResourceCache resourceCache;
 
     private static final String DATASET = "/dataset";
     private static final String WORKSPACE = "/workspace";
@@ -107,9 +110,10 @@ public class DeploymentApiImpl implements DeploymentApi {
             if (!nfsUtil.createDirs(true, bo.getWorkspaceDir(), bo.getDatasetDir(), bo.getOutputDir())) {
                 return new BizDeployment().error(K8sResponseEnum.INTERNAL_SERVER_ERROR.getCode(), K8sResponseEnum.INTERNAL_SERVER_ERROR.getMessage());
             }
+            resourceCache.deletePodCacheByResourceName(bo.getNamespace(),bo.getName());
             return new DeploymentDeployer(bo).deploy();
         } catch (KubernetesClientException e) {
-            LogUtil.error(LogEnum.BIZ_K8S, "DeploymentApiImpl.create error, param:{} error:", bo, e);
+            LogUtil.error(LogEnum.BIZ_K8S, "DeploymentApiImpl.create error, param:{} error:{}", bo, e);
             return new BizDeployment().error(String.valueOf(e.getCode()), e.getMessage());
         }
 
@@ -135,7 +139,7 @@ public class DeploymentApiImpl implements DeploymentApi {
             Deployment deployment = bizDeploymentList.getItems().get(0);
             return BizConvertUtils.toBizDeployment(deployment);
         } catch (KubernetesClientException e) {
-            LogUtil.error(LogEnum.BIZ_K8S, "DeploymentApiImpl.getWithResourceName error, param:[namespace]={}, [resourceName]={}, error:", namespace, resourceName, e);
+            LogUtil.error(LogEnum.BIZ_K8S, "DeploymentApiImpl.getWithResourceName error, param:[namespace]={}, [resourceName]={}, error:{}", namespace, resourceName, e);
             return new BizDeployment().error(String.valueOf(e.getCode()), e.getMessage());
         }
     }
@@ -182,7 +186,7 @@ public class DeploymentApiImpl implements DeploymentApi {
             client.apps().deployments().inNamespace(namespace).withLabels(LabelUtils.withEnvResourceName(resourceName)).delete();
             return new PtBaseResult();
         } catch (KubernetesClientException e) {
-            LogUtil.error(LogEnum.BIZ_K8S, "DeploymentApiImpl.deleteByResourceName error, param:[namespace]={}, [resourceName]={}, error:", namespace, resourceName, e);
+            LogUtil.error(LogEnum.BIZ_K8S, "DeploymentApiImpl.deleteByResourceName error, param:[namespace]={}, [resourceName]={}, error:{}", namespace, resourceName, e);
             return new PtBaseResult(String.valueOf(e.getCode()), e.getMessage());
         }
     }
@@ -249,7 +253,7 @@ public class DeploymentApiImpl implements DeploymentApi {
                 Deployment deployment = deployDeployment();
                 return BizConvertUtils.toBizDeployment(deployment);
             } catch (KubernetesClientException e) {
-                LogUtil.error(LogEnum.BIZ_K8S, "DeploymentApiImpl.deploy error:", e);
+                LogUtil.error(LogEnum.BIZ_K8S, "DeploymentApiImpl.deploy error:{}", e);
                 return (BizDeployment) new PtBaseResult().error(String.valueOf(e.getCode()), e.getMessage());
             }
 
@@ -258,7 +262,7 @@ public class DeploymentApiImpl implements DeploymentApi {
         /**
          * 检查资源是否已经存在
          *
-         * @return Deployment
+         * @return Deployment Deployment 业务类
          */
         private Deployment alreadyHaveDeployment() {
             DeploymentList list = client.apps().deployments().inNamespace(namespace).withLabels(LabelUtils.withEnvResourceName(baseName)).list();
@@ -273,7 +277,7 @@ public class DeploymentApiImpl implements DeploymentApi {
         /**
          * 部署Deployment
          *
-         * @return Deployment
+         * @return Deployment Deployment 业务类
          */
         private Deployment deployDeployment() {
             //已经存在直接返回
@@ -290,7 +294,7 @@ public class DeploymentApiImpl implements DeploymentApi {
         /**
          * 构建Deployment
          *
-         * @return Deployment
+         * @return Deployment Deployment 业务类
          */
         private Deployment buildDeployment() {
             Map<String, String> childLabels = LabelUtils.getChildLabels(baseName, deploymentName, K8sKindEnum.DEPLOYMENT.getKind(), businessLabel);
@@ -337,7 +341,7 @@ public class DeploymentApiImpl implements DeploymentApi {
         /**
          * 构建Container
          *
-         * @return Container
+         * @return Container  容器
          */
         private Container buildContainer() {
             return new ContainerBuilder()
@@ -354,7 +358,7 @@ public class DeploymentApiImpl implements DeploymentApi {
         /**
          * 构建VolumeMount
          *
-         * @return List<VolumeMount>
+         * @return List<VolumeMount> VolumeMount集合类
          */
         private List<VolumeMount> buildVolumeMount() {
             List<VolumeMount> volumeMounts = new ArrayList<>();
@@ -385,7 +389,7 @@ public class DeploymentApiImpl implements DeploymentApi {
         /**
          * 构建Volume
          *
-         * @return List<Volume>
+         * @return List<Volume> Volume集合类
          */
         private List<Volume> buildVolume() {
             List<Volume> volumes = new ArrayList<>();

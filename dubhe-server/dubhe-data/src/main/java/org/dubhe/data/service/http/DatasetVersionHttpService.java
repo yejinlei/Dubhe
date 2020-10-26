@@ -45,8 +45,8 @@ public class DatasetVersionHttpService {
     /**
      * 调用训练算法查询当前数据集是否在使用
      *
-     * @param datasetVersionUrls 数据集版本url
-     * @return: boolean          是否正在训练
+     * @param datasetVersionUrls    数据集版本url
+     * @return boolean              是否正在训练
      */
     public boolean urlStatus(List<String> datasetVersionUrls) {
         try {

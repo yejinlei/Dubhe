@@ -67,12 +67,12 @@ public class K8sNameTool {
     }
 
     /**
-     * 生成 Notebook的NameSpace
+     * 生成 Notebook的Namespace
      *
      * @param userId
      * @return namespace
      */
-    public String generateNameSpace(long userId) {
+    public String generateNamespace(long userId) {
         return this.k8sNameConfig.getNamespace() + SEPARATOR + userId;
     }
 
@@ -96,7 +96,7 @@ public class K8sNameTool {
      * @param namespace
      * @return Long
      */
-    public Long getUserIdFromNameSpace(String namespace) {
+    public Long getUserIdFromNamespace(String namespace) {
         if (StringUtils.isEmpty(namespace) || !namespace.contains(this.k8sNameConfig.getNamespace() + SEPARATOR)) {
             return null;
         }

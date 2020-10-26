@@ -18,11 +18,13 @@
 package org.dubhe.dao;
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
+import org.dubhe.annotation.DataPermission;
 import org.dubhe.domain.PtModelBranch;
 
 /**
  * @description 模型版本管理
  * @date 2020-04-02
  */
+@DataPermission(ignoresMethod = {"insert"})
 public interface PtModelBranchMapper extends BaseMapper<PtModelBranch> {
 }

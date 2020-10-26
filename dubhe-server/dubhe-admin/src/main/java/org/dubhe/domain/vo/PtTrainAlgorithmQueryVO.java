@@ -25,7 +25,7 @@ import java.io.Serializable;
 import java.sql.Timestamp;
 
 /**
- * @description: 训练算法返回列表
+ * @description 训练算法返回列表
  * @date 2020-04-27
  */
 @Data
@@ -48,8 +48,8 @@ public class PtTrainAlgorithmQueryVO implements Serializable {
     @ApiModelProperty(value = "镜像名称")
     private String imageName;
 
-    @ApiModelProperty(value = "镜像Project")
-    private String imageNameProject;
+    @ApiModelProperty(value = "算法文件大小")
+    private String algorithmFileSize;
 
     @ApiModelProperty(value = "镜像版本")
     private String imageTag;
@@ -84,4 +84,6 @@ public class PtTrainAlgorithmQueryVO implements Serializable {
     @ApiModelProperty(value = "可视化日志（1是，0否）")
     private Boolean isVisualizedLog;
 
+    @ApiModelProperty("资源拥有者ID")
+    private Long originUserId;
 }

@@ -73,6 +73,7 @@ public interface PodApi {
      */
     List<BizPod> listAll();
 
+    List<BizPod> findByDtName(String dtName);
     /**
      * 根据Node分组获得所有运行中的Pod
      *
@@ -86,15 +87,6 @@ public interface PodApi {
      * @return Map<String,List<PtPodsVO>> 键为Node名称，值为Pod结果类集合
      */
     Map<String,List<PtPodsVO>> getPods();
-
-    /**
-     * 获取Pod的CPU使用率,Memory使用量,GPU使用率,并用grafana展示出来
-     *
-     * @param namespace 命名空间
-     * @param resourceName 资源名称
-     * @return String podGrafanaUrl
-     */
-    String getPodMetricsGrafanaUrl(String namespace, String resourceName);
 
     /**
      * 根据label查询Pod集合
@@ -162,7 +154,11 @@ public interface PodApi {
      *
      * @param namespace 命名空间
      * @param resourceName 资源名称
-     * @return String validateJupyterUrl
+     * @return String validateJupyterUrl 验证Jupyte的url值
      */
     String getUrlByResourceName(String namespace, String resourceName);
+
+
+
+
 }

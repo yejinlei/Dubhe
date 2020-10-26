@@ -17,11 +17,12 @@
 
 package org.dubhe.service.impl;
 
-import cn.hutool.core.util.RandomUtil;
-import cn.hutool.core.util.StrUtil;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import org.dubhe.annotation.DataPermissionMethod;
 import org.dubhe.config.NfsConfig;
+import org.dubhe.config.RecycleConfig;
 import org.dubhe.dao.PtModelBranchMapper;
 import org.dubhe.dao.PtModelInfoMapper;
 import org.dubhe.domain.PtModelBranch;
@@ -31,20 +32,20 @@ import org.dubhe.domain.vo.PtModelBranchCreateVO;
 import org.dubhe.domain.vo.PtModelBranchDeleteVO;
 import org.dubhe.domain.vo.PtModelBranchQueryVO;
 import org.dubhe.domain.vo.PtModelBranchUpdateVO;
-import org.dubhe.enums.LogEnum;
+import org.dubhe.enums.*;
 import org.dubhe.exception.BusinessException;
 import org.dubhe.service.PtModelBranchService;
+import org.dubhe.service.RecycleTaskService;
 import org.dubhe.service.storage.AsyncStorage;
 import org.dubhe.utils.*;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 
-
-import java.text.SimpleDateFormat;
-import java.util.*;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
@@ -67,25 +68,24 @@ public class PtModelBranchServiceImpl implements PtModelBranchService {
     private NfsUtil nfsUtil;
 
     @Autowired
+    private LocalFileUtil localFileUtil;
+
+    @Autowired
+    private K8sNameTool k8sNameTool;
+
+    @Autowired
     private AsyncStorage asyncStorage;
 
-    private static final String ZIP = ".zip";
+    @Autowired
+    private RecycleTaskService recycleTaskService;
 
-    private static final String SORT_ASC = "asc";
+    @Autowired
+    private RecycleConfig recycleConfig;
 
-    private static final String SORT_DESC = "desc";
-
-    private static final String ID = "id";
-
-    private static final int USERUPLOAD = 0;
-    private static final int TRAININGIMPORT = 1;
-    private static final int MODELOPTIMIZATION = 2;
-    private static final int RANDOMLENGTH = 4;
-
-    public final static List<String> filedNames;
+    public final static List<String> FIELD_NAMES;
 
     static {
-        filedNames = ReflectionUtils.getFieldNames(PtModelBranchQueryVO.class);
+        FIELD_NAMES = ReflectionUtils.getFieldNames(PtModelBranchQueryVO.class);
     }
 
     /**
@@ -95,6 +95,7 @@ public class PtModelBranchServiceImpl implements PtModelBranchService {
      * @return Map<String, Object>  模型版本管理分页对象
      */
     @Override
+    @DataPermissionMethod(dataType = DatasetTypeEnum.PUBLIC)
     public Map<String, Object> queryAll(PtModelBranchQueryDTO ptModelBranchQueryDTO) {
         //从会话中获取用户信息
         UserDTO user = JwtUtils.getCurrentUserDto();
@@ -103,14 +104,13 @@ public class PtModelBranchServiceImpl implements PtModelBranchService {
         LogUtil.info(LogEnum.BIZ_MODEL, "用户{}查询模型版本列表展示开始, 接收的参数为{}，Page{}", user.getUsername(), ptModelBranchQueryDTO, page);
 
         QueryWrapper wrapper = WrapperHelp.getWrapper(ptModelBranchQueryDTO);
-        wrapper.eq("create_user_id", user.getId());
 
         IPage<PtModelBranch> ptModelBranchs = null;
         try {
-            String order = null == ptModelBranchQueryDTO.getOrder() ? SORT_DESC : ptModelBranchQueryDTO.getOrder();
-            if (ptModelBranchQueryDTO.getSort() != null && filedNames.contains(ptModelBranchQueryDTO.getSort())) {
+            String order = null == ptModelBranchQueryDTO.getOrder() ? PtModelUtil.SORT_DESC : ptModelBranchQueryDTO.getOrder();
+            if (ptModelBranchQueryDTO.getSort() != null && FIELD_NAMES.contains(ptModelBranchQueryDTO.getSort())) {
                 switch (order.toLowerCase()) {
-                    case SORT_ASC:
+                    case PtModelUtil.SORT_ASC:
                         wrapper.orderByAsc(StringUtils.humpToLine(ptModelBranchQueryDTO.getSort()));
                         break;
                     default:
@@ -118,7 +118,7 @@ public class PtModelBranchServiceImpl implements PtModelBranchService {
                         break;
                 }
             } else {
-                wrapper.orderByDesc(ID);
+                wrapper.orderByDesc(PtModelUtil.ID);
             }
             ptModelBranchs = ptModelBranchMapper.selectPage(page, wrapper);
         } catch (Exception e) {
@@ -150,7 +150,6 @@ public class PtModelBranchServiceImpl implements PtModelBranchService {
         BeanUtils.copyProperties(ptModelBranchCreateDTO, ptModelBranch);
         QueryWrapper<PtModelInfo> ptModelInfoQueryWrapper = new QueryWrapper<PtModelInfo>();
         ptModelInfoQueryWrapper.eq("id", ptModelBranchCreateDTO.getParentId());
-        ptModelInfoQueryWrapper.eq("create_user_id", user.getId());
         PtModelInfo ptModelInfo = ptModelInfoMapper.selectOne(ptModelInfoQueryWrapper);
         if (ptModelInfo == null) {
             LogUtil.error(LogEnum.BIZ_MODEL, "用户{}更新模型列表未成功", user.getUsername());
@@ -158,46 +157,45 @@ public class PtModelBranchServiceImpl implements PtModelBranchService {
         }
         ptModelBranch.setVersionNum(getVersion(ptModelInfo));
         ptModelBranch.setModelPath("");
-
-        if (ptModelBranchCreateDTO.getModelSource() == USERUPLOAD) {
-            String path = ptModelBranchCreateDTO.getModelAddress();
+        //源文件路径
+        String sourcePath = nfsConfig.getBucket() + ptModelBranchCreateDTO.getModelAddress();
+        if (nfsUtil.fileOrDirIsEmpty(sourcePath)) {
+            LogUtil.error(LogEnum.BIZ_TRAIN, "The user {} upload path or source path {} does not exist", user.getUsername(), sourcePath);
+            throw new BusinessException("源文件或路径不存在");
+        }
+        if (ptModelBranchCreateDTO.getModelSource() == PtModelUtil.USER_UPLOAD) {
+            //目标路径
+            String targetPath = k8sNameTool.getNfsPath(BizNfsEnum.MODEL, user.getId());
             //校验path是否带有压缩文件，如有，则解压至当前文件夹并删除压缩文件
-            String fullPath = nfsConfig.getBucket() + path;
-            if (fullPath.endsWith(ZIP)) {
-                String[] split = fullPath.split(StrUtil.SLASH);
-                String suffix = split[split.length - 1];
-                String targetPath = fullPath.replace(suffix, "");
-                Boolean unzip = nfsUtil.unzip(fullPath, targetPath);
+            if (sourcePath.endsWith(PtModelUtil.ZIP)) {
+                boolean unzip = localFileUtil.unzipLocalPath(sourcePath, nfsConfig.getBucket() + targetPath);
                 if (!unzip) {
                     LogUtil.error(LogEnum.BIZ_MODEL, "用户{}解压模型文件失败", user.getUsername());
                     throw new BusinessException("模型文件解压失败");
                 }
-                //修改存储路径
-                ptModelBranch.setModelAddress(StrUtil.SLASH + path.replace(suffix, ""));
             } else {
-                String[] split = fullPath.split(StrUtil.SLASH);
-                String suffix = split[split.length - 1];
-                //修改存储路径
-                ptModelBranch.setModelAddress(StrUtil.SLASH + path.replace(suffix, ""));
+                boolean nfsCopy = nfsUtil.copyFile(sourcePath, nfsConfig.getBucket() + targetPath);
+                if (!nfsCopy) {
+                    LogUtil.info(LogEnum.BIZ_MODEL, "模型文件拷贝失败");
+                    throw new BusinessException("模型文件拷贝失败");
+                }
             }
+            //修改存储路径
+            ptModelBranch.setModelAddress(targetPath);
             if (ptModelBranchMapper.insert(ptModelBranch) < 1) {
                 LogUtil.error(LogEnum.BIZ_MODEL, "用户{}创建新版本未成功", user.getUsername());
                 throw new BusinessException("模型版本创建失败");
             }
-        } else if (ptModelBranchCreateDTO.getModelSource() == TRAININGIMPORT || ptModelBranchCreateDTO.getModelSource() == MODELOPTIMIZATION) {
-            String sourcePath = nfsConfig.getBucket() + ptModelBranchCreateDTO.getModelAddress();
-            String randomStr = RandomUtil.randomString(RANDOMLENGTH);
-            Date date = new Date();
-            SimpleDateFormat format = new SimpleDateFormat("yyyyMMddhhmmssSSS");
-            String path = "model" + StrUtil.SLASH + user.getId() + StrUtil.SLASH + format.format(date) + randomStr + StrUtil.SLASH;
-            String targetPath = nfsConfig.getBucket() + path;
-            ptModelBranch.setModelAddress(StrUtil.SLASH + path);
+        } else if (ptModelBranchCreateDTO.getModelSource() == PtModelUtil.TRAINING_IMPORT || ptModelBranchCreateDTO.getModelSource() == PtModelUtil.MODEL_OPTIMIZATION) {
+            //目标路径
+            String targetPath = k8sNameTool.getNfsPath(BizNfsEnum.MODEL, user.getId());
+            ptModelBranch.setModelAddress(targetPath);
             ptModelBranch.setStatus(0);
             if (ptModelBranchMapper.insert(ptModelBranch) < 1) {
                 LogUtil.error(LogEnum.BIZ_MODEL, "用户{}创建新版本未成功", user.getUsername());
                 throw new BusinessException("模型版本创建失败");
             }
-            asyncStorage.copyFileAsync(sourcePath, targetPath, ptModelBranchMapper, ptModelBranch);
+            asyncStorage.copyFileAsync(sourcePath, nfsConfig.getBucket() + targetPath, ptModelBranchMapper, ptModelBranch);
         }
         //模型信息更新
         ptModelInfo.setVersionNum(ptModelBranch.getVersionNum());
@@ -240,7 +238,6 @@ public class PtModelBranchServiceImpl implements PtModelBranchService {
 
         QueryWrapper wrapper = new QueryWrapper<>();
         wrapper.eq("id", ptModelBranchUpdateDTO.getId());
-        wrapper.eq("create_user_id", user.getId());
         Integer i = ptModelBranchMapper.selectCount(wrapper);
         if (i < 1) {
             LogUtil.error(LogEnum.BIZ_MODEL, "用户{}修改模型版本未成功,没有权限在模型版本表中修改对应数据", user.getUsername());
@@ -281,7 +278,6 @@ public class PtModelBranchServiceImpl implements PtModelBranchService {
 
         //权限校验
         QueryWrapper query = new QueryWrapper<>();
-        query.eq("create_user_id", user.getId());
         query.in("id", ids);
         if (ptModelBranchMapper.selectCount(query) < ids.size()) {
             LogUtil.error(LogEnum.BIZ_MODEL, "用户{}删除模型版本未成功,没有权限在模型版本表中删除对应数据", user.getUsername());
@@ -326,7 +322,16 @@ public class PtModelBranchServiceImpl implements PtModelBranchService {
                 }
             }
         }
-
+        //定时任务删除相应的模型文件
+        RecycleTaskCreateDTO recycleTask = new RecycleTaskCreateDTO();
+        for (PtModelBranch ptModelBranch : ptModelBranchs) {
+            recycleTask.setRecycleModule(RecycleModuleEnum.BIZ_MODEL.getValue())
+                    .setRecycleType(RecycleTypeEnum.FILE.getCode())
+                    .setRecycleDelayDate(recycleConfig.getModelValid())
+                    .setRecycleCondition(nfsUtil.formatPath(nfsConfig.getRootDir() + nfsConfig.getBucket() + ptModelBranch.getModelAddress()))
+                    .setRecycleNote("删除模型文件");
+            recycleTaskService.createRecycleTask(recycleTask);
+        }
         PtModelBranchDeleteVO ptModelBranchDeleteVO = new PtModelBranchDeleteVO();
         ptModelBranchDeleteVO.setIds(ptModelBranchDeleteDTO.getIds());
         return ptModelBranchDeleteVO;

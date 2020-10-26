@@ -18,6 +18,8 @@
 package org.dubhe.data.constant;
 
 import org.dubhe.base.MagicNumConstant;
+import org.dubhe.data.machine.constant.DataStateCodeConstant;
+import org.dubhe.data.machine.constant.FileStateCodeConstant;
 
 import java.io.File;
 import java.util.HashSet;
@@ -53,17 +55,19 @@ public class Constant {
      */
     public static final long RESERVED_LABEL_ID = MagicNumConstant.TEN_THOUSAND_LONG;
 
+    /**
+     * 自动标注需要符合的状态
+     */
     public static final Set<Integer> AUTO_ANNOTATION_NEED_STATUS = new HashSet<Integer>() {{
-        add(FileStatusEnum.INIT.getValue());
+        add(FileStateCodeConstant.NOT_ANNOTATION_FILE_STATE);
     }};
-
 
     /**
      * 自动跟踪需要符合的状态
      */
     public static final Set<Integer> AUTO_TRACK_NEED_STATUS = new HashSet<Integer>() {{
-        add(DatasetStatusEnum.FINISHED.getValue());
-        add(DatasetStatusEnum.AUTO_FINISHED.getValue());
+        add(DataStateCodeConstant.ANNOTATION_COMPLETE_STATE);
+        add(DataStateCodeConstant.AUTO_TAG_COMPLETE_STATE);
     }};
 
     /**
@@ -71,6 +75,9 @@ public class Constant {
      */
     public static final String DATASET_VERSION_NAME_REGEXP = "^V[0-9]{4}$";
 
+    /**
+     * 数据集版本格式说明
+     */
     public static final String DATASET_VERSION_NAME_REGEXP_NOTE = "版本规则: 1.满足V0001结构(V0001-V9999) " +
             "2.只能是字母、数字、下划线或者中划线组成的合法字符串长度限制8个字符";
 
@@ -194,5 +201,46 @@ public class Constant {
      * 数据集文件夹名称
      */
     public static final String DATASET_DIRECTORY = "dataset";
+
+    /**
+     * 临时文件
+     */
+    public static final String UPLOAD_TEMP = File.separator + "upload-temp";
+
+
+    /**
+     * 分表业务编码 - 文件表
+     */
+    public static final String DATA_FILE = "DATA_FILE";
+
+    /**
+     * 分表业务编码 - 文件版本关系表
+     */
+    public static final String DATA_VERSION_FILE = "DATA_VERSION_FILE";
+
+
+    /**
+     *  数据集预置标签组默认ID COCO
+     */
+    public static final Long COCO_ID = 1L;
+
+    /**
+     *  数据集预置标签组默认ID ImageNet
+     */
+    public static final Long IMAGENET_ID = 2L;
+
+
+    /**
+     *  大数据默认删除数量
+     */
+    public static final int LIMIT_NUMBER = 10000;
+
+
+
+    /**
+     * redis 预置标签key
+     */
+    public final static String DATASET_LABEL_PUB_KEY = "dateset:label:pub";
+
 
 }

@@ -65,6 +65,11 @@ public class PtJupyterJobBO {
     private GraphicsCardTypeEnum graphicsCardType;
     /**业务标签,用于标识业务模块**/
     private String businessLabel;
+    /**延时创建时间，单位：分钟**/
+    private Integer delayCreateTime;
+    /**定时删除时间，相对于实际创建时间，单位：分钟**/
+    private Integer delayDeleteTime;
+
 
     public List<String> getDirList(){
         if (CollectionUtil.isNotEmpty(nfsMounts)){

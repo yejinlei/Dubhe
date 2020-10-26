@@ -22,7 +22,6 @@ import com.alibaba.fastjson.JSONObject;
 import org.apache.commons.lang.StringUtils;
 import org.dubhe.base.MagicNumConstant;
 import org.dubhe.data.domain.dto.FileCreateDTO;
-import org.dubhe.data.service.FileService;
 import org.dubhe.data.service.impl.FileServiceImpl;
 import org.dubhe.enums.LogEnum;
 import org.dubhe.utils.LogUtil;
@@ -30,21 +29,14 @@ import org.dubhe.utils.MinioUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
-
-import javax.imageio.ImageIO;
-import javax.imageio.ImageReader;
-import javax.imageio.stream.ImageInputStream;
-import java.awt.image.BufferedImage;
-import java.awt.image.Raster;
 import java.io.*;
 import java.math.BigDecimal;
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 
 /**
- * @Description oneflow文本格式转换
- * @Date 2020-07-16
+ * @description oneflow文本格式转换
+ * @date 2020-07-16
  */
 @Component
 public class ConversionUtil {
@@ -68,6 +60,7 @@ public class ConversionUtil {
      * 将annotation信息转换为txt
      *
      * @param path 图片文件路径
+     * @param datasetId 数据集ID
      */
     public void txtConversion(String path, Long datasetId) {
         List<String> imagePaths = new ArrayList<>();
@@ -96,9 +89,9 @@ public class ConversionUtil {
                 continue;
             }
             StringBuffer content = new StringBuffer();
-            for (int i = 0; i < objects.size(); i++) {
-                JSONObject jsonObject = (JSONObject) objects.get(i);
-                Integer categoryId = (Integer) jsonObject.get("category_id");
+            for (Object object : objects) {
+                JSONObject jsonObject = (JSONObject) object;
+                Long categoryId = Long.valueOf(jsonObject.getString("category_id"));
                 JSONArray jsonArray = (JSONArray) jsonObject.get("bbox");
                 BigDecimal[] bbox = new BigDecimal[ARRAY_LENGTH];
                 for (int j = 0; j < ARRAY_LENGTH; j++) {
@@ -128,10 +121,10 @@ public class ConversionUtil {
     /**
      * 格式转换
      *
-     * @param x
-     * @param y
-     * @param w
-     * @param h
+     * @param x      横坐标
+     * @param y      纵坐标
+     * @param w      宽度
+     * @param h      高度
      * @param width  图片宽
      * @param height 图片高
      * @return double[]

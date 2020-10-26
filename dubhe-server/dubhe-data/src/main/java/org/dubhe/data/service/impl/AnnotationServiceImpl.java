@@ -19,73 +19,58 @@ package org.dubhe.data.service.impl;
 
 import cn.hutool.core.collection.CollectionUtil;
 import cn.hutool.core.collection.ConcurrentHashSet;
+import com.alibaba.fastjson.JSON;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
-import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
+import org.dubhe.annotation.DataPermissionMethod;
 import org.dubhe.base.MagicNumConstant;
 import org.dubhe.base.ResponseCode;
-import org.dubhe.data.constant.*;
-import org.dubhe.data.domain.bo.FileBO;
+import org.dubhe.data.constant.Constant;
+import org.dubhe.data.constant.DataTaskTypeEnum;
+import org.dubhe.data.constant.DatatypeEnum;
+import org.dubhe.data.constant.ErrorEnum;
 import org.dubhe.data.domain.bo.TaskSplitBO;
-import org.dubhe.data.domain.dto.AnnotationDeleteDTO;
-import org.dubhe.data.domain.dto.AnnotationInfoCreateDTO;
-import org.dubhe.data.domain.dto.AutoTrackCreateDTO;
-import org.dubhe.data.domain.dto.BatchAnnotationInfoCreateDTO;
+import org.dubhe.data.domain.dto.*;
 import org.dubhe.data.domain.entity.Dataset;
 import org.dubhe.data.domain.entity.DatasetVersionFile;
 import org.dubhe.data.domain.entity.File;
 import org.dubhe.data.domain.vo.FileVO;
-import org.dubhe.data.pool.BasePool;
+import org.dubhe.data.machine.constant.DataStateMachineConstant;
+import org.dubhe.data.machine.constant.FileStateCodeConstant;
+import org.dubhe.data.machine.constant.FileStateMachineConstant;
+import org.dubhe.data.machine.dto.StateChangeDTO;
+import org.dubhe.data.machine.utils.StateMachineUtil;
 import org.dubhe.data.service.*;
-import org.dubhe.data.service.http.AnnotationHttpService;
-import org.dubhe.data.service.http.TrackHttpService;
 import org.dubhe.data.service.store.IStoreService;
 import org.dubhe.data.service.store.MinioStoreServiceImpl;
-import org.dubhe.data.util.StatusIdentifyUtil;
 import org.dubhe.enums.LogEnum;
+import org.dubhe.enums.OperationTypeEnum;
 import org.dubhe.exception.BusinessException;
 import org.dubhe.utils.LogUtil;
 import org.dubhe.utils.MinioUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.ApplicationArguments;
-import org.springframework.boot.ApplicationRunner;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import javax.annotation.PostConstruct;
 import javax.annotation.Resource;
-import java.sql.Timestamp;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.PriorityBlockingQueue;
 import java.util.stream.Collectors;
-
-import static org.dubhe.constant.PermissionConstant.ADMIN_USER_ID;
 
 /**
  * @description 标注service
  * @date 2020-03-27
  */
 @Service
-public class AnnotationServiceImpl implements AnnotationService, ApplicationRunner {
+public class AnnotationServiceImpl implements AnnotationService {
 
     /**
      * 文件信息服务
      */
     @Autowired
     private FileService fileService;
-
-    /**
-     * 标注算法调用服务
-     */
-    @Autowired
-    private AnnotationHttpService annotationHttpService;
-
-    /**
-     * 跟踪算法调用服务
-     */
-    @Autowired
-    private TrackHttpService trackHttpService;
 
     /**
      * 任务服务类
@@ -145,22 +130,11 @@ public class AnnotationServiceImpl implements AnnotationService, ApplicationRunn
     private ConcurrentHashSet<Long> tracking;
 
     /**
-     * 线程池
-     */
-    @Autowired
-    private BasePool pool;
-
-    /**
      * 文件工具类
      */
     @Autowired
     private org.dubhe.data.util.FileUtil fileUtil;
 
-    /**
-     * 数据集状态工具类
-     */
-    @Autowired
-    private StatusIdentifyUtil statusIdentifyUtil;
 
     /**
      * 队列长度
@@ -168,14 +142,10 @@ public class AnnotationServiceImpl implements AnnotationService, ApplicationRunn
     public static final int QUEUE_SIZE = MagicNumConstant.FIFTY;
 
     /**
-     * 自动标注数量
-     */
-    public static final int AUTO_ANNOTATING_SIZE = MagicNumConstant.TWENTY;
-
-    /**
      * 跟踪数量
      */
     public static final int TRACKING_SIZE = MagicNumConstant.FIVE;
+
 
     /**
      * 初始化
@@ -195,8 +165,11 @@ public class AnnotationServiceImpl implements AnnotationService, ApplicationRunn
      */
     @Transactional(rollbackFor = Exception.class)
     @Override
-    public int save(BatchAnnotationInfoCreateDTO batchAnnotationInfoCreateDTO) {
-        return batchAnnotationInfoCreateDTO.getAnnotations().stream().mapToInt(this::save).sum();
+    @DataPermissionMethod
+    public void save(Long datasetId,BatchAnnotationInfoCreateDTO batchAnnotationInfoCreateDTO) {
+        for (AnnotationInfoCreateDTO annotationInfoCreateDTO : batchAnnotationInfoCreateDTO.getAnnotations() ) {
+            save(datasetId,annotationInfoCreateDTO);
+        }
     }
 
     /**
@@ -206,18 +179,28 @@ public class AnnotationServiceImpl implements AnnotationService, ApplicationRunn
      * @return int 标注修改的数量
      */
     @Override
-    public int save(AnnotationInfoCreateDTO annotationInfoCreateDTO) {
-        if (annotationInfoCreateDTO.getId() == null) {
-            return MagicNumConstant.ZERO;
-        }
-        FileVO fileVO = fileService.get(annotationInfoCreateDTO.getId());
+    public void save(Long datasetId,AnnotationInfoCreateDTO annotationInfoCreateDTO) {
+        FileVO fileVO = fileService.get(annotationInfoCreateDTO.getId(),datasetId);
         Dataset dataset = datasetService.getOneById(fileVO.getDatasetId());
-        datasetService.checkPublic(dataset);
+        datasetService.checkPublic(dataset, OperationTypeEnum.UPDATE);
+        annotationInfoCreateDTO.setDatasetId(datasetId);
         doSave(annotationInfoCreateDTO);
-        return datasetVersionFileService.updateAnnotationStatus(dataset.getId(),
-                dataset.getCurrentVersionName(), new HashSet<Long>() {{
-                    add(annotationInfoCreateDTO.getId());
-                }}, null, FileStatusEnum.FINISHED.getValue());
+        //改变文件的状态为标注完成
+        StateMachineUtil.stateChange(new StateChangeDTO() {{
+            setObjectParam(new Object[]{new DatasetVersionFile() {{
+                setDatasetId(dataset.getId());
+                setFileId(fileVO.getId());
+                setVersionName(dataset.getCurrentVersionName());
+            }}});
+            setEventMethodName(FileStateMachineConstant.FILE_SAVE_COMPLETE_EVENT);
+            setStateMachineType(FileStateMachineConstant.FILE_STATE_MACHINE);
+        }});
+        //改变数据集的状态为标注完成
+        StateMachineUtil.stateChange(new StateChangeDTO() {{
+            setObjectParam(new Object[]{dataset});
+            setEventMethodName(DataStateMachineConstant.DATA_FINISH_MANUAL_EVENT);
+            setStateMachineType(DataStateMachineConstant.DATA_STATE_MACHINE);
+        }});
     }
 
     /**
@@ -228,22 +211,37 @@ public class AnnotationServiceImpl implements AnnotationService, ApplicationRunn
      */
     @Transactional(rollbackFor = Exception.class)
     @Override
-    public int save(Long fileId, AnnotationInfoCreateDTO annotationInfoCreateDTO) {
-        FileVO fileVO = fileService.get(fileId);
+    @DataPermissionMethod
+    public void save(Long fileId,Long datasetId, AnnotationInfoCreateDTO annotationInfoCreateDTO) {
+        FileVO fileVO = fileService.get(fileId,datasetId);
         if (fileVO == null) {
             throw new BusinessException(ErrorEnum.FILE_ABSENT);
         }
         Dataset dataset = datasetService.getOneById(fileVO.getDatasetId());
+
         if (dataset == null) {
             throw new BusinessException(ErrorEnum.DATASET_ABSENT);
         }
-        datasetService.checkPublic(dataset);
+        datasetService.checkPublic(dataset, OperationTypeEnum.UPDATE);
         annotationInfoCreateDTO.setId(fileId);
+        annotationInfoCreateDTO.setDatasetId(datasetId);
         doSave(annotationInfoCreateDTO);
-        return datasetVersionFileService.updateAnnotationStatus(dataset.getId(),
-                dataset.getCurrentVersionName(), new HashSet<Long>() {{
-                    add(fileId);
-                }}, null, FileStatusEnum.ANNOTATING.getValue());
+        //改变数据集的状态为标注中
+        StateMachineUtil.stateChange(new StateChangeDTO() {{
+            setObjectParam(new Object[]{dataset});
+            setEventMethodName(DataStateMachineConstant.DATA_MANUAL_ANNOTATION_SAVE_EVENT);
+            setStateMachineType(DataStateMachineConstant.DATA_STATE_MACHINE);
+        }});
+        //将文件改为标注中的状态
+        StateMachineUtil.stateChange(new StateChangeDTO() {{
+            setObjectParam(new Object[]{new DatasetVersionFile() {{
+                setDatasetId(dataset.getId());
+                setFileId(fileId);
+                setVersionName(dataset.getCurrentVersionName());
+            }}});
+            setEventMethodName(FileStateMachineConstant.FILE_MANUAL_ANNOTATION_SAVE_EVENT);
+            setStateMachineType(FileStateMachineConstant.FILE_STATE_MACHINE);
+        }});
     }
 
     /**
@@ -257,15 +255,9 @@ public class AnnotationServiceImpl implements AnnotationService, ApplicationRunn
             LogUtil.warn(LogEnum.BIZ_DATASET, "annotation info invalid. annotation:{}", annotationInfoCreateDTO);
             return;
         }
-        File file = fileService.selectById(annotationInfoCreateDTO.getId());
-        Dataset dataset = datasetService.getOneById(file.getDatasetId());
         QueryWrapper<File> fileQueryWrapper = new QueryWrapper<>();
         fileQueryWrapper
-                .in("create_user_id", new HashSet<Long>() {{
-                    add(dataset.getCreateUserId());
-                    add(ADMIN_USER_ID);
-                }})
-                .eq("id", annotationInfoCreateDTO.getId());
+                .eq("id", annotationInfoCreateDTO.getId()).eq("dataset_id", annotationInfoCreateDTO.getDatasetId());
         File fileOne = fileService.selectOne(fileQueryWrapper);
         if (fileOne == null) {
             LogUtil.warn(LogEnum.BIZ_DATASET, ErrorEnum.FILE_ABSENT.getMsg() + "fileId is" + annotationInfoCreateDTO.getId());
@@ -285,53 +277,53 @@ public class AnnotationServiceImpl implements AnnotationService, ApplicationRunn
      */
     @Transactional(rollbackFor = Exception.class)
     @Override
-    public int finishManual(Long fileId, AnnotationInfoCreateDTO annotationInfoCreateDTO) {
-        FileVO fileVO = fileService.get(fileId);
+    @DataPermissionMethod
+    public void finishManual(Long fileId,Long datasetId, AnnotationInfoCreateDTO annotationInfoCreateDTO) {
+        annotationInfoCreateDTO.setDatasetId(datasetId);
+        FileVO fileVO = fileService.get(fileId,datasetId);
         Dataset dataset = datasetService.getOneById(fileVO.getDatasetId());
-        datasetService.checkPublic(dataset);
+        datasetService.checkPublic(dataset, OperationTypeEnum.UPDATE);
         annotationInfoCreateDTO.setId(fileId);
         doSave(annotationInfoCreateDTO);
-        return datasetVersionFileService.updateAnnotationStatus(dataset.getId(),
-                dataset.getCurrentVersionName(), new HashSet<Long>() {{
-                    add(annotationInfoCreateDTO.getId());
-                }}, null, FileStatusEnum.FINISHED.getValue());
+        //改变文件的状态为标注完成
+        StateMachineUtil.stateChange(new StateChangeDTO() {{
+            setObjectParam(new Object[]{new DatasetVersionFile() {{
+                setDatasetId(dataset.getId());
+                setFileId(fileVO.getId());
+                setVersionName(dataset.getCurrentVersionName());
+            }}});
+            setEventMethodName(FileStateMachineConstant.FILE_SAVE_COMPLETE_EVENT);
+            setStateMachineType(FileStateMachineConstant.FILE_STATE_MACHINE);
+        }});
+        //改变数据集的状态为标注完成
+        StateMachineUtil.stateChange(new StateChangeDTO() {{
+            setObjectParam(new Object[]{dataset});
+            setEventMethodName(DataStateMachineConstant.DATA_FINISH_MANUAL_EVENT);
+            setStateMachineType(DataStateMachineConstant.DATA_STATE_MACHINE);
+        }});
     }
 
     /**
-     * 标注清除
+     * 重新自动标注
      *
      * @param annotationDeleteDTO 标注清除条件
      * @return boolean 清除标注是否成功
      */
     @Transactional(rollbackFor = Exception.class)
     @Override
-    public void delete(AnnotationDeleteDTO annotationDeleteDTO) {
+    @DataPermissionMethod
+    public void reAuto(AnnotationDeleteDTO annotationDeleteDTO) {
         Dataset dataset = datasetService.getOneById(annotationDeleteDTO.getDatasetId());
-        //判断数据集标注信息不可以清除的情况
-        if (dataset == null) {
-            throw new BusinessException(ErrorEnum.DATASET_ABSENT);
-        }
-        //获取数据集的实时状态
-        DatasetStatusEnum status = statusIdentifyUtil.getStatus(dataset);
-        switch (status) {
-            case INIT:
-                throw new BusinessException(ErrorEnum.ANNOTATION_EMPTY_ERROR);
-            case AUTO_ANNOTATING:
-                throw new BusinessException(ErrorEnum.AUTO_ERROR);
-            case NOT_SAMPLE:
-                throw new BusinessException(ErrorEnum.DATASET_SAMPLE_IS_UNDONE);
-            case SAMPLING:
-                throw new BusinessException(ErrorEnum.DATASET_SAMPLING);
-            case ENHANCING:
-                throw new BusinessException(ErrorEnum.DATASET_ENHANCEMENT);
-            default:
-                if (dataset.getDataType().equals(DatatypeEnum.VIDEO.getValue()) &&
-                        status.getValue() == DatasetStatusEnum.AUTO_FINISHED.getValue()) {
-                    throw new BusinessException(ErrorEnum.DATASET_VIDEO_HAS_NOT_BEEN_AUTOMATICALLY_TRACKED);
-                }
-        }
+        StateMachineUtil.stateChange(new StateChangeDTO() {{
+            setStateMachineType(DataStateMachineConstant.DATA_STATE_MACHINE);
+            setEventMethodName(DataStateMachineConstant.DATA_DELETE_ANNOTATING_EVENT);
+            setObjectParam(new Object[]{annotationDeleteDTO.getDatasetId().intValue()});
+        }});
         //删除数据集标注信息 改数据集相关状态
         deleteMinioAnnotation(dataset);
+        taskService.auto(new AutoAnnotationCreateDTO() {{
+            setDatasetIds(new Long[]{annotationDeleteDTO.getDatasetId()});
+        }});
     }
 
     /**
@@ -355,67 +347,6 @@ public class AnnotationServiceImpl implements AnnotationService, ApplicationRunn
         String filePath = fileUtil.getAnnotationAbsPath(file.getDatasetId(), file.getName());
         storeService.delete(filePath);
         LogUtil.info(LogEnum.BIZ_DATASET, "delete file. file:{}", filePath);
-    }
-
-    /**
-     * 阻塞队列初始化
-     *
-     * @param args
-     */
-    @Override
-    public void run(ApplicationArguments args) {
-        initAnnotationWorker(Constant.ANNOTATION_TASK_WORKER_NUM);
-    }
-
-    /**
-     * 线程任务提交
-     *
-     * @param num 线程数量
-     */
-    private void initAnnotationWorker(int num) {
-        while (num-- > MagicNumConstant.ZERO) {
-            pool.getExecutor().submit((Runnable) this::annotate);
-        }
-    }
-
-    /**
-     * 任务调用算法
-     */
-    private void annotate() {
-        while (true) {
-            if (autoAnnotating.size() > AUTO_ANNOTATING_SIZE) {
-                continue;
-            }
-            try {
-                TaskSplitBO t = queue.take();
-                annotate(t);
-            } catch (InterruptedException e) {
-                LogUtil.warn(LogEnum.BIZ_DATASET, "annotation worker has been interrupted. thread:{}", Thread.currentThread());
-                return;
-            }
-        }
-    }
-
-    /**
-     * 单个标注任务调用算法
-     *
-     * @param taskSplit 标注任务
-     */
-    public void annotate(TaskSplitBO taskSplit) {
-        LogUtil.info(LogEnum.BIZ_DATASET, "annotate task split. taskSplit:{}", taskSplit);
-        if (taskSplit == null || !TaskServiceImpl.taskIds.contains(taskSplit.getTaskId())) {
-            return;
-        }
-        String id = annotationHttpService.annotate(taskSplit);
-        if (id != null) {
-            // invoke success
-            taskSplit.setId(id);
-            taskSplit.setSendTime(System.currentTimeMillis());
-            autoAnnotating.putIfAbsent(id, taskSplit);
-        } else {
-            LogUtil.warn(LogEnum.BIZ_DATASET, "task send fail. task:{}", taskSplit);
-            doRemoveTask(taskSplit.getTaskId());
-        }
     }
 
     /**
@@ -446,7 +377,6 @@ public class AnnotationServiceImpl implements AnnotationService, ApplicationRunn
         return true;
     }
 
-
     /**
      * 状态为标记完成的文件推送到追踪算法
      *
@@ -462,29 +392,10 @@ public class AnnotationServiceImpl implements AnnotationService, ApplicationRunn
             LogUtil.info(LogEnum.BIZ_DATASET, "there is currently no data to track");
             return;
         }
-        //过滤已发送给算法的
-        datasets.stream().filter(dataset -> !tracking.contains(dataset.getId())).forEach(this::executionTracking);
-    }
-
-    /**
-     * 执行自动追踪
-     *
-     * @param dataset 数据集
-     */
-    public void executionTracking(Dataset dataset) {
-        pool.getExecutor().submit(() -> {
-            //查当前版本数据集的版本文件中间表
-            Map<Long, List<DatasetVersionFile>> fileMap = queryFileAccordingToCurrentVersionAndStatus(dataset);
-            if (fileMap.isEmpty()) {
-                LogUtil.info(LogEnum.BIZ_DATASET, "there is currently no data to track");
-                return;
+        datasets.stream().forEach(dataset -> {
+            if (CollectionUtil.isEmpty(taskService.getExecutingTask(dataset.getId(), DataTaskTypeEnum.TARGET_TRACK.getValue()))) {
+                taskService.track(dataset);
             }
-            //修改数据集更新时间,以此来保证数据集不会多次调用跟踪接口
-            if (!datasetService.updataTimeByIdSet(fileMap)) {
-                LogUtil.info(LogEnum.BIZ_DATASET, "dataset modification update time failed.datasetIds:{}", fileMap.keySet().toString());
-                return;
-            }
-            track(fileMap);
         });
     }
 
@@ -498,8 +409,7 @@ public class AnnotationServiceImpl implements AnnotationService, ApplicationRunn
         QueryWrapper<Dataset> datasetQueryWrapper = new QueryWrapper<>();
         datasetQueryWrapper.lambda()
                 .eq(Dataset::getDataType, DatatypeEnum.VIDEO.getValue())
-                .in(Dataset::getStatus, Constant.AUTO_TRACK_NEED_STATUS)
-                .lt(Dataset::getUpdateTime, new Timestamp(System.currentTimeMillis() - (MagicNumConstant.ONE_THOUSAND * MagicNumConstant.SIXTY)));
+                .in(Dataset::getStatus, Constant.AUTO_TRACK_NEED_STATUS);
         return datasetService.queryList(datasetQueryWrapper);
     }
 
@@ -509,6 +419,7 @@ public class AnnotationServiceImpl implements AnnotationService, ApplicationRunn
      * @param dataset 数据集
      * @return Map<Long, List < DatasetVersionFile>> 根据当前版本和状态查询文件列表
      */
+    @Override
     public Map<Long, List<DatasetVersionFile>> queryFileAccordingToCurrentVersionAndStatus(Dataset dataset) {
         Map<Long, List<DatasetVersionFile>> fileMap = new HashMap<>(MagicNumConstant.SIXTEEN);
         //根据数据集读数据集版本文件中间表
@@ -529,23 +440,8 @@ public class AnnotationServiceImpl implements AnnotationService, ApplicationRunn
     public List<DatasetVersionFile> filterFilesThatNeedToBeTracked(Long datasetId, String versionName) {
         List<DatasetVersionFile> versionFiles = datasetVersionFileService.getFilesByDatasetIdAndVersionName(datasetId, versionName);
         long size = versionFiles.stream().filter(f ->
-                FileStatusEnum.AUTO_ANNOTATION.getValue() != f.getStatus() || FileStatusEnum.FINISHED.getValue() != f.getStatus()).count();
+                !FileStateCodeConstant.AUTO_TAG_COMPLETE_FILE_STATE.equals(f.getStatus()) || FileStateCodeConstant.ANNOTATION_COMPLETE_FILE_STATE.equals(f.getStatus())).count();
         return size == versionFiles.size() ? versionFiles : null;
-    }
-
-    /**
-     * 执行目标跟踪
-     *
-     * @param fileMap 跟踪文件map
-     */
-    public void track(Map<Long, List<DatasetVersionFile>> fileMap) {
-        if (trackHttpService.track(fileMap)) {
-            fileMap.forEach((k, v) -> {
-                if (tracking.size() < TRACKING_SIZE) {
-                    tracking.add(k);
-                }
-            });
-        }
     }
 
     /**
@@ -555,6 +451,7 @@ public class AnnotationServiceImpl implements AnnotationService, ApplicationRunn
      * @param resMap    标注文件保存条件
      */
     @Transactional(rollbackFor = Exception.class)
+    @Override
     public void doFinishAuto(TaskSplitBO taskSplit, Map<Long, AnnotationInfoCreateDTO> resMap) {
         LogUtil.info(LogEnum.BIZ_DATASET, "finish auto. ts:{}, resMap:{}", taskSplit, resMap);
         //图片状态变更为自动标注完成
@@ -568,17 +465,34 @@ public class AnnotationServiceImpl implements AnnotationService, ApplicationRunn
             storeService.write(fileUtil.getAnnotationAbsPath(taskSplit.getDatasetId(), fileBO.getName()), annotationInfo.getAnnotation());
 
         });
-        boolean success = fileService.finishAnnotation(dataset, taskSplit
-                .getFiles()
-                .stream()
-                .map(FileBO::getId).collect(Collectors.toSet())
-        );
-        if (!success) {
-            return;
+        taskSplit.setVersionName(dataset.getCurrentVersionName());
+
+        HashSet<Long> annotationInfoIsNotEmpty = new HashSet<Long>() {{
+            addAll(resMap.keySet().stream().filter(k -> !JSON.parseArray(resMap.get(k).getAnnotation()).isEmpty()).collect(Collectors.toSet()));
+        }};
+        //嵌入状态机（改变文件状态，标记文件状态被改变）->改变有标注数据的文件
+        if (!annotationInfoIsNotEmpty.isEmpty()) {
+            StateMachineUtil.stateChange(
+                    new StateChangeDTO() {{
+                        setObjectParam(new Object[]{annotationInfoIsNotEmpty, taskSplit.getDatasetId(), taskSplit.getVersionName()});
+                        setEventMethodName(FileStateMachineConstant.FILE_DO_FINISH_AUTO_ANNOTATION_BATCH_EVENT);
+                        setStateMachineType(FileStateMachineConstant.FILE_STATE_MACHINE);
+                    }});
+        }
+        HashSet<Long> annotationInfoIsEmpty = new HashSet<Long>() {{
+            addAll(resMap.keySet().stream().filter(k -> JSON.parseArray(resMap.get(k).getAnnotation()).isEmpty()).collect(Collectors.toSet()));
+        }};
+        //嵌入状态机（改变文件状态，标记文件状态被改变）->改变无标注数据的文件
+        if (!annotationInfoIsEmpty.isEmpty()) {
+            StateMachineUtil.stateChange(new StateChangeDTO() {{
+                setObjectParam(new Object[]{annotationInfoIsEmpty, taskSplit.getDatasetId(), taskSplit.getVersionName()});
+                setEventMethodName(FileStateMachineConstant.FILE_DO_FINISH_AUTO_ANNOTATION_INFO_IS_EMPTY_BATCH_EVENT);
+                setStateMachineType(FileStateMachineConstant.FILE_STATE_MACHINE);
+            }});
         }
         //任务加文件数量
-        taskService.finishFile(taskSplit.getTaskId(), taskSplit.getFiles().size());
-        autoAnnotating.remove(taskSplit.getId());
+        // 判断是否需要去做目标跟踪
+        taskService.finishFile(taskSplit.getTaskId(), taskSplit.getFiles().size(), dataset);
     }
 
 
@@ -603,52 +517,36 @@ public class AnnotationServiceImpl implements AnnotationService, ApplicationRunn
         } else if (!DatatypeEnum.VIDEO.getValue().equals(dataset.getDataType())) {
             LogUtil.error(LogEnum.BIZ_DATASET, "wrong dataset type, not video. dataset:{}", datasetId);
         } else {
-            if (updateDatasetStatusIsFinishAutoTrack(dataset)) {
-                boolean update = updateFilesStatusIsFinishAutoTrack(dataset);
-                if (update) {
-                    tracking.remove(datasetId);
-                    LogUtil.info(LogEnum.BIZ_DATASET, "target tracking is complete dataset:{}", datasetId);
-                }
-            }
+            //嵌入状态机（目标跟踪中—>目标跟踪完成）
+            StateMachineUtil.stateChange(new StateChangeDTO() {{
+                setObjectParam(new Object[]{dataset});
+                setEventMethodName(DataStateMachineConstant.DATA_TARGET_COMPLETE_EVENT);
+                setStateMachineType(DataStateMachineConstant.DATA_STATE_MACHINE);
+            }});
+            //嵌入状态机（自动标注完成->目标跟踪完成）
+            StateMachineUtil.stateChange(new StateChangeDTO() {{
+                setObjectParam(new Object[]{dataset});
+                setEventMethodName(FileStateMachineConstant.FILE_DO_FINISH_AUTO_TRACK_EVENT);
+                setStateMachineType(FileStateMachineConstant.FILE_STATE_MACHINE);
+            }});
+            tracking.remove(datasetId);
+            LogUtil.info(LogEnum.BIZ_DATASET, "target tracking is complete dataset:{}", datasetId);
         }
         LogUtil.info(LogEnum.BIZ_DATASET, "exception update of target tracking algorithm callback. dataset:{}", datasetId);
     }
 
     /**
-     * 完成跟踪后修改状态
+     * 重新目标跟踪
      *
-     * @param dataset 数据集
-     * @return boolean 状态修改是否成功
+     * @param datasetId
      */
-    public boolean updateDatasetStatusIsFinishAutoTrack(Dataset dataset) {
-        //修改数据集的状态为目标跟踪完成
-        return datasetService.updateEntity(null, new UpdateWrapper<Dataset>()
-                .lambda()
-                .eq(Dataset::getId, dataset.getId())
-                .set(Dataset::getStatus, DatasetStatusEnum.FINISHED_TRACK.getValue())
-                .set(Dataset::getUpdateUserId, dataset.getCreateUserId())
-        );
-    }
-
-    /**
-     * 更新数据集文件版本状态为自动跟踪
-     *
-     * @param dataset 数据集
-     * @return boolean 状态修改是否成功
-     */
-    public boolean updateFilesStatusIsFinishAutoTrack(Dataset dataset) {
-        QueryWrapper<DatasetVersionFile> fileQueryWrapper = new QueryWrapper<>();
-        fileQueryWrapper.lambda().eq(DatasetVersionFile::getDatasetId, dataset.getId());
-        String currentVersionName = dataset.getCurrentVersionName();
-        if (currentVersionName == null || currentVersionName.isEmpty()) {
-            fileQueryWrapper.lambda().isNull(DatasetVersionFile::getVersionName);
-        } else {
-            fileQueryWrapper.lambda().eq(DatasetVersionFile::getVersionName, currentVersionName);
+    @Override
+    public void track(Long datasetId) {
+        Dataset dataset = datasetService.getOneById(datasetId);
+        if (dataset == null|| !DatatypeEnum.VIDEO.getValue().equals(dataset.getDataType())) {
+            throw new BusinessException(ErrorEnum.DATASET_TRACK_TYPE_ERROR);
         }
-        List<DatasetVersionFile> datasetVersionFileList = datasetVersionFileService.queryList(fileQueryWrapper);
-        return datasetVersionFileService.updateEntity(null, new UpdateWrapper<DatasetVersionFile>().lambda()
-                .in(DatasetVersionFile::getFileId, datasetVersionFileList.stream().map(DatasetVersionFile::getFileId)
-                        .filter(Objects::nonNull).collect(Collectors.toList())).set(DatasetVersionFile::getAnnotationStatus, FileStatusEnum.FINISH_AUTO_TRACK.getValue()));
+        taskService.track(dataset);
     }
 
     /**
@@ -656,25 +554,13 @@ public class AnnotationServiceImpl implements AnnotationService, ApplicationRunn
      *
      * @param dataset 数据集
      */
-    @Transactional(rollbackFor = Exception.class)
     public void deleteMinioAnnotation(Dataset dataset) {
-        datasetVersionFileService.updateStatus(dataset, FileStatusEnum.INIT);
-        datasetService.updateStatus(dataset.getId(), DatasetStatusEnum.INIT);
         try {
             client.del(bucket, dataset.getUri() + annotation +
                     (dataset.getCurrentVersionName() == null ? "" : (dataset.getCurrentVersionName())));
         } catch (Exception e) {
             LogUtil.error(LogEnum.BIZ_DATASET, "MinIO delete the dataset annotation file error", e);
         }
-    }
-
-    /**
-     * 失败移除任务
-     *
-     * @param taskId 任务ID
-     */
-    public void doRemoveTask(Long taskId) {
-        taskService.doRemoveTask(taskId, autoAnnotating, null);
     }
 
 }

@@ -118,7 +118,7 @@ public class PersistentVolumeClaimApiImpl implements PersistentVolumeClaimApi {
             LogUtil.info(LogEnum.BIZ_K8S, YamlUtils.dumpAsYaml(pvc));
             return BizConvertUtils.toBizPersistentVolumeClaim(client.persistentVolumeClaims().inNamespace(bo.getNamespace()).create(pvc));
         } catch (KubernetesClientException e) {
-            LogUtil.error(LogEnum.BIZ_K8S, "PersistentVolumeClaimApi.create error, param:{} error:", bo, e);
+            LogUtil.error(LogEnum.BIZ_K8S, "PersistentVolumeClaimApi.create error, param:{} error:{}", bo, e);
             return new BizPersistentVolumeClaim().error(String.valueOf(e.getCode()), e.getMessage());
         }
     }
@@ -174,7 +174,7 @@ public class PersistentVolumeClaimApiImpl implements PersistentVolumeClaimApi {
             }
 
         } catch (KubernetesClientException e) {
-            LogUtil.error(LogEnum.BIZ_K8S, "PersistentVolumeClaimApiImpl.createWithNfsPv error, param:{} error:", bo, e);
+            LogUtil.error(LogEnum.BIZ_K8S, "PersistentVolumeClaimApiImpl.createWithNfsPv error, param:{} error:{}", bo, e);
             return new BizPersistentVolumeClaim().error(String.valueOf(e.getCode()), e.getMessage());
         }
     }
@@ -230,7 +230,7 @@ public class PersistentVolumeClaimApiImpl implements PersistentVolumeClaimApi {
             }
 
         } catch (KubernetesClientException e) {
-            LogUtil.error(LogEnum.BIZ_K8S, "PersistentVolumeClaimApiImpl.createWithDirectPv error, param:{} error:", bo, e);
+            LogUtil.error(LogEnum.BIZ_K8S, "PersistentVolumeClaimApiImpl.createWithDirectPv error, param:{} error:{}", bo, e);
             return new BizPersistentVolumeClaim().error(String.valueOf(e.getCode()), e.getMessage());
         }
     }
@@ -271,7 +271,7 @@ public class PersistentVolumeClaimApiImpl implements PersistentVolumeClaimApi {
             }
 
         } catch (KubernetesClientException e) {
-            LogUtil.error(LogEnum.BIZ_K8S, "PersistentVolumeClaimApiImpl.createDynamicNfs error, param:{} error:", bo, e);
+            LogUtil.error(LogEnum.BIZ_K8S, "PersistentVolumeClaimApiImpl.createDynamicNfs error, param:{} error:{}", bo, e);
             return new BizPersistentVolumeClaim().error(String.valueOf(e.getCode()), e.getMessage());
         }
     }
@@ -308,7 +308,7 @@ public class PersistentVolumeClaimApiImpl implements PersistentVolumeClaimApi {
             client.persistentVolumeClaims().inNamespace(namespace).withName(pvcName).delete();
             return new PtBaseResult();
         } catch (KubernetesClientException e) {
-            LogUtil.error(LogEnum.BIZ_K8S, "PersistentVolumeClaimApiImpl.delete error, param:[namespace]={}, error:", namespace, e);
+            LogUtil.error(LogEnum.BIZ_K8S, "PersistentVolumeClaimApiImpl.delete error, param:[namespace]={}, error:{}", namespace, e);
             return new PtBaseResult(String.valueOf(e.getCode()), e.getMessage());
         }
     }
@@ -330,7 +330,7 @@ public class PersistentVolumeClaimApiImpl implements PersistentVolumeClaimApi {
             client.persistentVolumes().withLabels(LabelUtils.withEnvResourceName(resourceName)).delete();
             return new PtBaseResult();
         } catch (KubernetesClientException e) {
-            LogUtil.error(LogEnum.BIZ_K8S, "PersistentVolumeClaimApiImpl.recycle error, param:[namespace]={}, [resourceName]={}, error:",namespace, resourceName, e);
+            LogUtil.error(LogEnum.BIZ_K8S, "PersistentVolumeClaimApiImpl.recycle error, param:[namespace]={}, [resourceName]={}, error:{}",namespace, resourceName, e);
             return new PtBaseResult(String.valueOf(e.getCode()), e.getMessage());
         }
     }
@@ -354,7 +354,7 @@ public class PersistentVolumeClaimApiImpl implements PersistentVolumeClaimApi {
      * 删除PV
      *
      * @param pvName PV名称
-     * @return boolean
+     * @return boolean true成功 false失败
      */
     @Override
     public boolean deletePv(String pvName) {

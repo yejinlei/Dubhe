@@ -20,23 +20,15 @@ package org.dubhe.data.service;
 import com.baomidou.mybatisplus.core.conditions.Wrapper;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
-import org.dubhe.data.constant.DatasetStatusEnum;
-import org.dubhe.data.domain.dto.BatchFileCreateDTO;
-import org.dubhe.data.domain.dto.DatasetCreateDTO;
-import org.dubhe.data.domain.dto.DatasetCustomCreateDTO;
-import org.dubhe.data.domain.dto.DatasetDeleteDTO;
-import org.dubhe.data.domain.dto.DatasetEnhanceFinishDTO;
-import org.dubhe.data.domain.dto.DatasetEnhanceRequestDTO;
-import org.dubhe.data.domain.dto.DatasetIsVersionDTO;
-import org.dubhe.data.domain.dto.FileCreateDTO;
-import org.dubhe.data.domain.dto.FileDeleteDTO;
+import org.dubhe.data.constant.DatasetLabelEnum;
+import org.dubhe.data.domain.dto.*;
 import org.dubhe.data.domain.entity.Dataset;
 import org.dubhe.data.domain.entity.DatasetVersionFile;
 import org.dubhe.data.domain.entity.File;
 import org.dubhe.data.domain.entity.Label;
-import org.dubhe.data.domain.vo.DatasetCountVO;
-import org.dubhe.data.domain.vo.DatasetQueryDTO;
-import org.dubhe.data.domain.vo.DatasetVO;
+import org.dubhe.data.domain.vo.*;
+import org.dubhe.data.machine.enums.DataStateEnum;
+import org.dubhe.enums.OperationTypeEnum;
 import org.springframework.transaction.annotation.Transactional;
 
 import javax.servlet.http.HttpServletResponse;
@@ -126,9 +118,9 @@ public interface DatasetService {
      *
      * @param page                分页条件
      * @param datasetIsVersionDTO 查询数据集(有版本)条件
-     * @return: Map<String, Object> 查询数据集(有版本)列表
+     * @return Map<String, Object> 查询数据集(有版本)列表
      */
-    Map<String, Object> dataVersionlistVO(Page<Dataset> page, DatasetIsVersionDTO datasetIsVersionDTO);
+    Map<String, Object> dataVersionListVO(Page<Dataset> page, DatasetIsVersionDTO datasetIsVersionDTO);
 
     /**
      * 数据扩容
@@ -136,14 +128,6 @@ public interface DatasetService {
      * @param datasetEnhanceRequestDTO 数据扩容参数
      */
     void enhance(DatasetEnhanceRequestDTO datasetEnhanceRequestDTO);
-
-    /**
-     * 数据增强完成
-     *
-     * @param datasetEnhanceFinishDTO 数据增强参数
-     * @return boolean  数据增强完成是否成功
-     */
-    boolean enhanceFinish(DatasetEnhanceFinishDTO datasetEnhanceFinishDTO);
 
     /**
      * 查询公共和个人数据集的数量
@@ -157,9 +141,8 @@ public interface DatasetService {
      *
      * @param label     标签
      * @param datasetId 数据集id
-     * @return Long 保存标签数量
      */
-    Long saveLabel(Label label, Long datasetId);
+    void saveLabel(Label label, Long datasetId);
 
     /**
      * 根据ID获取数据集详情
@@ -172,16 +155,20 @@ public interface DatasetService {
     /**
      * 检测是否为公共数据集
      *
-     * @param id 数据集id
+     * @param id 数据集ID
+     * @param type 校验类型
+     * @return Boolean 更新结果
      */
-    void checkPublic(Long id);
+    Boolean checkPublic(Long id, OperationTypeEnum type);
 
     /**
      * 检测是否为公共数据集
      *
      * @param dataset 数据集
+     * @param type 操作类型枚举
+     * @return Boolean 更新结果
      */
-    void checkPublic(Dataset dataset);
+    Boolean checkPublic(Dataset dataset, OperationTypeEnum type);
 
     /**
      * 自动标注检查
@@ -196,7 +183,7 @@ public interface DatasetService {
      * @param fileMap 文件map
      * @return boolean 更新结果
      */
-    boolean updataTimeByIdSet(Map<Long, List<DatasetVersionFile>> fileMap);
+    boolean updateTimeByIdSet(Map<Long, List<DatasetVersionFile>> fileMap);
 
     /**
      * 条件查询数据集
@@ -213,7 +200,7 @@ public interface DatasetService {
      * @param pre     转变前的状态
      * @return boolean 更新数据集状态是否成功
      */
-    boolean updateStatus(Dataset dataset, DatasetStatusEnum pre);
+    boolean updateStatus(Dataset dataset, DataStateEnum pre);
 
     /**
      * 更新状态
@@ -222,12 +209,12 @@ public interface DatasetService {
      * @param to 转变后的状态
      * @return boolean 更新状态是否成功
      */
-    boolean updateStatus(Long id, DatasetStatusEnum to);
+    boolean updateStatus(Long id, DataStateEnum to);
 
     /**
      * 数据集更新
      *
-     * @param dataset 数据集对象
+     * @param dataset       数据集对象
      * @param updateWrapper 更新操作类
      * @return boolean 更新是否成功
      */
@@ -240,7 +227,7 @@ public interface DatasetService {
      * @param to      转变后的状态
      * @return boolean 更改数据集状态是否成功
      */
-    boolean transferStatus(Dataset dataset, DatasetStatusEnum to);
+    boolean transferStatus(Dataset dataset, DataStateEnum to);
 
     /**
      * 导入用户自定义数据集
@@ -258,4 +245,50 @@ public interface DatasetService {
     @Transactional(rollbackFor = Exception.class)
     void initVersion(Dataset dataset);
 
+    /**
+     * 数据集置顶
+     *
+     * @param datasetId 数据集
+     */
+    void topDataset(Long datasetId);
+
+    /**
+     * 预置标签处理
+     *
+     * @param presetLabelType 预置标签类型
+     * @param datasetId       数据集id
+     */
+    void presetLabel(Integer presetLabelType, Long datasetId);
+
+    /**
+     * 获取数据集标签类型
+     *
+     * @param datasetId 数据集ID
+     * @return DatasetLabelEnum 数据集标签类型
+     */
+    DatasetLabelEnum getDatasetLabelType(Long datasetId);
+
+    /**
+     * 批量获取获取数据集
+     *
+     * @param datasetIds 数据集Id列表
+     * @return List<Dataset> 数据集列表
+     */
+    List<Dataset> listDataByIds(List<Long> datasetIds);
+
+    /**
+     * 获取数据集标注进度接口
+     *
+     * @param datasetIds 数据集id列表
+     * @return Map<Long, ProgressVO>
+     */
+    Map<Long, ProgressVO> progress(List<Long> datasetIds);
+
+    /**
+     * 查询数据集状态
+     *
+     * @param datasetIds 数据集Id
+     * @return Map<Long, IsImportVO> 返回数据集状态
+     */
+    Map<Long, IsImportVO> determineIfTheDatasetIsAnImport(List<Long> datasetIds);
 }

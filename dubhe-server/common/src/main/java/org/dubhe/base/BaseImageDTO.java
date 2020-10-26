@@ -25,7 +25,7 @@ import java.io.Serializable;
 
 /**
  * @description 镜像基础类DTO
- * @date: 2020-07-14
+ * @date 2020-07-14
  */
 @Data
 @Accessors(chain = true)

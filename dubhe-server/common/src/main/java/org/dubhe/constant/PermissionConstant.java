@@ -21,8 +21,8 @@ import lombok.Data;
 import org.springframework.stereotype.Component;
 
 /**
- * @description: 权限常量
- * @since: 2020-05-25 14:39
+ * @description 权限常量
+ * @date 2020-05-25
  */
 @Component
 @Data
@@ -32,9 +32,10 @@ public class PermissionConstant {
      * 超级用户
      */
     public static final long ADMIN_USER_ID = 1L;
-    public static final long ANONYMOUS_USER = -1L;
-    public static final String SELECT = "select";
-    public static final String UPDATE = "update";
-    public static final String DELETE = "delete";
+
+    /**
+     * 数据集模块类型
+     */
+    public static final Integer RESOURCE_DATA_MODEL = 1;
 
 }

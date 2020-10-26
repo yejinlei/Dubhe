@@ -143,7 +143,7 @@ public class RsaEncrypt {
             cipher.init(Cipher.DECRYPT_MODE, priKey);
             outStr = new String(cipher.doFinal(inputByte));
         } catch (Exception e) {
-            log.error("RSAEncrypt decrypt error:{} ",e);
+            log.error("RSAEncrypt decrypt error:{} ", e);
         }
         return outStr;
     }

@@ -1,13 +1,22 @@
-# 一站式开发平台-服务端
+# 之江天枢-服务端
 
-## 本地开发
+**之江天枢一站式人工智能开源平台**（简称：**之江天枢**），包括海量数据处理、交互式模型构建（包含Notebook和模型可视化）、AI模型高效训练。多维度产品形态满足从开发者到大型企业的不同需求，将提升人工智能技术的研发效率、扩大算法模型的应用范围，进一步构建人工智能生态“朋友圈”。
+
+## 源码部署
 
 ### 准备环境
 安装如下软件环境。
 - OpenJDK：1.8+
 - Redis: 3.0+
 - Maven: 3.0+
-- MYSQL: 5.5.0+
+- MYSQL: 5.7.0+
+
+### 下载源码
+``` bash
+git clone https://codeup.teambition.com/zhejianglab/dubhe-server.git
+# 进入项目根目录
+cd dubhe-server
+```
 
 ### 创建DB
 在MySQL中依次执行如下sql文件
@@ -20,13 +29,34 @@ sql/v1/02-Dubhe-DML.sql
 ### 配置
 根据实际情况修改如下配置文件。
 ```
-dubhe-admin/src/main/resources/config/application-dev.yml
+dubhe-admin/src/main/resources/config/application-prod.yml
 ```
 
+### 构建
+``` bash
+# 构建，生成的 jar 包位于 ./dubhe-admin/target/dubhe-admin-1.0.jar
+mvn clean compile package
+```
+
+### 启动
+``` bash
+# 指定启动环境为 prod
+## admin模块
+java -jar ./dubhe-admin/target/dubhe-admin-1.0-exec.jar --spring.profiles.active=prod
+
+## task模块
+java -jar ./dubhe-task/target/dubhe-task-1.0.jar --spring.profiles.active=prod
+```
+
+## 本地开发
+
+### 必要条件：
+    导入maven项目，下载所需的依赖包
+    mysql下创建数据库dubhe，初始化数据脚本
+    安装redis
+
 ### 启动：
-```
-mvn spring-boot:run
-```
+    mvn spring-boot:run
 
 ## 代码结构：
 ```
@@ -49,6 +79,7 @@ mvn spring-boot:run
 ├── dubhe-data   数据处理模块  
 ├── dubhe-model  模型管理模块
 ├── dubhe-system  系统管理
+├── dubhe-task   定时任务模块
 ``` 
 
 ## docker服务器

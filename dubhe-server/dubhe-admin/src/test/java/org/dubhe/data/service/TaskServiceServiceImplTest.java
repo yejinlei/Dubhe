@@ -95,7 +95,7 @@ public class TaskServiceServiceImplTest extends BaseTest {
                 .datasetIds(ids)
                 .build());
 
-        Map<Long, ProgressVO> progress = fileService.listStatistics(idList);
+        Map<Long, ProgressVO> progress = fileService.listStatistics(null);
         System.out.println(progress);
         try {
             Thread.sleep(3000L);

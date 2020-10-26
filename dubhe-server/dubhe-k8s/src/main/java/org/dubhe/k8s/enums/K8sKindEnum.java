@@ -39,6 +39,10 @@ public enum K8sKindEnum {
      */
     STATEFULSET("StatefulSet"),
     /**
+     * DistributeTrain
+     */
+    DISTRIBUTETRAIN("DistributeTrain"),
+    /**
      * StorageClass
      */
     STORAGECLASS("StorageClass"),
@@ -54,6 +58,10 @@ public enum K8sKindEnum {
      * PodMetrics
      */
     PODMETRICS("PodMetrics"),
+    /**
+     * 原生混合资源类型
+     */
+    MixedNativeResource("MixedNativeResource"),
     ;
 
     private String kind;

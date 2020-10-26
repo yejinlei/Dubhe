@@ -19,14 +19,16 @@ package org.dubhe.data.dao.provider;
 
 import org.dubhe.data.constant.Constant;
 import org.dubhe.data.constant.DataStatusEnum;
+import org.dubhe.data.constant.FileTypeEnum;
 import org.dubhe.utils.StringUtils;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * @description DatasetVersionFile sql构建类
- * @date: 2020-05-15
+ * @date 2020-05-15
  */
 public class DatasetVersionFileProvider {
 
@@ -95,5 +97,30 @@ public class DatasetVersionFileProvider {
                 " where dataset_id= " + datasetId + " and version_name= '" + versionName + "' and changed = " + changed;
         return sql;
     }
+
+
+    /**
+     * 分页查询数据集文件中间表
+     *
+     * @param param 查询参数
+     * @return String sql
+     */
+    public static String getListByDatasetIdAndAnnotationStatus(Map<String, Object> param) {
+        Long datasetId = Long.parseLong(param.get("datasetId").toString());
+        String versionName = param.get("versionName") == null ? " is null " : " = '"+ param.get("versionName")+"'";
+        Set<Integer> status = FileTypeEnum.getStatus((Integer) param.get("status"));
+        Long offset = Long.parseLong(param.get("offset").toString());
+        Integer limit = (Integer) param.get("limit");
+        return new StringBuffer()
+                .append("select * from data_dataset_version_file a INNER JOIN(select id from data_dataset_version_file where ")
+                .append("dataset_id=").append(datasetId)
+                .append("   and status in (").append(DataStatusEnum.ADD.getValue()).append(",").append(DataStatusEnum.NORMAL.getValue()).append(")  ")
+                .append(status == null || status.isEmpty() ? "" : "   and annotation_status in (" + status.toString().replace("[", "").replace("]", "") + ") ")
+                .append("   and version_name ").append(versionName)
+                .append("   limit ").append(offset).append(",").append(limit)
+                .append(") b on a.id = b.id")
+                .toString();
+    }
+
 
 }

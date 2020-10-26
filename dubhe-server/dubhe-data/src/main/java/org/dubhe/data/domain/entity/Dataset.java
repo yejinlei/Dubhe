@@ -17,28 +17,23 @@
 
 package org.dubhe.data.domain.entity;
 
-import com.baomidou.mybatisplus.annotation.FieldFill;
-import com.baomidou.mybatisplus.annotation.IdType;
-import com.baomidou.mybatisplus.annotation.TableField;
-import com.baomidou.mybatisplus.annotation.TableId;
-import com.baomidou.mybatisplus.annotation.TableName;
+import com.baomidou.mybatisplus.annotation.*;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
-import lombok.Data;
-import lombok.EqualsAndHashCode;
+import lombok.*;
 import lombok.experimental.Accessors;
 import org.dubhe.data.constant.AnnotateTypeEnum;
-import org.dubhe.data.constant.DatasetStatusEnum;
-import org.dubhe.data.constant.DatasetTypeEnum;
 import org.dubhe.data.constant.DatatypeEnum;
 import org.dubhe.data.domain.dto.DatasetCreateDTO;
 import org.dubhe.data.domain.dto.DatasetCustomCreateDTO;
+import org.dubhe.data.machine.constant.DataStateCodeConstant;
 import org.dubhe.domain.entity.Team;
 import org.dubhe.domain.entity.User;
-import org.springframework.data.redis.connection.DataType;
-
+import org.dubhe.enums.DatasetTypeEnum;
+import org.dubhe.utils.JwtUtils;
 
 import java.sql.Timestamp;
+import java.util.Objects;
 
 /**
  * @description 数据集
@@ -49,6 +44,9 @@ import java.sql.Timestamp;
 @Accessors(chain = true)
 @TableName("data_dataset")
 @ApiModel(value = "Dataset对象", description = "数据集管理")
+@Builder
+@ToString
+@AllArgsConstructor
 public class Dataset {
 
     private static final long serialVersionUID = 1L;
@@ -102,6 +100,13 @@ public class Dataset {
     @ApiModelProperty(value = "解压失败原因")
     private String decompressFailReason;
 
+    @ApiModelProperty(value = "是否置顶")
+    @TableField(value = "is_top")
+    private boolean isTop;
+
+    @ApiModelProperty(value = "标签组Id")
+    private Long labelGroupId;
+
     /**
      * 团队
      */
@@ -126,6 +131,8 @@ public class Dataset {
     @TableField(value = "update_user_id", fill = FieldFill.INSERT_UPDATE)
     private Long updateUserId;
 
+    private Long originUserId;
+
     @TableField(exist = false)
     private User updateUser;
 
@@ -144,6 +151,8 @@ public class Dataset {
         this.teamId = datasetCreateDTO.getTeamId();
         this.dataType = datasetCreateDTO.getDataType();
         this.annotateType = datasetCreateDTO.getAnnotateType();
+        this.isImport = datasetCreateDTO.isImport();
+        this.labelGroupId = datasetCreateDTO.getLabelGroupId();
     }
 
     /**
@@ -156,7 +165,7 @@ public class Dataset {
         this.type = DatasetTypeEnum.PRIVATE.getValue();
         this.dataType = DatatypeEnum.IMAGE.getValue();
         this.annotateType = AnnotateTypeEnum.OBJECT_DETECTION.getValue();
-        this.status = DatasetStatusEnum.FINISHED.getValue();
+        this.status = DataStateCodeConstant.ANNOTATION_COMPLETE_STATE;
         this.archiveUrl = datasetCustomCreateDTO.getArchiveUrl();
         this.isImport = true;
     }

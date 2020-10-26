@@ -31,8 +31,9 @@ public interface TaskMapper extends BaseMapper<Task> {
     /**
      * 任务完成数加一
      *
-     * @param id 文件ID
-     * @return int 执行次数
+     * @param id            文件ID
+     * @param filesCount    文件数量
+     * @return              执行次数
      */
     @Update("update data_task t set t.finished = t.finished + #{filesCount} where t.id = #{id}")
     int finishFile(@Param("id") Long id, @Param("filesCount") Integer filesCount);

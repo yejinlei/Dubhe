@@ -18,16 +18,25 @@
 package org.dubhe.utils;
 
 import java.sql.Timestamp;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
+import java.util.Date;
 
 /**
  * @description 日期工具类
- * @date 2020-6-10
+ * @date 2020-06-10
  */
 public class DateUtil {
+
+    private DateUtil(){
+
+    }
+
+
     /**
      * 获取当前时间戳
      *
@@ -75,6 +84,15 @@ public class DateUtil {
         long milli = localDateTime1.atZone(ZoneId.of("Asia/Shanghai")).toInstant().toEpochMilli();
         System.out.println("当前时间到第二天凌晨的毫秒数"+(milli-l1));
         return (milli-l1);
+    }
+
+    /**
+     * @return 当前字符串时间yyyy-MM-dd HH:mm:ss SSS
+     */
+    public static String getCurrentTimeStr(){
+        Date date = new Date();
+        DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss SSS");
+        return dateFormat.format(date);
     }
 
 }

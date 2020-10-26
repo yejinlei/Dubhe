@@ -23,6 +23,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import javax.validation.constraints.NotBlank;
+import javax.validation.constraints.NotNull;
 import java.io.Serializable;
 
 /**
@@ -41,5 +42,10 @@ public class AnnotationInfoCreateDTO implements Serializable {
     private String annotation;
 
     @ApiModelProperty(value = "文件id")
+    @NotNull(message = "文件id不能为空")
     private Long id;
+
+    @ApiModelProperty(value = "数据集ID")
+    private Long datasetId;
+
 }

@@ -20,7 +20,6 @@ package org.dubhe.data.pool;
 import org.dubhe.enums.LogEnum;
 import org.dubhe.utils.LogUtil;
 
-
 /**
  * @description 异常线程池
  * @date 2020-04-10

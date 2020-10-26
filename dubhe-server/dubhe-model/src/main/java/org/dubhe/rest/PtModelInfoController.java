@@ -45,7 +45,11 @@ public class PtModelInfoController {
     @GetMapping
     @ApiOperation("查询模型")
     public DataResponseBody getPtModelInfos(PtModelInfoQueryDTO ptModelInfoQueryDTO) {
-        return new DataResponseBody(ptModelInfoService.queryAll(ptModelInfoQueryDTO));
+        if(ptModelInfoQueryDTO.getFilter()!=null && ptModelInfoQueryDTO.getFilter()){
+            return new DataResponseBody(ptModelInfoService.findModelByResource(ptModelInfoQueryDTO));
+        }else {
+            return new DataResponseBody(ptModelInfoService.queryAll(ptModelInfoQueryDTO));
+        }
     }
 
     @PostMapping

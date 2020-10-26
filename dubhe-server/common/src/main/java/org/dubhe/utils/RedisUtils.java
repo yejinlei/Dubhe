@@ -26,6 +26,9 @@ import org.springframework.data.redis.core.Cursor;
 import org.springframework.data.redis.core.RedisConnectionUtils;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.ScanOptions;
+import org.springframework.data.redis.core.script.DefaultRedisScript;
+import org.springframework.data.redis.core.script.RedisScript;
+import org.springframework.data.redis.serializer.Jackson2JsonRedisSerializer;
 import org.springframework.stereotype.Component;
 import org.springframework.util.CollectionUtils;
 
@@ -33,7 +36,7 @@ import java.util.*;
 import java.util.concurrent.TimeUnit;
 
 /**
- * @description  redis工具类
+ * @description redis工具类
  * @date 2020-03-13
  */
 @Component
@@ -62,7 +65,7 @@ public class RedisUtils {
                 redisTemplate.expire(key, time, TimeUnit.SECONDS);
             }
         } catch (Exception e) {
-            LogUtil.error(LogEnum.SYS_ERR,"RedisUtils expire key {} time {} error:{}",key,time,e.getMessage(),e);
+            LogUtil.error(LogEnum.SYS_ERR, "RedisUtils expire key {} time {} error:{}", key, time, e.getMessage(), e);
             return false;
         }
         return true;
@@ -82,7 +85,7 @@ public class RedisUtils {
      * 查找匹配key
      *
      * @param pattern key
-     * @return /
+     * @return List<String> 匹配的key集合
      */
     public List<String> scan(String pattern) {
         ScanOptions options = ScanOptions.scanOptions().match(pattern).build();
@@ -94,9 +97,9 @@ public class RedisUtils {
             result.add(new String(cursor.next()));
         }
         try {
-            RedisConnectionUtils.releaseConnection(rc, factory,true);
+            RedisConnectionUtils.releaseConnection(rc, factory, true);
         } catch (Exception e) {
-            LogUtil.error(LogEnum.SYS_ERR,"RedisUtils scan pattern {} error:{}",pattern,e.getMessage(),e);
+            LogUtil.error(LogEnum.SYS_ERR, "RedisUtils scan pattern {} error:{}", pattern, e.getMessage(), e);
         }
         return result;
     }
@@ -107,7 +110,7 @@ public class RedisUtils {
      * @param patternKey key
      * @param page       页码
      * @param size       每页数目
-     * @return /
+     * @return 匹配到的key集合
      */
     public List<String> findKeysForPage(String patternKey, int page, int size) {
         ScanOptions options = ScanOptions.scanOptions().match(patternKey).build();
@@ -132,9 +135,9 @@ public class RedisUtils {
             cursor.next();
         }
         try {
-            RedisConnectionUtils.releaseConnection(rc, factory,true);
+            RedisConnectionUtils.releaseConnection(rc, factory, true);
         } catch (Exception e) {
-            LogUtil.error(LogEnum.SYS_ERR,"RedisUtils findKeysForPage patternKey {} page {} size {} error:{}",patternKey,page,size,e.getMessage(),e);
+            LogUtil.error(LogEnum.SYS_ERR, "RedisUtils findKeysForPage patternKey {} page {} size {} error:{}", patternKey, page, size, e.getMessage(), e);
         }
         return result;
     }
@@ -149,7 +152,7 @@ public class RedisUtils {
         try {
             return redisTemplate.hasKey(key);
         } catch (Exception e) {
-            LogUtil.error(LogEnum.SYS_ERR,"RedisUtils hasKey key {} error:{}",key,e.getMessage(),e);
+            LogUtil.error(LogEnum.SYS_ERR, "RedisUtils hasKey key {} error:{}", key, e.getMessage(), e);
             return false;
         }
     }
@@ -175,7 +178,7 @@ public class RedisUtils {
      * 普通缓存获取
      *
      * @param key 键
-     * @return 值
+     * @return key对应的value值
      */
     public Object get(String key) {
 
@@ -185,8 +188,8 @@ public class RedisUtils {
     /**
      * 批量获取
      *
-     * @param keys
-     * @return
+     * @param keys key集合
+     * @return key集合对应的value集合
      */
     public List<Object> multiGet(List<String> keys) {
         Object obj = redisTemplate.opsForValue().multiGet(Collections.singleton(keys));
@@ -205,7 +208,7 @@ public class RedisUtils {
             redisTemplate.opsForValue().set(key, value);
             return true;
         } catch (Exception e) {
-            LogUtil.error(LogEnum.SYS_ERR,"RedisUtils set key {} value {} error:{}",key,value,e.getMessage(),e);
+            LogUtil.error(LogEnum.SYS_ERR, "RedisUtils set key {} value {} error:{}", key, value, e.getMessage(), e);
             return false;
         }
     }
@@ -227,7 +230,7 @@ public class RedisUtils {
             }
             return true;
         } catch (Exception e) {
-            LogUtil.error(LogEnum.SYS_ERR,"RedisUtils set key {} value {} time {} error:{}",key,value,time,e.getMessage(),e);
+            LogUtil.error(LogEnum.SYS_ERR, "RedisUtils set key {} value {} time {} error:{}", key, value, time, e.getMessage(), e);
             return false;
         }
     }
@@ -250,8 +253,53 @@ public class RedisUtils {
             }
             return true;
         } catch (Exception e) {
-            LogUtil.error(LogEnum.SYS_ERR,"RedisUtils set key {} value {} time {} timeUnit {} error:{}",key,value,time,timeUnit,e.getMessage(),e);
+            LogUtil.error(LogEnum.SYS_ERR, "RedisUtils set key {} value {} time {} timeUnit {} error:{}", key, value, time, timeUnit, e.getMessage(), e);
             return false;
+        }
+    }
+
+    //===============================Lock=================================
+
+    /**
+     * 加锁
+     * @param key 键
+     * @param requestId 请求id用以释放锁
+     * @param expireTime 超时时间（秒）
+     * @return
+     */
+    public boolean getDistributedLock(String key, String requestId, long expireTime) {
+        String script = "if redis.call('setNx',KEYS[1],ARGV[1]) == 1 then if redis.call('get',KEYS[1]) == ARGV[1] then return redis.call('expire',KEYS[1],ARGV[2]) else return 0 end else return 0 end";
+        Object result = executeRedisScript(script, key, requestId, expireTime);
+        return result != null && result.equals(MagicNumConstant.ONE_LONG);
+    }
+
+    /**
+     * 释放锁
+     * @param key 键
+     * @param requestId 请求id用以释放锁
+     * @return
+     */
+    public boolean releaseDistributedLock(String key, String requestId) {
+        String script = "if redis.call('get', KEYS[1]) == ARGV[1] then return redis.call('del', KEYS[1]) else return 0 end";
+        Object result = executeRedisScript(script, key, requestId);
+        return result != null && result.equals(MagicNumConstant.ONE_LONG);
+    }
+
+    /**
+     *
+     * @param script 脚本字符串
+     * @param key 键
+     * @param args 脚本其他参数
+     * @return
+     */
+    public Object executeRedisScript(String script, String key, Object... args) {
+        try {
+            RedisScript<Long> redisScript = new DefaultRedisScript<>(script, Long.class);
+            redisTemplate.setValueSerializer(new Jackson2JsonRedisSerializer<>(Object.class));
+            return redisTemplate.execute(redisScript, Collections.singletonList(key), args);
+        } catch (Exception e) {
+            LogUtil.error(LogEnum.SYS_ERR, "executeRedisScript script {} key {} expireTime {} args {} error:{}", script, key, args, e);
+            return MagicNumConstant.ZERO_LONG;
         }
     }
 
@@ -291,7 +339,7 @@ public class RedisUtils {
             redisTemplate.opsForHash().putAll(key, map);
             return true;
         } catch (Exception e) {
-            LogUtil.error(LogEnum.SYS_ERR,"RedisUtils hmset key {} map {} error:{}",key,map,e.getMessage(),e);
+            LogUtil.error(LogEnum.SYS_ERR, "RedisUtils hmset key {} map {} error:{}", key, map, e.getMessage(), e);
             return false;
         }
     }
@@ -312,7 +360,7 @@ public class RedisUtils {
             }
             return true;
         } catch (Exception e) {
-            LogUtil.error(LogEnum.SYS_ERR,"RedisUtils hmset key {} map {} time {} error:{}",key,map,time,e.getMessage(),e);
+            LogUtil.error(LogEnum.SYS_ERR, "RedisUtils hmset key {} map {} time {} error:{}", key, map, time, e.getMessage(), e);
             return false;
         }
     }
@@ -330,7 +378,7 @@ public class RedisUtils {
             redisTemplate.opsForHash().put(key, item, value);
             return true;
         } catch (Exception e) {
-            LogUtil.error(LogEnum.SYS_ERR,"RedisUtils hset key {} item {} value {} error:{}",key,item,value,e.getMessage(),e);
+            LogUtil.error(LogEnum.SYS_ERR, "RedisUtils hset key {} item {} value {} error:{}", key, item, value, e.getMessage(), e);
             return false;
         }
     }
@@ -352,7 +400,7 @@ public class RedisUtils {
             }
             return true;
         } catch (Exception e) {
-            LogUtil.error(LogEnum.SYS_ERR,"RedisUtils hset key {} item {} value {} time {} error:{}",key,item,value,time,e.getMessage(),e);
+            LogUtil.error(LogEnum.SYS_ERR, "RedisUtils hset key {} item {} value {} time {} error:{}", key, item, value, time, e.getMessage(), e);
             return false;
         }
     }
@@ -414,7 +462,7 @@ public class RedisUtils {
         try {
             return redisTemplate.opsForSet().members(key);
         } catch (Exception e) {
-            LogUtil.error(LogEnum.SYS_ERR,"RedisUtils sGet key {} error:{}",key,e.getMessage(),e);
+            LogUtil.error(LogEnum.SYS_ERR, "RedisUtils sGet key {} error:{}", key, e.getMessage(), e);
             return null;
         }
     }
@@ -430,7 +478,7 @@ public class RedisUtils {
         try {
             return redisTemplate.opsForSet().isMember(key, value);
         } catch (Exception e) {
-            LogUtil.error(LogEnum.SYS_ERR,"RedisUtils sHasKey key {} value {} error:{}",key,value,e.getMessage(),e);
+            LogUtil.error(LogEnum.SYS_ERR, "RedisUtils sHasKey key {} value {} error:{}", key, value, e.getMessage(), e);
             return false;
         }
     }
@@ -446,7 +494,7 @@ public class RedisUtils {
         try {
             return redisTemplate.opsForSet().add(key, values);
         } catch (Exception e) {
-            LogUtil.error(LogEnum.SYS_ERR,"RedisUtils sSet key {} values {} error:{}",key,values,e.getMessage(),e);
+            LogUtil.error(LogEnum.SYS_ERR, "RedisUtils sSet key {} values {} error:{}", key, values, e.getMessage(), e);
             return 0;
         }
     }
@@ -467,7 +515,7 @@ public class RedisUtils {
             }
             return count;
         } catch (Exception e) {
-            LogUtil.error(LogEnum.SYS_ERR,"RedisUtils sSetAndTime key {} time {} values {} error:{}",key,time,values,e.getMessage(),e);
+            LogUtil.error(LogEnum.SYS_ERR, "RedisUtils sSetAndTime key {} time {} values {} error:{}", key, time, values, e.getMessage(), e);
             return 0;
         }
     }
@@ -482,7 +530,7 @@ public class RedisUtils {
         try {
             return redisTemplate.opsForSet().size(key);
         } catch (Exception e) {
-            LogUtil.error(LogEnum.SYS_ERR,"RedisUtils sGetSetSize key {} error:{}",key,e.getMessage(),e);
+            LogUtil.error(LogEnum.SYS_ERR, "RedisUtils sGetSetSize key {} error:{}", key, e.getMessage(), e);
             return 0;
         }
     }
@@ -499,7 +547,7 @@ public class RedisUtils {
             Long count = redisTemplate.opsForSet().remove(key, values);
             return count;
         } catch (Exception e) {
-            LogUtil.error(LogEnum.SYS_ERR,"RedisUtils setRemove key {} values {} error:{}",key,values,e.getMessage(),e);
+            LogUtil.error(LogEnum.SYS_ERR, "RedisUtils setRemove key {} values {} error:{}", key, values, e.getMessage(), e);
             return 0;
         }
     }
@@ -507,22 +555,22 @@ public class RedisUtils {
     // ===============================sorted set=================================
 
     /**
-     *将zSet数据放入缓存
+     * 将zSet数据放入缓存
      *
      * @param key
      * @param time
      * @param values
      * @return Boolean
      */
-    public Boolean zSet(String key, long time, Object value){
+    public Boolean zSet(String key, long time, Object value) {
         try {
-            Boolean success = redisTemplate.opsForZSet().add(key, value,System.currentTimeMillis());
+            Boolean success = redisTemplate.opsForZSet().add(key, value, System.currentTimeMillis());
             if (success) {
                 expire(key, time);
             }
             return success;
         } catch (Exception e) {
-            LogUtil.error(LogEnum.SYS_ERR,"RedisUtils zSet key {} time {} value {} error:{}",key,time,value,e.getMessage(),e);
+            LogUtil.error(LogEnum.SYS_ERR, "RedisUtils zSet key {} time {} value {} error:{}", key, time, value, e.getMessage(), e);
             return false;
         }
     }
@@ -533,15 +581,14 @@ public class RedisUtils {
      * @param key
      * @return Set<Object>
      */
-    public Set<Object> zGet(String key){
+    public Set<Object> zGet(String key) {
         try {
-            return redisTemplate.opsForZSet().reverseRange(key,Long.MIN_VALUE, Long.MAX_VALUE);
+            return redisTemplate.opsForZSet().reverseRange(key, Long.MIN_VALUE, Long.MAX_VALUE);
         } catch (Exception e) {
-            LogUtil.error(LogEnum.SYS_ERR,"RedisUtils zGet key {} error:{}",key,e.getMessage(),e);
+            LogUtil.error(LogEnum.SYS_ERR, "RedisUtils zGet key {} error:{}", key, e.getMessage(), e);
             return null;
         }
     }
-
 
 
     // ===============================list=================================
@@ -558,7 +605,7 @@ public class RedisUtils {
         try {
             return redisTemplate.opsForList().range(key, start, end);
         } catch (Exception e) {
-            LogUtil.error(LogEnum.SYS_ERR,"RedisUtils lGetIndex key {} start {} end {} error:{}",key,start,end,e.getMessage(),e);
+            LogUtil.error(LogEnum.SYS_ERR, "RedisUtils lGetIndex key {} start {} end {} error:{}", key, start, end, e.getMessage(), e);
             return null;
         }
     }
@@ -573,7 +620,7 @@ public class RedisUtils {
         try {
             return redisTemplate.opsForList().size(key);
         } catch (Exception e) {
-            LogUtil.error(LogEnum.SYS_ERR,"RedisUtils lGetListSize key {} error:{}",key,e.getMessage(),e);
+            LogUtil.error(LogEnum.SYS_ERR, "RedisUtils lGetListSize key {} error:{}", key, e.getMessage(), e);
             return 0;
         }
     }
@@ -589,7 +636,7 @@ public class RedisUtils {
         try {
             return redisTemplate.opsForList().index(key, index);
         } catch (Exception e) {
-            LogUtil.error(LogEnum.SYS_ERR,"RedisUtils lGetIndex key {} index {} error:{}",key,index,e.getMessage(),e);
+            LogUtil.error(LogEnum.SYS_ERR, "RedisUtils lGetIndex key {} index {} error:{}", key, index, e.getMessage(), e);
             return null;
         }
     }
@@ -606,7 +653,7 @@ public class RedisUtils {
             redisTemplate.opsForList().rightPush(key, value);
             return true;
         } catch (Exception e) {
-            LogUtil.error(LogEnum.SYS_ERR,"RedisUtils lSet key {} value {} error:{}",key,value,e.getMessage(),e);
+            LogUtil.error(LogEnum.SYS_ERR, "RedisUtils lSet key {} value {} error:{}", key, value, e.getMessage(), e);
             return false;
         }
     }
@@ -617,7 +664,7 @@ public class RedisUtils {
      * @param key   键
      * @param value 值
      * @param time  时间(秒)
-     * @return
+     * @return 是否存储成功
      */
     public boolean lSet(String key, Object value, long time) {
         try {
@@ -627,7 +674,7 @@ public class RedisUtils {
             }
             return true;
         } catch (Exception e) {
-            LogUtil.error(LogEnum.SYS_ERR,"RedisUtils lSet key {} value {} time {} error:{}",key,value,time,e.getMessage(),e);
+            LogUtil.error(LogEnum.SYS_ERR, "RedisUtils lSet key {} value {} time {} error:{}", key, value, time, e.getMessage(), e);
             return false;
         }
     }
@@ -637,14 +684,14 @@ public class RedisUtils {
      *
      * @param key   键
      * @param value 值
-     * @return
+     * @return 是否存储成功
      */
     public boolean lSet(String key, List<Object> value) {
         try {
             redisTemplate.opsForList().rightPushAll(key, value);
             return true;
         } catch (Exception e) {
-            LogUtil.error(LogEnum.SYS_ERR,"RedisUtils lSet key {} value {} error:{}",key,value,e.getMessage(),e);
+            LogUtil.error(LogEnum.SYS_ERR, "RedisUtils lSet key {} value {} error:{}", key, value, e.getMessage(), e);
             return false;
         }
     }
@@ -655,7 +702,7 @@ public class RedisUtils {
      * @param key   键
      * @param value 值
      * @param time  时间(秒)
-     * @return
+     * @return 是否存储成功
      */
     public boolean lSet(String key, List<Object> value, long time) {
         try {
@@ -665,7 +712,7 @@ public class RedisUtils {
             }
             return true;
         } catch (Exception e) {
-            LogUtil.error(LogEnum.SYS_ERR,"RedisUtils lSet key {} value {} time {} error:{}",key,value,time,e.getMessage(),e);
+            LogUtil.error(LogEnum.SYS_ERR, "RedisUtils lSet key {} value {} time {} error:{}", key, value, time, e.getMessage(), e);
             return false;
         }
     }
@@ -676,14 +723,14 @@ public class RedisUtils {
      * @param key   键
      * @param index 索引
      * @param value 值
-     * @return /
+     * @return 更新数据标识
      */
     public boolean lUpdateIndex(String key, long index, Object value) {
         try {
             redisTemplate.opsForList().set(key, index, value);
             return true;
         } catch (Exception e) {
-            LogUtil.error(LogEnum.SYS_ERR,"RedisUtils lUpdateIndex key {} index {} value {} error:{}",key,index,value,e.getMessage(),e);
+            LogUtil.error(LogEnum.SYS_ERR, "RedisUtils lUpdateIndex key {} index {} value {} error:{}", key, index, value, e.getMessage(), e);
             return false;
         }
     }
@@ -700,8 +747,23 @@ public class RedisUtils {
         try {
             return redisTemplate.opsForList().remove(key, count, value);
         } catch (Exception e) {
-            LogUtil.error(LogEnum.SYS_ERR,"RedisUtils lRemove key {} count {} value {} error:{}",key,count,value,e.getMessage(),e);
+            LogUtil.error(LogEnum.SYS_ERR, "RedisUtils lRemove key {} count {} value {} error:{}", key, count, value, e.getMessage(), e);
             return 0;
+        }
+    }
+
+    /**
+     * 队列从左弹出数据
+     *
+     * @param key
+     * @return key对应的value值
+     */
+    public Object lpop(String key) {
+        try {
+            return redisTemplate.opsForList().leftPop(key);
+        } catch (Exception e) {
+            LogUtil.error(LogEnum.SYS_ERR, "RedisUtils lRemove key {} error:{}", key, e.getMessage(), e);
+            return null;
         }
     }
 }

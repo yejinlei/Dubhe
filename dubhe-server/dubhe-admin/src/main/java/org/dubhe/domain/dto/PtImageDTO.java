@@ -66,4 +66,6 @@ public class PtImageDTO implements Serializable {
     @ApiModelProperty("删除(0正常，1已删除)")
     private Boolean deleted;
 
+    @ApiModelProperty("资源拥有者ID")
+    private Long originUserId;
 }

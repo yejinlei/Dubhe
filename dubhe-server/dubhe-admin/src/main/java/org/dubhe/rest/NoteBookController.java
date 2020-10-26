@@ -68,7 +68,6 @@ public class NoteBookController {
     @GetMapping(value = "/notebooks")
     @RequiresPermissions(Permissions.DEVELOPMENT_NOTEBOOK)
     public DataResponseBody getNoteBookList(Page page, NoteBookListQueryDTO noteBookListQueryDTO) {
-        noteBookListQueryDTO.setUserId(NotebookUtil.getCurUserId());
         return new DataResponseBody(noteBookService.getNoteBookList(page, noteBookListQueryDTO));
     }
 
@@ -102,7 +101,7 @@ public class NoteBookController {
     }
 
 
-    @ApiOperation("开启notebook")
+    @ApiOperation("打开notebook")
     @GetMapping(value = "/{id}")
     @RequiresPermissions(Permissions.DEVELOPMENT_NOTEBOOK)
     public DataResponseBody openNotebook(@PathVariable(name = "id", required = true) Long noteBookId) {
@@ -141,7 +140,7 @@ public class NoteBookController {
     @GetMapping(value = "/run-number")
     @RequiresPermissions(Permissions.DEVELOPMENT_NOTEBOOK)
     public DataResponseBody getNoteBookRunNumber() {
-        return new DataResponseBody(noteBookService.getNoteBookRunNumber(NotebookUtil.getCurUserId()));
+        return new DataResponseBody(noteBookService.getNoteBookRunNumber());
     }
 
 

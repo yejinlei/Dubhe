@@ -21,6 +21,7 @@ import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Select;
+import org.dubhe.annotation.DataPermission;
 import org.dubhe.domain.entity.PtTrainJob;
 import org.dubhe.domain.vo.PtTrainVO;
 
@@ -28,6 +29,7 @@ import org.dubhe.domain.vo.PtTrainVO;
  * @description 训练作业job Mapper 接口
  * @date 2020-04-27
  */
+@DataPermission(ignoresMethod = {"insert","selectCountByStatus","getPageTrain"})
 public interface PtTrainJobMapper extends BaseMapper<PtTrainJob> {
 
 	/**

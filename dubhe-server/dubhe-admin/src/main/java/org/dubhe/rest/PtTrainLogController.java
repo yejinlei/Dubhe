@@ -26,10 +26,12 @@ import org.dubhe.base.MagicNumConstant;
 import org.dubhe.constant.Permissions;
 import org.dubhe.domain.dto.PtTrainLogQueryDTO;
 import org.dubhe.domain.vo.PtTrainLogQueryVO;
+import org.dubhe.factory.DataResponseFactory;
 import org.dubhe.service.PtTrainLogService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -63,5 +65,15 @@ public class PtTrainLogController {
 		PtTrainLogQueryVO ptTrainLogQueryVO = ptTrainLogService.queryTrainLog(ptTrainLogQueryDTO);
 		return new DataResponseBody(ptTrainLogService.getTrainLogString(ptTrainLogQueryVO.getContent()));
 	}
+
+	@GetMapping("/pod/{id}")
+	@ApiOperation("获取pod节点")
+	@RequiresPermissions(Permissions.TRAINING_JOB)
+	public DataResponseBody getPods(@PathVariable Long id) {
+		return DataResponseFactory.success(ptTrainLogService.getPods(id));
+	}
+
+
+
 
 }

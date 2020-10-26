@@ -20,6 +20,7 @@ package org.dubhe.dao;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Select;
+import org.dubhe.annotation.DataPermission;
 import org.dubhe.domain.entity.PtTrainAlgorithm;
 
 import java.util.List;
@@ -28,6 +29,7 @@ import java.util.List;
  * @description 训练算法Mapper
  * @date 2020-04-27
  */
+@DataPermission(ignoresMethod = {"insert"})
 public interface PtTrainAlgorithmMapper extends BaseMapper<PtTrainAlgorithm> {
 
     /**

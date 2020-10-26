@@ -20,8 +20,8 @@ package org.dubhe.k8s.domain.vo;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import org.dubhe.k8s.domain.PtBaseResult;
-
 import java.util.List;
+
 
 /**
  * @description LogMonitoringVO对象

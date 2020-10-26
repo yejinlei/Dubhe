@@ -119,7 +119,7 @@ public interface PtTrainJobService {
      * 获取job在grafana监控的地址
      *
      * @param jobId                     任务ID
-     * @return PtJobMetricsGrafanaVO    Pod Metrics Grafana url
+     * @return List<PtJobMetricsGrafanaVO>    Pod Metrics Grafana url
      */
-    PtJobMetricsGrafanaVO getGrafanaUrl(Long jobId);
+    List<PtJobMetricsGrafanaVO> getGrafanaUrl(Long jobId);
 }

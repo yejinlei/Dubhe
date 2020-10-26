@@ -110,7 +110,7 @@ public class ModelOptJobApiImpl implements ModelOptJobApi {
             LogUtil.info(LogEnum.BIZ_K8S, "Return value of creating Job--create:{}", result);
             return result;
         } catch (KubernetesClientException e) {
-            LogUtil.error(LogEnum.BIZ_K8S, "ModelOptJobApiImpl.create error, param:{} error:", bo, e);
+            LogUtil.error(LogEnum.BIZ_K8S, "ModelOptJobApiImpl.create error, param:{} error:{}", bo, e);
             return new BizJob().error(String.valueOf(e.getCode()), e.getMessage());
         }
     }
@@ -178,7 +178,7 @@ public class ModelOptJobApiImpl implements ModelOptJobApi {
             client.batch().jobs().inNamespace(namespace).withLabels(LabelUtils.withEnvResourceName(resourceName)).delete();
             return new PtBaseResult();
         } catch (KubernetesClientException e) {
-            LogUtil.error(LogEnum.BIZ_K8S, "ModelOptJobApiImpl.deleteByResourceName error, param:[namespace]={}, [resourceName]={}, error:",namespace, resourceName, e);
+            LogUtil.error(LogEnum.BIZ_K8S, "ModelOptJobApiImpl.deleteByResourceName error, param:[namespace]={}, [resourceName]={}, error:{}",namespace, resourceName, e);
             return new PtBaseResult(String.valueOf(e.getCode()), e.getMessage());
         }
     }
@@ -243,7 +243,7 @@ public class ModelOptJobApiImpl implements ModelOptJobApi {
                 Job job = deployJob();
                 return BizConvertUtils.toBizJob(job);
             } catch (KubernetesClientException e) {
-                LogUtil.error(LogEnum.BIZ_K8S, "ModelOptJobApiImpl.deploy error:", e);
+                LogUtil.error(LogEnum.BIZ_K8S, "ModelOptJobApiImpl.deploy error:{}", e);
                 return (BizJob) new PtBaseResult(String.valueOf(e.getCode()), e.getMessage());
             }
         }
@@ -276,7 +276,7 @@ public class ModelOptJobApiImpl implements ModelOptJobApi {
          * @param mountPath 挂载路径
          * @param dirBO 挂载路径参数
          * @param i 名称序号
-         * @return boolean
+         * @return boolean true成功 false失败
          */
         private boolean buildNfsVolumes(String mountPath, PtMountDirBO dirBO, int i) {
             volumeMounts.add(new VolumeMountBuilder()
@@ -300,7 +300,7 @@ public class ModelOptJobApiImpl implements ModelOptJobApi {
          * @param mountPath 挂载路径
          * @param dirBO 挂载路径参数
          * @param i 名称序号
-         * @return boolean
+         * @return boolean true成功 false失败
          */
         private boolean buildNfsPvcVolumes(String mountPath, PtMountDirBO dirBO, int i) {
             BizPersistentVolumeClaim bizPersistentVolumeClaim = persistentVolumeClaimApi.createWithNfsPv(new PtPersistentVolumeClaimBO(namespace, baseName, dirBO));
@@ -325,7 +325,7 @@ public class ModelOptJobApiImpl implements ModelOptJobApi {
         /**
          * 检查是否已经存在，存在则返回
          *
-         * @return Job
+         * @return Job 任务类
          */
         private Job alreadyHaveJob() {
             JobList list = client.batch().jobs().inNamespace(namespace).withLabels(LabelUtils.withEnvResourceName(baseName)).list();
@@ -340,7 +340,7 @@ public class ModelOptJobApiImpl implements ModelOptJobApi {
         /**
          * 部署Job
          *
-         * @return Job
+         * @return Job 任务job类
          */
         private Job deployJob() {
             //已经存在直接返回
@@ -357,7 +357,7 @@ public class ModelOptJobApiImpl implements ModelOptJobApi {
         /**
          * 构建Job
          *
-         * @return Job
+         * @return Job 任务job类
          */
         private Job buildJob() {
             Map<String, String> childLabels = LabelUtils.getChildLabels(baseName, jobName, K8sKindEnum.JOB.getKind(), businessLabel);
@@ -403,7 +403,7 @@ public class ModelOptJobApiImpl implements ModelOptJobApi {
         /**
          * 构建Container
          *
-         * @return Container
+         * @return Container 容器类
          */
         private Container buildContainer() {
             return new ContainerBuilder()

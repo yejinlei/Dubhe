@@ -23,8 +23,6 @@ import com.baomidou.mybatisplus.annotation.TableName;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 import lombok.Data;
-import lombok.EqualsAndHashCode;
-import lombok.experimental.Accessors;
 import org.dubhe.data.constant.Constant;
 import org.dubhe.utils.StringUtils;
 
@@ -33,14 +31,16 @@ import org.dubhe.utils.StringUtils;
  * @date 2020-05-14
  */
 @Data
-@EqualsAndHashCode(callSuper = false)
-@Accessors(chain = true)
 @TableName("data_dataset_version_file")
 @ApiModel(value = "Dataset版本文件关系表", description = "数据集版本文件管理")
 public class DatasetVersionFile {
 
     @TableId(type = IdType.AUTO)
     private Long id;
+
+    public void setId(Long id) {
+        this.id = id;
+    }
 
     @ApiModelProperty("数据集ID")
     private Long datasetId;
@@ -89,4 +89,19 @@ public class DatasetVersionFile {
         this.status = 0;
         this.changed = changed;
     }
+
+    @Override
+    public String toString() {
+        return "DatasetVersionFile{" +
+                "id=" + id +
+                ", datasetId=" + datasetId +
+                ", versionName='" + versionName + '\'' +
+                ", fileId=" + fileId +
+                ", status=" + status +
+                ", annotationStatus=" + annotationStatus +
+                ", backupStatus=" + backupStatus +
+                ", changed=" + changed +
+                '}';
+    }
+
 }

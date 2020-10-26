@@ -19,8 +19,8 @@ package org.dubhe.enums;
 
 import lombok.Getter;
 
-import java.util.Arrays;
-import java.util.List;
+import java.util.HashSet;
+import java.util.Set;
 
 /**
  * @description 训练任务枚举类
@@ -72,7 +72,13 @@ public enum TrainJobStatusEnum {
         this.message = message;
     }
 
-    public static TrainJobStatusEnum get(String msg) {
+    /**
+     * 根据信息获取枚举类对象
+     *
+     * @param msg 信息
+     * @return 枚举类对象
+     */
+    public static TrainJobStatusEnum getByMessage(String msg) {
         for (TrainJobStatusEnum statusEnum : values()) {
             if (statusEnum.message.equalsIgnoreCase(msg)) {
                 return statusEnum;
@@ -81,21 +87,63 @@ public enum TrainJobStatusEnum {
         return UNKNOWN;
     }
 
-    public static boolean isEnd(String msg) {
-        List<String> endList = Arrays.asList("SUCCEEDED", "FAILED", "STOP", "CREATE_FAILED");
-        return endList.stream().anyMatch(s -> s.equalsIgnoreCase(msg));
+    /**
+     * 回调状态转换  若是DELETED则转换为STOP，避免状态不统一
+     * @param phase k8s pod phase
+     * @return
+     */
+    public static TrainJobStatusEnum transferStatus(String phase) {
+        TrainJobStatusEnum enums = getByMessage(phase);
+        if (enums != DELETED) {
+            return enums;
+        }
+        return STOP;
     }
 
-    public static boolean isEnd(Integer num) {
-        List<Integer> endList = Arrays.asList(2, 3, 4, 7);
-        return endList.stream().anyMatch(s -> s.equals(num));
+    /**
+     * 根据状态获取枚举类对象
+     *
+     * @param status 状态
+     * @return 枚举类对象
+     */
+    public static TrainJobStatusEnum getByStatus(Integer status) {
+        for (TrainJobStatusEnum statusEnum : values()) {
+            if (statusEnum.status.equals(status)) {
+                return statusEnum;
+            }
+        }
+        return UNKNOWN;
+    }
+
+
+    /**
+     * 结束状态枚举集合
+     */
+    public static final Set<TrainJobStatusEnum> END_TRAIN_JOB_STATUS;
+
+    static {
+        END_TRAIN_JOB_STATUS = new HashSet<>();
+        END_TRAIN_JOB_STATUS.add(SUCCEEDED);
+        END_TRAIN_JOB_STATUS.add(FAILED);
+        END_TRAIN_JOB_STATUS.add(STOP);
+        END_TRAIN_JOB_STATUS.add(CREATE_FAILED);
+        END_TRAIN_JOB_STATUS.add(DELETED);
+    }
+
+    public static boolean isEnd(String msg) {
+        return END_TRAIN_JOB_STATUS.contains(getByMessage(msg));
+    }
+
+    public static boolean isEnd(Integer status) {
+        return END_TRAIN_JOB_STATUS.contains(getByStatus(status));
     }
 
     public static boolean checkStopStatus(Integer num) {
-        return SUCCEEDED.getStatus().equals(num) ||
-                FAILED.getStatus().equals(num) ||
-                STOP.getStatus().equals(num) ||
-                CREATE_FAILED.getStatus().equals(num) ||
-                DELETED.getStatus().equals(num);
+        return isEnd(num);
+    }
+
+    public static boolean checkRunStatus(Integer num) {
+        return PENDING.getStatus().equals(num) ||
+                RUNNING.getStatus().equals(num);
     }
 }

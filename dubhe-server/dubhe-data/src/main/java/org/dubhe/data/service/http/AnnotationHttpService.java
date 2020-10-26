@@ -43,7 +43,12 @@ public class AnnotationHttpService {
     @Value("${data.imageNet.endpoint}auto_annotate")
     private String imageNetUrl;
 
-
+    /**
+     * http调用标注算法
+     *
+     * @param request 任务详情
+     * @return String 算法服务响应
+     */
     public String annotate(TaskSplitBO request) {
         try {
             String param = JSON.toJSONString(request);

@@ -50,7 +50,6 @@ public interface HarborApi {
     /**
      * 查询所有镜像名称不用根据ProjectName进行查询
      *
-     * @param
      * @return List<Map> 镜像结果集
      **/
     List<Map> findImageList();
@@ -61,4 +60,11 @@ public interface HarborApi {
      * @return ImageVO 镜像vo对象
      **/
     ImageVO findImagePage(Page page);
+    /**
+     * 删除镜像
+     *
+     * @param  imageUrl 镜像的完整路径
+     */
+    void deleteImageByTag(String imageUrl);
+
 }

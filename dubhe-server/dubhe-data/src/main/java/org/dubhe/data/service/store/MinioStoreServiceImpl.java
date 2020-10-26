@@ -41,7 +41,7 @@ public class MinioStoreServiceImpl implements IStoreService {
      * read
      *
      * @param filePath 文件路径
-     * @return: String 读取文件
+     * @return String 读取文件
      */
     @Override
     public String read(String filePath) {
@@ -75,7 +75,7 @@ public class MinioStoreServiceImpl implements IStoreService {
      * delete
      *
      * @param fullFileOrDirPath 全文件路径
-     * @return: boolean 更新结果
+     * @return boolean 更新结果
      */
     @Override
     public boolean delete(String fullFileOrDirPath) {

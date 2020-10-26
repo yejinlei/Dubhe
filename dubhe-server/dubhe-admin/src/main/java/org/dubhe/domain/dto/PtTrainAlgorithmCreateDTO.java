@@ -85,4 +85,7 @@ public class PtTrainAlgorithmCreateDTO implements Serializable {
     @ApiModelProperty("noteBookId")
     private Long noteBookId;
 
+    @ApiModelProperty("资源拥有者ID")
+    private Long originUserId;
+
 }

@@ -78,6 +78,9 @@ public class File extends BaseEntity {
     @ApiModelProperty(value = "图片高")
     private Integer height;
 
+    @ApiModelProperty(value = "资源拥有人id")
+    private Long originUserId;
+
     @Override
     public boolean equals(Object o) {
         if (this == o) {

@@ -21,6 +21,7 @@ import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Select;
+import org.dubhe.annotation.DataPermission;
 import org.dubhe.domain.entity.NoteBook;
 
 import java.util.List;
@@ -29,28 +30,27 @@ import java.util.List;
  * @description notebook mapper
  * @date 2020-04-28
  */
+@DataPermission(ignoresMethod = {"insert","findByNamespaceAndResourceName","selectRunNotUrlList"})
 public interface NoteBookMapper extends BaseMapper<NoteBook> {
 
     /**
      * 根据名称查询
      *
      * @param name
-     * @param userId
      * @param status
      * @return NoteBook
      */
-    @Select("select * from notebook where notebook_name = #{name} and user_id = #{userId} and status != #{status} and deleted = 0 limit 1")
-    NoteBook findByNameAndUserId(@Param("name") String name, @Param("userId") long userId, @Param("status") Integer status);
+    @Select("select * from notebook where notebook_name = #{name} and status != #{status} and deleted = 0 limit 1")
+    NoteBook findByNameAndStatus(@Param("name") String name, @Param("status") Integer status);
 
     /**
      * 查询正在运行的notebook数量
      *
-     * @param userId
      * @param status
      * @return int
      */
-    @Select("select count(1) from notebook where user_id = #{userId} and status = #{status} and deleted = 0")
-    int selectRunNoteBookNum(@Param("userId") long userId, @Param("status") Integer status);
+    @Select("select count(1) from notebook where status = #{status} and deleted = 0")
+    int selectRunNoteBookNum( @Param("status") Integer status);
 
     /**
      * 根据namespace + resourceName查询

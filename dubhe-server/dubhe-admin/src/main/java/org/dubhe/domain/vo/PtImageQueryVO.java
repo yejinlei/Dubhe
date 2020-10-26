@@ -24,8 +24,8 @@ import java.io.Serializable;
 import java.sql.Timestamp;
 
 /**
- * @description: 返回镜像查询结果
- * @date: 2020-04-27
+ * @description 返回镜像查询结果
+ * @date 2020-04-27
  */
 @Data
 public class PtImageQueryVO implements Serializable {
@@ -52,4 +52,6 @@ public class PtImageQueryVO implements Serializable {
     @ApiModelProperty("创建时间")
     private Timestamp createTime;
 
+    @ApiModelProperty("资源拥有者ID")
+    private Long originUserId;
 }

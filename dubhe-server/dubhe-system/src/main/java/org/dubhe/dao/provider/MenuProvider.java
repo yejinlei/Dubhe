@@ -19,7 +19,6 @@ package org.dubhe.dao.provider;
 
 import org.apache.ibatis.jdbc.SQL;
 
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 

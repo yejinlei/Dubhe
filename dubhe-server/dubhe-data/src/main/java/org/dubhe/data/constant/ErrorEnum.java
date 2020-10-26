@@ -57,6 +57,11 @@ public enum ErrorEnum implements ErrorCode {
     FILE_EXIST(1304, "文件已存在"),
     VIDEO_EXIST(1305, "数据集存在视频"),
     FILE_DELETE_ERROR(1306, "文件删除失败"),
+    DATASET_TYPE_MODIFY_ERROR(1307,"数据集存在文件不可更改数据类型"),
+    DATASET_ANNOTATION_MODIFY_ERROR(1308,"非未标注状态不可更改标注类型"),
+    DATASET_PUBLIC_LIMIT_ERROR(1309,"公共数据集不可操作"),
+    TASK_ABSENT(1302, "任务不存在"),
+
 
     /**
      * 数据集标注操作错误
@@ -75,6 +80,10 @@ public enum ErrorEnum implements ErrorCode {
      */
     LABEL_ERROR(1600, "标签名不能为空或非系统自动标注支持的标签"),
     LABEL_NAME_EXIST(1601, "本数据集已有同名标签"),
+    LABEL_NAME_DUPLICATION(1602,"标签名重复，请检查"),
+    LABEL_NOT_EXISTS(1603,"标签不存在"),
+    LABEL_NAME_COLOR_NOT_NULL(1604,"JSON文件中标签名称和颜色不能为空"),
+    LABEL_PUBLIC_EORROR(1605,"不允许操作公共标签"),
 
     /**
      * 数据集操作错误
@@ -91,6 +100,8 @@ public enum ErrorEnum implements ErrorCode {
     DATASET_VIDEO_HAS_NOT_BEEN_AUTOMATICALLY_TRACKED(1709, "该数据集视频未自动跟踪完成,请稍等"),
     DATASET_LABEL_EMPTY(1710, "增强类型不能为空!"),
     DATASET_ENHANCEMENT(1711, "该数据集正在增强中,请稍等"),
+    DATASET_TRACK_TYPE_ERROR(1712, "数据集类型只能是目标跟踪才能进行跟踪!"),
+    DATASET_DELETE_ERROR(1713, "数据集数据大数据删除异常!"),
 
     /**
      * 数据集版本校验
@@ -99,8 +110,25 @@ public enum ErrorEnum implements ErrorCode {
     DATASET_VERSION_PTJOB_STATUS(1802, "当前数据集正在训练不可删除"),
     DATASET_NOT_ENHANCE(1803, "数据集状态只能是自动标注完成、标注完成、目标跟踪完成才能进行数据增强!"),
     DATASET_PUBLIC_ERROR(1900, "不允许操作公共数据集"),
-    ;
 
+    /**
+     * 标签组错误
+     */
+    LABELGROUP_NAME_DUPLICATED_ERROR(1901,"标签组名已存在"),
+    LABELGROUP_PUBLIC_ERROR(1902,"不允许操作公共标签组"),
+    LABELGROUP_IN_USE_STATUS(1903,"当前标签组内标签正在使用，无法操作"),
+    LABELGROUP_JSON_FILE_ERROR(1904,"请上传json格式文件"),
+    LABELGROUP_JSON_FILE_SIZE_ERROR(1905,"文件大小不能超过5M"),
+    LABELGROUP_JSON_FILE_FORMAT_ERROR(1906,"请输入正确的JSON内容"),
+    LABELGROUP_DOES_NOT_EXIST(1907,"标签组不存在"),
+    LABELGROUP_FILE_NAME_NOT_EXIST(1908,"请输入文件名称"),
+    LABELGROUP_LABELG_ID_ERROR(1909,"标签ID异常"),
+    LABELGROUP_OPERATE_LABEL_ID_ERROR(1910,"不允许操作公共标签组中的标签"),
+    LABELGROUP_LABEL_NAME_ERROR(1911,"请输入正确预置标签组标签"),
+    LABELGROUP_LABEL_GROUP_EDIT_ERROR(1912,"标签组下标签不许修改"),
+    LABELGROUP_LABEL_GROUP_QUOTE_DEL_ERROR(1913,"标签组已被数据集引用,无法删除!"),
+    ;
+    ;
 
     ErrorEnum(int code, String msg) {
         this.code = code;

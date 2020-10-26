@@ -139,7 +139,7 @@ public class JwtUtils {
     public static boolean isTokenExpired(String token) {
         Date now = Calendar.getInstance().getTime();
         DecodedJWT jwt = JWT.decode(token);
-        return jwt.getExpiresAt().before(now);
+        return jwt.getExpiresAt() == null || jwt.getExpiresAt().before(now);
     }
 
     /**

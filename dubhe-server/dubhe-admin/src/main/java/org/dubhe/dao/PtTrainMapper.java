@@ -18,12 +18,14 @@
 package org.dubhe.dao;
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
+import org.dubhe.annotation.DataPermission;
 import org.dubhe.domain.entity.PtTrain;
 
 /**
  * @description 训练作业主 Mapper 接口
  * @date 2020-04-27
  */
+@DataPermission(ignoresMethod = {"insert"})
 public interface PtTrainMapper extends BaseMapper<PtTrain> {
 
 }

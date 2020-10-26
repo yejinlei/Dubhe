@@ -23,7 +23,9 @@ import org.apache.shiro.authz.annotation.RequiresPermissions;
 import org.dubhe.annotation.ApiVersion;
 import org.dubhe.base.DataResponseBody;
 import org.dubhe.constant.Permissions;
+import org.dubhe.domain.dto.PtImageDeleteDTO;
 import org.dubhe.domain.dto.PtImageQueryDTO;
+import org.dubhe.domain.dto.PtImageUpdateDTO;
 import org.dubhe.domain.dto.PtImageUploadDTO;
 import org.dubhe.service.PtImageService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -70,5 +72,29 @@ public class PtImageController {
     @RequiresPermissions(Permissions.TRAINING_IMAGE)
     public DataResponseBody getHarborProjectList() {
         return new DataResponseBody(ptImageService.getHarborProjectList());
+    }
+
+
+    @DeleteMapping
+    @ApiOperation("删除镜像")
+    @RequiresPermissions(Permissions.TRAINING_IMAGE)
+    public DataResponseBody deleteTrainImage(@RequestBody PtImageDeleteDTO ptImageDeleteDTO) {
+        ptImageService.deleteTrainImage(ptImageDeleteDTO);
+        return new DataResponseBody();
+    }
+
+    @PutMapping
+    @ApiOperation("修改镜像信息")
+    @RequiresPermissions(Permissions.TRAINING_IMAGE)
+    public DataResponseBody updateTrainImage(@Validated @RequestBody PtImageUpdateDTO ptImageUpdateDTO) {
+        ptImageService.updateTrainImage(ptImageUpdateDTO);
+        return new DataResponseBody();
+    }
+
+    @GetMapping("/imageNameList")
+    @ApiOperation("获取镜像名称列表")
+    @RequiresPermissions(Permissions.TRAINING_IMAGE)
+    public DataResponseBody getImageNameList() {
+        return new DataResponseBody(ptImageService.getImageNameList());
     }
 }

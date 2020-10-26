@@ -24,9 +24,9 @@ import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 import lombok.*;
 import lombok.experimental.Accessors;
-
+import org.dubhe.base.BaseEntity;
+import org.dubhe.data.domain.dto.LabelCreateDTO;
 import java.io.Serializable;
-import java.time.LocalDateTime;
 
 /**
  * @description 标签
@@ -40,7 +40,7 @@ import java.time.LocalDateTime;
 @ApiModel(value = "Label对象", description = "数据集标签")
 @NoArgsConstructor
 @AllArgsConstructor
-public class Label implements Serializable {
+public class Label extends BaseEntity implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
@@ -52,16 +52,12 @@ public class Label implements Serializable {
 
     private String color;
 
-    private Long createUserId;
-
-    private LocalDateTime createTime;
-
-    private Long updateUserId;
-
-    private LocalDateTime updateTime;
-
-    private Boolean deleted;
-
     private Integer type;
+
+
+    public Label (LabelCreateDTO labelCreateDTO){
+        this.name = labelCreateDTO.getName();
+        this.color = labelCreateDTO.getColor();
+    }
 
 }
