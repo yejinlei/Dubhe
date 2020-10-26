@@ -45,9 +45,9 @@
       </el-table-column>
       <el-table-column label="操作" width="200" fixed="right">
         <template slot-scope="scope">
-          <el-button type="text" @click.stop="goTraining(scope.row)">创建训练任务</el-button>
-          <el-button type="text" @click.stop="doEdit(scope.row)">编辑</el-button>
-          <el-button type="text" @click.stop="doDelete(scope.row.id)">删除</el-button>
+          <el-button :id="`goTraining_`+scope.$index" type="text" @click.stop="goTraining(scope.row)">创建训练任务</el-button>
+          <el-button :id="`doEdit_`+scope.$index" type="text" @click.stop="doEdit(scope.row)">编辑</el-button>
+          <el-button :id="`doDelete_`+scope.$index" type="text" @click.stop="doDelete(scope.row.id)">删除</el-button>
         </template>
       </el-table-column>
     </el-table>
@@ -56,15 +56,20 @@
     <!--表单组件-->
     <BaseModal
       class="training-params-dialog"
-      :before-close="crud.cancelCU"
-      :visible="crud.status.cu > 0"
+      :visible.sync="showDialog"
       :title="crud.status.title"
-      :loading="crud.status.cu === 2"
+      :loading="loading"
       width="50%"
-      @cancel="crud.cancelCU"
-      @ok="crud.submitCU"
+      @cancel="showDialog=false"
+      @ok="toEdit"
     >
-      <job-form v-if="reFresh" ref="form" :form="form" :widthPercent="100" :showFooterBtns="false" type="paramEdit" />
+      <job-form 
+        v-if="reFresh"
+        ref="form"
+        :widthPercent="100"
+        type="paramEdit"
+        @getForm="getForm"
+      />
     </BaseModal>
     <!--右边侧边栏-->
     <el-drawer
@@ -83,28 +88,14 @@
 </template>
 
 <script>
-import CRUD, { presenter, header, form, crud } from '@crud/crud';
+import CRUD, { presenter, header, crud } from '@crud/crud';
 import pagination from '@crud/Pagination';
-import crudParams, { del as deleteParams } from '@/api/trainingJob/params';
+import crudParams, { del as deleteParams, edit as editParams } from '@/api/trainingJob/params';
 import BaseModal from '@/components/BaseModal';
 import DropdownHeader from '@/components/DropdownHeader';
 import JobForm from '@/components/Training/jobForm';
 import jobDetail from './components/jobDetail';
 
-const defaultForm = {
-  $_id: 0,
-  paramName: null,
-  description: null,
-  algorithmId: null,
-  dataSourceName: null,
-  dataSourcePath: null,
-  algorithmSource: 1,
-  outPath: null,
-  runParams: {},
-  logPath: null,
-  resourcesPoolType: 0,
-  trainJobSpecsId: null,
-};
 export default {
   name: 'JobParam',
   components: { BaseModal, DropdownHeader, pagination, jobDetail, JobForm },
@@ -126,7 +117,7 @@ export default {
       },
     });
   },
-  mixins: [presenter(), header(), form(defaultForm), crud()],
+  mixins: [presenter(), header(), crud()],
   data() {
     return {
       currentRow: null,
@@ -137,6 +128,8 @@ export default {
       selectItemObj: null,
       drawer: false,
       reFresh: true,
+      showDialog: false,
+      loading: false,
       filterParams: {
         resourcesPoolType: undefined,
       },
@@ -169,22 +162,10 @@ export default {
     handleClose(done) {
       done();
     },
-    [CRUD.HOOK.beforeToCU](crud, form) {
-      setTimeout(() => {
-        this.$refs.form.clearValidate();
-      }, 0);
-      delete form.trainName;
-      delete form.$_id;
-    },
-    [CRUD.HOOK.beforeSubmit](crud) {
-      const {form} = crud;
-      delete form.trainName;
-      delete form.$_id;
-    },
     // link
     goTraining(paramsDataObj) {
       this.$router.push({
-        path: '/training/jobAdd',
+        path: '/training/jobadd',
         name: 'jobAdd',
         params: {
           from: 'param',
@@ -192,11 +173,30 @@ export default {
         },
       });
     },
+    toEdit() {
+      this.$refs.form.save();
+    },
+    async getForm(form) {
+      const params = { ...form};
+      this.loading = true;
+      await editParams(params).finally(() => {
+        this.loading = false;
+      });
+      this.$message({
+        message: '任务修改成功',
+        type: 'success',
+      });
+      this.showDialog = false;
+      this.crud.refresh();
+    },
     // op
-    async doEdit(paramsDataObj) {
+    doEdit(paramsDataObj) {
       this.reFresh = false;
       this.$nextTick(async() => {
-        await this.crud.toEdit(paramsDataObj);
+        this.showDialog = true;
+        this.$nextTick(() => {
+          this.$refs.form.initForm(paramsDataObj);
+        });
         this.reFresh = true;
       });
     },

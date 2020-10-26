@@ -48,6 +48,7 @@
       </div>
     </div>
     <List
+      ref="listRef"
       v-bind="$attrs"
       :updateState="updateState"
       :list="state.files.value"
@@ -55,6 +56,7 @@
       :hasMore="state.hasMore.value"
       :total="state.total.value"
       :offset="state.offset.value"
+      :type="thumbState.type"
       :history="state.history.value"
       v-on="$listeners"
     />
@@ -93,7 +95,7 @@ import { Message } from 'element-ui';
 import { pick } from 'lodash';
 
 import UploadForm from '@/components/UploadForm';
-import { fileTypeEnum, getImgFromMinIO, withDimensionFile } from '@/views/dataset/util';
+import { fileTypeEnum, fileCodeMap, getImgFromMinIO, withDimensionFile } from '@/views/dataset/util';
 import { submit } from '@/api/preparation/datafile';
 import { detectFileList, queryFileOffset } from '@/api/preparation/dataset';
 import List from './list';
@@ -115,6 +117,8 @@ export default {
     const { $route } = ctx.root;
 
     const uploaderRef = ref(null);
+    const listRef = ref(null);
+
     const { updateList, state, updateState, isTrack } = props;
     const { datasetId } = state;
     const thumbState = reactive({
@@ -132,11 +136,11 @@ export default {
     const dropdownList = computed(() => {
       let filter = [];
       if (isTrack) {
-        // 目标跟踪：全部(0)、未标注-手动标注、手动标注中(1)、手动标注中(1)、自动目标跟踪完成(4)、手动标注完成(3)
-        filter = pick(fileTypeEnum, [0, 1, 3, 4]);
+        // 目标跟踪：全部 未标注 未识别 手动标注中 手动标注完成 自动标注完成 目标跟踪完成
+        filter = pick(fileTypeEnum, [fileCodeMap.ALL, fileCodeMap.UNANNOTATED, fileCodeMap.UNRECOGNIZED, fileCodeMap.MANUAL_ANNOTATING, fileCodeMap.MANUAL_ANNOTATED, fileCodeMap.AUTO_ANNOTATED, fileCodeMap.TRACK_SUCCEED]);
       } else {
-        // 目标检测：全部(0)、未标注-手动标注、手动标注中(1)、自动标注完成(2)、手动标注完成(3)
-        filter = pick(fileTypeEnum, [0, 1, 2, 3]);
+        // 目标检测：全部 未标注 未识别 手动标注中 自动标注完成 手动标注完成
+        filter = pick(fileTypeEnum, [fileCodeMap.ALL, fileCodeMap.UNANNOTATED, fileCodeMap.UNRECOGNIZED, fileCodeMap.MANUAL_ANNOTATING, fileCodeMap.AUTO_ANNOTATED, fileCodeMap.MANUAL_ANNOTATED]);
       }
       const statusList = Object.keys(filter).map(k => ({
         command: k,
@@ -153,6 +157,11 @@ export default {
       updateState({ annotations: [], fileFilterType: command });
       // 重新请求文件
       updateList({ type: command, offset: 0 });
+      // 获取滚动列表容器
+      const listWrapper = listRef.value.$refs?.listWrapper;
+      listWrapper.scrollTo({
+        top: 0,
+      });
     };
 
     const handleClose = () => {
@@ -223,6 +232,7 @@ export default {
     });
 
     return {
+      listRef,
       thumbState,
       withDimensionFile,
       uploadParams,

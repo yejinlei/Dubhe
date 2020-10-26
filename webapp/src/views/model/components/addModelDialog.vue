@@ -82,16 +82,16 @@
     </template>
     <!--step==2-->
     <template v-if="step==1">
-      <el-form ref="form2" :model="form2" :rules="rules" label-width="100px">
+      <el-form v-if="visible" ref="form2" :model="form2" :rules="rules" label-width="100px">
         <el-form-item label="模型名称">
           <div>{{ form.name }}</div>
         </el-form-item>
-        <el-form-item label="模型上传" prop="modelAddress">
+        <el-form-item ref="modelAddress" label="模型上传" prop="modelAddress">
           <upload-inline
             v-if="refreshFlag"
             action="fakeApi"
             accept=".zip,.pb,.h5,.ckpt,.pkl,.pth,.weight,.caffemodel,.pt"
-            :acceptSize="5120"
+            :acceptSize="0"
             list-type="text"
             :limit="1"
             :multiple="false"
@@ -103,12 +103,19 @@
             @uploadSuccess="uploadSuccess"
             @uploadError="uploadError"
           />
-          <div v-if="loading"><i class="el-icon-loading" />模型上传中...</div>
+          <upload-progress 
+            v-if="loading" 
+            :progress="progress" 
+            :color="customColors" 
+            :status="status" 
+            :size="size" 
+            @onSetProgress="onSetProgress"
+          />
         </el-form-item>
       </el-form>
       <div slot="footer" class="dialog-footer">
         <el-button @click="visible = false;step=0;">下次再传</el-button>
-        <el-button type="primary" @click="doAddVersion">确定上传</el-button>
+        <el-button type="primary" :disabled="loading" @click="doAddVersion">确定上传</el-button>
       </div>
     </template>
   </el-dialog>
@@ -119,8 +126,8 @@ import { add as addVersion } from '@/api/model/modelVersion';
 import { add as addModel } from '@/api/model/model';
 import { list as getAlgorithmUsages, add as addAlgorithmUsage } from '@/api/algorithm/algorithmUsage';
 import UploadInline from '@/components/UploadForm/inline';
-import { parseTime, validateNameWithHyphen } from '@/utils';
-import { nanoid } from 'nanoid';
+import UploadProgress from '@/components/UploadProgress';
+import { getUniqueId, validateNameWithHyphen } from '@/utils';
 
 const defaultForm = {
   name: null,
@@ -139,7 +146,7 @@ const defaultForm2 = {
 export default {
   name: 'AddModelDialog',
   dicts: ['model_type', 'frame_type'],
-  components: { UploadInline },
+  components: { UploadInline, UploadProgress },
   data() {
     return {
       visible: false,
@@ -171,17 +178,32 @@ export default {
           { max: 255, message: '长度在255个字符以内', trigger: 'blur' },
         ],
         modelAddress: [
-          { required: true, message: '请上传有效的模型', trigger: 'blur' },
+          { required: true, message: '请上传有效的模型', trigger: ['blur', 'manual'] },
         ],
       },
       step: 0,
       uploadParams: {
-        objectPath: `model/${this.$store.state.user.user.id}/${parseTime(new Date(), '{y}{m}{d}{h}{i}{s}{S}') + nanoid(4)}`, // 对象存储路径
+        objectPath: null, // 对象存储路径
       },
       algorithmUsageList: [],
       refreshFlag: true,
       loading: false,
+      size: 0,
+      progress: 0,
+      customColors: [
+        {color: '#909399', percentage: 40},
+        {color: '#e6a23c', percentage: 80},
+        {color: '#67c23a', percentage: 100},
+      ],
     };
+  },
+  computed: {
+    status() {
+      return this.progress === 100 ? 'success' : null;
+    },
+    user() {
+      return this.$store.getters.user;
+    },
   },
   methods: {
     show() {
@@ -196,6 +218,7 @@ export default {
     },
     onDialogClose() {
       this.reset();
+      this.loading = false;
       this.$emit('addDone', true);
     },
     reset() {
@@ -217,13 +240,22 @@ export default {
     handleRemove() {
       this.loading = false;
       this.form2.modelAddress = null;
+      this.$refs.modelAddress.validate('manual');
     },
-    uploadStart() {
-      this.loading = true;
+    uploadStart(files) {
+      this.updateImagePath();
+      [ this.loading, this.size, this.progress ] = [ true, files.size, 0 ];
+    },
+    onSetProgress(val) {
+      this.progress += val;
     },
     uploadSuccess(res) {
-      this.loading = false;
+      this.progress = 100;
+      setTimeout(() => {
+        this.loading = false;
+      }, 1000);
       this.form2.modelAddress = res[0].data.objectName;
+      this.$refs.modelAddress.validate('manual');
     },
     uploadError() {
       this.loading = false;
@@ -273,6 +305,9 @@ export default {
     async createAlgorithmUsage(auxInfo) {
       await addAlgorithmUsage({ auxInfo });
       this.getAlgorithmUsages();
+    },
+    updateImagePath() {
+      this.uploadParams.objectPath = `upload-temp/${this.user.id}/${getUniqueId()}`;
     },
   },
 };

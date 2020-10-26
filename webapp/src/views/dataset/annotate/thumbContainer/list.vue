@@ -15,7 +15,7 @@
 */
 
 <template>
-  <div class="infinite-list-wrapper" style="overflow: auto;">
+  <div ref="listWrapper" class="infinite-list-wrapper" style="overflow: auto;">
     <ul
       v-infinite-scroll="loadMore"
       infinite-scroll-distance="100"
@@ -35,7 +35,7 @@
   </div>
 </template>
 <script>
-import { reactive, watch, computed } from '@vue/composition-api';
+import { reactive, watch, computed, ref } from '@vue/composition-api';
 
 import { limit } from '@/views/dataset/annotate';
 import ListItem from './listItem';
@@ -49,6 +49,9 @@ export default {
     list: {
       type: Array,
       default: () => [],
+    },
+    type: {
+      type: [String, Number],
     },
     addList: {
       type: Array,
@@ -70,6 +73,9 @@ export default {
   },
   setup(props, ctx) {
     const { updateState, queryNextPage } = props;
+
+    const listWrapper = ref(null);
+
     const state = reactive({
       loading: false,
     });
@@ -99,6 +105,7 @@ export default {
       });
       queryNextPage({
         offset: props.offset,
+        type: Number(props.type),
       }).then(() => {
         Object.assign(state, {
           loading: false,
@@ -111,6 +118,7 @@ export default {
       disabled,
       loadMore,
       handleClick,
+      listWrapper,
     };
   },
 };

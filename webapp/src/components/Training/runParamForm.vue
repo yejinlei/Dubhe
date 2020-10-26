@@ -18,8 +18,8 @@
   <div>
     <el-form-item label="运行参数模式">
       <el-radio-group v-model="paramsMode" @change="onParamsModeChange">
-        <el-radio-button :label="1">key-value</el-radio-button>
-        <el-radio-button :label="2">arguments</el-radio-button>
+        <el-radio :label="1" border class="mr-0">key-value</el-radio>
+        <el-radio :label="2" border>arguments</el-radio>
       </el-radio-group>
     </el-form-item>
     <el-form-item
@@ -29,38 +29,21 @@
       :prop="prop"
       style="margin-bottom: 0;"
     >
-      <el-form ref="runParamForm" :label-width="paramLabelWidth">
-        <div v-for="(item, index) in runParamsList" :key="index">
-          <el-form-item
-            :ref="itemKeyId(index)"
-            style="display: inline-block; margin-bottom: 18px;"
-            :label="'运行参数' + (index+1)"
-            :prop="itemKeyId(index)"
-            :rules="{
-              validator: (rule, value, callback) => {validateKey(callback, item, index)}, trigger: 'blur'
-            }"
-            :error="errMsg[index]"
-          >
-            <el-input v-model="item.key" :style="`width:${input1Width}px;`" clearable :disabled="disabled" @change="handleChange" />
-          </el-form-item>
-          <el-form-item
-            :ref="itemValueId(index)"
-            style="display: inline-block;"
-            label="="
-            label-width="30px"
-            :prop="itemValueId(index)"
-            :rules="{
-              validator: (rule, value, callback) => {validateValue(callback, item, index)}, trigger: 'blur'
-            }"
-          >
-            <el-input v-model="item.value" type="text" :style="`width:${input2Width}px;`" :disabled="disabled" @change="handleChange" />
-          </el-form-item>
-          <template v-if="!disabled">
-            <el-button v-if="index==runParamsList.length-1" type="primary" size="mini" icon="el-icon-plus" circle @click="() => { addP(index) }" />
-            <el-button v-if="runParamsList.length>1" type="danger" size="mini" icon="el-icon-minus" circle @click="() => { removeP(index) }" />
-          </template>
-        </div>
-      </el-form>
+      <param-pair
+        v-for="(item, index) in runParamsList"
+        :key="item.id"
+        ref="paramPairs"
+        :item="runParamsList[index]"
+        :index="index"
+        :label-width="paramLabelWidth"
+        :disabled="disabled"
+        :show-add="index==runParamsList.length-1"
+        :show-remove="runParamsList.length>1"
+        :key-rule="keyRule"
+        @add="addP"
+        @remove="removeP"
+        @change="handleChange"
+      />
     </el-form-item>
     <el-form-item v-show="paramsMode === 2" label="运行参数" :error="argErrorMsg">
       <el-input
@@ -76,29 +59,19 @@
 
 <script>
 import { stringIsValidPythonVariable } from '@/utils';
+import ParamPair from './paramPair';
 
 export default {
   name: 'RunParamForm',
+  components: { ParamPair },
   props: {
-    id: {
-      type: [Number, String],
-      default: null,
-    },
     runParamObj: {
       type: Object,
-      default: () => {},
+      default: () => ({}),
     },
     prop: {
       type: String,
       default: null,
-    },
-    input1Width: {
-      type: Number,
-      default: 150,
-    },
-    input2Width: {
-      type: Number,
-      default: 150,
     },
     paramLabelWidth: {
       type: String,
@@ -110,73 +83,34 @@ export default {
     },
   },
   data() {
+    const isInputEmpty = value => {
+      return value === '' || value === null;
+    };
+
+    const keyValidator = (rule, value, callback) => {
+      if (!isInputEmpty(value) && !stringIsValidPythonVariable(value)) {
+        callback(new Error('参数key必须是合法变量名'));
+      } else {
+        callback();
+      }
+    };
+    
     return {
       runParamsList: [],
-      errMsg: [],
       paramsMode: 1,
       paramsArguments: '',
       argErrorMsg: null,
-      validateKey: (callback, item, index) => {
-        // 先校验是不是都为空，若都为空则通过
-        const isEmptyKey = this.isInputEmpty(item.key);
-        const isEmptyValue = this.isInputEmpty(item.value);
-        if (isEmptyKey && isEmptyValue) {
-          // 可能之前value有校验错误信息
-          this.$refs[this.itemValueId(index)][0].form.clearValidate(this.itemValueId(index));
-          callback();
-          return;
-        }
-        // 再校验自己是不是合法的变量名
-        if (!stringIsValidPythonVariable(item.key)) {
-          callback(new Error('参数key必须是合法变量名'));
-          return;
-        }
-        // 然后和value联合校验
-        if (isEmptyKey) {
-          callback(new Error('请输入参数key'));
-          return;
-        } if (isEmptyValue) {
-          this.$refs.runParamForm.validateField(this.itemValueId(index));
-        } else {
-          callback();
-          
-        }
-      },
-      validateValue: (callback, item, index) => {
-        // 先校验是不是都为空，若都为空则通过
-        const isEmptyKey = this.isInputEmpty(item.key);
-        const isEmptyValue = this.isInputEmpty(item.value);
-        if (isEmptyKey && isEmptyValue) {
-          // 可能之前key有校验错误信息
-          this.$refs[this.itemKeyId(index)][0].form.clearValidate(this.itemKeyId(index));
-          callback();
-          return;
-        }
-        // 输入框格式保证了其类似一定是字符串，只需不传空即可
-        // 然后和key联合校验
-        if (isEmptyValue) {
-          callback();
-          return;
-        } if (isEmptyKey) {
-          this.$refs.runParamForm.validateField(this.itemKeyId(index));
-        } else {
-          callback();
-          
-        }
-      },
+      // 整体校验规则：对 key 做 python 变量名有效性校验，对 value 不做任何校验
+      keyRule: [{
+        validator: keyValidator,
+        trigger: 'blur',
+      }],
+      paramId: 0,
+      paramRepeatWarning: null,
+      hasError: false,
     };
   },
   watch: {
-    id(newValue) {
-      if (newValue === null || isNaN(newValue)) {
-        /**
-         * newValue为null时的一种情况是与el-form组合使用的
-         * crud组件触发了cancelCU方法，此时不需更新
-         */
-        return;
-      }
-      this.syncListData();
-    },
     runParamObj() {
       this.syncListData();
     },
@@ -185,19 +119,12 @@ export default {
     this.syncListData();
   },
   methods: {
-    isInputEmpty(value) {
-      return value === '' || value === null;
-    },
-    itemKeyId(index) {
-      return `runParamsList.${  index  }.key`;
-    },
-    itemValueId(index) {
-      return `runParamsList.${  index  }.value`;
-    },
     addP() {
       this.runParamsList.push({
         key: '',
         value: '',
+        // eslint-disable-next-line no-plusplus
+        id: this.paramId++,
       });
     },
     removeP(i) {
@@ -205,12 +132,17 @@ export default {
       this.updateRunParamObj();
     },
     syncListData() {
-      const rpObj = { ...this.runParamObj};
       const list = [];
-      for (const formKey in rpObj) {
-        list.push({
-          key: formKey,
-          value: typeof (rpObj[formKey]) === 'object' ? JSON.stringify(rpObj[formKey]) : rpObj[formKey],
+      for (const key in this.runParamObj) {
+        const objItem = this.runParamsList.find(p => p.key === key);
+        if (objItem) {
+          objItem.value = this.runParamObj[key];
+        }
+        list.push(objItem || {
+          key,
+          value: this.runParamObj[key],
+          // eslint-disable-next-line no-plusplus
+          id: this.paramId++,
         });
       }
       this.runParamsList = list;
@@ -221,33 +153,59 @@ export default {
         this.convertPairsToArgs();
       }
     },
-    handleChange() {
+    handleChange(paramPair) {
+      // 当参数对的值改变时 key 为空，则把对于的 param 删除
+      if (!paramPair.key) {
+        const paramIndex = this.runParamsList.findIndex(p => p.id === paramPair.id);
+        this.runParamsList.splice(paramIndex, 1);
+      }
+      if (!this.runParamsList.length) {
+        this.addP();
+      }
       this.updateRunParamObj();
+    },
+    // 提供修改参数的入口, 如果参数存在则可修改
+    updateParam(key, value) {
+      const param = this.runParamsList.find(p => p.key === key);
+      if (param) {
+        param.value = value;
+        this.updateRunParamObj();
+      }
     },
     updateRunParamObj() {
       const obj = {};
-      this.runParamsList.forEach(d => {
-        if (d.key === '') return;
-        obj[d.key] = d.value;
+      const repeatedParams = new Set();
+      this.runParamsList.forEach(param => {
+        // 当 key 为空或者已存在相同 key 时，不加入数值
+        if (!param.key) {
+          return;
+        }
+        if (obj[param.key] !== undefined) {
+          repeatedParams.add(param.key);
+          return;
+        }
+        obj[param.key] = param.value;
       });
+      if (repeatedParams.size) {
+        this.paramRepeatWarning && this.paramRepeatWarning.close();
+        this.paramRepeatWarning = this.$message.warning(`参数 ${[...repeatedParams].join(', ')} 有重复, 将取用第一个值。`);
+      }
       this.$emit('updateRunParams', obj);
     },
-    goValid() {
+    validate() {
       // 单独校验
       let valid = true;
-      this.errMsg = [];
-      this.runParamsList.forEach((item, index) => {
-        if (this.isInputEmpty(item.key)) {
-          if (!this.isInputEmpty(item.value)) {
-            valid = false;
-          }
-        } else if (!stringIsValidPythonVariable(item.key)) {
-          valid = false;
-          this.$nextTick(() => {
-            this.errMsg[index] = '参数key必须是合法变量名';
-          });
-        }
-      });
+      const validCallback = pairValid => {
+        valid = valid && pairValid;
+      };
+
+      // eslint-disable-next-line no-plusplus
+      for (let i = 0; i < this.runParamsList.length; i++) {
+        this.paramsMode === 1 && this.$refs.paramPairs[i].validate(validCallback);
+      };
+
+      valid = valid && !this.hasError;
+
       return valid;
     },
     onParamsModeChange(value) {
@@ -265,33 +223,41 @@ export default {
       const paramsList = this.paramsArguments.split(' ');
       const pairList = [];
       const re = /^--(.+)=(.*)$/;
+      this.hasError = false;
+      // 先使用正则进行匹配
       paramsList.forEach(arg => {
         const group = re.exec(arg);
         if (group) {
           pairList.push({
             key: group[1],
             value: group[2],
+            // eslint-disable-next-line no-plusplus
+            id: this.paramId++,
           });
         } else if (arg) {
           this.$nextTick(() => {
             this.argErrorMsg = `参数'${arg}'不合法，请检查运行参数`;
           });
           this.paramsMode = 2;
-          
+          this.hasError = true;
         }
       });
+      if (this.hasError) return;
+      // 其次做参数名验证
       pairList.forEach(pair => {
         if (!stringIsValidPythonVariable(pair.key)) {
           this.$nextTick(() => {
             this.argErrorMsg = `参数名'${pair.key}'不是合法参数，请检查运行参数`;
           });
           this.paramsMode = 2;
-          
+          this.hasError = true;
         }
       });
+      if (this.hasError) return;
       // 参数为空时增加一个空参数
       if (!pairList.length) {
-        pairList.push({ key: '', value: '' });
+        // eslint-disable-next-line no-plusplus
+        pairList.push({ key: '', value: '', id: this.paramId++ });
       }
       this.runParamsList = pairList;
       this.updateRunParamObj();
@@ -308,13 +274,20 @@ export default {
       this.paramsArguments = args;
     },
     reset() {
-      this.errMsg = [];
       this.argErrorMsg = null;
       this.paramsMode = 1;
       this.paramsArguments = '';
-      this.runParamsList = [{ key: '', value: '' }];
-      this.$refs.runParamForm.clearValidate();
+      // eslint-disable-next-line no-plusplus
+      this.runParamsList = [{ key: '', value: '', id: this.paramId++ }];
     },
   },
 };
 </script>
+<style lang="scss" scoped>
+.el-radio.is-bordered {
+  width: 130px;
+  height: 35px;
+  padding: 10px 0;
+  text-align: center;
+}
+</style>

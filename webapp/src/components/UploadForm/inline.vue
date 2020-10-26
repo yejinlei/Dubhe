@@ -69,7 +69,7 @@ export default {
       }
 
       state.uploading = true;
-      ctx.emit('uploadStart');
+      ctx.emit('uploadStart', files);
       const uploadReqeust = request || minIOUpload;
       // 开始调用上传接口
       return uploadReqeust({ ...props.params, fileList: renameFileList, transformFile }, callback)

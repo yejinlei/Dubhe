@@ -91,7 +91,8 @@ export default {
       } else {
         // 不存在历史记录
         // 或者新开 Tab
-        if (!window.history.length || window.history.length === 1) {
+        // chrome 新开tab页面历史记录为 2
+        if (!window.history.length || window.history.length <= 2) {
           this.$router.push('/');
           return;
         }

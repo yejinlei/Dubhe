@@ -18,6 +18,8 @@
  * utils, 通用方法
  */
 
+import { nanoid } from 'nanoid';
+
 /**
  * Parse the time to string
  * @param {(Object|string|number)} time
@@ -252,5 +254,92 @@ export function stringIsValidPythonVariable(str) {
   }
   const pattern = /^[_a-zA-Z][_a-zA-Z0-9]*$/;
   return pattern.test(str);
+}
 
+
+const _toTree = (data) => {
+  const result = [];
+  if (!Array.isArray(data)) {
+    return result;
+  }
+  data.forEach(item => {
+    delete item.children;
+  });
+  const map = {};
+  data.forEach(item => {
+    map[item.id] = item;
+  });
+  data.forEach(item => {
+    const parent = map[item.pid];
+    if (parent) {
+      (parent.children || (parent.children = [])).push(item);
+    } else {
+      result.push(item);
+    }
+  });
+  return result;
+};
+
+/**
+ * minio数据转成树形结构
+ * @param {string} filepath minio的路径 
+ * @returns {list} [treeList, expandedKeys] 树形结构，和默认展开的元素
+ */
+export const getTreeListFromFilepath = async (filepath) => {
+  // 1，获取minio的数据
+  const tmp = await window.minioClient.listObjects(filepath);
+  if(!tmp || !tmp.length){
+    return [[], []];
+  }
+  const minioList = [];
+  for (const item of tmp) {
+    minioList.push(item.name.replace(filepath, ""));
+  }
+  // 2 转成平级数据
+  const dataList = [];
+  const keyList = []; // 去重用
+  for (const filename of minioList) {
+    const list = filename.split("/");
+    list.forEach((item, index) => {
+      const p = {
+        pid: index === 0 ? 9999 : `${index - 1}_${list[index - 1]}`,
+        id: `${index}_${item}`,
+        name: item,
+        originPath: filepath + list.slice(0,index+1).join('/'),
+        isFile: index === list.length-1,
+      };
+      const key = `${p.pid}_${p.id}`;
+      if (keyList.indexOf(key) === -1) {
+        keyList.push(key);
+        dataList.push(p);
+      }
+    });
+  }
+  // 2.1 最外层单独封装一层
+  const tmp2 = filepath.split('/');
+  const wrapperNodeName = tmp2[tmp2.length-2];
+  const wrapperNode = {
+    pid: 0,
+    id: 9999,
+    name: wrapperNodeName,
+    originPath: filepath,
+    isFile: false,
+  };
+  dataList.push(wrapperNode);
+  // 3 转成树形结构
+  const treeList = _toTree([].concat(dataList));
+  // 4 显示默认展开的层级，默认二级
+  const expandedKeys = [];
+  for (const item of treeList) {
+    expandedKeys.push(item.id);
+    for(const item2 of item.children){
+      expandedKeys.push(item2.id);
+    }
+  }
+  // 返回数据
+  return [treeList, expandedKeys];
+};
+
+export function getUniqueId() {
+  return parseTime(new Date(), '{y}{m}{d}{h}{i}{s}{S}') + nanoid(4);
 }

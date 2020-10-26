@@ -22,6 +22,7 @@
     <div class="flex flex-between">
       <InfoSelect
         v-model="state.label"
+        :innerRef="innerRef"
         style="width: 68%;"
         placeholder="选择已有标签或新建标签"
         :dataSource="dataSource"
@@ -29,7 +30,7 @@
         default-first-option
         filterable
         allow-create
-        @change="handleLabelChange"
+        @change="handleChange"
       />
       <el-button size="mini" type="primary" @click="postLabel">确定</el-button>
     </div>
@@ -37,7 +38,7 @@
 </template>
 
 <script>
-import { reactive } from '@vue/composition-api';
+import { reactive, ref } from '@vue/composition-api';
 
 import InfoSelect from '@/components/InfoSelect';
 import LabelTip from './labelTip';
@@ -56,6 +57,9 @@ export default {
     handleLabelChange: Function,
   },
   setup(props, ctx) {
+    const { handleLabelChange } = props;
+    const selectRef = ref(null);
+
     const state = reactive({
       label: undefined,
     });
@@ -65,9 +69,17 @@ export default {
       state.label = undefined;
     };
 
+    const handleChange = (params) => {
+      handleLabelChange(params, () => {
+        state.label = undefined;
+      });
+    };
+
     return {
       state,
       postLabel,
+      handleChange,
+      innerRef: () => selectRef,
     };
   },
 };

@@ -44,6 +44,14 @@
   }
 }
 
+// el-radio border
+.el-radio.is-bordered {
+  &.is-checked,
+  &:hover {
+    border-color: $primaryBorderColor;
+  }
+}
+
 // radio-button
 .el-radio-button__inner {
   padding: 8px 25px;
@@ -297,4 +305,28 @@
 
 .el-tooltip__popper {
   max-width: 50%;
+}
+
+.info-alert.is-light {
+  margin-bottom: 20px;
+  background-color: $primaryBg;
+
+  .el-alert__content {
+    width: 100%;
+  }
+
+  .el-alert__icon {
+    color: $primaryColor;
+  }
+
+  .slot-content {
+    display: flex;
+    justify-content: space-between;
+    width: 100%;
+    color: #000;
+
+    a {
+      color: $primaryColor;
+    }
+  }
 }

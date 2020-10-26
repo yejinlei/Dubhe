@@ -32,11 +32,27 @@ export function add(data) {
   });
 }
 
-export function project() {
+export function edit(data) {
   return request({
-    url: 'api/v1/ptImage/project',
+    url: 'api/v1/ptImage',
+    method: 'put',
+    data,
+  });
+}
+
+export function del(ids) {
+  return request({
+    url: 'api/v1/ptImage',
+    method: 'delete',
+    data: ids,
+  });
+}
+
+export function imageNameList() {
+  return request({
+    url: 'api/v1/ptImage/imageNameList',
     method: 'get',
   });
 }
 
-export default { list, add };
+export default { list, add, edit };

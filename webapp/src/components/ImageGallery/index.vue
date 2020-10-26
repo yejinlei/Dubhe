@@ -53,7 +53,7 @@
             :class="rootClass + '__img'"
             @click="onClickImg(dataImage)"
           >
-          <el-tag v-if="imageTagVisible && dataImage.status > 1" :hit="false" class="image-tag" :color="imageLabelTag[dataImage.id]['color']">{{ imageLabelTag[dataImage.id]['text'] }}</el-tag>
+          <el-tag v-if="imageTagVisible && statusCodeMap[dataImage.status] !== 'UNANNOTATED'" :hit="false" class="image-tag" :color="imageLabelTag[dataImage.id]['color']">{{ imageLabelTag[dataImage.id]['text'] }}</el-tag>
           <el-checkbox v-show="showOption(dataImage.id)" :value="selectedMap[dataImage.id]" class="image-checkbox" @change="checked => handleCheck(dataImage, checked)" />
           <div v-show="showOption(dataImage.id)" :title="dataImage.name" class="img-name-row">
             <div class="img-name">{{ basename(dataImage.url) }}</div>
@@ -74,6 +74,7 @@
 <script>
 import Vue from 'vue';
 import { bucketHost } from '@/utils/minIO';
+import { fileCodeMap, findKey, statusCodeMap } from '@/views/dataset/util';
 
 // eslint-disable-next-line import/no-extraneous-dependencies
 const path = require('path');
@@ -118,10 +119,13 @@ export default {
       multipleSelected: [],
       imageTagVisible: true,
       imgStatusMap: {
-        2: { 'text': '自动', 'color': '#468CFF' },
-        3: { 'text': '人工', 'color': '#FF9943' },
+        'UNRECOGNIZED': {'text': '未识别', 'color': '#FFFFFF'},
+        'UNANNOTATED': {'text': '未标注', 'color': '#FFFFFF'},
+        'AUTO_ANNOTATED': { 'text': '自动', 'color': '#468CFF' },
+        'MANUAL_ANNOTATED': { 'text': '人工', 'color': '#FF9943' },
       },
       hoverImg: null,
+      statusCodeMap,
     };
   },
   computed: {
@@ -139,9 +143,9 @@ export default {
     imageLabelTag() {
       const labelTag = {};
       this.dataImages.forEach((item) => {
-        const statusInfo = this.imgStatusMap[item.status];
+        const statusInfo = this.imgStatusMap[findKey(item.status, fileCodeMap)];
         const annotation = JSON.parse(item.annotation);
-        let categoryName = '无标注';
+        let categoryName = '未识别';
         let tagColor = '#db2a2a';
         if (statusInfo && (annotation instanceof Array) && annotation.length > 0) {
           const categoryId = annotation[0].category_id;

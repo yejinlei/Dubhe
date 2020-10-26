@@ -17,11 +17,12 @@
 <template>
   <div class="info-data-select">
     <el-select
-      :style="{ width: '100%' }"
+      ref="selectRef"
+      :style="{ width: selectEleWidth }"
       clearable
       v-bind="attrs"
       :value="state.sValue"
-      @change="handleChange"
+      v-on="listeners"
     >
       <el-option
         v-for="item in state.list"
@@ -36,7 +37,7 @@
 </template>
 <script>
 import { isNil } from 'lodash';
-import { reactive, watch, computed } from '@vue/composition-api';
+import { reactive, watch, computed, ref } from '@vue/composition-api';
 
 export default {
   name: 'InfoSelect',
@@ -47,6 +48,7 @@ export default {
   },
   props: {
     request: Function,
+    width: String,
     value: {
       type: [String, Number, Array],
     },
@@ -62,9 +64,12 @@ export default {
       type: Array,
       default: () => ([]),
     },
+    innerRef: Function,
   },
   setup(props, ctx) {
-    const { labelKey, valueKey } = props;
+    const { labelKey, valueKey, innerRef } = props;
+
+    const selectRef = !isNil(innerRef) ? innerRef() : ref(null);
 
     const buildOptions = (list) => list.map(d => ({
       ...d,
@@ -98,10 +103,18 @@ export default {
     });
 
     const attrs = computed(() => ctx.attrs);
+    const selectEleWidth =computed(() => props.width || '100%');
+    const listeners = computed(() => ({
+      ...ctx.listeners,
+      change: handleChange,
+    }));
 
     return {
       state,
+      selectEleWidth,
       attrs,
+      selectRef,
+      listeners,
       handleChange,
     };
   },

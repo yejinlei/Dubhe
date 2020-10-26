@@ -72,17 +72,17 @@ export function getJobList(params) {
   });
 }
 
-export function getTrainLog(params) {
+export function getJobDetail(jobId) {
   return request({
-    url: `api/v1/trainLog`,
+    url: `api/v1/trainJob/jobDetail`,
     method: 'get',
-    params,
+    params: { id: jobId },
   });
 }
 
-export function downloadTrainLog(params) {
+export function getTrainLog(params) {
   return request({
-    url: `api/v1/trainLog/download`,
+    url: `api/v1/trainLog`,
     method: 'get',
     params,
   });
@@ -109,4 +109,11 @@ export function getGarafanaInfo(jobId) {
   });
 }
 
-export default { list, add, edit, del, getGarafanaInfo };
+export function getPods(jobId) {
+  return request({
+    url: `api/v1/trainLog/pod/${jobId}`,
+    method: 'get',
+  });
+}
+
+export default { list, add, edit, del };

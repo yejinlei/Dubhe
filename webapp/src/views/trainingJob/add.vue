@@ -19,12 +19,11 @@
     <!--任务版本新增-->
     <job-form
       ref="jobForm"
-      :form="form"
-      :loading="loading"
       :type="formType"
       @getForm="getForm"
-      @resetForm="resetForm"
     />
+    <el-button type="primary" :loading="loading" style="margin-left: 120px;" @click="save">开始训练</el-button>
+    <el-button @click="reset">清空</el-button>
   </div>
 </template>
 
@@ -32,55 +31,45 @@
 import { add as addJob } from '@/api/trainingJob/job';
 import JobForm from '@/components/Training/jobForm';
 
-const defaultJobForm = {
-  $_id: 0,
-  trainName: '',
-  description: '',
-  algorithmSource: 1,
-  algorithmId: null,
-  dataSourceName: null,
-  dataSourcePath: null,
-  imageTag: null,
-  imageName: null,
-  runCommand: null,
-  outPath: '/home/result/',
-  logPath: '/home/log/',
-  resourcesPoolType: 0,
-  trainJobSpecsId: null,
-  runParams: {},
-};
-
 export default {
   name: 'JobAdd',
   components: { JobForm },
   data() {
     return {
       formType: 'add',
-      form: { ...defaultJobForm}, // 【训练任务版本】新增和编辑使用
       loading: false,
     };
   },
-  mounted() {
+  created() {
     const from = this.$route.params.from || 'job';
     if (from === 'algorithm') {
       const {params} = this.$route.params;
-      this.form = Object.assign(this.form, params);
+      this.formType = 'algoAdd';
       this.$nextTick(() => {
-        this.$refs.jobForm.clearValidate();
+        this.$refs.jobForm.initForm(params);
       });
     } else if (from === 'param') {
       const {paramsInfo} = this.$route.params;
-      this.form = Object.assign(this.form, paramsInfo);
-      this.form.$_id = new Date().getTime();
-      this.form.trainName = paramsInfo.paramName;
+      paramsInfo.trainName = paramsInfo.paramName;
       this.formType = 'paramsAdd';
+      this.$nextTick(() => {
+        this.$refs.jobForm.initForm(paramsInfo);
+      });
     }
+    this.$nextTick(() => {
+      this.$refs.jobForm.initForm();
+    });
   },
   methods: {
+    save() {
+      this.$refs.jobForm.save();
+    },
+    reset() {
+      this.$refs.jobForm.reset();
+    },
     // 任务新增
     async getForm(form) {
       const params = { ...form};
-      delete params.$_id;
       delete params.algorithmSource;
       this.loading = true;
       const res = await addJob(params).finally(() => {
@@ -90,16 +79,7 @@ export default {
         message: '任务提交成功',
         type: 'success',
       });
-      this.$router.push({ path: `/training/jobDetail?type=detail&id=${res[0]}` });
-    },
-    resetForm(reset) {
-      if (reset) {
-        this.form = { ...defaultJobForm};
-        this.$message({
-          message: '数据已重置',
-          type: 'success',
-        });
-      }
+      this.$router.push({ path: `/training/jobdetail?type=detail&id=${res[0]}` });
     },
   },
 };

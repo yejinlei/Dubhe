@@ -21,17 +21,17 @@
       <div class="cd-opts">
         <span class="cd-opts-left">
           <el-button
+            id="toAdd"
             class="filter-item"
             type="primary"
             icon="el-icon-plus"
             round
             @click="toAdd"
-          >
-            创建模型
-          </el-button>
+          >创建模型</el-button>
         </span>
         <span class="cd-opts-right">
           <el-input
+            id="queryName"
             v-model="query.name"
             clearable
             placeholder="请输入模型名称或ID"
@@ -44,8 +44,8 @@
       </div>
       <div>
         <el-tabs v-model="active" class="eltabs-inlineblock" @tab-click="crud.toQuery">
-          <el-tab-pane label="我的模型" name="0" />
-          <el-tab-pane label="预训练模型" name="1" />
+          <el-tab-pane id="tab_0" label="我的模型" name="0" />
+          <el-tab-pane id="tab_1" label="预训练模型" name="1" />
         </el-tabs>
       </div>
     </div>
@@ -61,15 +61,20 @@
       <el-table-column prop="id" label="ID" width="80" sortable="custom" />
       <el-table-column prop="name" label="模型名称" min-width="180px" />
       <el-table-column prop="frameType" label="框架名称" min-width="150px">
-        <template slot-scope="scope">{{ dict.label.frame_type[scope.row.frameType]||'--' }}</template>
+        <template slot-scope="scope">{{ dict.label.frame_type[scope.row.frameType]|| "--" }}</template>
       </el-table-column>
       <el-table-column prop="modelType" label="模型格式" min-width="150px">
-        <template slot-scope="scope">{{ dict.label.model_type[scope.row.modelType]||'--' }}</template>
+        <template slot-scope="scope">{{ dict.label.model_type[scope.row.modelType]|| "--" }}</template>
       </el-table-column>
       <el-table-column prop="modelClassName" label="模型类别" min-width="150px">
-        <template slot-scope="scope">{{ scope.row.modelClassName ||'--' }}</template>
+        <template slot-scope="scope">{{ scope.row.modelClassName || "--" }}</template>
       </el-table-column>
-      <el-table-column prop="modelDescription" label="模型描述" min-width="300px" show-overflow-tooltip />
+      <el-table-column
+        prop="modelDescription"
+        label="模型描述"
+        min-width="300px"
+        show-overflow-tooltip
+      />
       <el-table-column v-if="isCustom" prop="versionNum" label="版本" width="80">
         <template slot-scope="scope">
           <a
@@ -88,6 +93,7 @@
         <template slot-scope="scope">
           <el-button
             v-if="isCustom"
+            :id="`goVersion_`+scope.$index"
             type="text"
             @click="goVersion(scope.row.id, scope.row.name)"
           >历史版本</el-button>
@@ -99,6 +105,7 @@
           >
             <span :class="{'ml-10 mr-10': isCustom}">
               <el-button
+                :id="`doDownload_`+scope.$index"
                 :disabled="!scope.row.modelAddress"
                 type="text"
                 @click="doDownload(scope.row)"
@@ -107,11 +114,13 @@
           </el-tooltip>
           <el-button
             v-if="isCustom"
+            :id="`doEdit_`+scope.$index"
             type="text"
             @click="doEdit(scope.row)"
           >编辑</el-button>
           <el-button
             v-if="isCustom"
+            :id="`doDelete_`+scope.$index"
             type="text"
             @click="doDelete(scope.row.id)"
           >删除</el-button>
@@ -134,6 +143,7 @@
       <el-form ref="form" :model="form" :rules="rules" label-width="100px">
         <el-form-item label="模型名称" prop="name">
           <el-input
+            id="name"
             v-model.trim="form.name"
             style="width: 300px;"
             maxlength="15"
@@ -142,7 +152,12 @@
           />
         </el-form-item>
         <el-form-item label="框架" prop="frameType">
-          <el-select v-model="form.frameType" placeholder="请选择框架" style="width: 300px;">
+          <el-select
+            id="frameType"
+            v-model="form.frameType"
+            placeholder="请选择框架"
+            style="width: 300px;"
+          >
             <el-option
               v-for="item in dict.frame_type"
               :key="item.value"
@@ -152,7 +167,12 @@
           </el-select>
         </el-form-item>
         <el-form-item label="模型格式" prop="modelType">
-          <el-select v-model="form.modelType" placeholder="请选择模型格式" style="width: 300px;">
+          <el-select
+            id="modelType"
+            v-model="form.modelType"
+            placeholder="请选择模型格式"
+            style="width: 300px;"
+          >
             <el-option
               v-for="item in dict.model_type"
               :key="item.value"
@@ -163,6 +183,7 @@
         </el-form-item>
         <el-form-item label="模型类别" prop="modelClassName">
           <el-select
+            id="modelClassName"
             v-model="form.modelClassName"
             placeholder="请选择或输入模型类别"
             filterable
@@ -179,27 +200,35 @@
           </el-select>
         </el-form-item>
         <el-form-item label="模型描述" prop="modelDescription">
-          <el-input v-model="form.modelDescription" type="textarea" placeholder="请输入模型描述" maxlength="255" show-word-limit style="width: 400px;" />
+          <el-input
+            id="modelDescription"
+            v-model="form.modelDescription"
+            type="textarea"
+            placeholder="请输入模型描述"
+            maxlength="255"
+            show-word-limit
+            style="width: 400px;"
+          />
         </el-form-item>
       </el-form>
     </BaseModal>
     <!--多步骤新增dialog-->
-    <add-model-dialog
-      ref="addModel"
-      @addDone="addDone"
-    />
+    <add-model-dialog ref="addModel" @addDone="addDone" />
   </div>
 </template>
 
 <script>
-import crudModel, { del } from '@/api/model/model';
-import { list as getAlgorithmUsages, add as addAlgorithmUsage } from '@/api/algorithm/algorithmUsage';
-import CRUD, { presenter, header, form, crud } from '@crud/crud';
-import BaseModal from '@/components/BaseModal';
-import rrOperation from '@crud/RR.operation';
-import pagination from '@crud/Pagination';
-import { downloadZipFromObjectPath, validateNameWithHyphen } from '@/utils';
-import AddModelDialog from './components/addModelDialog';
+import crudModel, { del } from "@/api/model/model";
+import {
+  list as getAlgorithmUsages,
+  add as addAlgorithmUsage,
+} from "@/api/algorithm/algorithmUsage";
+import CRUD, { presenter, header, form, crud } from "@crud/crud";
+import BaseModal from "@/components/BaseModal";
+import rrOperation from "@crud/RR.operation";
+import pagination from "@crud/Pagination";
+import { downloadZipFromObjectPath, validateNameWithHyphen } from "@/utils";
+import AddModelDialog from "./components/addModelDialog";
 
 const defaultForm = {
   name: null,
@@ -235,7 +264,7 @@ export default {
           { max: 20, message: '长度在 20 个字符以内', trigger: 'blur' },
           {
             validator: validateNameWithHyphen,
-            trigger: ['blur', 'change'],
+            trigger: ["blur", "change"],
           },
         ],
         frameType: [
@@ -245,7 +274,11 @@ export default {
           { required: true, message: '请选择模型格式', trigger: 'blur' },
         ],
         modelClassName: [
-          { required: true, message: '请输入模型类别', trigger: ['blur', 'change'] },
+          {
+            required: true,
+            message: '请输入模型类别',
+            trigger: ["blur", "change"],
+          },
         ],
         modelDescription: [
           { required: true, message: '请输入模型描述', trigger: 'blur' },
@@ -253,7 +286,7 @@ export default {
         ],
       },
       algorithmUsageList: [],
-      active: '0',
+      active: "0",
     };
   },
   computed: {
@@ -291,7 +324,9 @@ export default {
       this.getAlgorithmUsages();
     },
     onAlgorithmUsageChange(value) {
-      const usageRes = this.algorithmUsageList.find(usage => usage.auxInfo === value);
+      const usageRes = this.algorithmUsageList.find(
+        usage => usage.auxInfo === value,
+      );
       if (!usageRes) {
         this.createAlgorithmUsage(value);
       }
@@ -304,7 +339,7 @@ export default {
     },
     // link
     goVersion(id, name, type = 'detail') {
-      this.$router.push({ path: '/model/version', query: { id, name, type }});
+      this.$router.push({ path: '/model/version', query: { id, name, type } });
     },
     // op
     async doEdit(item) {
@@ -315,7 +350,7 @@ export default {
     },
     doDelete(id) {
       this.$confirm('此操作将永久删除该模型, 是否继续?', '请确认').then(
-        async() => {
+        async () => {
           const params = {
             ids: [id],
           };
@@ -333,9 +368,11 @@ export default {
       const msg = this.isCustom
         ? `此操作将下载 ${name} 模型的 ${versionNum} 版本, 是否继续?`
         : `此操作将下载预训练模型 ${name}, 是否继续?`;
-      this.$confirm(msg, '请确认').then(
+      this.$confirm(msg, "请确认").then(
         () => {
-          const url = /^\//.test(modelAddress) ? modelAddress : `/${  modelAddress}`;
+          const url = /^\//.test(modelAddress)
+            ? modelAddress
+            : `/${modelAddress}`;
           downloadZipFromObjectPath(url, 'model.zip');
           this.$message({
             message: '请查看下载文件',

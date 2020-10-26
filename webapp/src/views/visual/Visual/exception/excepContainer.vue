@@ -33,7 +33,7 @@
           <div class="excepRectDiv" style="height: 100%;">
             <el-scrollbar style="height: 100%;">
               <canvas :id="excepCanvasId">
-              您的浏览器不支持 HTML5 canvas 标签。
+                您的浏览器不支持 HTML5 canvas 标签。
               </canvas>
             </el-scrollbar>
           </div>
@@ -909,7 +909,7 @@ export default {
   padding: 0;
 }
 
-/* 隐藏原生滑动轴并修改el-scroll颜色*/
+/* 隐藏原生滑动轴并修改el-scroll颜色 */
 .excepRectDiv /deep/ .el-scrollbar__wrap {
   overflow: hidden;
 }

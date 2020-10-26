@@ -151,7 +151,7 @@ export default {
 
     watch(() => props.fileId, async(next) => {
       if (next) {
-        const enhanceFileList = await getEnhanceFileList(next);
+        const enhanceFileList = await getEnhanceFileList(props.datasetId,next);
         const isOrigin = !!enhanceFileList.length; // 被增强
         Object.assign(state, {
           isOrigin,

@@ -97,10 +97,10 @@ const BaseModal = {
       return (
         <div class='modal-footer'>
           { this.showCancel && (
-            <el-button onClick={this.handleCancel}>{this.cancelText}</el-button>
+            <el-button id="cancel" onClick={this.handleCancel}>{this.cancelText}</el-button>
           )
           }
-          <el-button type='primary' disabled={this.disabled} onClick={this.handleOk} loading={this.loading}>{this.okText}</el-button>
+          <el-button id="ok" type='primary' disabled={this.disabled} onClick={this.handleOk} loading={this.loading}>{this.okText}</el-button>
         </div>
       );
     };

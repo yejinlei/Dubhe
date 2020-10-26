@@ -13,22 +13,28 @@
 * limitations under the License.
 * =============================================================
 */
+ 
+import { statusCodeMap } from '../util';
 
 export default {
   name: 'DatasetAction',
   functional: true,
   props: {
     showPublish: Function,
-    openUploadDialog: Function,
+    uploadDataFile: Function,
     goDetail: Function,
     getAutoAnnotateStatus: Function,
     autoAnnotate: Function,
     gotoVersion: Function,
     reAnnotation: Function,
+    track: Function,
     dataEnhance: Function,
+    topDataset: Function,
+    editDataset: Function,
+    checkImport: Function, // 查询外部数据集导入状态
   },
   render(h, { data, props }) {
-    const { showPublish, openUploadDialog, goDetail, autoAnnotate, gotoVersion, reAnnotation, dataEnhance } = props;
+    const { showPublish, uploadDataFile, goDetail, autoAnnotate, gotoVersion, reAnnotation, track, dataEnhance, topDataset, editDataset, checkImport } = props;
     const columnProps = {
       ...data,
       scopedSlots: {
@@ -36,10 +42,6 @@ export default {
           return (
             <span>
               <span>操作</span>
-              <el-tooltip effect='dark' placement='top' style={{ marginLeft: '10px' }}>
-                <div slot='content'>如果数据集操作没有更新，<br/>可能是后台算法在执行其他任务，<br/>请耐心等待或稍后重试</div>
-                <i class='el-icon-question'/>
-              </el-tooltip>
             </span>
           );
         },
@@ -55,9 +57,9 @@ export default {
             },
           };
 
-          // 查看标注按钮在 自动标注中(2) 未采样(5) 采样中(7) 数据增强中(8)时不显示, 此外，类型为视频时，自动标注完成(3)也不可查看(此时下游会进行目标跟踪)
-          let showCheckButton = ![2, 5, 7, 8].includes(row.status);
-          if (row.dataType === 1 && row.status === 3) {
+          // 查看标注按钮在 自动标注中 未采样 采样中 采样失败 目标跟踪中 数据增强中 目标跟踪失败 时不显示, 此外，类型为视频时，自动标注完成也不可查看(此时下游会进行目标跟踪)
+          let showCheckButton = !['AUTO_ANNOTATING', 'UNSAMPLED', 'SAMPLING', 'SAMPLE_FAILED', 'TRACKING', 'ENHANCING', 'TRACK_FAILED'].includes(statusCodeMap[row.status]);
+          if (row.dataType === 1 && statusCodeMap[row.status] === 'AUTO_ANNOTATED') {
             showCheckButton = false;
           }
           // 查看标注按钮
@@ -67,8 +69,8 @@ export default {
             </el-button>
           );
 
-          // 自动标注按钮在 自动标注中(2) 自动标注完成(3) 标注完成(4) 未采样(5) 目标跟踪完成(6) 采样中(7) 数据增强中(8)时不显示
-          let showAutoButton = ![2, 3, 4, 5, 6, 7, 8].includes(row.status);
+          // 自动标注按钮只在 未标注 标注中 时显示
+          let showAutoButton = ['UNANNOTATED', 'ANNOTATING'].includes(statusCodeMap[row.status]);
           // 自动标注按钮
           const autoButton = (
             <el-button {...btnProps} onClick={() => autoAnnotate(row)}>
@@ -109,17 +111,17 @@ export default {
             </el-button>
           );
 
-          // 当类型为视频时,状态为标注完成(4)目标跟踪完成(6)显示发布按钮,其余状态不显示发布按钮
-          // 当类型为图片时,状态为自动标注完成(3)显示有弹窗确认的发布按钮,为标注完成(4)显示发布按钮,其余状态不显示发布按钮
+          // 当类型为视频时,状态为标注完成、目标跟踪完成时显示发布按钮,其余状态不显示发布按钮
+          // 当类型为图片时,状态为自动标注完成时显示有弹窗确认的发布按钮,为标注完成时显示发布按钮,其余状态不显示发布按钮
           if (row.dataType === 1) {
-            if ([4, 6].includes(row.status)) {
+            if (['ANNOTATED', 'TRACK_SUCCEED'].includes(statusCodeMap[row.status])) {
               showPublishButton = true;
               publishButton = publishDialogButton;
             }
-          } else if (row.status === 3) {
+          } else if (statusCodeMap[row.status] === 'AUTO_ANNOTATED') {
             showPublishButton = true;
             publishButton = publishConfirmButton;
-          } else if (row.status === 4) {
+          } else if (statusCodeMap[row.status] === 'ANNOTATED') {
             showPublishButton = true;
             publishButton = publishDialogButton;
           }
@@ -127,22 +129,22 @@ export default {
           let showUploadButton = false;
           // 导入按钮
           const uploadButton = (
-            <el-button {...btnProps} onClick={() => openUploadDialog(row)}>
+            <el-button {...btnProps} onClick={() => uploadDataFile(row)}>
               导入
             </el-button>
           );
-          // 类型为视频时，当状态为未采样(5)时才可导入，其余状态不可导入
-          // 类型为图片时，自动标注中(2) 数据增强中(8)不可导入，其余状态均可导入
+          // 类型为视频时，当状态为未采样时才可导入，其余状态不可导入
+          // 类型为图片时，自动标注中、数据增强中 目标跟踪失败 不可导入，其余状态均可导入
           if (row.dataType === 1) {
-            if (row.status === 5) {
+            if (statusCodeMap[row.status] === 'UNSAMPLED') {
               showUploadButton = true;
             }
-          } else if (![2, 8].includes(row.status)) {
+          } else if (!['AUTO_ANNOTATING', 'ENHANCING', 'TRACK_FAILED'].includes(statusCodeMap[row.status])) {
             showUploadButton = true;
           }
 
-          // 当标注完成(4)目标跟踪完成(6)，以及非视频的自动标注完成(3)时显示重新自动标注按钮 (若为视频此时下游会进行目标跟踪)
-          let showReAutoButton = [4, 6].includes(row.status) || (row.status === 3 && row.dataType === 0);
+          // 当标注完成、目标跟踪完成，以及非视频的自动标注完成时显示重新自动标注按钮 (若为视频此时下游会进行目标跟踪)
+          let showReAutoButton = ['ANNOTATED', 'TRACK_SUCCEED'].includes(statusCodeMap[row.status]) || (statusCodeMap[row.status] === 'AUTO_ANNOTATED' && row.dataType === 0);
           // 重新自动标注按钮
           const reAutoButton = (
             <el-popconfirm
@@ -157,10 +159,28 @@ export default {
               </el-button>
             </el-popconfirm>
           );
+          
+          // 当目标跟踪标注类型的数据集状态为自动标注完成 标注完成时，显示目标跟踪按钮
+          let showTrackButton = row.annotateType === 5 && ['AUTO_ANNOTATED','ANNOTATED'].includes(statusCodeMap[row.status]);
+          // 目标跟踪按钮
+          const trackButton = (
+            <el-button {...btnProps} onClick={() => track(row, false)}>
+              目标跟踪
+            </el-button>
+          );
+
+          // 当目标跟踪失败时，显示重新目标跟踪按钮
+          let showReTrackButton = ['TRACK_FAILED', 'TRACK_SUCCEED'].includes(statusCodeMap[row.status]);
+          // 重新目标跟踪按钮
+          const reTrackButton = (
+            <el-button {...btnProps} onClick={() => track(row, true)}>
+              重新目标跟踪
+            </el-button>
+          );
 
           // 展示数据增强入口
-          // 当数据类型为图片,并且状态为自动标注完成(3) 标注完成(4)展示数据增强入口
-          let showAugmentButton = row.dataType === 0 && [3, 4].includes(row.status);
+          // 当数据类型为图片,并且状态为自动标注完成、标注完成展示数据增强入口
+          let showAugmentButton = row.dataType === 0 && ['AUTO_ANNOTATED', 'ANNOTATED'].includes(statusCodeMap[row.status]);
           // 数据增强按钮
           const augmentButton = (
             <el-button {...btnProps} onClick={() => dataEnhance(row)}>
@@ -168,14 +188,41 @@ export default {
             </el-button>
           );
 
-          // 有当前版本且状态不为自动标注中(2) 数据增强中(8)
-          let showVersionButton = (row.currentVersionName && ![2, 8].includes(row.status));
+          // 有当前版本且状态不为自动标注中、数据增强中、目标跟踪中，导入中
+          let showVersionButton = (row.currentVersionName && !['AUTO_ANNOTATING', 'ENHANCING', 'TRACKING', 'IMPORTING'].includes(statusCodeMap[row.status]));
           // 历史版本按钮
           const versionButton = (
             <el-button {...btnProps} onClick={() => gotoVersion(row)}>
               历史版本
             </el-button>
           );
+          
+          let showTopButton = true;
+          // 置顶按钮总会显示
+          const topButton = (
+            <el-button {...btnProps} onClick={() => topDataset(row)}>
+              {row.top ? '取消置顶' : '置顶'}
+            </el-button>
+          );
+
+          let showEditButton = true;
+          // 修改按钮总会显示
+          const editButton = (
+            <el-button {...btnProps} onClick={() => editDataset(row)}>
+              修改
+            </el-button>
+          );
+
+          // 导入外部数据集
+          const showImportButton = row.import === true && ['UNANNOTATED'].includes(statusCodeMap[row.status]);
+
+          // 外部导入数据集
+          const importDatasetButton = showImportButton ? (
+            <a {...btnProps} onClick={() => checkImport(row)} href="http://docs.dubhe.ai/docs/module/dataset/import-dataset" target="_blank" class="primary">
+              导入本地数据集&nbsp;
+              <IconFont type="externallink" />
+            </a>
+          ) : null;
 
           // 预置数据集只具备查看标注,历史版本功能。 
           if (row.type === 2) {
@@ -184,18 +231,23 @@ export default {
             showCheckButton = true;
             showAutoButton = false;
             showReAutoButton = false;
+            showTrackButton = false;
+            showReTrackButton = false;
             showVersionButton = true;
             showAugmentButton = false;
+            showTopButton = false;
+            showEditButton = false;
           };
-          // 导入的自定义数据集只允许删除操作
+          // 导入的自定义数据集只允许删除 置顶 修改操作
           if (row.import) {
-            showPublishButton = false;
             showUploadButton = false;
-            showCheckButton = false;
             showAutoButton = false;
             showReAutoButton = false;
-            showVersionButton = false;
+            showTrackButton = false;
+            showReTrackButton = false;
             showAugmentButton = false;
+            // 导入完成才可以查看标注
+            showCheckButton = (statusCodeMap[row.status] === 'ANNOTATED');
           };
           // 统计需要显示的按钮个数
           const buttonCount = (arr) => {
@@ -204,8 +256,8 @@ export default {
               (item) => { if (item) count+=1; });
             return count;
           };
-          const leftButtonArr = [showPublishButton, showUploadButton, showCheckButton, showAutoButton, showReAutoButton];
-          const rightButtonArr = [showVersionButton, showAugmentButton];
+          const leftButtonArr = [showPublishButton, showUploadButton, showCheckButton, showAutoButton, showReAutoButton, showTrackButton];
+          const rightButtonArr = [showVersionButton, showAugmentButton, showTopButton, showEditButton, showReTrackButton];
           const leftButtonCount = buttonCount(leftButtonArr);
           const rightButtonCount = buttonCount(rightButtonArr);
 
@@ -216,8 +268,11 @@ export default {
             if (leftButtonCount < 3) {
               moreButton = (
                 <span>
+                  {showReTrackButton && reTrackButton}                  
                   {showVersionButton && versionButton}
                   {showAugmentButton && augmentButton}
+                  {showTopButton && topButton}
+                  {showEditButton && editButton}
                 </span>
               );
             } else {
@@ -228,10 +283,19 @@ export default {
                   </el-button>
                   <el-dropdown-menu slot='dropdown'>
                     <el-dropdown-item>
+                      {showReTrackButton && reTrackButton}
+                    </el-dropdown-item>
+                    <el-dropdown-item>
                       {showVersionButton && versionButton}
                     </el-dropdown-item>
                     <el-dropdown-item key='dataEnhance'>
                       {showAugmentButton && augmentButton}
+                    </el-dropdown-item>                    
+                    <el-dropdown-item key='top'>
+                      {showTopButton && topButton}
+                    </el-dropdown-item>
+                    <el-dropdown-item key='edit'>
+                      {showEditButton && editButton}
                     </el-dropdown-item>
                   </el-dropdown-menu>
                 </el-dropdown>
@@ -241,10 +305,12 @@ export default {
 
           return (
             <span>
+              { importDatasetButton }
               {showPublishButton && publishButton}
               {showUploadButton && uploadButton}
               {showCheckButton && checkButton}
               {showAutoButton && autoButton}
+              {showTrackButton && trackButton}
               {showReAutoButton && reAutoButton}
               {moreButton}
             </span>

@@ -20,7 +20,7 @@ export default {
   name: 'DatasetStatus',
   functional: true,
   render(h, { data, props }) {
-    const { withAllDatasetStatusList, filterByDatasetStatus, datasetStatusFilter } = props;
+    const { statusList, filterByDatasetStatus, datasetStatusFilter } = props;
     const iconClass = ['el-icon-arrow-down', 'el-icon--right'];
     const textClass = datasetStatusFilter === 'all' ? null : 'primary';
     const columnProps = {
@@ -34,7 +34,7 @@ export default {
                 <i {... { class: iconClass } } />
               </span>
               <el-dropdown-menu slot='dropdown'>
-                {withAllDatasetStatusList.map(item => {
+                {statusList.map(item => {
                   return (
                     <el-dropdown-item
                       key={item.value}
@@ -45,17 +45,10 @@ export default {
                   );
                 })}
               </el-dropdown-menu>
-              <el-tooltip effect='dark' content='数据集状态可能会延迟更新，请耐心等待' placement='top' style={{ marginLeft: '10px' }}>
-                <i class='el-icon-question'/>
-              </el-tooltip>
             </el-dropdown>
           );
         },
         default: ({ row }) => {
-          // 导入自定义数据集 状态保持为标注完成（4）
-          if (row.import) {
-            row.status = 4;
-          }
           const status = datasetStatusMap[row.status] || {};
           const colorProps = (!status.type && status.bgColor) && {
             props: {

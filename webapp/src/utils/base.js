@@ -15,8 +15,16 @@
 */
 
 import { format, parseISO, isDate } from 'date-fns';
-import { isEqual, isPlainObject } from 'lodash';
+import { isEqual, isPlainObject, isNil, findIndex, findLastIndex } from 'lodash';
 import { nanoid } from 'nanoid';
+
+const chroma = require('chroma-js');
+
+export const duplicate = (arr, callback) => {
+  const index = findIndex(arr, callback);
+  const lastIndex = findLastIndex(arr, callback);
+  return index !== lastIndex;
+};
 
 // 合并多个属性
 export function mergeProps(...args) {
@@ -144,3 +152,19 @@ export const identity = d => d;
 export const isEqualByProp = (arr1, arr2, prop) => {
   return isEqual(arr1.map(d => d[prop]), arr2.map(d => d[prop]));
 };
+
+// 根据背景色深浅来设置颜色
+export const colorByLuminance = (color) => {
+  if(isNil(color) || color === '') {
+    return '#333';
+  } 
+  const colorMap = {
+    dark: '#333',
+    light: '#fff',
+  };
+  const luminance = chroma(color).luminance();
+  const theme = luminance < 0.5 ? 'light' : 'dark';
+  return colorMap[theme];
+};
+
+export { chroma };

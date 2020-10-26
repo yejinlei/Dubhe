@@ -27,18 +27,18 @@
   >
     <el-form ref="form" :model="form" :rules="rules" label-width="100px">
       <el-form-item label="名称" prop="noteBookName">
-        <el-input v-model="form.noteBookName" class="input" maxlength="30" style="width: 600px;" show-word-limit placeholder="请输入notebook名称" />
+        <el-input id="noteBookName" v-model="form.noteBookName" class="input" maxlength="30" style="width: 600px;" show-word-limit placeholder="请输入notebook名称" />
       </el-form-item>
       <el-form-item label="描述" prop="description">
-        <el-input v-model="form.description" type="textarea" maxlength="255" show-word-limit style="width: 600px;" />
+        <el-input id="description" v-model="form.description" type="textarea" maxlength="255" show-word-limit style="width: 600px;" />
       </el-form-item>
       <el-form-item label="开发环境" prop="k8sImageName">
-        <el-select v-model="form.k8sImageName" placeholder="请选择开发环境" no-data-text="请先选择项目" style="width: 600px;" @change="validateField('k8sImageName')">
+        <el-select id="k8sImageName" v-model="form.k8sImageName" placeholder="请选择开发环境" no-data-text="请先选择项目" style="width: 600px;" @change="validateField('k8sImageName')">
           <el-option v-for="(item, index) in imageOptions" :key="index" :label="item.label" :value="item.value" />
         </el-select>
       </el-form-item>
       <el-form-item label="类型" prop="deviceType">
-        <el-radio-group v-model="form.deviceType" @change="onDeviceChange">
+        <el-radio-group id="deviceType" v-model="form.deviceType" @change="onDeviceChange">
           <el-radio-button v-for="(item,index) in deviceOptions" :key="index" :label="item">{{ item==='GPU'?'CPU + GPU':item }}</el-radio-button>
         </el-radio-group>
       </el-form-item>

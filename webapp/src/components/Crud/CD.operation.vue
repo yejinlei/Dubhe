@@ -19,6 +19,7 @@
     <span class="cd-opts-left">
       <el-button
         v-if="crud.optShow.add"
+        id="toAdd"
         v-bind="addProps"
         class="filter-item"
         type="primary"
@@ -31,6 +32,7 @@
       <slot name="left" />
       <el-button
         v-if="crud.optShow.del"
+        id="toDelete"
         slot="reference"
         class="filter-item"
         type="danger"

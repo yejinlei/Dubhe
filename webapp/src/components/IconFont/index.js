@@ -26,7 +26,7 @@
 import create from './iconfont';
 
 const IconFont = create({
-  scriptUrl: '//at.alicdn.com/t/font_1756495_bycxbb6pz6s.js',
+  scriptUrl: '//at.alicdn.com/t/font_1756495_k4j524i5vng.js',
   extraIconProps: { class: 'svg-icon' },
 });
 

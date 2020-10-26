@@ -43,13 +43,9 @@ export default {
     },
     limit: {
       type: Number,
-      default: 1000,
+      default: 5000,
     },
     showFileCount: {
-      type: Boolean,
-      default: true,
-    },
-    wordShow: {
       type: Boolean,
       default: true,
     },
@@ -130,6 +126,7 @@ export default {
     },
     onRemove(file, fileList) {
       this.lenOfFileList = fileList.length;
+      this.$attrs['on-remove'] && this.$attrs['on-remove'](file, fileList);
     },
     cancelUpload() {
       if (this.source) {
@@ -163,7 +160,7 @@ export default {
           class='upload-field'
           limit={this.limit}
           multiple
-          list-type='picture'
+          list-type={this.lenOfFileList>100? 'text' : 'picture'}
           auto-upload={false}
           disabled={this.uploading}
           {...uploadProps}
@@ -180,7 +177,7 @@ export default {
             </div>
             {
               this.showFileCount && (
-                this.wordShow ? <span class='upload-chosen-tip'>已选择{ this.lenOfFileList }张</span> : null
+                <span class='upload-chosen-tip'>已选择{ this.lenOfFileList }张</span>
               )
             }
           </div>

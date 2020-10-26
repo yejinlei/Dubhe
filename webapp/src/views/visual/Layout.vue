@@ -45,155 +45,155 @@
       <div id="write" class="">
         <h2>
           <a name="模型结构" class="md-header-anchor"/>
-        <span>模型结构</span></h2>
+          <span>模型结构</span></h2>
         <h3>
           <a name="主体界面" class="md-header-anchor"/>
-        <span>主体界面</span></h3>
+          <span>主体界面</span></h3>
         <p>
-        <span>1.通过滚轮实现图的放大与缩小</span></p>
+          <span>1.通过滚轮实现图的放大与缩小</span></p>
         <p>
-        <span>2.通过单击鼠标左键并移动实现图的移动</span></p>
+          <span>2.通过单击鼠标左键并移动实现图的移动</span></p>
         <p>
-        <span>3.单击节点会将节点具体信息显示在菜单栏，同时，与该节点相连的其他节点以及边都会标红</span></p>
+          <span>3.单击节点会将节点具体信息显示在菜单栏，同时，与该节点相连的其他节点以及边都会标红</span></p>
         <p>
-        <span>4.双击节点可以实现节点的展开与缩回</span></p>
+          <span>4.双击节点可以实现节点的展开与缩回</span></p>
         <p>
-        <span>5.右键节点可以对节点进行边的隐藏、显示以及删除操作</span></p>
+          <span>5.右键节点可以对节点进行边的隐藏、显示以及删除操作</span></p>
         <p>
-        <span>6.当通过右键删除节点时，节点会被放置在右侧的隐藏栏中。双击隐藏栏内的节点可以实现节点的放回</span></p>
+          <span>6.当通过右键删除节点时，节点会被放置在右侧的隐藏栏中。双击隐藏栏内的节点可以实现节点的放回</span></p>
         <h3>
           <a name="功能栏" class="md-header-anchor"/>
-        <span>功能栏</span></h3>
+          <span>功能栏</span></h3>
         <h4>
           <a name="计算图" class="md-header-anchor"/>
-        <span>计算图</span></h4>
+          <span>计算图</span></h4>
         <p>
           <span>1.用户通过条件的输入与选择实现针对节点的</span>
           <strong>
-          <span>批量筛选</span></strong>
+            <span>批量筛选</span></strong>
         </p>
         <p>
           <span>2.</span>
           <strong>
-          <span>隐藏</span></strong>
-        <span>按钮用于实现针对符合批量筛选条件节点的隐藏，但并没有改变图的结构</span></p>
+            <span>隐藏</span></strong>
+          <span>按钮用于实现针对符合批量筛选条件节点的隐藏，但并没有改变图的结构</span></p>
         <p>
           <span>3.</span>
           <strong>
-          <span>布局</span></strong>
-        <span>按钮用于实现针对符合批量筛选条件以及单独隐藏节点的删除与重新布局，该操作会让剩余节点在当前新条件下重新绘制，会改变图的结构</span></p>
+            <span>布局</span></strong>
+          <span>按钮用于实现针对符合批量筛选条件以及单独隐藏节点的删除与重新布局，该操作会让剩余节点在当前新条件下重新绘制，会改变图的结构</span></p>
         <p>
           <span>4.</span>
           <strong>
-          <span>上一步</span></strong>
-        <span>按钮用于返回用户的之前一步操作</span></p>
+            <span>上一步</span></strong>
+          <span>按钮用于返回用户的之前一步操作</span></p>
         <p>
           <span>5.</span>
           <strong>
-          <span>初始化</span></strong>
-        <span>按钮用于将图重置为最初未经改变的图像</span></p>
+            <span>初始化</span></strong>
+          <span>按钮用于将图重置为最初未经改变的图像</span></p>
         <h4>
           <a name="结构图" class="md-header-anchor"/>
-        <span>结构图</span></h4>
+          <span>结构图</span></h4>
         <p>
-        <span>1.下拉框用于实现同数据集下结构图的切换</span></p>
+          <span>1.下拉框用于实现同数据集下结构图的切换</span></p>
         <p>
           <span>2.</span>
           <strong>
-          <span>布局</span></strong>
-        <span>按钮用于实现针对单独隐藏节点的删除与重新布局，该操作会让剩余节点在当前新条件下重新绘制，会改变图的结构</span></p>
+            <span>布局</span></strong>
+          <span>按钮用于实现针对单独隐藏节点的删除与重新布局，该操作会让剩余节点在当前新条件下重新绘制，会改变图的结构</span></p>
         <h4>
           <a name="数据信息栏" class="md-header-anchor"/>
-        <span>数据信息栏</span></h4>
+          <span>数据信息栏</span></h4>
         <p>
           <span>信息栏用于显示单击特定节点时节点的全部信息，可通过</span>
           <strong>
-          <span>箭头</span></strong>
-        <span>按钮实现对信息的折叠与展开</span></p>
+            <span>箭头</span></strong>
+          <span>按钮实现对信息的折叠与展开</span></p>
         <p>&nbsp;</p>
         <hr >
         <p>&nbsp;</p>
         <h2>
           <a name="标量数据" class="md-header-anchor"/>
-        <span>标量数据</span></h2>
+          <span>标量数据</span></h2>
         <h3>
           <a name="主体界面-n308" class="md-header-anchor"/>
-        <span>主体界面</span></h3>
+          <span>主体界面</span></h3>
         <p>
-        <span>标量图表操作：</span></p>
+          <span>标量图表操作：</span></p>
         <ol>
           <li>
-          <span>不同分类的图表组可以单击选择关闭或打开视图</span></li>
+            <span>不同分类的图表组可以单击选择关闭或打开视图</span></li>
           <li>
-          <span>可以鼠标移动到数据上显示数据信息</span></li>
+            <span>可以鼠标移动到数据上显示数据信息</span></li>
           <li>
-          <span>每一图表右上角有放大缩小按钮</span></li>
+            <span>每一图表右上角有放大缩小按钮</span></li>
           <li>
-          <span>右上角矩形框可为用户定制所用，选中后再按定制按钮就可以把数据迁移上用户定制上；也可为合并多个图表时所用</span></li>
+            <span>右上角矩形框可为用户定制所用，选中后再按定制按钮就可以把数据迁移上用户定制上；也可为合并多个图表时所用</span></li>
           <li>
-          <span>在图表内部拖动鼠标选择一个方形区域可进行图表局部放大，双击图表可还原</span></li>
+            <span>在图表内部拖动鼠标选择一个方形区域可进行图表局部放大，双击图表可还原</span></li>
         </ol>
         <h3>
           <a name="控制栏" class="md-header-anchor"/>
-        <span>控制栏</span></h3>
+          <span>控制栏</span></h3>
         <p>
-        <span>Smooth：调整数据显示平滑程度，选择范围为（0 ~ 0.9）</span></p>
+          <span>Smooth：调整数据显示平滑程度，选择范围为（0 ~ 0.9）</span></p>
         <p>
-        <span>Y-axis：调整y轴数据显示方式，共两种，一种是linear（原始数据），一种是log-linear（取对数后的数据）</span></p>
+          <span>Y-axis：调整y轴数据显示方式，共两种，一种是linear（原始数据），一种是log-linear（取对数后的数据）</span></p>
         <p>
-        <span>合并按钮：将勾选中的图表进行合并，合并限制：至多可勾选两种tag的图表，至多可勾选6幅图表</span></p>
+          <span>合并按钮：将勾选中的图表进行合并，合并限制：至多可勾选两种tag的图表，至多可勾选6幅图表</span></p>
         <p>
-        <span>还原按钮：将勾选中的合并图表进行还原</span></p>
+          <span>还原按钮：将勾选中的合并图表进行还原</span></p>
         <h3>
           <a name="数据信息栏-n326" class="md-header-anchor"/>
-        <span>数据信息栏</span></h3>
+          <span>数据信息栏</span></h3>
         <p>
-        <span>暂无数据</span></p>
+          <span>暂无数据</span></p>
         <p>&nbsp;</p>
         <hr >
         <p>&nbsp;</p>
         <h2>
           <a name="媒体数据" class="md-header-anchor"/>
-        <span>媒体数据</span></h2>
+          <span>媒体数据</span></h2>
         <h3>
           <a name="主体界面-n452" class="md-header-anchor"/>
-        <span>主体界面</span></h3>
+          <span>主体界面</span></h3>
         <p>
-        <span>可以显示文本，图像，音频</span></p>
+          <span>可以显示文本，图像，音频</span></p>
         <h4>
           <a name="文本" class="md-header-anchor"/>
-        <span>文本</span></h4>
+          <span>文本</span></h4>
         <ol>
           <li>
-          <span>显示相应的数据</span></li>
+            <span>显示相应的数据</span></li>
           <li>
-          <span>slider 可以对step进行拖拽</span></li>
+            <span>slider 可以对step进行拖拽</span></li>
         </ol>
         <h4>
           <a name="图像" class="md-header-anchor"/>
-        <span>图像</span></h4>
+          <span>图像</span></h4>
         <ol>
           <li>
-          <span>可以对图像进行点击，显示大图</span></li>
+            <span>可以对图像进行点击，显示大图</span></li>
           <li>
-          <span>slider 可以对step进行拖拽</span></li>
+            <span>slider 可以对step进行拖拽</span></li>
         </ol>
         <h4>
           <a name="音频" class="md-header-anchor"/>
-        <span>音频</span></h4>
+          <span>音频</span></h4>
         <ol>
           <li>
-          <span>可以播放音频</span></li>
+            <span>可以播放音频</span></li>
           <li>
-          <span>slider 可以对step进行拖拽</span></li>
+            <span>slider 可以对step进行拖拽</span></li>
         </ol>
         <h3>
           <a name="数据信息栏-n472" class="md-header-anchor"/>
-        <span>数据信息栏</span></h3>
+          <span>数据信息栏</span></h3>
         <ol>
           <li>
             <p>
-            <span>暂时为空</span></p>
+              <span>暂时为空</span></p>
             <p>&nbsp;</p>
           </li>
         </ol>
@@ -201,106 +201,106 @@
         <p>&nbsp;</p>
         <h2>
           <a name="统计分析" class="md-header-anchor"/>
-        <span>统计分析</span></h2>
+          <span>统计分析</span></h2>
         <h3>
           <a name="主体界面-n551" class="md-header-anchor"/>
-        <span>主体界面</span></h3>
+          <span>主体界面</span></h3>
         <p>
-        <span>由直方图和分布图两部分组成</span></p>
+          <span>由直方图和分布图两部分组成</span></p>
         <p>
-        <span>直方图操作：</span></p>
+          <span>直方图操作：</span></p>
         <ol>
           <li>
-          <span>直方图可以单击选择关闭或打开视图</span></li>
+            <span>直方图可以单击选择关闭或打开视图</span></li>
           <li>
-          <span>可以鼠标移动到数据上显示数据信息</span></li>
+            <span>可以鼠标移动到数据上显示数据信息</span></li>
           <li>
-          <span>每一直方图右上角有放大缩小按钮</span></li>
+            <span>每一直方图右上角有放大缩小按钮</span></li>
           <li>
-          <span>右上角矩形框为用户定制所用，选中后再按定制按钮就可以把数据迁移上用户定制上</span></li>
+            <span>右上角矩形框为用户定制所用，选中后再按定制按钮就可以把数据迁移上用户定制上</span></li>
         </ol>
         <p>
-        <span>分布图操作：</span></p>
+          <span>分布图操作：</span></p>
         <ol>
           <li>
-          <span>分布图可以单击选择关闭或打开视图</span></li>
+            <span>分布图可以单击选择关闭或打开视图</span></li>
           <li>
-          <span>每一直方图右上角有放大缩小按钮</span></li>
+            <span>每一直方图右上角有放大缩小按钮</span></li>
           <li>
-          <span>右上角矩形框为用户定制所用，选中后再按定制按钮就可以把数据迁移上用户定制上</span></li>
+            <span>右上角矩形框为用户定制所用，选中后再按定制按钮就可以把数据迁移上用户定制上</span></li>
         </ol>
         <h3>
           <a name="控制栏-n571" class="md-header-anchor"/>
-        <span>控制栏</span></h3>
+          <span>控制栏</span></h3>
         <p>
-        <span>直方图控制栏：</span></p>
+          <span>直方图控制栏：</span></p>
         <p>
-        <span>数据显示比率参数：调整数据显示数量</span></p>
+          <span>数据显示比率参数：调整数据显示数量</span></p>
         <p>
-        <span>统计区间个数参数：调整总体数据的统计区间个数</span></p>
+          <span>统计区间个数参数：调整总体数据的统计区间个数</span></p>
         <p>
-        <span>模式下拉框：直方图三维或二维显示</span></p>
+          <span>模式下拉框：直方图三维或二维显示</span></p>
         <p>&nbsp;</p>
         <h3>
           <a name="数据信息栏-n577" class="md-header-anchor"/>
-        <span>数据信息栏</span></h3>
+          <span>数据信息栏</span></h3>
         <p>
-        <span>显示直方图选中的原始数据</span></p>
+          <span>显示直方图选中的原始数据</span></p>
         <p>&nbsp;</p>
         <hr >
         <p>&nbsp;</p>
         <h2>
           <a name="降维分析" class="md-header-anchor"/>
-        <span>降维分析</span></h2>
+          <span>降维分析</span></h2>
         <h3>
           <a name="主体界面-n671" class="md-header-anchor"/>
-        <span>主体界面</span></h3>
+          <span>主体界面</span></h3>
         <p>
-        <span>可以显示2维，3维分类结果</span></p>
+          <span>可以显示2维，3维分类结果</span></p>
         <h4>
           <a name="2维操作" class="md-header-anchor"/>
-        <span>2维操作</span></h4>
+          <span>2维操作</span></h4>
         <ol>
           <li>
-          <span>可以对点(线条)进行点击，数据信息栏会显示存储的图片/文本</span></li>
+            <span>可以对点(线条)进行点击，数据信息栏会显示存储的图片/文本</span></li>
           <li>
-          <span>鼠标移动上去可以简单显示对应的点和标签</span></li>
+            <span>鼠标移动上去可以简单显示对应的点和标签</span></li>
           <li>
-          <span>拖拽可以对点进行局部放大</span></li>
+            <span>拖拽可以对点进行局部放大</span></li>
           <li>
-          <span>双击显示窗口可以回到初始的显示界面</span></li>
+            <span>双击显示窗口可以回到初始的显示界面</span></li>
         </ol>
         <h4>
           <a name="3维操作" class="md-header-anchor"/>
-        <span>3维操作</span></h4>
+          <span>3维操作</span></h4>
         <ol>
           <li>
-          <span>可以对点(线条)进行点击，数据信息栏会显示存储的图片/文本</span></li>
+            <span>可以对点(线条)进行点击，数据信息栏会显示存储的图片/文本</span></li>
           <li>
-          <span>鼠标移动上去可以简单显示对应的点和标签</span></li>
+            <span>鼠标移动上去可以简单显示对应的点和标签</span></li>
           <li>
-          <span>鼠标滚轮可以进行缩放</span></li>
+            <span>鼠标滚轮可以进行缩放</span></li>
         </ol>
         <h3>
           <a name="控制面板" class="md-header-anchor"/>
-        <span>控制面板</span></h3>
+          <span>控制面板</span></h3>
         <ol>
           <li>
-          <span>可以选择对应的标签(Tag)</span></li>
+            <span>可以选择对应的标签(Tag)</span></li>
           <li>
-          <span>可以选择对应的降维方法(PCA TSNE)</span></li>
+            <span>可以选择对应的降维方法(PCA TSNE)</span></li>
           <li>
-          <span>可以选择维度信息</span></li>
+            <span>可以选择维度信息</span></li>
           <li>
-          <span>播放按钮可以显示出step动态的动画（这个功能对于应2，3,4-8维）</span></li>
+            <span>播放按钮可以显示出step动态的动画（这个功能对于应2，3,4-8维）</span></li>
         </ol>
         <h3>
           <a name="数据信息栏-n711" class="md-header-anchor"/>
-        <span>数据信息栏</span></h3>
+          <span>数据信息栏</span></h3>
         <ol>
           <li>
             <p>
-            <span>显示对应的数据（文字和图片）</span></p>
+              <span>显示对应的数据（文字和图片）</span></p>
             <p>&nbsp;</p>
           </li>
         </ol>
@@ -308,56 +308,56 @@
         <p>&nbsp;</p>
         <h2>
           <a name="超参数" class="md-header-anchor"/>
-        <span>超参数</span></h2>
+          <span>超参数</span></h2>
         <h3>
           <a name="主体界面-n767" class="md-header-anchor"/>
-        <span>主体界面</span></h3>
+          <span>主体界面</span></h3>
         <p>
-        <span>主界面由平行坐标以及表格数据</span></p>
+          <span>主界面由平行坐标以及表格数据</span></p>
         <p>
-        <span>平行坐标操作：</span></p>
+          <span>平行坐标操作：</span></p>
         <ol>
           <li>
-          <span>选择坐标轴上部分区域高亮显示对应的表格数据也会高亮</span></li>
+            <span>选择坐标轴上部分区域高亮显示对应的表格数据也会高亮</span></li>
           <li>
-          <span>鼠标移动到线上高亮显示</span></li>
+            <span>鼠标移动到线上高亮显示</span></li>
           <li>
-          <span>坐标轴移动以改变平行坐标</span></li>
+            <span>坐标轴移动以改变平行坐标</span></li>
         </ol>
         <p>
-        <span>表格操作：</span></p>
+          <span>表格操作：</span></p>
         <ol>
           <li>
-          <span>鼠标移动到某一行，平行坐标上对应数据会高亮显示</span></li>
+            <span>鼠标移动到某一行，平行坐标上对应数据会高亮显示</span></li>
         </ol>
         <h3>
           <a name="控制面板-n783" class="md-header-anchor"/>
-        <span>控制面板</span></h3>
+          <span>控制面板</span></h3>
         <p>
-        <span>主参数 控制颜色映射对应的数据</span></p>
+          <span>主参数 控制颜色映射对应的数据</span></p>
         <p>
-        <span>坐标尺度： 数值型数据可以选择线性坐标轴和对数坐标轴</span></p>
+          <span>坐标尺度： 数值型数据可以选择线性坐标轴和对数坐标轴</span></p>
         <h3>
           <a name="统计信息栏" class="md-header-anchor"/>
-        <span>统计信息栏</span></h3>
+          <span>统计信息栏</span></h3>
         <p>
-        <span>显示选中的数据进行统计信息显示。</span></p>
+          <span>显示选中的数据进行统计信息显示。</span></p>
         <p>
-        <span>默认选中全部数据</span></p>
+          <span>默认选中全部数据</span></p>
         <h3>
           <a name="数据信息栏-n789" class="md-header-anchor"/>
-        <span>数据信息栏</span></h3>
+          <span>数据信息栏</span></h3>
         <p>
-        <span>显示选中数据的原始信息。</span></p>
+          <span>显示选中数据的原始信息。</span></p>
         <p>&nbsp;</p>
         <hr >
         <p>&nbsp;</p>
         <h2>
           <a name="异常检测" class="md-header-anchor"/>
-        <span>异常检测</span></h2>
+          <span>异常检测</span></h2>
         <h3>
           <a name="主体界面-n811" class="md-header-anchor"/>
-        <span>主体界面</span></h3>
+          <span>主体界面</span></h3>
         <p>
           <span>由直方图、颜色矩阵和盒须图三部分组成</span>
           <span>直方图：数据的统计信息，区间不均匀分布，坐标轴上的红色标记对应盒须图异常点的上下边界</span>
@@ -373,42 +373,42 @@
         </p>
         <h3>
           <a name="控制栏-n813" class="md-header-anchor"/>
-        <span>控制栏</span></h3>
+          <span>控制栏</span></h3>
         <p>
           <span>主要功能：调节盒须图异常值的上下边界</span>
-        <span>联动选择：勾选联动后，盒须图异常值的上下边界会同步变化</span></p>
+          <span>联动选择：勾选联动后，盒须图异常值的上下边界会同步变化</span></p>
         <h3>
           <a name="数据信息栏-n815" class="md-header-anchor"/>
-        <span>数据信息栏</span></h3>
+          <span>数据信息栏</span></h3>
         <p>
-        <span>鼠标放到颜色矩阵或是盒须图的异常点上，显示该点所在的行、列、数值大小等</span></p>
+          <span>鼠标放到颜色矩阵或是盒须图的异常点上，显示该点所在的行、列、数值大小等</span></p>
         <h3>
           <a name="数据信息栏-n817" class="md-header-anchor"/>
-        <span>数据信息栏</span></h3>
+          <span>数据信息栏</span></h3>
         <p>
-        <span>暂无数据</span></p>
+          <span>暂无数据</span></p>
         <p>&nbsp;</p>
         <hr >
         <p>&nbsp;</p>
         <h2>
           <a name="用户定制" class="md-header-anchor"/>
-        <span>用户定制</span></h2>
+          <span>用户定制</span></h2>
         <h3>
           <a name="主体界面-n134" class="md-header-anchor"/>
-        <span>主体界面</span></h3>
+          <span>主体界面</span></h3>
         <p>
-        <span>可以将媒体数据，标量数据，统计分析数据集中到用户定制集中显示</span></p>
+          <span>可以将媒体数据，标量数据，统计分析数据集中到用户定制集中显示</span></p>
         <ol start="">
           <li>
-          <span>通过点击上面信息框的勾选框，再点击用户定制图标，自动跳转到用户定制</span></li>
+            <span>通过点击上面信息框的勾选框，再点击用户定制图标，自动跳转到用户定制</span></li>
           <li>
-          <span>点击‘X’，会删除对应的显示组件</span></li>
+            <span>点击‘X’，会删除对应的显示组件</span></li>
         </ol>
         <h3>
           <a name="控制栏-n141" class="md-header-anchor"/>
-        <span>控制栏</span></h3>
+          <span>控制栏</span></h3>
         <p>
-        <span>对应的显示组件有对应的控制栏的话，右边会出现相应的控制栏</span></p>
+          <span>对应的显示组件有对应的控制栏的话，右边会出现相应的控制栏</span></p>
         <p>&nbsp;</p>
         <p>&nbsp;</p>
       </div>

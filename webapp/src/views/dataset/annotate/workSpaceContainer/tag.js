@@ -15,58 +15,53 @@
 */
 
 import { isNil } from 'lodash';
-import { addSuffix } from '@/utils';
+import { addSuffix, chroma, colorByLuminance } from '@/utils';
 
 import { defaultColor } from './bbox';
-
-const chroma = require('chroma-js');
 
 export default {
   name: 'Tag',
   functional: true,
   props: {
     annotate: Object,
-    scale: {
-      type: Number,
-    },
-    imgBoundingLeft: Number,
+    offset: Function,
+    transformer: Object,
     getLabelName: Function,
+    brush: Object,
+    currentAnnotationId: String,
   },
   render(h, context) {
     const { props } = context;
     const {
       annotate = {},
-      imgBoundingLeft,
       getLabelName,
+      offset,
+      transformer,
+      brush,
     } = props;
 
-    const { data = {}, __type } = annotate;
+    const { data = {}, id } = annotate;
     const { bbox, color = defaultColor } = data;
+
+    // 当前在拖拽中不展示
+    if(props.currentAnnotationId === id && brush.isBrushing) return null;
+
     if (isNil(bbox)) return null;
     // 是否为草稿模式
-    const isDraft = __type === 0;
 
-    const paddingLeft = (props.scale < 1 && !isNil(imgBoundingLeft))
-      ? imgBoundingLeft
-      : 0;
-
-    const pos = isDraft ? {
-      x: bbox.x,
-      y: bbox.y,
-      width: bbox.width,
-      height: bbox.height,
-    } : {
-      x: bbox.x * props.scale + paddingLeft,
-      y: bbox.y * props.scale,
-      width: bbox.width * props.scale,
-      height: bbox.height * props.scale,
-    };
+    const pos = offset(props.annotate);
 
     const style = {
       width: addSuffix(pos.width),
       left: addSuffix(pos.x),
       top: addSuffix(pos.y),
+      color: colorByLuminance(color),
     };
+
+    // 匹配当前标注
+    if(annotate.id === transformer.id) {
+      style.transform = `translate(${transformer.dx}px, ${transformer.dy}px)`;
+    }
 
     const tagColor = chroma(color).alpha(0.8).toString();
     const tagName = getLabelName(data.categoryId);
@@ -74,7 +69,7 @@ export default {
     if (!tagName) return null;
     return (
       <div class='annotation-label image-tag' style={style}>
-        <el-tag color={tagColor} style={{ color: '#fff', border: 'none' }}>{tagName}</el-tag>
+        <el-tag color={tagColor} disable-transitions style={{ color: 'inherit', border: 'none' }}>{tagName}</el-tag>
       </div>
     );
   },

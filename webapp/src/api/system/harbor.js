@@ -18,7 +18,7 @@ import request from '@/utils/request';
 
 export function harborProjectNames() {
   return request({
-    url: `api/v1/ptImage/project`,
+    url: `api/v1/ptImage/imageNameList`,
     method: 'get',
   });
 }

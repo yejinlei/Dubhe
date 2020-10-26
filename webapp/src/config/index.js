@@ -18,7 +18,7 @@ module.exports = {
   minIO: {
     development: {
       config: {
-        endPoint: '10.5.26.234',
+        endPoint: '', // MinIO 服务地址
         port: 9000,
         useSSL: false,
       },
@@ -26,7 +26,7 @@ module.exports = {
     },
     test: {
       config: {
-        endPoint: '10.5.26.234',
+        endPoint: '',
         port: 9000,
         useSSL: false,
       },
@@ -34,7 +34,7 @@ module.exports = {
     },
     production: {
       config: {
-        endPoint: '121.41.72.89',
+        endPoint: '',
         port: 9000,
         useSSL: false,
       },

@@ -102,7 +102,7 @@ export default {
     };
 
     const withEdit = (item, isEdit = false) => {
-      const { categoryId, track_id } = item.data;
+      const { categoryId, track_id } = item.data || {};
       // 获取到分类标签名
       const labelName = rLabels.value[categoryId];
       const labelNameTxt = labelName ? `${labelName}_` : '';

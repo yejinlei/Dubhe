@@ -33,7 +33,7 @@
       <!--已有模型-->
       <el-form-item v-if="!createModelFlag" label="归属模型" prop="parentId">
         <el-select v-model="modelForm.parentId" filterable placeholder="请选择模型" style="width: 300px;">
-          <el-option v-for="item in modelList" :key="item.id" :label="item.name" :value="item.id" />
+          <el-option v-for="item in modelList" :key="item.id" :label="formatVersion(item)" :value="item.id" />
         </el-select>
         <el-tooltip class="item" effect="dark" content="如果没有对应的模型，请点击新建" placement="right-start">
           <el-button @click="goModel">新建模型</el-button>
@@ -209,6 +209,12 @@ export default {
       if (!usage) {
         this.createAlgorithmUsage(value);
       }
+    },
+    formatVersion(item) {
+      if (item.versionNum) {
+        return `${item.name} (V${(Number(item.versionNum.substr(1)) + 1).toString().padStart(4, '0')})`;
+      }
+      return `${item.name} (V0001)`;
     },
     // op
     doSaveModel() {

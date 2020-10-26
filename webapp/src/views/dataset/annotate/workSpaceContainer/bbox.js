@@ -16,8 +16,7 @@
 
 import cx from 'classnames';
 import { isNil } from 'lodash';
-
-const chroma = require('chroma-js');
+import { chroma } from '@/utils';
 
 export const defaultColor = 'rgba(102, 181, 245, 1)';
 const defaultFill = 'rgba(102, 181, 245, 0.1)';
@@ -27,68 +26,71 @@ export default {
   functional: true,
   props: {
     annotate: Object,
+    brush: Object,
     scale: {
       type: Number,
       default: 1,
     },
-    currentAnnotationId: Object,
-    imgBoundingLeft: Number,
-    handleClick: Function,
+    pos: {
+      type: Object,
+      default: () => ({}),
+    },
+    dragStart: Function,
+    dragMove: Function,
+    dragEnd: Function,
+    currentAnnotationId: String,
+    transformer: Object,
     imgRef: HTMLImageElement,
   },
   render(h, context) {
     const { props } = context;
+    const { style } = context.data;
     const {
       annotate = {},
-      imgBoundingLeft,
       currentAnnotationId,
-      handleClick,
+      dragStart,
+      dragMove,
+      dragEnd,
+      brush,
+      transformer,
       ...rest // does this work?
     } = props;
-    const { data = {}, __type } = annotate;
+    const { data = {} } = annotate;
     const { bbox, color } = data;
 
     if (isNil(bbox)) return null;
 
     const bgColor = color || defaultFill;
 
-    const isActive = currentAnnotationId.value === annotate.id;
+    const isActive = currentAnnotationId === annotate.id;
     const colorAlpha = isActive ? 0.4 : 0.1;
 
     const fill = chroma(bgColor).alpha(colorAlpha);
 
-    // 是否为草稿模式
-    const isDraft = __type === 0;
-
-    const paddingLeft = (props.scale < 1 && !isNil(imgBoundingLeft))
-      ? imgBoundingLeft
-      : 0;
-
-    const pos = isDraft ? {
-      x: bbox.x,
-      y: bbox.y,
-      width: bbox.width,
-      height: bbox.height,
-    } : {
-      x: bbox.x * props.scale + paddingLeft,
-      y: bbox.y * props.scale,
-      width: bbox.width * props.scale,
-      height: bbox.height * props.scale,
-    };
+    let transform = null;
+    // 匹配当前标注
+    if(annotate.id === transformer.id) {
+      transform = `translate(${transformer.dx}, ${transformer.dy})`;
+    }
 
     return (
       <g class={cx('bbox-group', {
         active: isActive,
-      })} onClick={handleClick(annotate)}>
+      })}>
         <rect
           fill={fill}
           stroke={color || defaultColor}
           strokeWidth={4}
           // {...bounding} spread operator sucks...
-          x={pos.x}
-          y={pos.y}
-          width={pos.width}
-          height={pos.height}
+          x={props.pos.x}
+          y={props.pos.y}
+          width={props.pos.width}
+          height={props.pos.height}
+          transform={transform}
+          onMousemove={dragMove}
+          onMouseup={dragEnd}
+          onMousedown={dragStart}
+          style={style}
           {...rest}
         />
       </g>

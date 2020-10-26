@@ -36,7 +36,7 @@
     >
       <el-carousel-item v-for="item in fileList" :key="item.id">
         <div class="figure-action-row rel" :style="buildActionRow(item)">
-          <div v-if="item.enhanceTag" class="action-tag tc">{{ item.enhanceTag.label }}</div>
+          <div v-if="item.enhanceTag" class="action-tag tc">增强类型：{{ item.enhanceTag.label }}</div>
         </div>
         <div class="figure-wrapper carousel-figure-item">
           <div

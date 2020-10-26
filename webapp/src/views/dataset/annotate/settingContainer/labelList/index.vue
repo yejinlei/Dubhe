@@ -23,7 +23,21 @@
     <div style="max-height: 200px; padding: 0 2.5px; overflow: auto;">
       <el-row :gutter="5" style="clear: both;">
         <el-col v-for="item in state.labelData" :key="item.id" :span="8">
-          <el-tag class="tag-item" :title="item.name" :color="item.color" :style="getStyle(item)">{{ item.name }}</el-tag>
+          <el-tag
+            class="tag-item" 
+            :title="item.name" 
+            :color="item.color" 
+            :style="getStyle(item)" 
+            @click="event => handleEditAnnotation(item, event)"
+          >
+            {{ item.name }}
+            <Edit
+              v-if="!item.labelGroupId"
+              :getStyle="getStyle"
+              :item="item"
+              @handleOk="handleEditLabel"
+            />
+          </el-tag>
         </el-col>
       </el-row>
     </div>
@@ -32,34 +46,44 @@
 
 <script>
 import { reactive, watch, computed } from '@vue/composition-api';
-import SearchLabel from '@/views/dataset/components/searchLabel';
 
-const chroma = require('chroma-js');
+import { colorByLuminance, replace } from '@/utils';
+import SearchLabel from '@/views/dataset/components/searchLabel';
+import Edit from './edit';
 
 export default {
   name: 'LabelList',
   components: {
     SearchLabel,
+    Edit,
   },
   props: {
     labels: {
       type: Array,
       default: () => ([]),
     },
+    currentAnnotationId: {
+      type: String,
+      default: undefined,
+    },
+    editLabel: Function,
+    annotations: Array,
+    updateState: Function,
+    getColorLabel: Function,
+    findRowIndex: Function,
   },
   setup(props) {
+    const { annotations: rawAnnotations ,updateState, getColorLabel, findRowIndex, editLabel } = props;
     const state = reactive({
+      annotations: rawAnnotations,
       labelData: props.labels,
+      currentAnnotationId: props.currentAnnotationId,
     });
     // 根据亮度来决定颜色
     const getStyle = (item) => {
-      if (item.color && chroma(item.color).luminance() < 0.5) {
-        return {
-          color: '#fff',
-        };
-      }
+      const color = colorByLuminance(item.color);
       return {
-        color: '#000',
+        color,
       };
     };
     // 查询分类标签
@@ -75,16 +99,53 @@ export default {
       return `全部标签(${props.labels.length})`;
     });
 
+    const handleEditAnnotation = (item, event) => {
+      // 过滤编辑入口
+      if (event.target.classList.contains('el-icon-edit')) return;
+      const updateIndex = findRowIndex(state.currentAnnotationId);
+      if (updateIndex > -1) {
+        const curItem = props.annotations[updateIndex];
+        const nextItem = {
+          ...curItem,
+          data: {
+            ...curItem.data,
+            categoryId: item.id,
+            color: getColorLabel(item.id),
+          },
+        };
+        const updateList = replace(props.annotations, updateIndex, nextItem);
+        updateState({
+          annotations: updateList,
+        });
+      }
+    };
+
+    const handleEditLabel = (field, item) => {
+      editLabel(item.id, field);
+    };
+
     watch(() => props.labels, (next) => {
       state.labelData = next;
+    });
+
+    watch(() => props.currentAnnotationId, (next) => {
+      state.currentAnnotationId = next;
     });
 
     return {
       state,
       labelsTitle,
+      handleEditAnnotation,
+      handleEditLabel,
       getStyle,
       handleSearch,
     };
   },
 };
 </script>
+<style lang="scss" scoped>
+  .el-icon-edit {
+    padding: 0 4px;
+    margin-left: 4px;
+  }
+</style>

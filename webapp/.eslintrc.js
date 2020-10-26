@@ -53,15 +53,19 @@ module.exports = {
     "vue/attribute-hyphenation": "off",
     "vue/comment-directive": "off",
     "vue/prop-name-casing": "off",
-    "vue/max-attributes-per-line": [
-      2,
-      {
-        singleline: 20,
-        multiline: {
-          max: 1,
-          allowFirstLine: false
-        }
-      }
-    ]
+    "vue/max-attributes-per-line": [2, {
+      singleline: 20,
+      multiline: {
+        max: 1,
+        allowFirstLine: false
+      }}
+    ],
+    "vue/html-indent": ["error", 2, {
+      "attribute": 1,
+      "baseIndent": 1,
+      "closeBracket": 0,
+      "alignAttributesVertically": true,
+      "ignores": []
+    }]
   }
 };

@@ -33,15 +33,15 @@
         <el-col :span="12">
 
           <el-popover
-          placement="bottom"
-          trigger="click"
+            placement="bottom"
+            trigger="click"
           >
             <img src="../../../assets/images/dingtalk.jpg" width="200" alt="">
             <div slot="reference" class="feed-action">
               <i class="el-icon-chat-dot-square" />
               <div>钉钉交流群</div>
             </div>
-        </el-popover>
+          </el-popover>
         
         </el-col>
       </el-row>

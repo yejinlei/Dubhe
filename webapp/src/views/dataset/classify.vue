@@ -29,12 +29,12 @@
     <div class="classify-container flex">
       <!--文件列表展示-->
       <div class="file-list-container">
-        <div class="app-container">
+        <div v-loading="crud.loading" class="app-container">
           <!--tabs页和工具栏-->
           <div class="classify-tab">
             <el-tabs :value="lastTabName" @tab-click="handleTabClick">
-              <el-tab-pane label="未标注" name="unannotate" />
-              <el-tab-pane label="已标注" name="annotate" />
+              <el-tab-pane label="未完成" name="unannotate" />
+              <el-tab-pane label="已完成" name="annotate" />
             </el-tabs>
             <div class="classify-button flex flex-between flex-vertical-align">
               <div class="row-left">
@@ -111,7 +111,16 @@
       <!--Label列表展示-->
       <div class="label-list-container">
         <div class="fixed-label-list">
-          <div v-if="showCreateLabel" class="mb-22">
+          <div v-if="datasetInfo.labelGroupId" class='mb-10'>
+            <label class="el-form-item__label no-float tl">标签组</label>
+            <div class="f14">
+              <span class="vm">{{ datasetInfo.labelGroupName }} &nbsp;</span>
+              <el-link target="_blank" type="primary" :underline="false" class="vm" :href="`/data/labelgroup/detail?id=${datasetInfo.labelGroupId}`">
+                查看详情
+              </el-link>
+            </div>
+          </div>
+          <div v-if="datasetInfo.labelGroupType !== 1" class="mb-22">
             <LabelTip />
             <div class="flex flex-between">
               <InfoSelect
@@ -136,7 +145,15 @@
             <div style="max-height: 200px; padding: 0 2.5px; overflow: auto;">
               <el-row :gutter="5" style="clear: both;">
                 <el-col v-for="data in labelData" :key="data.id" :span="8">
-                  <el-tag class="tag-item" :title="data.name" :color="data.color" :style="getStyle(data)" @click="chooseLabel(data)">{{ data.name }}</el-tag>
+                  <el-tag class="tag-item" :title="data.name" :color="data.color" :style="getStyle(data)" @click="event => chooseLabel(data, event)">
+                    <span :title="data.name">{{ data.name }}</span>
+                    <EditLabel
+                      v-if="!data.labelGroupId"
+                      :getStyle="getStyle"
+                      :item="data"
+                      @handleOk="handleEditLabel"
+                    />
+                  </el-tag>
                 </el-col>
               </el-row>
             </div>
@@ -163,11 +180,13 @@
 <script>
 import { without, isNil } from 'lodash';
 import { Message } from 'element-ui';
-import { queryDataEnhanceList } from '@/api/preparation/dataset';
 
-import { transformFile, transformFiles, getImgFromMinIO, dataEnhanceMap, withDimensionFile } from '@/views/dataset/util';
+import { colorByLuminance } from '@/utils';
+import { queryDataEnhanceList, detail } from '@/api/preparation/dataset';
+
+import { transformFile, transformFiles, getImgFromMinIO, dataEnhanceMap, withDimensionFile, fileCodeMap } from '@/views/dataset/util';
 import crudDataFile, { list, del , submit } from '@/api/preparation/datafile';
-import { getAutoLabels, getLabels, createLabel } from '@/api/preparation/datalabel';
+import { getAutoLabels, getLabels, createLabel, editLabel } from '@/api/preparation/datalabel';
 import { batchFinishAnnotation } from '@/api/preparation/annotation';
 import CRUD, { presenter, header, crud } from '@crud/crud';
 import ImageGallery from '@/components/ImageGallery';
@@ -178,18 +197,18 @@ import SortingMenu from '@/components/SortingMenu';
 import SearchLabel from './components/searchLabel';
 import LabelTip from './annotate/settingContainer/labelTip';
 import PicInfoModal from './components/picInfoModal';
+import EditLabel from './annotate/settingContainer/labelList/edit';
 
-const chroma = require('chroma-js');
 // eslint-disable-next-line import/no-extraneous-dependencies
 const path = require('path');
 
 export default {
   name: 'Classify',
-  components: { ImageGallery, UploadForm, InfoCard, InfoSelect, SearchLabel, LabelTip, SortingMenu, PicInfoModal },
+  components: { ImageGallery, UploadForm, InfoCard, InfoSelect, SearchLabel, LabelTip, SortingMenu, PicInfoModal, EditLabel },
   cruds() {
     const id = this.parent.$route.params.datasetId;
     const crudObj = CRUD({ title: '数据分类', crudMethod: { ...crudDataFile }});
-    crudObj.params = { 'datasetId': id, 'status': [0] };
+    crudObj.params = { 'datasetId': id, 'status': fileCodeMap.UNCOMPLETED };
     crudObj.page.size = 30;
     return crudObj;
   },
@@ -203,18 +222,18 @@ export default {
   data() {
     return {
       datasetId: 0,
+      datasetInfo: {},
       uploadDialogVisible: false,
       lastTabName: 'unannotate',
       crudStatusMap: {
-        'unannotate': [0],
-        'annotate': [2, 3],
+        'unannotate': [fileCodeMap.UNCOMPLETED],
+        'annotate': [fileCodeMap.COMPLETED],
       },
       newLabel: undefined,
       checkAll: false,
       isIndeterminate: false,
       typeSwitch: true,
       rawLabelData: [],
-      showCreateLabel: true,
       labelData: [],
       name2CategoryId: {},
       // 选中列表
@@ -251,8 +270,8 @@ export default {
     this.datasetId = parseInt(this.$route.params.datasetId, 10);
     this.refreshLabel();
     Promise.all([
-      list({ 'datasetId': this.datasetId, 'status': [0] }),
-      list({ 'datasetId': this.datasetId, 'status': [2, 3] }),
+      list({ 'datasetId': this.datasetId, 'status': [fileCodeMap.UNCOMPLETED] }),
+      list({ 'datasetId': this.datasetId, 'status': [fileCodeMap.COMPLETED] }),
     ])
       .then(([unannotate, annotate]) => {
         if (unannotate.result.length === 0 && annotate.result.length !== 0) {
@@ -262,6 +281,9 @@ export default {
         }
       });
 
+    detail(this.datasetId).then(res => {
+      this.datasetInfo = res || {};
+    });
     // 系统标签
     this.getSystemLabel();
   },
@@ -277,6 +299,9 @@ export default {
     })();
   },
   methods: {
+    handleEditLabel(field, item){
+      editLabel(item.id, field).then(this.refreshLabel);
+    },
     handleSort(command) {
       this.resetQuery();
       this.crud.params.order = command === 1 ? 'name' : '';
@@ -340,6 +365,10 @@ export default {
         };
         if (ids.length) {
           del(params).then(() => {
+            this.$message({
+              message: '删除文件成功',
+              type: 'success',
+            });
             this.crud.toQuery();
           }).finally(() => {
             this.crud.delAllLoading = false;
@@ -354,6 +383,7 @@ export default {
     },
     handleCheckAllChange(val) {
       const {imgGallery} = this.$refs;
+      if(!imgGallery) return false;
       if (val) {
         imgGallery.selectAll();
       } else {
@@ -442,10 +472,6 @@ export default {
     },
     refreshLabel() {
       getLabels(this.datasetId).then((res) => {
-        // 图像分类使用的是预置标签时，不显示新建标签功能，目前自定义标签type为0，自动标注标签为1
-        if (res[0] && res[0].type > 1) {
-          this.showCreateLabel = false;
-        }
         this.rawLabelData = res;
         this.rawLabelData.forEach((item) => {
           if (item.color === '#000000') {
@@ -460,7 +486,9 @@ export default {
         this.labelData = this.rawLabelData;
       });
     },
-    chooseLabel(row) {
+    chooseLabel(row, event) {
+      // 过滤编辑入口
+      if (event.target.classList.contains('el-icon-edit')) return;
       if (this.selectImgsId.length > 0) {
         const annotations = [];
         this.selectImgsId.forEach((item) => {
@@ -472,7 +500,7 @@ export default {
             id: item,
           });
         });
-        batchFinishAnnotation({ annotations }).then(() => {
+        batchFinishAnnotation({ annotations }, this.datasetId).then(() => {
           this.crud.refresh();
           this.handleCheckAllChange(0);
         });
@@ -489,6 +517,8 @@ export default {
         // 如果不是系统标签，才会选择新建
         if (this.systemLabels.findIndex(d => d.value === value) === -1) {
           this.addLabel(value);
+          // 新建标签
+          this.postLabel();
         } else {
           const systemLabel = this.systemLabels.find(d => d.value === value) || {};
           systemLabel.label && this.addLabel(systemLabel.label);
@@ -512,6 +542,8 @@ export default {
           this.newLabel = undefined;
           this.refreshLabel();
         });
+      } else {
+        Message.warning('请选择标签');
       }
     },
     switchLabelTag(newSwitch) {
@@ -519,13 +551,8 @@ export default {
     },
     getStyle(item) {
       // 根据亮度来决定颜色
-      if (item.color && chroma(item.color).luminance() < 0.5) {
-        return {
-          color: '#fff',
-        };
-      }
       return {
-        color: '#000',
+        color: colorByLuminance(item.color),
       };
     },
   },

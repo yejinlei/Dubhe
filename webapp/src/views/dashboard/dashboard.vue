@@ -157,40 +157,40 @@ export default {
 </script>
 
 <style rel="stylesheet/scss" lang="scss" scoped>
-  .dashboard-container {
-    padding: 24px;
-    color: #666;
+.dashboard-container {
+  padding: 24px;
+  color: #666;
 
-    .section-title {
-      height: 24px;
-      margin: 26px 0 24px;
-      font-size: 18px;
-      font-weight: bold;
-      line-height: 24px;
-      letter-spacing: 2px;
-    }
+  .section-title {
+    height: 24px;
+    margin: 26px 0 24px;
+    font-size: 18px;
+    font-weight: bold;
+    line-height: 24px;
+    letter-spacing: 2px;
+  }
 
-    .section-card {
-      padding: 4px;
+  .section-card {
+    padding: 4px;
 
-      &:last-child {
-        margin-bottom: 34px;
-      }
-    }
-
-    .card-head {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      height: 32px;
-      margin-bottom: 8px;
-
-      &-title {
-        height: 20px;
-        font-size: 14px;
-        font-weight: bold;
-        line-height: 20px;
-      }
+    &:last-child {
+      margin-bottom: 34px;
     }
   }
+
+  .card-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 32px;
+    margin-bottom: 8px;
+
+    &-title {
+      height: 20px;
+      font-size: 14px;
+      font-weight: bold;
+      line-height: 20px;
+    }
+  }
+}
 </style>

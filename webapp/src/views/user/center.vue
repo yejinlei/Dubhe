@@ -60,7 +60,7 @@
       :params="uploadParams"
       :multiple="false"
       :limit="1"
-      :wordShow="false"
+      :showFileCount="false"
       @uploadSuccess="uploadSuccess"
       @uploadError="uploadError"
     />

@@ -18,6 +18,7 @@
  * validate，校验函数
  */
 
+import { isPlainObject } from 'lodash';
 import { ValidationProvider, ValidationObserver, extend } from 'vee-validate';
 import { required } from 'vee-validate/dist/rules';
 
@@ -267,4 +268,30 @@ export function validateRunCommand(rule, value, callback) {
   } else {
     callback(new Error('请输入正确的启动命令'));
   }
+}
+
+// 校验标签组基本方法
+export const validateLabelsUtil = (value) => {
+  if(!isPlainObject(value)) {
+    return '标签不能为空';
+  }
+  if(!value.name) {
+    return '标签名称不能为空';
+  } 
+  if(!value.color) {
+    return '标签颜色不能为空';
+  } 
+  if(!/^#[0-9A-F]{6}$/i.test(value.color)) {
+    return '标签颜色格式不对';
+  } 
+    return '';
+};
+
+export function validateLabel(rule, value, callback) {
+  const validateResult = validateLabelsUtil(value);
+  if(validateResult !== '') {
+    callback(new Error(validateResult));
+    return;
+  }
+  callback();
 }

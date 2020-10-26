@@ -41,36 +41,6 @@
             :picker-options="pickerOptions"
             @change="crud.toQuery"
           />
-          <el-select
-            v-model="query.roleId"
-            clearable
-            placeholder="请选择角色"
-            class="filter-item"
-            style="width: 120px;"
-            @change="crud.toQuery"
-          >
-            <el-option
-              v-for="item in roleOptions"
-              :key="item.id"
-              :label="item.name"
-              :value="item.id"
-            />
-          </el-select>
-          <el-select
-            v-model="query.enabled"
-            clearable
-            placeholder="状态"
-            class="filter-item"
-            style="width: 80px;"
-            @change="crud.toQuery"
-          >
-            <el-option
-              v-for="item in dict.user_status"
-              :key="item.value"
-              :label="item.label"
-              :value="item.value"
-            />
-          </el-select>
           <rrOperation />
         </span>
       </cdOperation>
@@ -142,12 +112,28 @@
       <el-table-column prop="sex" width="60" label="性别" />
       <el-table-column show-overflow-tooltip prop="phone" width="120" label="手机号" />
       <el-table-column show-overflow-tooltip prop="email" label="邮箱" />
-      <el-table-column show-overflow-tooltip prop="rodes" label="角色">
+      <el-table-column show-overflow-tooltip prop="roles">
+        <template #header>
+          <dropdown-header
+            title="角色"
+            :list="userRoleList"
+            :filtered="Boolean(crud.query.roleId)"
+            @command="filterByRoles"
+          />
+        </template>
         <template slot-scope="scope">
           <span>{{ getUserRoles(scope.row) }}</span>
         </template>
       </el-table-column>
-      <el-table-column label="状态" prop="enabled" width="80">
+      <el-table-column prop="enabled" width="80">
+        <template #header>
+          <dropdown-header
+            title="状态"
+            :list="userStatusList"
+            :filtered="Boolean(crud.query.enabled)"
+            @command="filterByStatus"
+          />
+        </template>
         <template slot-scope="scope">
           <el-tag :type="scope.row.enabled ? '' : 'info'" effect="plain">{{ dict.label.user_status[scope.row.enabled.toString()] }} </el-tag>
         </template>
@@ -181,6 +167,7 @@ import { validateName, validateAccount } from '@/utils/validate';
 import crudUser from '@/api/system/user';
 import { getAll } from '@/api/system/role';
 import BaseModal from '@/components/BaseModal';
+import DropdownHeader from '@/components/DropdownHeader';
 import datePickerMixin from '@/mixins/datePickerMixin';
 
 const ADMIN_USER_ID = 1; // 系统管理员ID
@@ -188,7 +175,7 @@ const ADMIN_USER_ID = 1; // 系统管理员ID
 const defaultForm = { id: null, username: null, nickName: null, sex: null, email: null, remark: null, enabled: null, phone: null, roles: [], roleId: '' };
 export default {
   name: 'User',
-  components: { BaseModal, cdOperation, rrOperation, udOperation, pagination },
+  components: { BaseModal, cdOperation, rrOperation, udOperation, pagination, DropdownHeader },
   cruds() {
     return CRUD({ title: '用户', crudMethod: { ...crudUser }});
   },
@@ -233,6 +220,16 @@ export default {
     ...mapGetters([
       'user',
     ]),
+    userStatusList() {
+      return [{ label: '全部', value: null }].concat(this.dict.user_status);
+    },
+    userRoleList() {
+      const arr = [{ label: '全部', value: null }];
+      this.roleOptions.forEach(item => {
+        arr.push({ label: item.name, value: item.id });
+      });
+      return arr;
+    },
   },
   created() {
     this.$nextTick(() => {
@@ -287,6 +284,14 @@ export default {
       const roles = row.roles || [];
       const names = roles.map(role => role.name);
       return names.join('<br/>') || '-';
+    },
+    filterByStatus(status) {
+      this.crud.query.enabled = status;
+      this.crud.refresh();
+    },
+    filterByRoles(id) {
+      this.crud.query.roleId = id;
+      this.crud.refresh();
     },
   },
 };

@@ -16,7 +16,9 @@
 
 <template>
   <div id="app">
-    <router-view />
+    <keep-alive include="DataSet">
+      <router-view/>
+    </keep-alive>
   </div>
 </template>
 

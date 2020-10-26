@@ -22,28 +22,36 @@
       :model="form"
       :rules="rules"
       label-width="120px"
-      class="demo-ruleForm"
-      :style="`width: ${widthPercent}%;`"
+      :style="`width: ${widthPercent}%; margin-top: 20px;`"
     >
-      <el-form-item v-if="type==='add' || type === 'paramsAdd'" label="任务名称" prop="trainName">
+      <el-form-item v-if="type==='add' || type === 'paramsAdd' || type === 'algoAdd'" label="任务名称" prop="trainName">
         <el-input v-model="form.trainName" />
       </el-form-item>
       <el-form-item v-if="type==='edit'" label="任务名称" prop="jobName">
         <div>{{ form.jobName }}</div>
       </el-form-item>
       <el-form-item v-if="type==='saveParams' || type==='paramEdit'" label="任务模板名称" prop="paramName">
-        <el-input v-model="form.paramName" />
+        <el-input id="paramName" v-model="form.paramName" />
       </el-form-item>
       <el-form-item label="描述" prop="description">
-        <el-input v-model="form.description" type="textarea" />
+        <el-input id="description" v-model="form.description" type="textarea" />
       </el-form-item>
-      <hr>
+      <el-divider />
       <!--可编辑-->
       <template v-if="type!=='saveParams'">
         <el-form-item label="选用算法类型" prop="algorithmSource">
           <el-radio-group v-model="form.algorithmSource" @change="onAlgorithmSourceChange">
-            <el-radio-button :label="1">我的算法</el-radio-button>
-            <el-radio-button :label="2">预置算法</el-radio-button>
+            <el-radio
+              id="algorithm_tab_0"
+              :label="1"
+              border
+              class="mr-0"
+            >我的算法</el-radio>
+            <el-radio
+              id="algorithm_tab_1"
+              :label="2"
+              border
+            >预置算法</el-radio>
           </el-radio-group>
         </el-form-item>
         <el-form-item
@@ -52,10 +60,11 @@
           prop="algorithmId"
         >
           <el-select
+            id="algorithmId"
             v-model="form.algorithmId"
             v-el-select-load-more="getAlgorithmList"
             placeholder="请选择您使用的算法代码"
-            class="w250"
+            class="w270"
             @change="onAlgorithmChange"
           >
             <el-option
@@ -72,23 +81,25 @@
           prop="imageTag"
         >
           <el-select
+            id="imageName"
             v-model="form.imageName"
             placeholder="请选择镜像"
-            style="width: 120px;"
+            style="width: 190px;"
             clearable
             @change="getHarborImages"
           >
             <el-option
-              v-for="(item, index) in harborProjectList"
-              :key="index"
-              :label="item.imageName"
-              :value="item.imageName"
+              v-for="item in harborProjectList"
+              :key="item"
+              :label="item"
+              :value="item"
             />
           </el-select>
           <el-select
+            id="imageTag"
             v-model="form.imageTag"
             placeholder="请选择镜像版本"
-            style="width: 336px;"
+            style="width: 305px;"
             clearable
             @change="validateField('imageTag')"
           >
@@ -100,60 +111,81 @@
             />
           </el-select>
         </el-form-item>
-        <el-form-item ref="dataset" label="选用数据集" prop="dataSourcePath">
+        <el-form-item label="加载模型">
+          <el-switch v-model="form.modelType" :active-value="1" :inactive-value="0" @change="onModelTypeChange"/>
+        </el-form-item>
+        <el-form-item v-if="form.modelType" label="选用模型类型">
+          <el-radio-group v-model="form.modelResource" @change="onModelResourceChange">
+            <el-radio :label="0" border class="mr-0">我的模型</el-radio>
+            <el-radio :label="1" border>预训练模型</el-radio>
+          </el-radio-group>
+        </el-form-item>
+        <el-form-item v-if="form.modelType" label="模型选择">
           <el-select
-            v-model="algorithmUsage"
-            placeholder="请选择数据集用途"
-            @change="getDataSetList"
-          >
-            <el-option :value="null" label="全部" />
-            <el-option
-              v-for="item in algorithmUsageList"
-              :key="item.id"
-              :value="item.auxInfo"
-              :label="item.auxInfo"
-            />
-          </el-select>
-          <el-select
-            v-model="selectedDataSource"
-            placeholder="请选择您挂载的数据集"
-            filterable
-            value-key="id"
-            @change="onDataSourceChange"
+            id="modelId" 
+            v-model="form.modelId"
+            placeholder="请选择模型"
+            style="width: 190px;"
+            clearable
+            @change="getModelNames"
           >
             <el-option
-              v-for="item in datasetIdList"
+              v-for="item in modelNameList"
               :key="item.id"
-              :value="item"
               :label="item.name"
+              :value="item.id"
             />
           </el-select>
           <el-select
-            v-model="selectedDataSourceVersion"
-            placeholder="请选择您挂载的数据集版本"
-            value-key="versionUrl"
-            @change="onDataSourceVersionChange"
+            v-if="!form.modelResource"
+            id="modelLoadPathDir"
+            v-model="form.modelLoadPathDir"
+            placeholder="请选择模型版本"
+            style="width: 305px;"
+            clearable
           >
             <el-option
-              v-for="(item, index) in datasetVersionList"
-              :key="index"
-              :value="item"
-              :label="item.versionName"
+              v-for="item in modelLoadPathList"
+              :key="item.id"
+              :label="item.versionNum"
+              :value="item.modelAddress"
             />
           </el-select>
-          <el-tooltip effect="dark" content="请确保代码中包含“data_url”参数用于传输数据集路径" placement="top">
-            <i class="el-icon-warning-outline primary f18 v-text-top" />
-          </el-tooltip>
-          <el-tooltip effect="dark" :disabled="!selectedDataSourceVersion" :content="ofRecordTooltip" placement="top">
-            <el-checkbox
-              v-model="versionOfRecordUrlChecked"
-              :disabled="!versionOfRecordUrlShow"
-              @change="onOfRecordUrlChange"
-            >使用 OfRecord</el-checkbox>
-          </el-tooltip>
+        </el-form-item>
+        <el-form-item ref="trainDataSource" label="训练数据集" prop="dataSourcePath">
+          <DataSourceSelector
+            ref="trainDataSourceSelector"
+            type="train"
+            :algorithm-usage="form.algorithmUsage"
+            :data-source-name="form.dataSourceName"
+            :data-source-path="form.dataSourcePath"
+            @change="onTrainDataSourceChange"
+          />
+        </el-form-item>
+        <el-form-item
+          label="验证数据集"
+          prop="valType"
+        >
+          <el-switch
+            v-model="form.valType"
+            :active-value="1"
+            :inactive-value="0"
+            @change="onVerifyTypeChange"
+          />
+        </el-form-item>
+        <el-form-item v-if="form.valType" ref="verifyDataSource" label="验证数据集" prop="verifyDataSourcePath">
+          <DataSourceSelector
+            ref="verifyDataSourceSelector"
+            type="verify"
+            :algorithm-usage="form.valAlgorithmUsage"
+            :data-source-name="form.valDataSourceName"
+            :data-source-path="form.valDataSourcePath"
+            @change="onVerifyDataSourceChange"
+          />
         </el-form-item>
         <el-form-item ref="runCommand" label="运行命令" prop="runCommand">
           <el-input
+            id="runCommand"
             v-model="form.runCommand"
             placeholder="例如：python mnist.py"
             style="max-width: 500px;"
@@ -161,30 +193,119 @@
         </el-form-item>
         <!--运行参数-->
         <run-param-form
-          :id="form.$_id"
           ref="runParamComp"
-          :runParamObj="form.runParams || {}"
+          :run-param-obj="form.runParams || {}"
           prop="runParams"
-          paramLabelWidth="120px"
-          :input1Width="runParamWidth"
-          :input2Width="runParamWidth"
+          param-label-width="120px"
+          class="w120"
           @updateRunParams="updateRunParams"
         />
-        <el-form-item label="节点类型" class="is-required">
-          <el-radio-group v-model="form.resourcesPoolType" @change="getTrainJobSpecs">
-            <el-radio-button :label="0">CPU</el-radio-button>
-            <el-radio-button :label="1">GPU</el-radio-button>
-          </el-radio-group>
+        <el-divider />
+        <el-form-item
+          label="分布式训练"
+          prop="trainType"
+          class="mt-10"
+        >
+          <el-switch
+            id="trainType"
+            v-model="form.trainType"
+            :active-value="1"
+            :inactive-value="0"
+            @change="onTrainTypeChange"
+          />
         </el-form-item>
-        <el-form-item ref="trainJobSpecs" label="节点规格" prop="trainJobSpecsId">
-          <el-radio-group v-model="form.trainJobSpecsId">
-            <el-radio-button
+        <el-form-item
+          v-if="form.trainType"
+          label="节点数"
+          prop="resourcesPoolNode"
+        >
+          <el-input-number
+            id="resourcesPoolNode"
+            v-model="form.resourcesPoolNode"
+            :min="1"
+            :max="8"
+            :step-strictly="true"
+          />
+          <el-tooltip effect="dark" content="请确保代码中包含“num_nodes”参数和“node_ips”参数用于接收分布式相关参数" placement="top">
+            <i class="el-icon-warning-outline primary f18 v-text-top" />
+          </el-tooltip>
+        </el-form-item>
+        <el-form-item label="节点类型" class="is-required">
+          <el-radio-group
+            v-model="form.resourcesPoolType"
+            @change="onResourcesPoolTypeChange"
+          >
+            <el-radio
+              id="resourcesPoolType_tab_0"
+              :label="0"
+              border
+              class="mr-0"
+            >CPU</el-radio>
+            <el-radio
+              id="resourcesPoolType_tab_1"
+              :label="1"
+              border
+            >GPU</el-radio>
+          </el-radio-group>
+          <el-tooltip v-if="form.resourcesPoolType" effect="dark" content="后台将自动获取并填充参数 gpu_num_per_node" placement="top">
+            <i class="el-icon-warning-outline primary f18 v-text-top" />
+          </el-tooltip>
+        </el-form-item>
+        <el-form-item ref="trainJobSpecs" label="节点规格" prop="trainJobSpecsName" class="w270">
+          <el-select id="trainJobSpecsName" v-model="form.trainJobSpecsName">
+            <el-option
               v-for="spec in specList"
               :key="spec.id"
-              :label="spec.id"
-              class="mb-10 spec-btn"
-            >{{ spec.specsName }}</el-radio-button>
-          </el-radio-group>
+              :label="spec.label"
+              :value="spec.label"
+            />
+          </el-select>
+          <el-tooltip v-if="form.trainType" effect="dark" content="每个节点的节点规格" placement="top">
+            <i class="el-icon-warning-outline primary f18 v-text-top" />
+          </el-tooltip>
+        </el-form-item>
+        <el-form-item
+          label="延迟启停"
+        >
+          <el-switch
+            id="delayCreateDelete"
+            v-model="delayCreateDelete"
+            @change="onDelayChange"
+          />
+        </el-form-item>
+        <el-form-item
+          v-if="delayCreateDelete"
+          label="延迟启动"
+          prop="delayCreateTime"
+        >
+          <el-input-number
+            id="delayCreateTime"
+            v-model="form.delayCreateTime"
+            :min="0"
+            :max="168"
+            :step-strictly="true"
+          />&nbsp;小时
+        </el-form-item>
+        <el-form-item
+          v-if="delayCreateDelete"
+          label="训练时长上限"
+          prop="delayDeleteTime"
+        >
+          <el-input-number
+            id="delayDeleteTime"
+            v-model="form.delayDeleteTime"
+            :min="0"
+            :max="168"
+            :step-strictly="true"
+          />&nbsp;小时
+          <el-tooltip effect="dark" content="选择 0 表示不限制训练时长" placement="top">
+            <i class="el-icon-warning-outline primary f18 v-text-top" />
+          </el-tooltip>
+        </el-form-item>
+        <el-form-item label="运行命令预览" prop="preview">
+          <div class="param">
+            {{ preview }}
+          </div>
         </el-form-item>
       </template>
       <!--不可编辑-->
@@ -198,26 +319,51 @@
         <el-form-item label="镜像选择">
           {{ form.imageName }}
         </el-form-item>
-        <el-form-item label="选用数据集">
+        <el-form-item label="模型选择">
+          {{ form.modelName }}
+        </el-form-item>
+        <el-form-item label="训练数据集">
           {{ form.dataSourceName }}
+        </el-form-item>
+        <el-form-item label="验证数据集">
+          {{ form.valDataSourceName }}
         </el-form-item>
         <el-form-item label="运行命令">
           {{ form.runCommand }}
         </el-form-item>
         <el-form-item label="运行参数">
-          <span v-for="key of Object.keys(form.runParams || {})" :key="key">--{{ key }}={{ form.runParams[key] }} </span>
+          <span
+            v-for="key of Object.keys(form.runParams || {})"
+            :key="key"
+          >--{{ key }}={{ form.runParams[key] }} </span>
+        </el-form-item>
+        <el-form-item label="分布式训练">
+          {{ form.trainType === 1 ? '是' : '否' }}
+        </el-form-item>
+        <el-form-item v-if="form.trainType" label="节点数">
+          {{ form.resourcesPoolNode }}
+        </el-form-item>
+        <el-form-item label="延迟启停">
+          {{ delayCreateDelete ? '是' : '否' }}
+        </el-form-item>
+        <el-form-item v-if="delayCreateDelete" label="延迟启动">
+          {{ form.delayCreateTime }}&nbsp;小时
+        </el-form-item>
+        <el-form-item v-if="delayCreateDelete" label="延迟停止">
+          {{ form.delayDeleteTime }}&nbsp;小时
         </el-form-item>
         <el-form-item label="节点类型">
-          {{ form.resourcesPoolType ? 'GPU' : 'CPU' }}
+          {{ form.resourcesPoolNode }}
         </el-form-item>
         <el-form-item label="节点规格">
-          {{ formSpecs && formSpecs.specsName }}
+          {{ formSpecs && formSpecs.label }}
+        </el-form-item>
+        <el-form-item label="运行命令预览">
+          <div class="param">
+            {{ preview }}
+          </div>
         </el-form-item>
       </template>
-      <el-form-item v-if="showFooterBtns">
-        <el-button type="primary" :loading="loading" @click="save">开始训练</el-button>
-        <el-button @click="reset">清空</el-button>
-      </el-form-item>
     </el-form>
   </div>
 </template>
@@ -225,42 +371,79 @@
 <script>
 import { validateNameWithHyphen } from '@/utils';
 import { list as getAlgorithmList } from '@/api/algorithm/algorithm';
-import { getTrainJobSpecs } from '@/api/trainingJob/job';
-import { getPublishedDatasets, getDatasetVersions } from '@/api/preparation/dataset';
 import { harborProjectNames, harborImageNames } from '@/api/system/harbor';
-import { list as getAlgorithmUsages } from '@/api/algorithm/algorithmUsage';
-import RunParamForm from '@/components/Training/runParamForm';
+import { list as getModelName } from '@/api/model/model';
+import { list as getModelTag } from '@/api/model/modelVersion';
+import RunParamForm from './runParamForm';
+import DataSourceSelector from './dataSourceSelector';
+
+const defaultForm = {
+  id: null, // 用于编辑训练任务时, 表单传递 jobId
+  trainName: '',
+  jobName: '', // 用于编辑训练任务时, 表单展示 jobName
+  paramName: '',
+  description: '',
+  algorithmSource: 1,
+  algorithmId: null,
+  algorithmName: null,
+  algorithmUsage: null,
+  valAlgorithmUsage: null,
+  imageTag: null,
+  imageName: null,
+  dataSourceName: null,
+  dataSourcePath: null,
+  valDataSourceName: null,
+  valDataSourcePath: null,
+  runCommand: '',
+  runParams: {},
+  trainType: 0,
+  valType: 0,
+  resourcesPoolNode: 1,
+  resourcesPoolType: 0,
+  trainJobSpecsName: null,
+  outPath: '/home/result/',
+  logPath: '/home/log/',
+  // 延迟启停相关参数
+  delayCreateTime: 0,
+  delayDeleteTime: 0,
+  modelType: 0,
+  modelResource: 0,
+  modelId: null,
+  modelLoadPathDir: null,
+  modelName: null,
+};
 
 export default {
   name: 'JobForm',
-  components: { RunParamForm },
+  dicts: ['cpu_specs', 'gpu_specs'],
+  components: { RunParamForm, DataSourceSelector },
   props: {
-    form: {
-      type: Object,
-    },
     type: {
       type: String,
-      default: 'add', // add: 新增训练任务; paramsAdd: 任务参数创建训练任务; edit: 修改训练任务; saveParams: 保存训练参数。
+      default: 'add', // add: 新增训练任务; paramsAdd: 任务参数创建训练任务; algoAdd: 算法创建训练任务; edit: 修改训练任务; saveParams: 保存训练参数模板; paramEdit: 修改训练参数模板。
     },
     widthPercent: {
       type: Number,
       default: 60,
     },
-    runParamWidth: {
-      type: Number,
-      default: 150,
-    },
-    showFooterBtns: {
-      type: Boolean,
-      default: true,
-    },
-    loading: {
-      type: Boolean,
-      default: false,
-    },
   },
   data() {
     return {
+      algorithmIdList: [],
+      harborProjectList: [],
+      harborImageList: [],
+      modelNameList: [],
+      modelLoadPathList: [],
+      noMoreLoadAlg: false,
+      algLoading: false,
+      currentAlgPage: 1,
+      algPageSize: 1000,
+      runParamObj: {}, // 该对象用于提交训练
+      dictReady: false,
+      delayCreateDelete: false,
+      selectedAlgorithm: null,
+
+      form: { ...defaultForm },
       rules: {
         trainName: [
           { required: true, message: '请输入任务名称', trigger: 'blur' },
@@ -284,58 +467,77 @@ export default {
         dataSourcePath: [
           { required: true, message: '请选择数据集', trigger: 'manual' },
         ],
-        trainJobSpecsId: [
+        trainJobSpecsName: [
           { required: true, message: '请选择节点规格', trigger: 'change' },
         ],
         runCommand: [
           { required: true, message: '请输入运行命令', trigger: ['blur', 'change'] },
         ],
       },
-      selectedDataSource: null,
-      selectedDataSourceVersion: null,
-      algorithmUsage: null,
-      algorithmUsageList: [],
-      datasetIdList: [],
-      datasetVersionList: [],
-      algorithmIdList: [],
-      harborProjectList: [],
-      harborImageList: [],
-      noMoreLoadAlg: false,
-      algLoading: false,
-      currentAlgPage: 1,
-      algPageSize: 1000,
-      versionOfRecordUrlShow: false,
-      versionOfRecordUrlChecked: false,
-      versionOfRecordUrlOptions: {},
-      specList: [],
     };
   },
   computed: {
     formSpecs() {
-      return this.specList.find(spec => spec.id === this.form.trainJobSpecsId);
+      return this.specList.find(spec => spec.label === this.form.trainJobSpecsName);
     },
-    ofRecordTooltip() {
-      const content = this.selectedDataSourceVersion?.versionOfRecordUrl
-        ? '选中 OfRecord 将使用二进制数据集文件'
-        : '二进制数据集文件不可用或正在生成中';
-      return content;
+    specList() {
+      switch(this.form.resourcesPoolType) {
+        case 0:
+          return this.dict.cpu_specs;
+        case 1:
+          return this.dict.gpu_specs;
+        default:
+          return [];
+      }
+    },
+    preview() {
+      let str = this.form.runCommand;
+      for(const key of Object.keys(this.runParamObj)) {
+        str += ` --${key}=${this.runParamObj[key]}`;
+      }
+      if (this.selectedAlgorithm) {
+        str += this.selectedAlgorithm.isTrainLog? ' --train_log=/workspace/log' : '';
+        str += this.selectedAlgorithm.isTrainOut? ' --train_out=/workspace/out' : '';
+        str += this.selectedAlgorithm.isVisualizedLog? ' --train_visualized_log=/workspace/visualizedlog' : '';
+        str += ' --data_url=/dataset';
+      }
+      str += this.form.valDataSourceName && this.form.valDataSourcePath ? ' --val_data_url=/valdataset' : '';
+      str += this.form.modelId && this.form.modelLoadPathDir ? ' --model_load_dir=/modeldir' : '';
+      if (this.form.resourcesPoolType) {
+        // eslint-disable-next-line no-template-curly-in-string
+        str += ' --gpu_num_per_node=${gpu_num}';
+      }
+      return str;
     },
   },
   mounted() {
-    setTimeout(() => {
-      if (this.type !== 'saveParams') {
-        this.getAlgorithmList();
-        this.getAlgorithmUsages();
-        this.getDataSetList(this.form.algorithmUsage, true);
-        this.getHarborProjects().then(() => {
-          this.resetProject();
-        });
-      }
-      this.getTrainJobSpecs(this.form.resourcesPoolType, this.type !== 'add');
-      this.form.runParams = this.form.runParams || {};
-    }, 0);
+    this.$on('dictReady', () => { this.dictReady = true; });
   },
   methods: {
+    initForm(form) {
+      const newForm = form || {};
+      Object.keys(this.form).forEach(item => { newForm[item] && (this.form[item] = newForm[item]); });
+      setTimeout(() => {
+        this.delayCreateDelete = (this.form.delayCreateTime !== 0) && (this.form.delayDeleteTime !== 0);
+        this.getAlgorithmList();
+        if (this.type !== 'saveParams') {
+          this.getHarborProjects().then(() => {
+            this.resetProject();
+          });
+          this.getModelNames(false);
+          this.$refs.trainDataSourceSelector.updateAlgorithmUsage(this.form.algorithmUsage, true);
+          this.form.valType && this.$refs.verifyDataSourceSelector.updateAlgorithmUsage(this.form.valAlgorithmUsage, true);
+        }
+        if (this.dictReady) {
+          this.onResourcesPoolTypeChange((this.type !== 'add') && (this.type !== 'algoAdd'));
+        } else {
+          this.$on('dictReady', () => this.onResourcesPoolTypeChange((this.type !== 'add') && (this.type !== 'algoAdd')));
+        }
+        // runParamObj 初始值为 form.runParams
+        this.runParamObj = {...this.form.runParams} || {};
+        this.clearValidate();
+      }, 0);
+    },
     validate(...args) {
       this.$refs.form.validate.apply(this, args);
     },
@@ -349,7 +551,7 @@ export default {
       this.$refs[field].clearValidate();
     },
     updateRunParams(params) {
-      this.form.runParams = params;
+      this.runParamObj = params;
     },
     save() {
       if (this.loading) {
@@ -359,11 +561,14 @@ export default {
       if (this.type !== 'saveParams' && this.$refs.runParamComp.paramsMode === 2) {
         this.$refs.runParamComp.convertArgsToPairs();
       }
-      const runParamsValid = this.type === 'saveParams' || this.$refs.runParamComp.goValid();
+      const runParamsValid = this.type === 'saveParams' || this.$refs.runParamComp.validate();
       if (runParamsValid) {
         this.$refs.form.validate(async valid => {
           if (valid) {
-            const params = { ...this.form};
+            const params = {...this.form};
+            params.runParams = {...this.runParamObj};
+            params.trainJobSpecsInfo = this.formSpecs.value;
+            delete params.modelName; // modelName只用来展示,不作为提交参数
             // 请求交互都不放在组件完成
             this.$emit('getForm', params);
           } else {
@@ -375,7 +580,7 @@ export default {
         });
       } else {
         this.$message({
-          message: '请仔细检查任务参数',
+          message: '运行参数不合法',
           type: 'warning',
         });
       }
@@ -383,10 +588,10 @@ export default {
     // 镜像项目为空时选择默认项目
     resetProject() {
       if (!this.form.imageName) {
-        if (this.harborProjectList.some(project => project.imageName === 'oneflow')) {
+        if (this.harborProjectList.some(project => project === 'oneflow')) {
           this.form.imageName = 'oneflow';
         } else if (this.harborProjectList.length) {
-          this.form.imageName = this.harborProjectList[0].imageName;
+          Object.assign(this.form, { imageName: this.harborProjectList[0] });
         } else {
           this.$message.warning('镜像项目列表为空');
           return;
@@ -395,10 +600,17 @@ export default {
       }
     },
     reset() {
-      this.selectedDataSource = this.selectedDataSourceVersion = this.algorithmUsage = null;
-      this.$emit('resetForm', true);
+      this.$refs.trainDataSourceSelector.reset();
+      this.form = { ...defaultForm };
+      this.runParamObj = {};
+      this.selectedAlgorithm = null;
+      this.delayCreateDelete = false;
+      this.$message({
+        message: '数据已重置',
+        type: 'success',
+      });
       setTimeout(() => {
-        this.getTrainJobSpecs(this.form.resourcesPoolType);
+        this.onResourcesPoolTypeChange();
         this.resetProject();
         this.$refs.form.clearValidate();
         this.$refs.runParamComp.reset();
@@ -406,7 +618,7 @@ export default {
     },
     async getHarborProjects() {
       this.harborProjectList = await harborProjectNames();
-      if (this.form.imageName && !this.harborProjectList.some(project => project.imageName === this.form.imageName)) {
+      if (this.form.imageName && !this.harborProjectList.some(project => project === this.form.imageName)) {
         this.$message.warning('该训练原有的运行项目不存在，请重新选择');
         this.form.imageName = null;
         this.form.imageTag = null;
@@ -416,7 +628,6 @@ export default {
       if (this.form.imageTag && !this.harborImageList.some(image => image === this.form.imageTag)) {
         this.$message.warning('该训练原有的运行镜像不存在，请重新选择');
         this.form.imageTag = null;
-        
       }
     },
     getHarborImages(saveImageName = false) {
@@ -432,26 +643,36 @@ export default {
           this.harborImageList = res;
         });
     },
-    getAlgorithmUsages() {
-      const params = {
-        isContainDefault: true,
-        current: 1,
-        size: 1000,
+    
+    async getModelNames(saveModel = true) {
+      this.modelNameList = await getModelName({ modelResource: this.form.modelResource, filter: true });
+      if (!this.form.modelId) [this.modelLoadPathList, this.form.modelLoadPathDir] = [[], null];
+      (this.form.modelId && !this.form.modelResource) && this.modelLoadPath(saveModel);
+    },
+
+    async modelLoadPath(create) {
+      if (create) {
+        this.form.modelLoadPathDir = null;
       };
-      getAlgorithmUsages(params).then(res => {
-        this.algorithmUsageList = res.result;
-      });
+      const data = await getModelTag({ parentId: this.form.modelId });
+      this.modelLoadPathList = data.result;
     },
-    async getTrainJobSpecs(resourcesPoolType, keepSpec = false) {
-      this.specList = await getTrainJobSpecs({ resourcesPoolType });
-      // 接口没有返回规格列表, 则清空所选规格; 规格列表没有当前选项, 则选择规格列表第一个选项
-      if (this.specList.length === 0) {
-        this.$message.warning('所选节点类型没有现存规格，请重新选择');
-        this.form.trainJobSpecsId = null;
-      } else if (!keepSpec) {
-          this.form.trainJobSpecsId = this.specList[0].id;
-        }
+
+    onModelResourceChange() {
+      this.form.modelId = this.form.modelLoadPathDir = null;
+      this.getModelNames();
     },
+
+    onModelTypeChange() {
+      if (this.form.modelType === 0 ) {
+        this.form = Object.assign(this.form, {
+          modelResource: 0,
+          modelId: null,
+          modelLoadPathDir: null,
+        });
+      };
+    },
+
     getAlgorithmList() {
       if (this.noMoreLoadAlg || this.algLoading) {
         return;
@@ -469,93 +690,53 @@ export default {
         if (res.result.length < this.algPageSize) {
           this.noMoreLoadAlg = true;
         }
-        if (this.form.algorithmId && !this.algorithmIdList.find(item => item.id === this.form.algorithmId)) {
-          this.$message.warning('原有算法不存在，请重新选择');
-          this.form.algorithmId = null;
+        if (this.form.algorithmId) {
+          this.selectedAlgorithm = this.algorithmIdList.find(item => item.id === this.form.algorithmId);
+          if (!this.selectedAlgorithm) {
+            this.$message.warning('原有算法不存在，请重新选择');
+            this.form.algorithmId = null;
+          }
         }
       }).finally(() => {
         this.algLoading = false;
       });
     },
-    /**
-     * 用于获取数据集列表，init 用于表示是否为修改训练任务初始化
-     * @param {String} annotateType
-     * @param {Boolean} init
-     */
-    async getDataSetList(annotateType, init) {
-      const params = {
-        size: 1000,
-        annotateType: annotateType || undefined,
-      };
-      const data = await getPublishedDatasets(params);
-      this.datasetIdList = data.result;
-      this.datasetVersionList = [];
-      if (init && this.form.dataSourceName) {
-        this.selectedDataSource = this.datasetIdList.find(dataset => dataset.name === this.form.dataSourceName.split(':')[0]);
-        if (!this.selectedDataSource) {
-          this.$message.warning('原有数据集不存在，请重新选择');
-          this.form.dataSourceName = this.form.dataSourcePath = null;
-          return;
-        }
-        this.datasetVersionList = await getDatasetVersions(this.selectedDataSource.id);
-        this.selectedDataSourceVersion = this.datasetVersionList.find(dataset => dataset.versionUrl === this.form.dataSourcePath);
-        // 依次使用 versionUrl 和 versionOfRecordUrl 对带入数据集路径进行匹配
-        if (!this.selectedDataSourceVersion) {
-          this.selectedDataSourceVersion = this.datasetVersionList.find(dataset => dataset.versionOfRecordUrl === this.form.dataSourcePath);
-          if (this.selectedDataSourceVersion) {
-            this.versionOfRecordUrlShow = this.versionOfRecordUrlChecked = true;
-          }
-        }
-        if (!this.selectedDataSourceVersion) {
-          this.$message.warning('原有数据集版本不存在，请重新选择');
-          this.form.dataSourcePath = null;
-        }
-      } else {
-        this.selectedDataSource = this.selectedDataSourceVersion = this.form.dataSourceName = this.form.dataSourcePath = null;
+
+    onResourcesPoolTypeChange(keepSpec = false) {
+      // 当没有显式指定保留节点规格时，选择规格列表第一个选项
+      if (keepSpec !== true && this.specList.length) {
+        this.form.trainJobSpecsName = this.specList[0].label;
       }
     },
-    async onDataSourceChange(dataSource) {
-      // 数据集选项发生变化时，清空数据集版本、路径、OfRecord 相关信息，同时获取版本列表
-      this.form.dataSourceName = dataSource.name;
-      this.form.dataSourcePath = null;
-      this.selectedDataSourceVersion = null;
-      this.versionOfRecordUrlOptions = null;
-      this.versionOfRecordUrlShow = false;
-      this.versionOfRecordUrlChecked = false;
-      this.datasetVersionList = await getDatasetVersions(dataSource.id);
-    },
-    onDataSourceVersionChange(version) {
-      // 选择数据集版本后，如果存在 OfRecordUrl，则默认勾选使用，否则禁用选择
-      this.form.dataSourceName = `${this.selectedDataSource.name  }:${  version.versionName}`;
-      const { versionUrl, versionOfRecordUrl } = version;
-      this.versionOfRecordUrlShow = Boolean(version.versionOfRecordUrl);
-      this.versionOfRecordUrlChecked = Boolean(version.versionOfRecordUrl);
-      this.versionOfRecordUrlOptions = {
-        versionUrl, versionOfRecordUrl,
-      };
-      this.form.dataSourcePath = this.versionOfRecordUrlChecked ? versionOfRecordUrl : versionUrl;
-      this.$refs.dataset.validate('manual');
+    onTrainDataSourceChange(dataSourceResult) {
+      this.form.dataSourceName = dataSourceResult.dataSourceName;
+      this.form.dataSourcePath = dataSourceResult.dataSourcePath;
+      dataSourceResult.dataSourcePath && this.$refs.trainDataSource.validate('manual');
       // 如果在运行参数中包含了 image_counts 字段，则自动把数据集图片数量填充至该字段。
-      if (this.form.runParams?.image_counts !== undefined) {
-        this.form.runParams.image_counts = version.imageCounts;
-        this.$refs.runParamComp.syncListData();
-      }
+      this.$refs.runParamComp.updateParam('image_counts', dataSourceResult.imageCounts);
     },
-    onOfRecordUrlChange(ofRecord) {
-      const { versionUrl, versionOfRecordUrl } = this.versionOfRecordUrlOptions;
-      this.form.dataSourcePath = ofRecord ? versionOfRecordUrl : versionUrl;
+    onVerifyDataSourceChange(result) {
+      this.form.valDataSourceName = result.dataSourceName;
+      this.form.valDataSourcePath = result.dataSourcePath;
     },
     async onAlgorithmChange(id) {
       // 选用算法变更时，需要对自动填充的表单项进行验证
       this.validateField('algorithmId');
       // 选用算法变更时，需要同步算法的算法用途、运行项目、运行镜像、运行命令、运行参数
       const algorithm = this.algorithmIdList.find(i => i.id === id);
-      this.algorithmUsage = algorithm?.algorithmUsage || null;
-      this.getDataSetList(this.algorithmUsage);
-      this.form.runCommand = algorithm?.runCommand || null;
+      this.selectedAlgorithm = algorithm;
+      this.form.algorithmUsage = algorithm?.algorithmUsage || null;
+      this.form.valAlgorithmUsage = algorithm?.algorithmUsage || null;
+      this.$refs.trainDataSourceSelector.updateAlgorithmUsage(this.form.algorithmUsage);
+      this.form.valType && this.$refs.verifyDataSourceSelector.updateAlgorithmUsage(this.form.valAlgorithmUsage);
+      this.form.runCommand = algorithm?.runCommand || '';
       this.form.runParams = algorithm?.runParams || {};
+      this.runParamObj = {...this.form.runParams};
       this.form.imageName = algorithm?.imageName;
-      if (this.form.imageName && !this.harborProjectList.some(project => project.imageName === this.form.imageName)) {
+      this.$nextTick(() => {
+        this.clearFieldValidate('runCommand');
+      });
+      if (this.form.imageName && !this.harborProjectList.some(project => project === this.form.imageName)) {
         this.$message.warning('算法选择的运行项目不存在，请重新选择');
         this.form.imageName = null;
         this.form.imageTag = null;
@@ -573,62 +754,103 @@ export default {
       }
       this.resetProject();
     },
+    onDelayChange(isDelay) {
+      if (!isDelay) {
+        this.form.delayCreateTime = 0;
+        this.form.delayDeleteTime = 0;
+      }
+    },
+    onVerifyTypeChange() {
+      if (this.form.valType === 0 ) {
+        this.form = Object.assign(this.form, {
+          valDataSourceName: null,
+          valDataSourcePath: null,
+        });
+        this.$refs.verifyDataSourceSelector.reset();
+      } else {
+        // 打开训练数据集时获取相应值
+        this.$nextTick(() => {
+          this.$refs.verifyDataSourceSelector.updateAlgorithmUsage(this.form.valAlgorithmUsage, false);
+        });
+      }
+    },
     async onAlgorithmSourceChange() {
       // 算法类型更改之后，需要清空下方表单
       this.algorithmIdList = [];
       this.currentAlgPage = 1;
       this.noMoreLoadAlg = false;
-      this.getAlgorithmList();
+      this.selectedAlgorithm = null;
       this.form = Object.assign(this.form, {
         algorithmId: null,
+        algorithmUsage: null,
         dataSourceName: null,
         dataSourcePath: null,
+        valAlgorithmUsage: null,
+        valDataSourceName: null,
+        valDataSourcePath: null,
         imageTag: null,
         imageName: null,
-        runCommand: null,
+        runCommand: '',
         resourcesPoolType: 0,
+        valType: 0,
         runParams: {},
+        modelType: 0,
+        modelResource: 0,
+        modelId: null,
+        modelLoadPathDir: null,
       });
+      this.getAlgorithmList();
+      this.$refs.trainDataSourceSelector.reset();
+      // 切换算法时去获取相应内容
+      this.$refs.trainDataSourceSelector.updateAlgorithmUsage(null);
+      this.runParamObj = {};
       this.$nextTick(() => {
         this.clearFieldValidate('runCommand');
         this.clearFieldValidate('trainJobSpecs');
       });
-      this.algorithmUsage = this.selectedDataSource = this.selectedDataSourceVersion = null;
       this.$refs.runParamComp.reset();
-      this.harborImageList = this.datasetVersionList = [];
+      this.harborImageList = [];
       this.resetProject();
-      this.getAlgorithmUsages();
-      this.getTrainJobSpecs(this.form.resourcesPoolType);
+      this.onResourcesPoolTypeChange();
+    },
+    onTrainTypeChange(trainType) {
+      if (trainType === 0) {
+        this.form.resourcesPoolNode = 1;
+      }
     },
   },
 };
 </script>
 
 <style lang="scss" scoped>
-::v-deep.w250 {
+::v-deep.w270 {
   .el-input {
-    width: 250px;
+    width: 270px;
   }
 }
-</style>
-<style lang="scss"> // 若使用 scoped，带有属性的样式权重过高会影响正常样式
-@import '@/assets/styles/variables.scss';
-// el-radio-button 被换行时，第二行左侧没有边框，需要添加样式
-.spec-btn {
-  .el-radio-button__inner {
-    border-left: solid 1px $borderColorBase;
-  }
 
-  .el-radio-button__orig-radio:hover + .el-radio-button__inner,
-  .el-radio-button__orig-radio:checked + .el-radio-button__inner {
-    border-left-color: transparent;
-  }
+::v-deep.el-input-number {
+  width: 270px;
 
-  &:first-child {
-    .el-radio-button__orig-radio:hover + .el-radio-button__inner,
-    .el-radio-button__orig-radio:checked + .el-radio-button__inner {
-      border-left-color: $primaryBorderColor;
-    }
+  .el-input-number__increase,
+  .el-input-number__decrease {
+    width: 70px;
   }
+}
+
+.el-radio.is-bordered {
+  width: 130px;
+  height: 35px;
+  padding: 10px 0;
+  text-align: center;
+}
+
+.param {
+  min-height: 80px;
+  padding: 0 10px;
+  line-height: 25px;
+  color: rgb(204, 204, 204);
+  background: rgb(30, 30, 30);
+  border-radius: 5px;
 }
 </style>

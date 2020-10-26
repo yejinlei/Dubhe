@@ -61,38 +61,56 @@
           <!--状态：0为待处理，1为运行中 -->
           <el-button
             v-if="map[scope.row.trainStatus].statusMap==='running'"
+            :id="`doStop_`+scope.$index"
             type="text"
             @click.stop="doStop(scope.row.id)"
           >停止</el-button>
           <!--状态：2为运行完成，3为失败，4为停止，5为未知 -->
           <el-button
             v-if="map[scope.row.trainStatus].statusMap==='done'"
+            :id="`goEdit_`+scope.$index"
             type="text"
             @click.stop="goEdit(scope.row, 'edit')"
           >修改</el-button>
           <el-button
+            :id="`goVisual_`+scope.$index"
             :disabled="!scope.row.visualizedLogPath"
             type="text"
             @click.stop="goVisual(scope.row.jobName)"
           >可视化</el-button>
-          <!--状态：2为运行完成 -->
+          <!-- 状态为 4 (停止) 时，在下拉菜单中展示保存模型 -->
           <el-button
             v-show="scope.row.trainStatus !== 4"
-            :disabled="scope.row.trainStatus !== 2"
+            :id="`goSaveModel_`+scope.$index"
+            :disabled="!scope.row.outPath"
             type="text"
             @click.stop="goSaveModel(scope.row)"
           >保存模型</el-button>
           <el-button
             v-show="scope.row.trainStatus === 4"
+            :id="`doResume_`+scope.$index"
+            :disabled="!scope.row.outPath"
             type="text"
-            @click.stop="doResume(scope.row.id)"
+            @click.stop="doResume(scope.row)"
           >断点续训</el-button>
           <el-dropdown>
             <el-button type="text" style="margin-left: 10px;" @click.stop="()=>{}">
               更多<i class="el-icon-arrow-down el-icon--right" />
             </el-button>
             <el-dropdown-menu slot="dropdown">
+              <!-- 状态为 4 (停止) 时，在下拉菜单中展示保存模型 -->
               <el-dropdown-item
+                v-show="scope.row.trainStatus === 4"
+                :id="`goSaveModel_inside_`+scope.$index"
+                @click.native="goSaveModel(scope.row)"
+              >
+                <el-button
+                  :disabled="!scope.row.outPath"
+                  type="text"
+                >保存模型</el-button>
+              </el-dropdown-item>
+              <el-dropdown-item
+                :id="`goEditParams_`+scope.$index"
                 :disabled="map[scope.row.trainStatus].statusMap!=='done'"
                 @click.native="goEdit(scope.row, 'saveParams')"
               >
@@ -103,6 +121,7 @@
                 >保存任务模板</el-button>
               </el-dropdown-item>
               <el-dropdown-item
+                :id="`doDelete_`+scope.$index"
                 :disabled="map[scope.row.trainStatus].statusMap!=='done'"
                 @click.native="doDelete(scope.row.id)"
               >
@@ -129,11 +148,8 @@
       <job-form
         v-if="reFresh"
         ref="jobFormEdit"
-        :form="form"
-        :widthPercent="100"
-        :showFooterBtns="false"
+        :width-percent="100"
         :type="dialogType"
-        :loading="submitLoading"
         @getForm="getForm"
       />
     </BaseModal>
@@ -142,15 +158,22 @@
       ref="saveModel"
       type="training"
     />
+    <!--断点续训Dialog-->
+    <path-select-dialog
+      ref="pathSelect"
+      :type="pathType"
+      @chooseDone="chooseDone"
+      @chooseModel="chooseModel"
+    />
     <!--右边侧边栏-->
     <el-drawer
-      :visible.sync="drawer"
+      :visible.sync="drawerVisible"
       :with-header="false"
       :direction="'rtl'"
       :size="'50%'"
-      @open="handleDrawerOpen"
+      @close="handleDrawerClose"
     >
-      <job-drawer ref="jobDrawer" :item="jobDetail" />
+      <job-drawer ref="jobDrawer" />
     </el-drawer>
   </div>
 </template>
@@ -162,38 +185,20 @@ import { mapGetters } from 'vuex';
 import { debounce } from 'throttle-debounce';
 
 import CRUD, { presenter, header, crud } from '@crud/crud';
-import { parseTime, Constant } from '@/utils';
-import crudJob, { getJobList, resumeTrain, stop as stopJob, del as deleteJob, edit as editJob } from '@/api/trainingJob/job';
+import { Constant } from '@/utils';
+import crudJob, { getJobList, stop as stopJob, del as deleteJob, edit as editJob } from '@/api/trainingJob/job';
 import { add as addParams } from '@/api/trainingJob/params';
 import BaseModal from '@/components/BaseModal';
 import JobForm from '@/components/Training/jobForm';
 import SaveModelDialog from '@/components/Training/saveModelDialog';
+import pathSelectDialog from './components/pathSelectDialog';
 import jobDrawer from './components/jobDrawer';
 import { trainingStatusMap as map } from './utils';
-
-const defaultJobForm = {
-  $_id: 0,
-  trainName: '',
-  paramName: '',
-  description: '',
-  algorithmSource: 1,
-  algorithmId: null,
-  imageTag: null,
-  imageName: null,
-  runCommand: null,
-  dataSourceName: null,
-  dataSourcePath: null,
-  outPath: '/home/result/',
-  logPath: '/home/log/',
-  resourcesPoolType: 0,
-  trainJobSpecsId: null,
-  runParams: {},
-};
 
 export default {
   name: 'JobDetail',
   dicts: ['job_status'],
-  components: { BaseModal, JobForm, jobDrawer, SaveModelDialog },
+  components: { BaseModal, JobForm, jobDrawer, SaveModelDialog, pathSelectDialog },
   cruds() {
     return CRUD({
       crudMethod: { ...crudJob },
@@ -209,17 +214,16 @@ export default {
   data() {
     return {
       id: null,
-      form: { ...defaultJobForm}, // 任务版本编辑
       tableList: [], // 任务版本列表
       params: {},
       map,
+      pathType: '', // 目录树选择类型
       keepPool: true,
       showDialog: false,
       dialogTitle: '',
       dialogType: 'edit', // edit: 修改训练任务; saveParams: 保存任务参数
-      drawer: false,
+      drawerVisible: false,
       reFresh: true, // job_form_id 没法重新渲染，先用refresh
-      jobDetail: null, // job 详情
       modelList: [],
       submitLoading: false,
       resumeLoading: false,
@@ -254,11 +258,12 @@ export default {
     this.keepPool = false;
   },
   methods: {
-    parseTime,
     // handle 操作
     onRowClick(row) {
-      this.jobDetail = row;
-      this.drawer = true;
+      this.drawerVisible = true;
+      this.$nextTick(() => {
+        this.$refs.jobDrawer.onOpen(row.id);
+      });
     },
     handleSortChange({ prop, order }) {
       const sortParams = {
@@ -268,10 +273,8 @@ export default {
       this.params = Object.assign(this.params, sortParams);
       this.getJobList();
     },
-    handleDrawerOpen() {
-      setTimeout(() => {
-        this.$refs.jobDrawer.reset();
-      }, 0);
+    handleDrawerClose() {
+      this.$refs.jobDrawer.onClose();
     },
     // 页面逻辑
     async getJobList() {
@@ -289,25 +292,9 @@ export default {
       this.getJobList();
     },
     async getForm(form) {
-      const { id, paramName } = form;
-      const params = {
-        description: form.description,
-        algorithmId: form.algorithmId,
-        dataSourceName: form.dataSourceName,
-        dataSourcePath: form.dataSourcePath,
-        outPath: form.outPath,
-        logPath: form.logPath,
-        runParams: form.runParams,
-        resourcesPoolType: form.resourcesPoolType,
-        trainJobSpecsId: form.trainJobSpecsId,
-        imageTag: form.imageTag,
-        imageName: form.imageName,
-        runCommand: form.runCommand,
-      };
       this.submitLoading = true;
       if (this.dialogType === 'edit') {
-        params.id = id;
-        await editJob(params).finally(() => {
+        await editJob(form).finally(() => {
           this.submitLoading = false;
         });
         this.refreshList();
@@ -316,8 +303,7 @@ export default {
           type: 'success',
         });
       } else {
-        params.paramName = paramName;
-        await addParams(params).finally(() => {
+        await addParams(form).finally(() => {
           this.submitLoading = false;
         });
         this.$message({
@@ -339,9 +325,11 @@ export default {
         if (dialogType === 'saveParams') {
           item.paramName = item.jobName;
         }
-        this.form = { ...item};
-        this.form.$_id = new Date().getTime();
+        item.valAlgorithmUsage = item.algorithmUsage;
         this.showDialog = true;
+        this.$nextTick(() => {
+          this.$refs.jobFormEdit.initForm(item);
+        });
         this.dialogTitle = dialogType === 'edit' ? '修改任务' : '保存任务模板';
         this.dialogType = dialogType;
         this.reFresh = true;
@@ -357,6 +345,7 @@ export default {
       window.open(url, '_blank');
     },
     async goSaveModel(model) {
+      this.pathType = 'modelSelect';
       const modelParams = {
         algorithmId: model.algorithmId,
         algorithmName: model.algorithmName,
@@ -364,7 +353,13 @@ export default {
         algorithmUsage: model.algorithmUsage,
         modelAddress: model.outPath,
       };
-      this.$refs.saveModel.show(modelParams);
+      this.$nextTick(() => {
+        this.$refs.pathSelect.show({
+          resumePath: `${model.outPath}/`,
+          id: model.algorithmId,
+          params: modelParams,
+        });
+      });
     },
     // op
     doEdit() {
@@ -407,12 +402,21 @@ export default {
           }
         });
     },
-    async doResume(id) {
-      this.resumeLoading = true;
-      await resumeTrain({ id }).finally(() => {
-        this.resumeLoading = false;
-        this.refreshList();
+    async doResume(item) {
+      this.pathType = 'jobResume';
+      this.$nextTick(() => {
+        this.$refs.pathSelect.show({
+          resumePath: `${item.outPath}/`,
+          id: item.id,
+        });
       });
+    },
+    chooseDone() {
+      this.refreshList();
+    },
+    chooseModel(selectPath, params) {
+      Object.assign(params, {modelAddress: selectPath});
+      this.$refs.saveModel.show(params);
     },
   },
 };

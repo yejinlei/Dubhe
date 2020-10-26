@@ -20,6 +20,7 @@
 
 const state = {
   activePanel: 0,
+  activePanelLabelGroup: 0,
 };
 
 const mutations = {
@@ -29,6 +30,12 @@ const mutations = {
   RESET_PANEL: (state) => {
     state.activePanel = 0;
   },
+  TOGGLE_PANEL_LABEL_GROUP: (state, panel) => {
+    state.activePanelLabelGroup = panel;
+  },
+  RESET_PANEL_LABEL_GROUP: (state) => {
+    state.activePanelLabelGroup = 0;
+  },
 };
 
 const actions = {
@@ -37,6 +44,12 @@ const actions = {
   },
   resetPanel({ commit }) {
     commit('RESET_PANEL');
+  },
+  togglePanelLabelGroup({ commit }, panel) {
+    commit('TOGGLE_PANEL_LABEL_GROUP', panel);
+  },
+  resetPanelLabelGroup({ commit }) {
+    commit('RESET_PANEL_LABEL_GROUP');
   },
 };
 

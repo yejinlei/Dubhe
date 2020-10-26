@@ -42,10 +42,11 @@
       <el-table-column label="操作" width="150px" fixed="right">
         <template slot-scope="scope">
           <el-button
+            :id="`doDownload_`+scope.$index"
             type="text"
             @click="doDownload(scope.row.parentId, scope.row.versionNum, scope.row.modelAddress)"
           >下载</el-button>
-          <el-button type="text" @click="doDelete(scope.row.id)">删除</el-button>
+          <el-button :id="`doDelete`+scope.$index" type="text" @click="doDelete(scope.row.id)">删除</el-button>
         </template>
       </el-table-column>
     </el-table>
@@ -57,7 +58,9 @@
       :visible="crud.status.cu > 0"
       :title="crud.status.title"
       :loading="crud.status.cu === 2"
+      :disabled="loading"
       width="800px"
+      @close="onDialogClose"
       @cancel="crud.cancelCU"
       @ok="onSubmit"
     >
@@ -68,9 +71,10 @@
         <el-form-item ref="modelAddress" label="模型上传" prop="modelAddress">
           <upload-inline
             v-if="refreshFlag"
+            ref="upload"
             action="fakeApi"
-            accept=".zip,.pb,.h5,.ckpt,.pkl,.pth,.weight,.caffemodel,.pt"
-            :acceptSize="5120"
+            accept=".zip, .pb, .h5, .ckpt, .pkl, .pth, .weight, .caffemodel, .pt"
+            :acceptSize="0"
             list-type="text"
             :limit="1"
             :multiple="false"
@@ -82,7 +86,14 @@
             @uploadSuccess="uploadSuccess"
             @uploadError="uploadError"
           />
-          <div v-if="loading"><i class="el-icon-loading" />模型上传中...</div>
+          <upload-progress 
+            v-if="loading" 
+            :progress="progress" 
+            :color="customColors" 
+            :status="status" 
+            :size="size" 
+            @onSetProgress="onSetProgress"
+          />
         </el-form-item>
       </el-form>
     </BaseModal>
@@ -90,14 +101,14 @@
 </template>
 
 <script>
-import crudModelVersion, {del} from '@/api/model/modelVersion';
+import crudModelVersion, { del } from '@/api/model/modelVersion';
 import CRUD, { presenter, header, form, crud } from '@crud/crud';
 import BaseModal from '@/components/BaseModal';
 import cdOperation from '@crud/CD.operation';
 import pagination from '@crud/Pagination';
 import UploadInline from '@/components/UploadForm/inline';
-import { parseTime, downloadZipFromObjectPath } from '@/utils';
-import { nanoid } from 'nanoid';
+import UploadProgress from '@/components/UploadProgress';
+import { getUniqueId, downloadZipFromObjectPath } from '@/utils';
 
 const defaultForm = {
   parentId: null,
@@ -107,7 +118,7 @@ const defaultForm = {
 export default {
   name: 'ModelVersion',
   dicts: ['model_source'],
-  components: { BaseModal, pagination, cdOperation, UploadInline },
+  components: { BaseModal, pagination, cdOperation, UploadInline, UploadProgress },
   cruds() {
     return CRUD({
       title: '模型版本管理',
@@ -135,11 +146,26 @@ export default {
         ],
       },
       uploadParams: {
-        objectPath: `model/${this.$store.state.user.user.id}/${parseTime(new Date(), '{y}{m}{d}{h}{i}{s}{S}') + nanoid(4)}`, // 对象存储路径
+        objectPath: null, // 对象存储路径
       },
       refreshFlag: true,
       loading: false,
+      progress: 0,
+      size: 0,
+      customColors: [
+        {color: '#909399', percentage: 40},
+        {color: '#e6a23c', percentage: 80},
+        {color: '#67c23a', percentage: 100},
+      ],
     };
+  },
+  computed: {
+    status() {
+      return this.progress === 100 ? 'success' : null;
+    },
+    user() {
+      return this.$store.getters.user;
+    },
   },
   mounted() {
     this.modelId = this.$route.query.id;
@@ -156,12 +182,20 @@ export default {
     handleRemove() {
       this.loading = false;
       this.form.modelAddress = null;
+      this.$refs.modelAddress.validate('manual');
     },
-    uploadStart() {
-      this.loading = true;
+    uploadStart(files) {
+      this.updateImagePath();
+      [ this.loading, this.size, this.progress ] = [ true, files.size, 0 ];
+    },
+    onSetProgress(val) {
+      this.progress += val;
     },
     uploadSuccess(res) {
-      this.loading = false;
+      this.progress = 100;
+      setTimeout(() => {
+        this.loading = false;
+      }, 1000);
       this.form.modelAddress = res[0].data.objectName;
       this.$refs.modelAddress.validate('manual');
     },
@@ -171,6 +205,10 @@ export default {
         message: '上传文件失败',
         type: 'error',
       });
+    },
+    onDialogClose() {
+      this.$refs.upload.formRef.reset();
+      this.loading = false;
     },
     onSubmit() {
       this.form.parentId = this.modelId;
@@ -183,10 +221,13 @@ export default {
         this.refreshFlag = true;
       });
     },
+    updateImagePath() {
+      this.uploadParams.objectPath = `upload-temp/${this.user.id}/${getUniqueId()}`;
+    },
     // op
     doDelete(id) {
-      this.$confirm('此操作将永久删除该模型, 是否继续?', '请确认')
-        .then(async() => {
+      this.$confirm('此操作将永久删除该模型, 是否继续?', '请确认').then(
+        async () => {
           const params = {
             ids: [id],
           };
@@ -196,19 +237,22 @@ export default {
             type: 'success',
           });
           this.crud.refresh();
-        });
+        },
+      );
     },
     doDownload(parentId, versionNum, filepath) {
       const msg = `此操作将下载${this.modelName}模型的${versionNum}版本, 是否继续?`;
-      this.$confirm(msg, '请确认')
-        .then(() => {
-          const url = /^\//.test(filepath) ? filepath : `/${  filepath}`;
-          downloadZipFromObjectPath(url, 'model.zip');
+      this.$confirm(msg, "请确认").then(
+        () => {
+          const url = /^\//.test(filepath) ? filepath : `/${filepath}`;
+          downloadZipFromObjectPath(url, "model.zip");
           this.$message({
             message: '请查看下载文件',
             type: 'success',
           });
-        }, () => {});
+        },
+        () => {},
+      );
     },
   },
 };

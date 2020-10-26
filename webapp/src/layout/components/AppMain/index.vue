@@ -59,6 +59,7 @@ export default {
   font-size: 0.7rem !important;
   color: #7a8b9a;
   letter-spacing: 0.8px;
+  pointer-events: none;
   background: none repeat scroll 0 0 white;
   border-top: 1px solid #e7eaec;
 }

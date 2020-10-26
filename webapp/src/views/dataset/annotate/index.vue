@@ -30,7 +30,7 @@
       :isTrack="isTrack"
       :state="state"
       :currentImg="currentImg"
-      :handleBrushEnd="handleBrushEnd"
+      :drawBboxEnd="drawBboxEnd"
       :createLabel="createLabel"
       :queryLabels="queryLabels"
       :updateState="updateState"
@@ -65,8 +65,8 @@ import { isEmpty, isFunction, omit, isNil } from 'lodash';
 
 import { detail, detectFileList, queryFileOffset, queryDataEnhanceList, getEnhanceFileList } from '@/api/preparation/dataset';
 import request from '@/utils/request';
-import { generateUuid, generateBbox, endsWith, replace, remove, AssertError } from '@/utils';
-import { parseAnnotation, labelsSymbol, enhanceSymbol, stringifyAnnotations, annotationMap, transformFiles } from '../util';
+import { generateUuid, generateBbox, bbox2Extent, extent2Bbox, endsWith, replace, remove, AssertError } from '@/utils';
+import { parseAnnotation, labelsSymbol, enhanceSymbol, stringifyAnnotations, annotationMap, transformFiles, withExtent } from '../util';
 
 import ThumbContainer from './thumbContainer';
 import WorkSpaceContainer from './workSpaceContainer';
@@ -89,6 +89,9 @@ export default {
     const { params = {}} = $route;
     const workspaceRef = ref(null);
 
+    // 加载下一页，避免重复加载
+    const loadNextPageFlag = ref(false);
+
     // 标注类型
     const isTrack = $route.name.startsWith('TrackDataset');
     // const isAnnotation = meta.type === 'annotate'
@@ -102,6 +105,7 @@ export default {
       hasMore: true, // 是否有更多列表
       datasetId: Number(params.datasetId),
       currentImgId: Number(params.fileId) || undefined, // 当前图片 id
+      rawAnnotations: [], // 原始标注集合
       annotations: [], // 标注集合
       fileInfo: null, // 文件信息
       fileId: Number($route.params.fileId),
@@ -177,8 +181,15 @@ export default {
     };
 
     // 根据异步结果更新状态
-    const updateState = (nextState) => {
-      Object.assign(state, nextState);
+    const updateState = (params) => {
+      // 区分函数式更新和对象更新
+      if(typeof params === 'function') {
+        const next = params(state);
+        Object.assign(state, next);
+        return;
+      }
+      // 普通更新
+      Object.assign(state, params);
     };
 
     // 根据 labelId 获取标签颜色
@@ -236,6 +247,7 @@ export default {
     const clearHistory = () => {
       updateState({
         history: [],
+        rawAnnotations: [],
         annotations: [],
         fileInfo: null, // 当前文件信息
         lastSelectedLabel: undefined,
@@ -259,7 +271,13 @@ export default {
       // 当到下边界只有 2 张图片时，请求下一页数据
       // 仍然有下页
       if (index + 2 >= fileList.value.length && state.hasMore) {
-        queryNextPage({ offset: state.offset, type: state.fileFilterType });
+        // 避免重复加载
+        if(loadNextPageFlag.value === false) {
+          loadNextPageFlag.value = true;
+          queryNextPage({ offset: state.offset, type: state.fileFilterType }).then(() => {
+            loadNextPageFlag.value = false;
+          });
+        }
       }
     };
 
@@ -286,7 +304,7 @@ export default {
 
     // 请求指定图片信息
     const queryFile = async(id) => {
-      const file = await request(`api/data/datasets/files/${id}/info`) || {};
+      const file = await request(`api/data/datasets/files/${params.datasetId}/${id}/info`) || {};
       return file;
     };
 
@@ -319,7 +337,7 @@ export default {
 
     // 保存标注
     const saveAnnotation = async(data) => {
-      await request.post(`api/data/datasets/files/${state.currentImgId}/annotations`, data).then(() => {
+      await request.post(`api/data/datasets/files/${params.datasetId}/${state.currentImgId}/annotations`, data).then(() => {
         // 清空历史记录
         Object.assign(state, { history: [] });
         Message.success({ message: '保存成功', duration: 800 });
@@ -328,7 +346,7 @@ export default {
 
     // 人工确认标注
     const confirmAnnotation = async(data) => {
-      await request.post(`api/data/datasets/files/${state.currentImgId}/annotations/finish`, data).then(() => {
+      await request.post(`api/data/datasets/files/${params.datasetId}/${state.currentImgId}/annotations/finish`, data).then(() => {
         // 清空历史记录
         Object.assign(state, { history: [] });
         // todo: 更新列表
@@ -352,15 +370,71 @@ export default {
       });
     };
 
+    // 将绝对路径映射为相对图片路径
+    const mapBrushToBbox = annotation => {
+      const { bbox } = annotation.data;
+
+      const { dimension } = workspaceRef.value;
+      // 临时变量
+      let temp_bbox = {};
+      // 解析 bbox 值
+      const _bbox = {};
+      // 当图片缩放比例小于1，当前画布尺寸会超过图片，需要截取空白尺寸
+      if (dimension.scale < 1) {
+        const padding = {
+          width: dimension.svg.width - dimension.img.width * dimension.scale,
+          height: dimension.svg.height - dimension.img.height * dimension.scale,
+        };
+        Object.assign(temp_bbox, {
+          ...bbox,
+          x: bbox.x - padding.width / 2,
+          // 垂直反向偏移
+          y: bbox.y - padding.height / 2,
+        });
+      } else {
+        temp_bbox = bbox;
+      }
+      for (const k in temp_bbox) {
+        // 根据图片缩放比例进行调整
+        _bbox[k] = temp_bbox[k] / (dimension.scale || 1);
+      }
+
+      const updatedAnnotation = {
+        ...annotation,
+        data: {
+          ...annotation.data,
+          bbox: _bbox,
+          extent: bbox2Extent(_bbox),
+        },
+      };
+
+      return updatedAnnotation;
+    };
+
+    // 保存的时候生成新的位置信息
+    const rescale = (annotation) => {
+      const { extent } = annotation.data;
+
+      const updatedAnnotation = {
+        ...annotation,
+        data: {
+          ...annotation.data,
+          bbox: extent2Bbox(extent),
+        },
+      };
+      // _type 仅供绘画使用
+      return omit(updatedAnnotation, ['__type']);
+    };
+
     // 手动画框结束
-    const handleBrushEnd = (brush) => {
+    const drawBboxEnd = (brush) => {
       const bbox = generateBbox(brush);
       // 记录上一次选中的 selectLabel
       const otherProps = state.lastSelectedLabel ? {
         categoryId: state.lastSelectedLabel,
         color: getColorLabel(state.lastSelectedLabel),
       } : {};
-      const annotation = {
+      const rawAnnotation = {
         id: generateUuid(),
         __type: 0, // 标识为新创建的标注
         data: {
@@ -369,6 +443,9 @@ export default {
           ...otherProps,
         },
       };
+
+      // todo: 转换成标准地址（extent/bbox）
+      const annotation = mapBrushToBbox(rawAnnotation);
       // 更新框选位置坐标
       const newAnnotation = (state.annotations || []).concat(annotation);
       Object.assign(state, {
@@ -384,48 +461,6 @@ export default {
         return false;
       }
       return true;
-    };
-
-    // 保存的时候生成新的位置信息
-    const rescale = (annotation) => {
-      const { __type } = annotation;
-      const { bbox } = annotation.data;
-      const { dimension } = workspaceRef.value;
-      // 临时变量
-      let temp_bbox = {};
-      // 解析 bbox 值
-      const _bbox = {};
-      if (__type === 0) {
-        // 当图片缩放比例小于1，当前画布尺寸会超过图片，需要截取空白尺寸
-        if (dimension.scale < 1) {
-          const padding = {
-            width: dimension.svg.width - dimension.img.width * dimension.scale,
-            height: dimension.svg.height - dimension.img.height * dimension.scale,
-          };
-          Object.assign(temp_bbox, {
-            ...bbox,
-            x: bbox.x - padding.width / 2,
-            // 垂直反向偏移
-            // y: bbox.y - padding.height / 2
-          });
-        } else {
-          temp_bbox = bbox;
-        }
-        for (const k in temp_bbox) {
-          // 根据图片缩放比例进行调整
-          _bbox[k] = temp_bbox[k] / (dimension.scale || 1);
-        }
-      }
-
-      const updatedAnnotation = {
-        ...annotation,
-        data: {
-          ...annotation.data,
-          bbox: __type === 0 ? _bbox : bbox,
-        },
-      };
-      // _type 仅供绘画使用
-      return omit(updatedAnnotation, ['__type']);
     };
 
     // 保存标注
@@ -580,6 +615,8 @@ export default {
       let { result: files } = rawFile.value;
       const { __offset__, page = {}} = rawFile.value;
 
+      // 同步当前文件的偏移
+      state.offset = __offset__;
       // 自定义分页
       // 当前条数小于每页可返回的总条数，向上补齐
       const availableSize = Math.min(page.size, page.total);
@@ -610,15 +647,16 @@ export default {
       updateState(nextState);
 
       // 根据第一个文件是否携带数据增强结果来决定是否展示
-      const firstEnhanceList = await getEnhanceFileList(firstFile.id);
+      const firstEnhanceList = await getEnhanceFileList(params.datasetId, firstFile.id);
 
       // 更新当前图片
       const { file, annotations } = await updateImageInfo(activeFileId, labels);
       updateState({
         currentImgId: file.id,
         fileInfo: file,
-        annotations,
-        hasEnhanceRecord: firstEnhanceList.length > 0,
+        rawAnnotations: annotations,
+        annotations: withExtent(annotations),
+        hasEnhanceRecord: !isNil(firstEnhanceList),
       });
     });
 
@@ -632,6 +670,7 @@ export default {
     watch(() => [state.currentImgId, state.timestamp], async() => {
       const imgId = state.currentImgId;
       updateState({
+        rawAnnotations: [],
         annotations: [],
         fileInfo: null,
       });
@@ -646,7 +685,8 @@ export default {
         gotoFileDetail(imgId);
         // 清理数据
         updateState({
-          annotations,
+          rawAnnotations: annotations,
+          annotations: withExtent(annotations),
           fileInfo: file,
         });
       }
@@ -663,7 +703,7 @@ export default {
       currentImg,
       handleSelection,
       handleBrushStart,
-      handleBrushEnd,
+      drawBboxEnd,
       handleSave,
       handleConfirm,
       gotoFileDetail,

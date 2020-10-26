@@ -235,7 +235,7 @@ export default {
   padding: 0;
 }
 
-.statisticContainer /deep/  .el-card {
+.statisticContainer /deep/ .el-card {
   border-radius: 0 0 3px 3px;
 }
 

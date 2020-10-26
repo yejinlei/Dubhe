@@ -19,17 +19,26 @@
     <!--工具栏-->
     <div class="head-container">
       <cdOperation linkType="custom" @to-add="toAdd">
+        <span slot="left">
+          <el-tooltip
+            content="Notebook 将会在开启后四小时自动关闭，请及时保存您的代码"
+            placement="top"
+          >
+            <i class="el-icon-warning-outline primary f18" />
+          </el-tooltip>
+        </span>
         <span slot="right">
           <!-- 搜索 -->
-          <el-select v-model="query.status" class="filter-item" placeholder="状态" clearable @change="crud.toQuery">
-            <el-option
-              v-for="item in statusOptions"
-              :key="item.statusCode"
-              :value="item.statusCode"
-              :label="item.statusName"
-            />
-          </el-select>
-          <el-input v-model="query.noteBookName" clearable placeholder="请输入名称" class="filter-item" style="width: 200px;" @keyup.enter.native="crud.toQuery" />
+          <el-input
+            id="queryName"
+            v-model="localQuery.noteBookName"
+            clearable
+            placeholder="请输入名称"
+            class="filter-item"
+            style="width: 200px;"
+            @clear="crud.toQuery"
+            @keyup.enter.native="crud.toQuery"
+          />
           <rrOperation />
         </span>
       </cdOperation>
@@ -53,6 +62,14 @@
       </el-table-column>
       <el-table-column prop="description" label="描述" />
       <el-table-column prop="status" label="状态" width="100">
+        <template #header>
+          <dropdown-header
+            title="状态"
+            :list="notebookStatusList"
+            :filtered="Boolean(localQuery.status) || localQuery.status === 0"
+            @command="filterByStatus"
+          />
+        </template>
         <template slot-scope="scope">
           <el-tag v-if="!(scope.row.status==0 && !scope.row.url)" :type="getTagType(scope.row.status)" effect="plain">{{ notebookStatus[scope.row.status] }} </el-tag>
           <el-tag v-if="(scope.row.status==0 && !scope.row.url)" :type="getTagType(3)" effect="plain">{{ notebookStatus[3] }} </el-tag>
@@ -65,13 +82,13 @@
       </el-table-column>
       <el-table-column label="操作" width="200" fixed="right">
         <template slot-scope="scope">
-          <el-button v-if="scope.row.status === 1" type="text" @click.stop="doStart(scope.row)">启动</el-button>
-          <el-button v-if="scope.row.status === 1" type="text" @click.stop="doDelete(scope.row)">删除</el-button>
-          <el-button v-if="scope.row.status === 0 && scope.row.url" type="text" @click.stop="doOpen(scope.row)">
+          <el-button v-if="scope.row.status === 1" :id="`start_`+scope.$index" type="text" @click.stop="doStart(scope.row)">启动</el-button>
+          <el-button v-if="scope.row.status === 1" :id="`delete_`+scope.$index" type="text" @click.stop="doDelete(scope.row)">删除</el-button>
+          <el-button v-if="scope.row.status === 0 && scope.row.url" :id="`open_`+scope.$index" type="text" @click.stop="doOpen(scope.row)">
             打开<IconFont type="externallink" />
           </el-button>
-          <el-button v-if="scope.row.status === 0 && scope.row.url" type="text" @click.stop="doStop(scope.row)">停止</el-button>
-          <el-button v-if="((scope.row.status === 0 && scope.row.url) || scope.row.status === 1) && !scope.row.algorithmId" type="text" @click.stop="doSave(scope.row)">保存算法</el-button>
+          <el-button v-if="scope.row.status === 0 && scope.row.url" :id="`stop_`+scope.$index" type="text" @click.stop="doStop(scope.row)">停止</el-button>
+          <el-button v-if="((scope.row.status === 0 && scope.row.url) || scope.row.status === 1) && !scope.row.algorithmId" :id="`save_`+scope.$index" type="text" @click.stop="doSave(scope.row)">保存算法</el-button>
           <i v-if="[3, 4, 5].includes(scope.row.status) || (scope.row.status === 0 && !scope.row.url)" class="el-icon-loading" />
         </template>
       </el-table-column>
@@ -87,6 +104,7 @@ import { debounce } from 'throttle-debounce';
 
 import notebookApi, {detail, getStatus, start, stop, open} from '@/api/development/notebook';
 import { add as addAlgorithm } from '@/api/algorithm/algorithm';
+import DropdownHeader from '@/components/DropdownHeader';
 import CRUD, { presenter, header, crud } from '@crud/crud';
 import rrOperation from '@crud/RR.operation';
 import cdOperation from '@crud/CD.operation';
@@ -96,7 +114,7 @@ import NotebookDetail from './components/NotebookDetail';
 
 export default {
   name: 'Notebook',
-  components: { pagination, rrOperation, cdOperation, CreateDialog, NotebookDetail },
+  components: { pagination, rrOperation, cdOperation, DropdownHeader, CreateDialog, NotebookDetail },
   cruds() {
     return CRUD({
       title: 'Notebook',
@@ -121,8 +139,23 @@ export default {
       drawer: false,
       selectedItemObj: {},
       pollingCount: 0,
+      keepPoll: true,
       ct: null,
+      localQuery: {
+        noteBookName: null,
+        status: null,
+      },
     };
+  },
+  computed: {
+    notebookStatusList() {
+      return [{ label: '全部', value: null }].concat(this.statusOptions.map(status => {
+        return {
+          label: status.statusName,
+          value: status.statusCode,
+        };
+      }));
+    },
   },
   mounted() {
     this.crud.msg.del = '正在删除';
@@ -131,10 +164,12 @@ export default {
       this.query.noteBookName = this.$route.params.noteBookName;
     }
     this.refetch = debounce(1000, this.crud.refresh);
+    this.detailRefetch = debounce(2000, this.polling);
     this.getNotebookStatus();
   },
   beforeDestroy() {
     this.ct && clearTimeout(this.ct);
+    this.keepPoll = false;
   },
   methods: {
     [CRUD.HOOK.afterRefresh]() {
@@ -153,18 +188,22 @@ export default {
           this.crud.refresh();
         });
     },
+    filterByStatus(status) {
+      this.localQuery.status = status;
+      this.crud.toQuery();
+    },
     checkStatus() {
       // 删除操作5s内 或 有进行中的状态需要刷新列表
       if (this.deleteCount > 0) {
         this.deleteCount -= 1;
         this.refetch();
       } else if (this.crud.data.some(item => [3, 4, 5].includes(item.status) || (item.status === 0 && !item.url))) {
-        this.polling();
+        this.detailRefetch();
       }
     },
     async polling() {
       const idList = this.checkPollingIds();
-      if (!idList.length) {
+      if (!this.keepPoll || !idList.length) {
         return;
       }
       const res = await detail(idList);
@@ -177,12 +216,16 @@ export default {
           ele.status = item.status;
           ele.updateTime = item.updateTime;
           ele.url = item.url;
+          // 当变成云心中且有url时，自动打开url
+          if(item.status === 0 && item.url){
+            window.open(item.url, '_blank');
+          }
         }
       }
       if (this.crud.data.some(item => [3, 4, 5].includes(item.status)) || this.crud.data.some(item => (item.status === 0 && !item.url))) {
         this.ct = setTimeout(() => {
           if (this.pollingCount < 200) { // 400s超时，超时不作提示
-            this.polling();
+            this.detailRefetch();
           }
         }, 2000);
       }
@@ -208,6 +251,9 @@ export default {
         case 6: return 'danger';
         default: return '';
       }
+    },
+    [CRUD.HOOK.beforeRefresh]() {
+      this.crud.query = { ...this.localQuery};
     },
     toAdd() {
       this.$refs.create.showThis();

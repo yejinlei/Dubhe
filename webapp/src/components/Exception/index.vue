@@ -38,19 +38,18 @@ export default {
 };
 </script>
 <style lang="scss">
+@import '@/assets/styles/variables.scss';
+
 .exception {
   display: flex;
   align-items: center;
+  justify-content: center;
   height: 100%;
-  margin: 0 auto;
+  color: $infoColor;
   text-align: center;
 
   .imgBlock {
     font-size: 48px;
-  }
-
-  .content {
-    margin-top: 10px;
   }
 }
 </style>

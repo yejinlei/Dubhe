@@ -71,6 +71,10 @@ service.interceptors.request.use(
 service.interceptors.response.use(
   response => {
     const res = response.data;
+    // 如果请求的返回类型是流，则直接返回 data
+    if (response.config.responseType === 'blob') {
+      return res;
+    }
     // if the custom code is not 200, it is judged as an error.
     if (res.code !== 200) {
       if (isWhiteList(response.config.url)) {

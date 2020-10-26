@@ -21,85 +21,72 @@
       <div class="cd-opts">
         <span class="cd-opts-left">
           <el-button
+            id="toAdd"
             :disabled="isParams"
             class="filter-item"
             type="primary"
             icon="el-icon-plus"
             round
             @click="toAdd"
-          >
-            创建训练任务
-          </el-button>
+          >创建训练任务</el-button>
         </span>
         <span class="cd-opts-right">
           <span slot="right">
             <template v-if="isAllTrain || isRunningTrain">
               <el-input
+                id="trainName"
                 v-model="jobQuery.trainName"
                 clearable
                 placeholder="请输入任务名称或 ID"
                 style="width: 200px;"
                 class="filter-item"
+                @clear="toQuery"
                 @keyup.enter.native="toQuery"
               />
             </template>
             <template v-if="isParams">
               <el-input
+                id="paramName"
                 v-model="paramQuery.paramName"
                 clearable
                 placeholder="请输入任务模板名称"
                 class="filter-item"
                 style="width: 200px;"
+                @clear="toQuery"
                 @keyup.enter.native="toQuery"
               />
             </template>
             <span>
-              <el-button
-                class="filter-item"
-                @click="resetQuery"
-              >
-                重置
-              </el-button>
-              <el-button
-                class="filter-item"
-                type="primary"
-                @click="toQuery"
-              >搜索</el-button>
+              <el-button id="resetQuery" class="filter-item" @click="resetQuery">重置</el-button>
+              <el-button id="toQuery" class="filter-item" type="primary" @click="toQuery">搜索</el-button>
             </span>
           </span>
         </span>
       </div>
     </div>
     <el-tabs v-model="active" class="eltabs-inlineblock" @tab-click="handleClick">
-      <el-tab-pane label="全部任务" name="0" />
-      <el-tab-pane label="运行中任务" name="1" />
-      <el-tab-pane label="任务模板" name="2" />
+      <el-tab-pane id="tab_0" label="全部任务" name="0" />
+      <el-tab-pane id="tab_1" label="运行中任务" name="1" />
+      <el-tab-pane id="tab_2" label="任务模板" name="2" />
     </el-tabs>
     <!--表格内容-->
-    <job-list
-      v-if="isAllTrain || isRunningTrain"
-      ref="jobList"
-      :isAllTrain="isAllTrain"
-    />
+    <job-list v-if="isAllTrain || isRunningTrain" ref="jobList" :isAllTrain="isAllTrain" />
     <job-param v-if="isParams" ref="jobParam" />
   </div>
 </template>
 
 <script>
-import jobList from './jobList';
-import jobParam from './jobParam';
+import jobList from "./jobList";
+import jobParam from "./jobParam";
 
 export default {
-  name: 'Job',
-  dicts: ['job_status'],
+  name: "Job",
+  dicts: ["job_status"],
   components: { jobList, jobParam },
   data() {
     return {
-      active: '0',
+      active: "0",
       id: null,
-      linkUrls: {
-        add: '/training/jobAdd',
-      },
       currentPage: 1,
       jobQuery: {
         trainName: null,
@@ -112,13 +99,13 @@ export default {
   },
   computed: {
     isAllTrain() {
-      return this.active === '0';
+      return this.active === "0";
     },
     isRunningTrain() {
-      return this.active === '1';
+      return this.active === "1";
     },
     isParams() {
-      return this.active === '2';
+      return this.active === "2";
     },
   },
   mounted() {
@@ -128,7 +115,7 @@ export default {
     });
   },
   beforeRouteEnter(to, from, next) {
-    if (from.name === 'JobDetail' && from.params.currentPage) {
+    if (from.name === "JobDetail" && from.params.currentPage) {
       next(vm => {
         vm.currentPage = from.params.currentPage;
       });
@@ -157,13 +144,18 @@ export default {
       }
     },
     toAdd() {
-      this.$router.push({ path: '/training/jobAdd' });
+      this.$router.push({ path: "/training/jobadd" });
     },
     resetQuery() {
       if (this.isParams) {
         this.paramQuery = {
           trainName: null,
           trainStatus: null,
+        };
+      } else if (this.isRunningTrain) {
+        this.jobQuery = {
+          paramName: null,
+          trainStatus: 1,
         };
       } else {
         this.jobQuery = {

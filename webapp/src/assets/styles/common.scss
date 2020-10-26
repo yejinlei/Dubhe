@@ -126,7 +126,6 @@
     }
 
     .text {
-      height: 19px;
       font-size: 14px;
       line-height: 19px;
       color: rgba(68, 68, 68, 1);
@@ -142,18 +141,6 @@
         width: calc(100% - 120px);
       }
     }
-  }
-
-  .fr {
-    margin-right: 5%;
-  }
-
-  .iframe {
-    width: 90%;
-    height: 500px;
-    margin: 40px 5%;
-    overflow: auto;
-    border: #ccc solid 1px;
   }
 }
 
@@ -241,4 +228,10 @@
   :hover {
     color: $primaryHoverColor;
   }
+}
+
+.tree-container {
+  height: 500px;
+  margin-top: 20px;
+  overflow-y: scroll;
 }

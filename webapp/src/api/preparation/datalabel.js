@@ -31,6 +31,14 @@ export function createLabel(id, label) {
   });
 }
 
+export function editLabel(id, label) {
+  return request({
+    url: `api/data/datasets/labels/${id}`,
+    method: 'put',
+    data: label,
+  });
+}
+
 export function getAutoLabels() {
   return request({
     url: 'api/data/datasets/labels/auto',

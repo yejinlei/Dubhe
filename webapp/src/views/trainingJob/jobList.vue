@@ -63,12 +63,14 @@
           <!--状态：0为待处理，1为运行中 -->
           <el-button
             v-if="map[scope.row.trainStatus].statusMap==='running'"
+            :id="`doStop_`+scope.$index"
             type="text"
             @click.stop="doStop(scope.row.trainId)"
           >停止</el-button>
           <!--状态：2为运行完成，3为运行失败，4为停止，5为未知，7为创建失败 -->
           <el-button
             v-if="map[scope.row.trainStatus].statusMap==='done'"
+            :id="`doDelete_`+scope.$index"
             type="text"
             @click.stop="doDelete(scope.row.trainId)"
           >删除</el-button>
@@ -117,9 +119,6 @@ export default {
   data() {
     return {
       id: null,
-      linkUrls: {
-        add: '/training/jobAdd',
-      },
       map,
       localQuery: {
         trainName: null,
@@ -142,7 +141,7 @@ export default {
     // link
     goDetail(type = 'add', id = null) {
       this.$router.push({
-        path: '/training/jobDetail',
+        path: '/training/jobdetail',
         name: 'JobDetail',
         query: { type, id },
         params: { currentPage: this.crud.page.current },

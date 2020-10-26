@@ -18,6 +18,7 @@
   <span>
     <el-button
       v-if="crud.optShow.reset"
+      id="toReset"
       class="filter-item"
       :icon="crud.props.resetIconShow ? `el-icon-refresh-left` : ''"
       @click="resetQuery"
@@ -25,6 +26,7 @@
       {{ crud.props.optText.reset }}
     </el-button>
     <el-button
+      id="toQuery"
       class="filter-item"
       type="primary"
       :icon="crud.props.searchIconShow ? `el-icon-search` : ''"

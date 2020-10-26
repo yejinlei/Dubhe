@@ -66,8 +66,13 @@ function useZoom(initialZoom, wrapperRef, options = {
     updateZoom({ newZoom: 1, zoom: 1, zoomX: 0, zoomY: 0 });
   }
 
+  function getZoom(){
+    return state;
+  }
+
   return ({
     zoom: state,
+    getZoom,
     setZoom,
     zoomIn,
     zoomOut,

@@ -17,13 +17,35 @@
 <template>
   <div class="workspace-settings">
     <el-form label-position="top" @submit.native.prevent>
+      <el-form-item v-if="state.datasetInfo.value.labelGroupId" label="标签组" style="margin-bottom: 0;">
+        <div style="margin-top: -10px;">
+          <span class="vm">{{ state.datasetInfo.value.labelGroupName }} &nbsp;</span>
+          <el-link
+            target="_blank"
+            type="primary"
+            :underline="false"
+            class="vm"
+            :href="`/data/labelgroup/detail?id=${state.datasetInfo.value.labelGroupId}`"
+          >
+            查看详情
+          </el-link>
+        </div>
+      </el-form-item>
       <SelectLabel
         v-if="!isPresetLabel"
         :dataSource="api.systemLabels"
         :handleLabelChange="handleLabelChange"
         @postLabel="postLabel"
       />
-      <LabelList :labels="labels" />
+      <LabelList 
+        :labels="labels"
+        :editLabel="edit"
+        :annotations="state.annotations.value"
+        :currentAnnotationId="api.currentAnnotationId"
+        :updateState="updateState"
+        :getColorLabel="getColorLabel"
+        :findRowIndex="findRowIndex"
+      />
       <Annotations
         :annotations="state.annotations.value"
         :currentAnnotationId="state.currentAnnotationId.value"
@@ -55,10 +77,10 @@
 
 <script>
 import { Message } from 'element-ui';
-import { inject, reactive, onMounted, computed } from '@vue/composition-api';
+import { inject, watch, reactive, onMounted, computed } from '@vue/composition-api';
 import { isNil } from 'lodash';
 
-import { getAutoLabels } from '@/api/preparation/datalabel';
+import { getAutoLabels, editLabel } from '@/api/preparation/datalabel';
 import { labelsSymbol } from '@/views/dataset/util';
 
 import SelectLabel from './selectLabel';
@@ -90,6 +112,7 @@ export default {
     const { createLabel, updateState, queryLabels } = props;
     const api = reactive({
       newLabel: undefined,
+      currentAnnotationId: undefined,
     });
     // 当前所有标签信息
     const labels = inject(labelsSymbol);
@@ -103,21 +126,13 @@ export default {
       });
     };
 
-    const addLabel = (label) => {
-      api.newLabel = label;
+    // 编辑标签
+    const edit = (labelId, data) => {
+      return editLabel(labelId, data).then(refreshLabel);
     };
 
-    const handleLabelChange = value => {
-      // 新建标签
-      if (!isNil(value)) {
-        // 如果不是系统标签，才会选择新建
-        if (api.systemLabels.findIndex(d => d.value === value) === -1) {
-          addLabel(value);
-        } else {
-          const systemLabel = api.systemLabels.find(d => d.value === value) || {};
-          systemLabel.label && addLabel(systemLabel.label);
-        }
-      }
+    const addLabel = (label) => {
+      api.newLabel = label;
     };
 
     const postLabel = () => {
@@ -131,6 +146,24 @@ export default {
           api.newLabel = undefined;
           refreshLabel();
         });
+      } else {
+        Message.warning('请选择标签');
+      }
+    };
+
+    const handleLabelChange = (value, callback) => {
+      // 新建标签
+      if (!isNil(value)) {
+        // 如果不是系统标签，才会选择新建
+        if (api.systemLabels.findIndex(d => d.value === value) === -1) {
+          addLabel(value);
+          // 新建标签直接触发创建
+          postLabel();
+          typeof callback === 'function' && callback();
+        } else {
+          const systemLabel = api.systemLabels.find(d => d.value === value) || {};
+          systemLabel.label && addLabel(systemLabel.label);
+        }
       }
     };
 
@@ -176,8 +209,14 @@ export default {
       updateState(newState);
     };
 
-    // 使用的是预置标签时type大于1，目前自定义标签type为0，自动标注标签为1
-    const isPresetLabel = computed(() => labels.value && labels.value[0] && labels.value[0].type > 1);
+    // labelGroupType 标签组类型：0: private 私有标签组,  1:public 公开标签组
+    const isPresetLabel = computed(() => props.state.labelGroupType === 1);
+
+    watch(() => props.state, (next) => {
+      if ('currentAnnotationId' in next) {
+        api.currentAnnotationId = next.currentAnnotationId || [];
+      }
+    });
 
     onMounted(() => {
       getSystemLabel();
@@ -190,6 +229,8 @@ export default {
       toggleShowId,
       labels,
       postLabel,
+      addLabel,
+      edit,
       handleLabelChange,
       isPresetLabel,
     };

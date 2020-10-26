@@ -16,9 +16,9 @@
 
 import request from '@/utils/request';
 
-export function batchFinishAnnotation(data) {
+export function batchFinishAnnotation(data, datasetId) {
   return request({
-    url: 'api/data/datasets/files/annotations',
+    url: `api/data/datasets/files/${datasetId}/annotations`,
     method: 'post',
     data,
   });
@@ -30,6 +30,13 @@ export function delAnnotation(id) {
     url: 'api/data/datasets/files/annotations',
     method: 'delete',
     data: delData,
+  });
+}
+
+export function track(id) {
+  return request({
+    url: `api/data/datasets/files/annotations/auto/track/${id}`,
+    method: 'get',
   });
 }
 

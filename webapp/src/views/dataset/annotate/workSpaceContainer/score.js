@@ -15,11 +15,9 @@
 */
 
 import { isNil } from 'lodash';
-import { addSuffix } from '@/utils';
+import { addSuffix, colorByLuminance, chroma } from '@/utils';
 
 import { defaultColor } from './bbox';
-
-const chroma = require('chroma-js');
 
 // 分数最小宽度
 const MinWidth = 48;
@@ -29,39 +27,28 @@ export default {
   functional: true,
   props: {
     annotate: Object,
-    scale: {
-      type: Number,
-    },
-    imgBoundingLeft: Number,
+    offset: Function,
+    transformer: Object,
+    brush: Object,
+    currentAnnotationId: String,
   },
   render(h, context) {
     const { props } = context;
     const {
       annotate = {},
-      imgBoundingLeft,
+      offset,
+      transformer,
+      brush,
     } = props;
 
-    const { data = {}, __type } = annotate;
+    const { data = {}, id } = annotate;
     const { bbox, color = defaultColor, score = 1 } = data;
+
+    // 当前在拖拽中不展示
+    if(props.currentAnnotationId === id && brush.isBrushing) return null;
+
     if (isNil(bbox)) return null;
-    // 是否为草稿模式
-    const isDraft = __type === 0;
-
-    const paddingLeft = (props.scale < 1 && !isNil(imgBoundingLeft))
-      ? imgBoundingLeft
-      : 0;
-
-    const pos = isDraft ? {
-      x: bbox.x,
-      y: bbox.y,
-      width: bbox.width,
-      height: bbox.height,
-    } : {
-      x: bbox.x * props.scale + paddingLeft,
-      y: bbox.y * props.scale,
-      width: bbox.width * props.scale,
-      height: bbox.height * props.scale,
-    };
+    const pos = offset(props.annotate);
 
     const style = {
       width: addSuffix(pos.width),
@@ -70,8 +57,14 @@ export default {
       minWidth: addSuffix(MinWidth),
     };
 
+    // 匹配当前标注
+    if(annotate.id === transformer.id) {
+      style.transform = `translate(${transformer.dx}px, ${transformer.dy}px)`;
+    }
+
     const boxStyle = {
       backgroundColor: chroma(color).alpha(0.8),
+      color: colorByLuminance(color),
     };
 
     return (

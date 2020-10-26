@@ -32,6 +32,15 @@ export function detail(id) {
   });
 }
 
+// 数据集状态（导入数据集轮询使用）
+export function queryDatasetStatus(ids) {
+  return request({
+    url: `/api/data/datasets/status`,
+    method: 'get',
+    params: { datasetIds: ids },
+  });
+}
+
 export function add(data) {
   return request({
     url: 'api/data/datasets',
@@ -54,6 +63,13 @@ export function editDataset(data) {
     url: `api/data/datasets/${data.id}`,
     method: 'put',
     data,
+  });
+}
+
+export function topDataset(data) {
+  return request({
+    url: `api/data/datasets/${data.id}/top`,
+    method: 'get',
   });
 }
 
@@ -153,9 +169,9 @@ export function postDataEnhance(datasetId, types = []) {
 }
 
 // 指定原始文件，获取增强文件列表
-export function getEnhanceFileList(fileId) {
+export function getEnhanceFileList(datasetId, fileId) {
   return request({
-    url: `api/data/datasets/${fileId}/enhanceFileList`,
+    url: `api/data/datasets/${datasetId}/${fileId}/enhanceFileList`,
   });
 }
 
@@ -170,6 +186,15 @@ export function getOriginFileCount(datasetId) {
 export function queryDatasetsCount() {
   return request({
     url: `/api/data/datasets/count`,
+  });
+}
+
+// 查询数据集状态
+export function queryDatasetsProgress(params) {
+  return request({
+    url: `/api/data/datasets/progress`,
+    method: 'get',
+    params,
   });
 }
 

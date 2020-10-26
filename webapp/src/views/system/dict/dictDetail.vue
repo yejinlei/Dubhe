@@ -31,7 +31,7 @@
           <el-input v-model="form.label" style="width: 370px;" maxlength="50" show-word-limit />
         </el-form-item>
         <el-form-item label="字典值" prop="value">
-          <el-input v-model="form.value" style="width: 370px;" maxlength="50" show-word-limit />
+          <el-input v-model="form.value" style="width: 370px;" maxlength="255" show-word-limit />
         </el-form-item>
         <el-form-item label="排序" prop="sort">
           <el-input-number v-model.number="form.sort" :min="0" :max="999" style="width: 370px;" />
@@ -87,28 +87,15 @@ export default {
         sort: this.crud.data.length + 1, ...defaultForm};
     })],
   data() {
-    const validateAccount = (rule, value, callback) => {
-      if (value === '' || value == null) {
-        callback();
-      } else if (value.length > 50) {
-        callback(new Error('长度不超过 50 个字符'));
-      } else if (!/^[\u4E00-\u9FA5A-Za-z0-9:_-]+$/.test(value)) {
-        callback(new Error('只支持中英文、数字、下划线、横杠和英文冒号'));
-      } else {
-        callback();
-      }
-    };
     return {
       dictId: null,
       dictName: '',
       rules: {
         label: [
           { required: true, message: '请输入字典标签', trigger: 'blur' },
-          { validator: validateAccount, trigger: 'change' },
         ],
         value: [
           { required: true, message: '请输入字典值', trigger: 'blur' },
-          { validator: validateAccount, trigger: 'change' },
         ],
         sort: [
           { required: true, message: '请输入序号', trigger: 'blur', type: 'number' },

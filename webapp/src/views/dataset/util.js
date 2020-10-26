@@ -42,6 +42,22 @@ export const parseAnnotation = (annotationStr, labels) => {
   return result;
 };
 
+// 将 annotation 生成可拖拽的形式
+export const withExtent = annotations => {
+  return annotations.map(d => ({
+    ...d,
+    data: {
+      ...d.data,
+      extent: {
+        x0: d.data.bbox.x,
+        y0: d.data.bbox.y,
+        x1: d.data.bbox.x + d.data.bbox.width,
+        y1: d.data.bbox.y + d.data.bbox.height,
+      },
+    },
+  }));
+};
+
 // 将annotations 生成字符串
 export const stringifyAnnotations = (annotations) => {
   const resultList = annotations.map(d => {
@@ -157,6 +173,16 @@ export const withDimensionFiles = async(files) => {
   return Promise.all(files.map(file => checkImg(file)));
 };
 
+// 目标跟踪视频上传参数
+export const trackUploadProps = {
+  acceptSize: 1024,
+  accept: '.mp4,.avi,.mkv,.mov,.webm,.wmv',
+  listType: 'text',
+  limit: 1,
+  multiple: false,
+  showFileCount: false,
+};
+
 // context 配置
 export const labelsSymbol = Symbol('labels');
 export const enhanceSymbol = Symbol('enhance');
@@ -170,10 +196,25 @@ export const dataTypeMap = {
 // 文件状态
 export const fileTypeEnum = {
   0: { label: '全部', abbr: '全部' },
-  1: { label: '未标注', abbr: '未标注' },
-  2: { label: '自动标注完成', abbr: '自动完成' },
-  3: { label: '手动标注完成', abbr: '手动完成' },
-  4: { label: '自动目标跟踪完成', abbr: '跟踪完成' },
+  101: { label: '未标注', abbr: '未标注' },
+  102: { label: '手动标注中', abbr: '手动标注中' },
+  103: { label: '自动标注完成', abbr: '自动完成' },
+  104: { label: '手动标注完成', abbr: '手动完成' },
+  105: { label: '未识别', abbr: '未识别'},
+  201: { label: '目标跟踪完成', abbr: '跟踪完成' },
+  301: { label: '未完成', abbr: '未完成'},
+  302: { label: '已完成', abbr: '已完成'},
+};
+export const fileCodeMap = {
+  'ALL': 0,
+  'UNANNOTATED': 101,
+  'MANUAL_ANNOTATING': 102,
+  'AUTO_ANNOTATED': 103,
+  'MANUAL_ANNOTATED': 104,
+  'UNRECOGNIZED': 105,
+  'TRACK_SUCCEED': 201,
+  'UNCOMPLETED': 301,
+  'COMPLETED': 302,
 };
 
 export const annotationMap = {
@@ -186,15 +227,34 @@ export const annotationMap = {
 
 // 数据集状态
 export const datasetStatusMap = {
-  0: { name: '未标注', type: 'info' },
-  1: { name: '标注中', type: 'warning' },
-  2: { name: '自动标注中', type: 'danger' },
-  3: { name: '自动标注完成', type: '' },
-  4: { name: '标注完成', type: 'success' },
-  5: { name: '未采样', bgColor: '#a7a7a7', color: '#fff' },
-  6: { name: '目标跟踪完成', bgColor: '#409EFF', color: '#fff' },
-  7: { name: '采样中', bgColor: '#606266', color: '#fff' },
-  8: { name: '数据增强中', bgColor: '#1890ff', color: '#fff' },
+  101: { name: '未标注', type: 'info' },
+  102: { name: '标注中', type: 'warning' },
+  103: { name: '自动标注中', type: 'danger' },
+  104: { name: '自动标注完成', type: '' },
+  105: { name: '标注完成', type: 'success' },
+  201: { name: '目标跟踪中', bgColor: '#409EFF', color: '#fff' },
+  202: { name: '目标跟踪完成', bgColor: '#409EFF', color: '#fff' },
+  203: { name: '目标跟踪失败', bgColor: '#409EFF', color: '#fff' },
+  301: { name: '未采样', bgColor: '#a7a7a7', color: '#fff' },
+  302: { name: '采样中', bgColor: '#606266', color: '#fff' },
+  303: { name: '采样失败', bgColor: '#606266', color: '#fff' },
+  401: { name: '数据增强中', bgColor: '#1890ff', color: '#fff' },
+  402: { name: '导入中', bgColor: '#606266', color: '#fff' },
+};
+export const statusCodeMap = {
+  101: 'UNANNOTATED', // 未标注
+  102: 'ANNOTATING',
+  103: 'AUTO_ANNOTATING',
+  104: 'AUTO_ANNOTATED',
+  105: 'ANNOTATED',
+  201: 'TRACKING',
+  202: 'TRACK_SUCCEED',
+  203: 'TRACK_FAILED',
+  301: 'UNSAMPLED',
+  302: 'SAMPLING',
+  303: 'SAMPLE_FAILED',
+  401: 'ENHANCING',
+  402: 'IMPORTING',
 };
 
 // 标注精度
@@ -203,6 +263,7 @@ export const annotationProgressMap = {
   unfinished: '未完成',
   autoFinished: '自动标注完成',
   finishAutoTrack: '目标跟踪完成',
+  annotationNotDistinguishFile: '未识别',
 };
 
 export const decompressProgressMap = {
@@ -218,4 +279,10 @@ export const dataEnhanceMap = {
   2: 'success',
   3: 'info',
   4: 'warning',
+};
+
+// 根据value取key
+export const findKey = (value, data, compare = (a, b) => a === b) => 
+{ 
+  return Object.keys(data).find(k => compare(data[k], value));
 };

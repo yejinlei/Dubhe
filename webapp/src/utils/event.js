@@ -25,10 +25,10 @@ export const getCursorPosition = (el, event, options = {}) => {
 };
 
 // 根据 d3-zoom 获取缩放后的相对位置
-export const getZoomPosition = (el, originPosition = []) => {
+export const getZoomPosition = (el, {x, y}) => {
   const transform = zoomTransform(el);
   // const invertPosition = transform.invert(originPosition)
-  return [originPosition[0] / transform.k, originPosition[1] / transform.k];
+  return { x: x / transform.k,  y: y / transform.k };
   // return invertPosition
 };
 
@@ -59,6 +59,22 @@ export const generateBbox = (brush) => {
     height: region.y1 - region.y0,
   };
 };
+
+// Bbox 转为 extent
+export const bbox2Extent = bbox => ({
+  x0: bbox.x,
+  y0: bbox.y,
+  x1: bbox.x + bbox.width,
+  y1: bbox.y + bbox.height,
+});
+
+// 将 extent 转为 bbox
+export const extent2Bbox = extent => ({
+  x: extent.x0,
+  y: extent.y0,
+  width: extent.x1 - extent.x0,
+  height: extent.y1 - extent.y0,
+});
 
 // 解析bbox
 export const parseBbox = (bbox = []) => {
@@ -97,3 +113,32 @@ export function getStyle(el, property) {
     .getPropertyValue(property)
     .replace('px', '');
 }
+
+/**
+ * 向上找到原始 svg 元素
+ * @param  {[type]} node [节点]
+ * @param  {[type]} event [事件对象]
+ */
+// eslint-disable-next-line
+export const findAncestorSvg = (node, event) => {
+  // 检测是否有参数传入
+  if (!node) return null;
+
+  // 如果只有一个参数
+  if (node.target) {
+    event = null;
+    // 当前元素的 svg 包裹元素
+    node = node.target.ownerSVGElement;
+  }
+  // 向上一直遍历，直到找到 svg 元素
+  while (node.ownerSVGElement) {
+    node = node.ownerSVGElement;
+  }
+
+  return node;
+};
+
+export const raise = (arr, raiseIndex) => {
+  return ([...arr.slice(0, raiseIndex), ...arr.slice(raiseIndex + 1), arr[raiseIndex]]);
+};
+
