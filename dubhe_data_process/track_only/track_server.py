@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
 """
 /**
 * Copyright 2020 Zhejiang Lab. All Rights Reserved.
@@ -23,8 +25,6 @@
 2.本代码中使用的开源python包有：opencv、numpy、scipy、web.py。
 
 """
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 import _thread
 import argparse
 import json

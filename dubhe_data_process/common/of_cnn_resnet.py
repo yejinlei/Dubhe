@@ -16,17 +16,21 @@
 * =============================================================
 */
 """
+# -*- coding:utf-8 -*-
 
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+import sys
+import codecs
 import os
 import numpy as np
 from PIL import Image
 import oneflow as flow
 from of_model.resnet_model import resnet50
 
+sys.stdout = codecs.getwriter("utf-8")(sys.stdout.detach())
 
 def init_resnet():
     """Initialize ResNet with pretrained weights"""
@@ -60,7 +64,7 @@ def InferenceNet(images=flow.FixedTensorDef(
 
 def resnet_inf(image_path):
     """The whole procedure of inference of ResNet and return the category_id and the corresponding score"""
-    image = load_image(image_path)
+    image = load_image(image_path.encode('utf-8'))
     predictions = InferenceNet(image).get()
     clsidx = predictions.ndarray().argmax() + 161
     return predictions.ndarray().max(), clsidx

@@ -16,20 +16,24 @@
 * =============================================================
 */
 """
-
 # -*- coding: utf-8 -*-
-import argparse
-import json
-import math
-import os
-import shutil
-import struct
-import time
 
+import logging
+import json
+import os
+import struct
 import cv2
+import sched
 import numpy as np
 import oneflow.core.record.record_pb2 as of_record
+import luascript.delaytaskscript as delay_script
+import time
+import common.config as config
+from datetime import datetime
 
+schedule = sched.scheduler(time.time, time.sleep)
+
+delayId = ""
 
 class ImageCoder(object):
     """Helper class that provides image coding utilities."""
@@ -81,7 +85,7 @@ def dense_to_one_hot(labels_dense, num_classes):
     return labels_one_hot
 
 
-def extract_img_label(f):
+def extract_img_label(names, path):
     """Extract the images and labels into np array [index].
     Args:
       f: A file object that contain images and annotations.
@@ -90,15 +94,15 @@ def extract_img_label(f):
       labels: a 1D uint8 np array.
       num_img: the number of images.
     """
-    train_img = os.path.join(f, 'origin/')
-    train_label = os.path.join(f, 'annotation/')
-    img_set = os.listdir(train_img)
-    num_imgs = len(img_set)
+    train_img = os.path.join(path, 'origin/')
+    train_label = os.path.join(path, 'annotation/')
+    num_imgs = len(names)
     data = []
     labels = []
     print('^^^^^^^^^^ start img_set for sycle')
-    for i in img_set:
+    for i in names:
         name = os.path.splitext(i)[0]
+        print(name)
         coder = ImageCoder((224, 224))
         image_buffer, height, width = _process_image(
             os.path.join(train_img, i), coder)
@@ -123,39 +127,26 @@ def extract_img_label(f):
     return num_imgs, data, labels
 
 
-def read_data_sets(src, desc,label_map,
-                   part_num=8):
-    """
-    Args:
-      src: The path where image and annotations saved.
-      desc: The path where OfRecord will be writen in.
-      part_num: The OfRecord will be writen in part_num parts.
-      label_map: id and its corresponding label
-    Returns:
-      Whether there is image for converting to ofRecord
-      num_images: The number of images.
-      part_num: The OfRecord will be writen in part_num parts.
-    """
-    print('************** start read_data_sets func **********************')
-    num_images, images, labels = extract_img_label(src)
-    print('************** read_data_sets end **********************')
+def execute(src_path, desc, label_map, files, part_id, key):
+    """Execute ofrecord task method."""
+    global delayId
+    delayId = delayId = "\"" + eval(str(key, encoding="utf-8")) + "\""
+    logging.info(part_id)
+    num_imgs, images, labels = extract_img_label(files, src_path)
     keys = sorted(list(map(int, label_map.keys())))
     for i in range(len(keys)):
         label_map[str(keys[i])] = i
-    if not num_images:
+    if not num_imgs:
         return False, 0, 0
-    os.makedirs(desc)
-    part_size = num_images / int(part_num)
-    part_id = -1
-    print('************** start for range num_images')
-    for i in range(num_images):
-        p = math.floor(i / part_size)
-        if p != part_id and p < part_num:
-            part_id = p
-            filename = 'part-{}'.format(part_id)
-            filename = os.path.join(desc, filename)
-            f = open(filename, 'wb')
-            print(filename)
+    try:
+        os.makedirs(desc)
+    except Exception as e:
+        print('{} exists.'.format(desc))
+    for i in range(num_imgs):
+        filename = 'part-{}'.format(part_id)
+        filename = os.path.join(desc, filename)
+        f = open(filename, 'wb')
+        print(filename)
         img = images[i]
         label = label_map[str(labels[i])]
         sample = of_record.OFRecord(feature={
@@ -165,7 +156,26 @@ def read_data_sets(src, desc,label_map,
         size = sample.ByteSize()
         f.write(struct.pack("q", size))
         f.write(sample.SerializeToString())
-    print('********************* end for range')
     if f:
         f.close()
-    return True, num_images, part_num
+
+def delaySchduled(inc, redisClient):
+    """Delay task method.
+        Args:
+            inc: scheduled task time.
+            redisClient: redis client.
+    """
+    try:
+        print("delay:" + datetime.now().strftime("B%Y-%m-%d %H:%M:%S"))
+        redisClient.eval(delay_script.delayTaskLua, 1, config.ofrecordStartQueue, delayId, int(time.time()))
+        schedule.enter(inc, 0, delaySchduled, (inc, redisClient))
+    except Exception as e:
+        print("delay error" + e)
+
+def delayKeyThread(redisClient):
+    """Delay task thread.
+        Args:
+            redisClient: redis client.
+    """
+    schedule.enter(0, 0, delaySchduled, (5, redisClient))
+    schedule.run()

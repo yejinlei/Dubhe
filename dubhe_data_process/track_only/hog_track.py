@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
 """
 /**
 * Copyright 2020 Zhejiang Lab. All Rights Reserved.
@@ -16,8 +18,6 @@
 * =============================================================
 */
 """
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 import json
 import os
 import time
@@ -25,8 +25,8 @@ from datetime import datetime
 
 import cv2
 import numpy as np
-from mot_track_kc import KCTracker
-from util import draw_bboxes_conf_cls
+from track_only.mot_track_kc import KCTracker
+from track_only.util import draw_bboxes_conf_cls
 
 #将box四点坐标转换成左上角坐标和宽和高，并过滤低置信度的框
 def bbox_to_xywh_cls_conf(bbox_xyxyc, conf_thresh=0.5):
@@ -160,7 +160,7 @@ class Detector(object):
         if ann_json:
             for i, annotation in enumerate(ann_json):
                 conf_ = float(annotation['score'])
-                cls_ = int(annotation['category_id'] - 1)
+                cls_ = int(annotation['category_id'] - 1 - 80)
                 x1 = float(annotation['bbox'][0])
                 x2 = float(annotation['bbox'][2] + x1)
                 y1 = float(annotation['bbox'][1])
@@ -178,7 +178,7 @@ class Detector(object):
             return temp
         else:
             for j in range(result.shape[0]):
-                cls_id = int(result[j][6]) + 1
+                cls_id = int(result[j][6]) + 1 + 80
                 x1 = int(result[j][0])
                 x2 = int(result[j][2])
                 y1 = int(result[j][1])
