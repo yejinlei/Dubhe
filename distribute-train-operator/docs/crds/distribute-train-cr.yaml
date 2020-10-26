@@ -1,0 +1,65 @@
+apiVersion: onebrain.oneflow.org/v1alpha1
+kind: DistributeTrain
+metadata:
+  name: dt-resnet50
+  namespace: resnet50
+  labels:
+    key: value
+spec:
+  size: 3
+  image: {{IMAGE}}
+  imagePullPolicy: IfNotPresent
+  masterCmd: export NODE_IPS=`cat /home/hostfile.json |jq -r '.[]|.ip'|paste -d "," -s` && cd /workspace/Classification/cnns && rm -rf core.* && rm -rf ./output/snapshots/* && python3 of_cnn_train_val.py --train_data_dir=$DATA_ROOT/train --train_data_part_num=$TRAIN_DATA_PART_NUM --val_data_dir=$DATA_ROOT/validation --val_data_part_num=$VAL_DATA_PART_NUM --num_nodes=$NODE_NUM --node_ips="$NODE_IPS" --gpu_num_per_node=$GPU_NUM_PER_NODE --model_update="momentum" --learning_rate=0.256 --loss_print_every_n_iter=1 --batch_size_per_device=64 --val_batch_size_per_device=64 --num_epoch=1 --model="resnet50" --model_save_dir=/model
+  masterResources:
+    requests:
+      nvidia.com/gpu: 2
+      memory: "16Gi"
+      cpu: "2"
+    limits:
+      nvidia.com/gpu: 2
+      memory: "16Gi"
+      cpu: "2"
+  slaveCmd: export NODE_IPS=`cat /home/hostfile.json |jq -r '.[]|.ip'|paste -d "," -s` && cd /workspace/Classification/cnns && rm -rf core.* && rm -rf ./output/snapshots/* && python3 of_cnn_train_val.py --train_data_dir=$DATA_ROOT/train --train_data_part_num=$TRAIN_DATA_PART_NUM --val_data_dir=$DATA_ROOT/validation --val_data_part_num=$VAL_DATA_PART_NUM --num_nodes=$NODE_NUM --node_ips="$NODE_IPS" --gpu_num_per_node=$GPU_NUM_PER_NODE --model_update="momentum" --learning_rate=0.256 --loss_print_every_n_iter=1 --batch_size_per_device=64 --val_batch_size_per_device=64 --num_epoch=1 --model="resnet50" --model_save_dir=/model
+  slaveResources:
+    requests:
+      nvidia.com/gpu: 2
+      memory: "16Gi"
+      cpu: "2"
+    limits:
+      nvidia.com/gpu: 2
+      memory: "16Gi"
+      cpu: "2"
+  nodeSelector:
+    kubernetes.io/hostname: node02
+  env:
+    - name: ENABLE_USER_OP
+      value: 'True'
+    - name: DATA_ROOT
+      value: '/dataset'
+    - name: NODE_NUM
+      value: 3
+    - name: GPU_NUM_PER_NODE
+      value: 2
+    - name: ONEFLOW_DEBUG_MODE
+      value: ""
+    - name: TRAIN_DATA_PART_NUM
+      value: 6
+    - name: VAL_DATA_PART_NUM
+      value: 6
+    - name: NCCL_DEBUG
+      value: INFO
+  datasetStorage:
+    name: pvc-dataset
+    nfs:
+      path: {{DATASET}}
+      server: {{NFS}}
+  workspaceStorage:
+    name: pvc-workspace
+    nfs:
+      path: /nfs/resnet50/workspace
+      server: {{WORKSPACE}}
+  modelStorage:
+    name: pvc-model
+    nfs:
+      path: /nfs/resnet50/model
+      server: {{MODEL}}

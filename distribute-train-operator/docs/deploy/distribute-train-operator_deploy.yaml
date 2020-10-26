@@ -1,0 +1,47 @@
+kind: Deployment
+apiVersion: apps/v1
+metadata:
+  name: distribute-train-operator
+  namespace: test-ns
+  labels:
+    name: distribute-train-operator
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      name: distribute-train-operator
+  template:
+    metadata:
+      labels:
+        name: distribute-train-operator
+    spec:
+      containers:
+      - name: distribute-train-operator
+        image: {{IMAGE}}
+        ports:
+        - containerPort: 8080
+          protocol: TCP
+        volumeMounts:d
+        - mountPath: /root/config
+          name: config-volume
+        env:
+        - name: JAR_BALL
+          value: "distribute-train-operator-1.0.jar --k8s.kubeconfig=/root/config --spring.redis.host=192.168.1.104"
+        imagePullPolicy: IfNotPresent
+      volumes:
+        - name: config-volume
+          hostPath:
+            path: /root/.kube/config
+      restartPolicy: Always
+      terminationGracePeriodSeconds: 30
+      securityContext:
+        runAsUser: 0
+      schedulerName: default-scheduler
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1
+      maxSurge: 1
+  revisionHistoryLimit: 7
+  progressDeadlineSeconds: 600
+

@@ -1,0 +1,61 @@
+---
+apiVersion: apiextensions.k8s.io/v1beta1
+kind: CustomResourceDefinition
+metadata:
+  name: distributetrains.onebrain.oneflow.org
+spec:
+  group: onebrain.oneflow.org
+  names:
+    kind: DistributeTrain
+    singular: distributetrain
+    plural: distributetrains
+    shortNames:
+      - dt
+  scope: Namespaced
+  subresources:
+    status: {}
+  version: v1alpha1
+  validation:
+    openAPIV3Schema:
+      properties:
+        apiVersion:
+          type: string
+        kind:
+          type: string
+        metadata:
+          type: object
+        spec:
+          properties:
+            image:
+              type: string
+            imagePullPolicy:
+              type: string
+            size:
+              format: int32
+              type: integer
+            masterCmd:
+              type: string
+            slaveCmd:
+              type: string
+            masterResources:
+              type: object
+            slaveResources:
+              type: object
+            nodeSelector:
+              type: object
+            initContainer:
+              type: object
+            datasetStorage:
+              type: object
+            workspaceStorage:
+              type: object
+            modelStorage:
+              type: object
+          required:
+            - image
+            - imagePullPolicy
+            - size
+            - masterCmd
+            - slaveCmd
+            - workspaceStorage
+          type: object
