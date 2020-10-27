@@ -367,6 +367,7 @@ export default {
       })),
 
     uploadFinished() {
+      if(this.skipUpload) return true;
       return this.uploadStatus && ['success', 'exception'].includes(this.uploadStatus);
     },
   },  
