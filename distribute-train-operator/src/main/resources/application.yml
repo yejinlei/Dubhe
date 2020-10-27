@@ -1,0 +1,15 @@
+server:
+  port: 8090
+
+spring:
+  redis:
+    #数据库索引
+    database: 0
+    host:
+    port: 6379
+    password:
+    #连接超时时间
+    timeout: 5000
+
+k8s:
+  kubeconfig: kubeconfig

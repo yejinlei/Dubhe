@@ -1,0 +1,132 @@
+spring:
+  profiles:
+    active: dev
+  jackson:
+    time-zone: GMT+8
+    date-format: yyyy-MM-dd HH:mm:ss
+  data:
+    redis:
+      repositories:
+        enabled: false
+  # 邮箱配置
+  mail:
+    host:
+    # 邮件的发送者 163邮箱(开发测试时使用 发送延时 20秒，每天发送量限制 50)
+    username:
+    # SMTP授权密码
+    password:
+    protocol: smtp
+    properties.mail.smtp.auth: true
+    properties.mail.smtp.port: 465 #465或者994
+    properties.mail.smtp.starttls.enable: true
+    properties.mail.smtp.starttls.required: true
+    properties.mail.smtp.ssl.enable: true
+    default-encoding: utf-8
+
+#登录图形验证码有效时间/分钟
+loginCode:
+  expiration: 2
+  codeKey: "validate_code"
+  width: 108
+  height: 28
+  length: 4
+
+#密码加密传输，前端公钥加密，后端私钥解密
+rsa:
+  private_key:
+  public_key:
+
+#jwt
+jwt:
+  header: Authorization
+  # 令牌前缀
+  token-start-with: Bearer
+  # 必须使用最少88位的Base64对该令牌进行编码
+  base64-secret:
+  # 令牌过期时间 此处单位/毫秒 ，默认24小时，可在此网站生成 https://www.convertworld.com/zh-hans/time/milliseconds.html
+  token-validity-in-seconds: 86400000
+  # 在线用户key
+  online-key: online-token
+  # 验证码
+  code-key: code-key
+
+#是否开启 swagger-ui
+swagger:
+  enabled: true
+
+# 后台添加用户的初始密码
+initial_password: ""
+
+train-job:
+  namespace: "namespace-"
+  separator: "-"
+  version-label: "v"
+  pod-name: "platform/resource-name"
+  python-format: " --"
+  manage: "train-manage"
+  out-path: "out"
+  log-path: "log"
+  load-path: "load"
+  load-key: "model_load_dir"
+  visualized-log-path: "visualizedlog"
+  docker-dataset-path: "/dataset"
+  docker-train-path: "/train"
+  docker-out-path: "train_out=${train-job.docker-train-path}/${train-job.out-path}"
+  docker-log-path: "train_log=${train-job.docker-train-path}/${train-job.log-path}"
+  docker-visualized-log-path: "train_visualized_log=${train-job.docker-train-path}/${train-job.visualized-log-path}"
+  docker-dataset: "data_url=${train-job.docker-dataset-path}"
+  eight: "8"
+  plus-eight: "+8"
+
+minioweb:
+  GetToken:
+    url: minio/webrpc
+    param:
+      id: 2
+      jsonrpc: 2.0
+      method: Web.Login
+  zip:
+    url: minio/zip?token=
+
+train-algorithm:
+  #是否输出训练结果
+  is-train-out: true
+  #是否输出训练日志
+  is-train-log: true
+  #是否输出可视化日志
+  is-visualized-log: false
+  #设置默认算法来源(1为我的算法，2为预置算法)
+  algorithm-source: 1
+  #设置fork默认值
+  fork: false
+  #上传算法文件路径名
+  upload-algorithm-path: "upload-temp/algorithm-manage"
+
+docker:
+  host:
+  port:
+
+# 配置slq打印日志
+logging:
+  level:
+    com:
+      lawt:
+        repository:
+          mapper: debug
+
+# 配置转发
+dubhe-proxy:
+  visual:
+    keyword: visual
+    server: 10.5.18.239
+    port: 9898
+  refine:
+    keyword: refine
+    server: localhost
+    port: 9797
+
+# 延时全局配置
+delay:
+  notebook:
+    #模型开发延时关闭时间
+    delete: 240
