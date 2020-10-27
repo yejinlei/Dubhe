@@ -18,6 +18,9 @@
 package org.dubhe.utils;
 
 import java.util.Collection;
+import java.util.HashSet;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 import org.apache.shardingsphere.api.sharding.standard.PreciseShardingAlgorithm;
 import org.apache.shardingsphere.api.sharding.standard.PreciseShardingValue;
@@ -38,6 +41,8 @@ public class MyPreciseShardingAlgorithm implements PreciseShardingAlgorithm<Long
      */
     private long INTERVAL_NUMBER = 50;
 
+    private static Set<String> tableNames = new HashSet<>();
+
     /**
      * 分表策略处理
      *
@@ -49,10 +54,17 @@ public class MyPreciseShardingAlgorithm implements PreciseShardingAlgorithm<Long
     public String doSharding(Collection<String> collection, PreciseShardingValue<Long> preciseShardingValue) {
         long startIndex = 1;
         long endIndex = 50;
-        dataSequenceService =  SpringContextHolder.getBean(DataSequenceService.class);
         String tableName = preciseShardingValue.getLogicTableName()+ "_" + preciseSharding(preciseShardingValue.getValue(),startIndex ,endIndex);
-        if(!dataSequenceService.checkTableExist(tableName)){
-            dataSequenceService.createTable(tableName);
+        if(!tableNames.contains(tableName)) {
+            dataSequenceService =  SpringContextHolder.getBean(DataSequenceService.class);
+            if(!dataSequenceService.checkTableExist(tableName)){
+                try{
+                    dataSequenceService.createTable(tableName);
+                } catch (Exception e) {
+                    LogUtil.info(LogEnum.DATA_SEQUENCE, "table name repeat {}", tableName);
+                }
+            }
+            tableNames.add(tableName);
         }
         return tableName;
     }
