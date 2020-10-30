@@ -190,7 +190,7 @@ public class BaseStatefulSetDeployer implements StatefulSetDeployer<ChildResourc
      * @return 存储卷集合
      */
     private List<Volume> buildVolumes(ChildResourceCreateInfo info) {
-        List<Volume> volumes = buildVolumes(info);
+        List<Volume> volumes = new LinkedList<>();
         Optional.ofNullable(info.getWorkspaceVolume()).ifPresent(v-> volumes.add(v));
         Optional.ofNullable(info.getDatasetVolume()).ifPresent(v-> volumes.add(v));
         Optional.ofNullable(info.getModelVolume()).ifPresent(v-> volumes.add(v));
