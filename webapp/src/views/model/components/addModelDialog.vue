@@ -91,7 +91,8 @@
             v-if="refreshFlag"
             action="fakeApi"
             accept=".zip,.pb,.h5,.ckpt,.pkl,.pth,.weight,.caffemodel,.pt"
-            :acceptSize="0"
+            :acceptSize="modelConfig.uploadFileAcceptSize"
+            :acceptSizeFormat="uploadSizeFomatter"
             list-type="text"
             :limit="1"
             :multiple="false"
@@ -127,7 +128,8 @@ import { add as addModel } from '@/api/model/model';
 import { list as getAlgorithmUsages, add as addAlgorithmUsage } from '@/api/algorithm/algorithmUsage';
 import UploadInline from '@/components/UploadForm/inline';
 import UploadProgress from '@/components/UploadProgress';
-import { getUniqueId, validateNameWithHyphen } from '@/utils';
+import { getUniqueId, validateNameWithHyphen, uploadSizeFomatter } from '@/utils';
+import { modelConfig } from '@/config';
 
 const defaultForm = {
   name: null,
@@ -195,6 +197,7 @@ export default {
         {color: '#e6a23c', percentage: 80},
         {color: '#67c23a', percentage: 100},
       ],
+      modelConfig,
     };
   },
   computed: {
@@ -309,6 +312,7 @@ export default {
     updateImagePath() {
       this.uploadParams.objectPath = `upload-temp/${this.user.id}/${getUniqueId()}`;
     },
+    uploadSizeFomatter,
   },
 };
 </script>

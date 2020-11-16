@@ -171,7 +171,7 @@ import BrushTip from './brushTip';
 
 const addEventListener = require('add-dom-event-listener');
 
-const FooterHeight = 32;
+const FooterHeight = 0;
 
 // 侧边栏宽度
 export const ThumbWidth = 160;
@@ -881,7 +881,7 @@ export default {
       top: 0;
       left: 0;
       width: 100%;
-      height: calc(100vh - 130px);
+      height: calc(100vh - 50px - 48px);
     }
 
     .annotation-score-group {

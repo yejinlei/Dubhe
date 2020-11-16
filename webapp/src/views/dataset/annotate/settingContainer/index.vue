@@ -240,7 +240,6 @@ export default {
 <style lang="scss">
   .workspace-settings {
     padding: 28px 28px 0;
-    margin-bottom: 33px;
     overflow-y: auto;
     background-color: rgb(242, 242, 242);
 

@@ -24,7 +24,7 @@
       :prop="'labels.' + index"
       :rules="rules"
     >
-      <div class="flex">
+      <div v-if="addAble" class="flex">
         <InfoSelect
           :value="list[index].id || list[index].name"
           style="width: 200px; margin-right: 10px;"
@@ -56,6 +56,10 @@
             @click="add"
           />
         </span>
+      </div>
+      <div v-else class="flex">
+        <el-input v-model="list[index].name" style="width: 200px; margin-right: 10px;" disabled/>
+        <el-color-picker v-model="list[index].color" disabled size="small" />
       </div>
     </el-form-item>
   </div>

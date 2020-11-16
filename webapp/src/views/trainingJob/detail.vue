@@ -161,6 +161,7 @@
     <!--断点续训Dialog-->
     <path-select-dialog
       ref="pathSelect"
+      class-key="keepTrainDialog"
       :type="pathType"
       @chooseDone="chooseDone"
       @chooseModel="chooseModel"

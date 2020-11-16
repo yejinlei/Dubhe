@@ -129,7 +129,8 @@
             action="fakeApi"
             accept=".zip,.tar,.rar,.gz"
             list-type="text"
-            :acceptSize="0"
+            :acceptSize="imageConfig.uploadFileAcceptSize"
+            :acceptSizeFormat="uploadSizeFomatter"
             :params="uploadParams"
             :show-file-count="false"
             :auto-upload="true"
@@ -182,11 +183,12 @@ import rrOperation from '@crud/RR.operation';
 import pagination from '@crud/Pagination';
 import CRUD, { presenter, header, form, crud } from '@crud/crud';
 import trainingImageApi, { imageNameList, del } from '@/api/trainingImage/index';
-import { getUniqueId } from '@/utils';
+import { getUniqueId, uploadSizeFomatter } from '@/utils';
 import BaseModal from '@/components/BaseModal';
 import UploadInline from '@/components/UploadForm/inline';
 import DropdownHeader from '@/components/DropdownHeader';
 import UploadProgress from '@/components/UploadProgress';
+import { imageConfig } from '@/config';
 
 const defaultForm = {
   imageName: null,
@@ -292,6 +294,7 @@ export default {
       loading: false,
       isEdit: false,
       prefabricate: true,
+      imageConfig,
     };
   },
   computed: {
@@ -422,6 +425,7 @@ export default {
         },
       );
     },
+    uploadSizeFomatter,
   },
 };
 </script>

@@ -16,10 +16,10 @@
 
 import { getMinIOAuth } from '@/api/auth';
 import { decrypt } from '@/utils/rsaEncrypt';
+import { minIO } from '@/config';
 
 const Minio = require('minio');
 const toArray = require('stream-to-array');
-const Config = require('@/config');
 
 const env = process.env.NODE_ENV || 'development';
 
@@ -36,7 +36,7 @@ const makeBucket = (client, bucketName) => {
   });
 };
 
-const minIOConfig = Config.minIO[env];
+const minIOConfig = minIO[env];
 
 // 导出 bucketName
 export const {bucketName} = minIOConfig;

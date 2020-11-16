@@ -1,0 +1,56 @@
+module.exports = {
+  "code": 200,
+  "msg": null,
+  "data": {
+    "result": [{
+      "id": 56,
+      "name": "bag_data",
+      "remark": "不可删除，不可删除",
+      "type": 0,
+      "uri": null,
+      "dataType": 0,
+      "annotateType": 2,
+      "status": 104,
+      "createTime": "2020-10-21 15:39:01",
+      "updateTime": "2020-10-22 14:13:10",
+      "team": null,
+      "createUser": null,
+      "updateUser": null,
+      "progress": null,
+      "currentVersionName": null,
+      "decompressState": 0,
+      "labelGroupId": 1,
+      "labelGroupName": "COCO",
+      "labelGroupType": 1,
+      "import": false,
+      "top": true
+    }, {
+      "id": 346,
+      "name": "test432",
+      "remark": "test432",
+      "type": 0,
+      "uri": null,
+      "dataType": 0,
+      "annotateType": 1,
+      "status": 101,
+      "createTime": "2020-10-27 15:20:58",
+      "updateTime": "2020-10-27 15:20:58",
+      "team": null,
+      "createUser": null,
+      "updateUser": null,
+      "progress": null,
+      "currentVersionName": null,
+      "decompressState": 0,
+      "labelGroupId": 468,
+      "labelGroupName": "test432",
+      "labelGroupType": 0,
+      "import": false,
+      "top": false
+    }],
+    "page": {
+      "size": 10,
+      "current": 1,
+      "total": 218
+    },
+  }
+}

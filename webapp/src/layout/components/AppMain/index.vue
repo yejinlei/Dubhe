@@ -17,13 +17,6 @@
 <template>
   <section class="app-main">
     <router-view :key="$route.path" />
-    <div v-if="$store.state.settings.showFooter" id="el-main-footer">
-      <span> {{ $store.state.settings.footerTxt }} </span>
-      <template v-if="$store.state.settings.caseNumber">
-        <span>⋅</span>
-        <a href="/" target="_blank">{{ $store.state.settings.caseNumber }}</a>
-      </template>
-    </div>
   </section>
 </template>
 
@@ -45,23 +38,6 @@ export default {
 
 .fixed-header + .app-main {
   padding-top: 50px;
-}
-
-#el-main-footer {
-  position: fixed;
-  bottom: 0;
-  z-index: 99;
-  width: 100%;
-  height: 33px;
-  padding: 10px 6px 0 6px;
-  overflow: hidden;
-  font-family: Arial, sans-serif !important;
-  font-size: 0.7rem !important;
-  color: #7a8b9a;
-  letter-spacing: 0.8px;
-  pointer-events: none;
-  background: none repeat scroll 0 0 white;
-  border-top: 1px solid #e7eaec;
 }
 </style>
 

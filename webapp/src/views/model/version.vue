@@ -74,7 +74,8 @@
             ref="upload"
             action="fakeApi"
             accept=".zip, .pb, .h5, .ckpt, .pkl, .pth, .weight, .caffemodel, .pt"
-            :acceptSize="0"
+            :acceptSize="modelConfig.uploadFileAcceptSize"
+            :acceptSizeFormat="uploadSizeFomatter"
             list-type="text"
             :limit="1"
             :multiple="false"
@@ -108,7 +109,8 @@ import cdOperation from '@crud/CD.operation';
 import pagination from '@crud/Pagination';
 import UploadInline from '@/components/UploadForm/inline';
 import UploadProgress from '@/components/UploadProgress';
-import { getUniqueId, downloadZipFromObjectPath } from '@/utils';
+import { getUniqueId, downloadZipFromObjectPath, uploadSizeFomatter } from '@/utils';
+import { modelConfig } from '@/config';
 
 const defaultForm = {
   parentId: null,
@@ -157,6 +159,7 @@ export default {
         {color: '#e6a23c', percentage: 80},
         {color: '#67c23a', percentage: 100},
       ],
+      modelConfig,
     };
   },
   computed: {
@@ -254,6 +257,7 @@ export default {
         () => {},
       );
     },
+    uploadSizeFomatter,
   },
 };
 </script>

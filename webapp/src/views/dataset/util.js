@@ -193,6 +193,11 @@ export const dataTypeMap = {
   1: '视频',
 };
 
+export const dataTypeCodeMap = {
+  'IMAGE': 0,
+  'VIDEO': 1,
+};
+
 // 文件状态
 export const fileTypeEnum = {
   0: { label: '全部', abbr: '全部' },
@@ -215,6 +220,12 @@ export const fileCodeMap = {
   'TRACK_SUCCEED': 201,
   'UNCOMPLETED': 301,
   'COMPLETED': 302,
+};
+
+export const annotationCodeMap = {
+  'ANNOTATE': 1,
+  'CLASSIFY': 2,
+  'TRACK': 5,
 };
 
 export const annotationMap = {

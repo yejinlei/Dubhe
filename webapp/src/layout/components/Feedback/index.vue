@@ -106,7 +106,7 @@ export default {
 @import "~@/assets/styles/variables.scss";
 
 .feedback {
-  margin-right: 10px;
+  margin-right: 20px;
   font-size: 14px;
   line-height: $navBarHeight;
   color: $infoColor;

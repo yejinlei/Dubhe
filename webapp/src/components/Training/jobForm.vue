@@ -222,8 +222,8 @@
           <el-input-number
             id="resourcesPoolNode"
             v-model="form.resourcesPoolNode"
-            :min="1"
-            :max="8"
+            :min="2"
+            :max="trainConfig.trainNodeMax"
             :step-strictly="true"
           />
           <el-tooltip effect="dark" content="请确保代码中包含“num_nodes”参数和“node_ips”参数用于接收分布式相关参数" placement="top">
@@ -282,7 +282,7 @@
             id="delayCreateTime"
             v-model="form.delayCreateTime"
             :min="0"
-            :max="168"
+            :max="trainConfig.delayCreateTimeMax"
             :step-strictly="true"
           />&nbsp;小时
         </el-form-item>
@@ -295,7 +295,7 @@
             id="delayDeleteTime"
             v-model="form.delayDeleteTime"
             :min="0"
-            :max="168"
+            :max="trainConfig.delayDeleteTimeMax"
             :step-strictly="true"
           />&nbsp;小时
           <el-tooltip effect="dark" content="选择 0 表示不限制训练时长" placement="top">
@@ -374,6 +374,7 @@ import { list as getAlgorithmList } from '@/api/algorithm/algorithm';
 import { harborProjectNames, harborImageNames } from '@/api/system/harbor';
 import { list as getModelName } from '@/api/model/model';
 import { list as getModelTag } from '@/api/model/modelVersion';
+import { trainConfig } from '@/config';
 import RunParamForm from './runParamForm';
 import DataSourceSelector from './dataSourceSelector';
 
@@ -442,6 +443,7 @@ export default {
       dictReady: false,
       delayCreateDelete: false,
       selectedAlgorithm: null,
+      trainConfig,
 
       form: { ...defaultForm },
       rules: {
@@ -814,9 +816,7 @@ export default {
       this.onResourcesPoolTypeChange();
     },
     onTrainTypeChange(trainType) {
-      if (trainType === 0) {
-        this.form.resourcesPoolNode = 1;
-      }
+      this.form.resourcesPoolNode = trainType === 0 ? 1 : 2;
     },
   },
 };

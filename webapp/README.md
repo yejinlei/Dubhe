@@ -79,6 +79,15 @@ npm install
 npm run dev
 ```
 
+## 接口 Mock
+
+当前项目自动集成了接口 mock 服务，用户可以通过 `npm run mock` 启动数据 mock 服务。
+
+- 普通接口：在 `mock` 目录下创建根据请求 url 创建对应文件，比如请求路径是`api/data/datasets`，在就直接创建 `mock/api/data/datasets.js` 文件，并导出 mock 文件
+- RESTful 风格接口：在 `mock/mock-map` 文件下创建对应的文件 map, key 为符合[path-to-regexp](https://github.com/pillarjs/path-to-regexp) 风格的路径，value 为对应的实际 mock 文件地址
+
+如果用户未创建 mock 文件，请求会转发到 `development` 环境指定的 api 地址。
+
 ## 项目结构
 
 ```

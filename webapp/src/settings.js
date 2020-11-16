@@ -58,9 +58,13 @@ module.exports = {
   /**
    * RSA公钥
    */
-  publicKey: 'MFwwDQYJKoZIhvcNAQEBBQADSwAwSAJBANL378k3RiZHWx5AfJqdH9xRNBmD9wGD2iRe41HdTNF8RUhNnHit5NpMNtGL0NPTSSpPjjI1kJfVorRvaQerUgkCAwEAAQ==',
+  publicKey: '',
   /**
    * 用户社区
    */
   Community: 'http://www.aiiaos.cn/index.php?s=/forum/index/forum/id/45.html',
+  /**
+   * 使用文档
+   */
+  DocLink: 'http://docs.dubhe.ai/docs/' ,
 };

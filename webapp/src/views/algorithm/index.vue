@@ -181,8 +181,8 @@
             ref="upload"
             action="fakeApi"
             accept=".zip"
-            :acceptSize="1024"
-            :acceptSizeFormat="(size) => `${size/1024} GB`"
+            :acceptSize="algorithmConfig.uploadFileAcceptSize"
+            :acceptSizeFormat="uploadSizeFomatter"
             list-type="text"
             :show-file-count="false"
             :params="uploadParams"
@@ -263,7 +263,7 @@
 </template>
 
 <script>
-import { downloadZipFromObjectPath, validateNameWithHyphen, getUniqueId } from '@/utils';
+import { downloadZipFromObjectPath, validateNameWithHyphen, getUniqueId, uploadSizeFomatter } from '@/utils';
 import CRUD, { presenter, header, form, crud } from '@crud/crud';
 import cdOperation from '@crud/CD.operation';
 import rrOperation from '@crud/RR.operation';
@@ -275,6 +275,7 @@ import BaseModal from '@/components/BaseModal';
 import AlgorithmDetail from '@/components/Training/algorithmDetail';
 import UploadInline from '@/components/UploadForm/inline';
 import UploadProgress from '@/components/UploadProgress';
+import { algorithmConfig } from '@/config';
 
 const defaultForm = {
   id: null,
@@ -366,6 +367,7 @@ export default {
       uploading: false,
       progress: 0,
       size: 0,
+      algorithmConfig,
       customColors: [
         {color: '#909399', percentage: 40},
         {color: '#e6a23c', percentage: 80},
@@ -577,6 +579,7 @@ export default {
         noteBookName,
       }});
     },
+    uploadSizeFomatter,
   },
 };
 </script>

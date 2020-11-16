@@ -1,6 +1,6 @@
 {
   "name": "dubhe-web",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "之江天枢人工智能开源平台",
   "author": "zhejianglab",
   "keywords": [
@@ -11,6 +11,7 @@
     "人工智能"
   ],
   "scripts": {
+    "mock": "vue-cli-service serve --mode mock --open",
     "dev": "vue-cli-service serve --open",
     "build:prod": "vue-cli-service build",
     "build:test": "vue-cli-service build --mode test",
@@ -51,7 +52,7 @@
     "date-fns": "^2.13.0",
     "echarts": "4.2.1",
     "echarts-gl": "^1.1.1",
-    "element-ui": "^2.13.2",
+    "element-ui": "2.13.2",
     "file-saver": "^2.0.2",
     "filereader-stream": "^2.0.0",
     "jquery": "^3.5.1",
@@ -66,6 +67,7 @@
     "normalize.css": "7.0.0",
     "nprogress": "0.2.0",
     "p-map": "^4.0.0",
+    "path-to-regexp": "^6.2.0",
     "prismjs": "^1.20.0",
     "promise.allsettled": "^1.0.2",
     "qs": "^6.9.1",
@@ -105,6 +107,7 @@
     "eslint-plugin-import": "^2.20.2",
     "eslint-plugin-prettier": "^2.3.1",
     "eslint-plugin-vue": "^6.2.2",
+    "express-http-proxy": "^1.6.2",
     "html-webpack-plugin": "3.2.0",
     "husky": "^4.2.5",
     "less": "^3.11.3",

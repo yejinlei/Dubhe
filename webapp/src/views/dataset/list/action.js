@@ -14,7 +14,7 @@
 * =============================================================
 */
  
-import { statusCodeMap } from '../util';
+import { statusCodeMap, dataTypeCodeMap } from '../util';
 
 export default {
   name: 'DatasetAction',
@@ -59,7 +59,7 @@ export default {
 
           // 查看标注按钮在 自动标注中 未采样 采样中 采样失败 目标跟踪中 数据增强中 目标跟踪失败 时不显示, 此外，类型为视频时，自动标注完成也不可查看(此时下游会进行目标跟踪)
           let showCheckButton = !['AUTO_ANNOTATING', 'UNSAMPLED', 'SAMPLING', 'SAMPLE_FAILED', 'TRACKING', 'ENHANCING', 'TRACK_FAILED'].includes(statusCodeMap[row.status]);
-          if (row.dataType === 1 && statusCodeMap[row.status] === 'AUTO_ANNOTATED') {
+          if (row.dataType === dataTypeCodeMap.VIDEO && statusCodeMap[row.status] === 'AUTO_ANNOTATED') {
             showCheckButton = false;
           }
           // 查看标注按钮
@@ -113,7 +113,7 @@ export default {
 
           // 当类型为视频时,状态为标注完成、目标跟踪完成时显示发布按钮,其余状态不显示发布按钮
           // 当类型为图片时,状态为自动标注完成时显示有弹窗确认的发布按钮,为标注完成时显示发布按钮,其余状态不显示发布按钮
-          if (row.dataType === 1) {
+          if (row.dataType === dataTypeCodeMap.VIDEO) {
             if (['ANNOTATED', 'TRACK_SUCCEED'].includes(statusCodeMap[row.status])) {
               showPublishButton = true;
               publishButton = publishDialogButton;
@@ -135,7 +135,7 @@ export default {
           );
           // 类型为视频时，当状态为未采样时才可导入，其余状态不可导入
           // 类型为图片时，自动标注中、数据增强中 目标跟踪失败 不可导入，其余状态均可导入
-          if (row.dataType === 1) {
+          if (row.dataType === dataTypeCodeMap.VIDEO) {
             if (statusCodeMap[row.status] === 'UNSAMPLED') {
               showUploadButton = true;
             }
@@ -144,7 +144,7 @@ export default {
           }
 
           // 当标注完成、目标跟踪完成，以及非视频的自动标注完成时显示重新自动标注按钮 (若为视频此时下游会进行目标跟踪)
-          let showReAutoButton = ['ANNOTATED', 'TRACK_SUCCEED'].includes(statusCodeMap[row.status]) || (statusCodeMap[row.status] === 'AUTO_ANNOTATED' && row.dataType === 0);
+          let showReAutoButton = ['ANNOTATED', 'TRACK_SUCCEED'].includes(statusCodeMap[row.status]) || (statusCodeMap[row.status] === 'AUTO_ANNOTATED' && row.dataType === dataTypeCodeMap.IMAGE);
           // 重新自动标注按钮
           const reAutoButton = (
             <el-popconfirm
@@ -180,7 +180,7 @@ export default {
 
           // 展示数据增强入口
           // 当数据类型为图片,并且状态为自动标注完成、标注完成展示数据增强入口
-          let showAugmentButton = row.dataType === 0 && ['AUTO_ANNOTATED', 'ANNOTATED'].includes(statusCodeMap[row.status]);
+          let showAugmentButton = row.dataType === dataTypeCodeMap.IMAGE && ['AUTO_ANNOTATED', 'ANNOTATED'].includes(statusCodeMap[row.status]);
           // 数据增强按钮
           const augmentButton = (
             <el-button {...btnProps} onClick={() => dataEnhance(row)}>

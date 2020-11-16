@@ -26,11 +26,19 @@
           </template>
           <template v-slot:right>
             <slot name="right-options" />
+            <Guideline />
             <Feedback />
           </template>
         </navbar>
       </div>
       <app-main />
+      <div v-if="$store.state.settings.showFooter && showFooter" id="el-main-footer">
+        <span> {{ $store.state.settings.footerTxt }} </span>
+        <template v-if="$store.state.settings.caseNumber">
+          <span>⋅</span>
+          <a href="/" target="_blank">{{ $store.state.settings.caseNumber }}</a>
+        </template>
+      </div>
     </div>
   </div>
 </template>
@@ -38,7 +46,7 @@
 <script>
 import { mapState } from 'vuex';
 import ResizeMixin from './mixin/ResizeHandler';
-import { AppMain, Navbar, Sidebar, Feedback } from './components';
+import { AppMain, Navbar, Sidebar, Guideline, Feedback } from './components';
 
 export default {
   name: 'BaseLayout',
@@ -46,6 +54,7 @@ export default {
     AppMain,
     Navbar,
     Sidebar,
+    Guideline,
     Feedback,
   },
   mixins: [ResizeMixin],
@@ -59,6 +68,10 @@ export default {
       default: true,
     },
     showSidebar: {
+      type: Boolean,
+      default: true,
+    },
+    showFooter: {
       type: Boolean,
       default: true,
     },
@@ -150,5 +163,22 @@ export default {
 
   .mobile .fixed-header {
     width: 100%;
+  }
+
+  #el-main-footer {
+    position: fixed;
+    bottom: 0;
+    z-index: 99;
+    width: 100%;
+    height: 33px;
+    padding: 10px 6px 0 6px;
+    overflow: hidden;
+    font-family: Arial, sans-serif !important;
+    font-size: 0.7rem !important;
+    color: #7a8b9a;
+    letter-spacing: 0.8px;
+    pointer-events: none;
+    background: none repeat scroll 0 0 white;
+    border-top: 1px solid #e7eaec;
   }
 </style>

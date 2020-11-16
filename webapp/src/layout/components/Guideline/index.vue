@@ -14,8 +14,44 @@
 * =============================================================
 */
 
-export { default as AppMain } from './AppMain';
-export { default as Navbar } from './Navbar';
-export { default as Sidebar } from './Sidebar';
-export { default as Guideline } from './Guideline'; 
-export { default as Feedback } from './Feedback';
+<template>
+  <div class="doc-link" >
+    <a class="link-action" target="_blank" :href="DocLink">
+      使用文档
+      <IconFont type="externallink" />
+    </a>
+  </div>
+</template>
+
+<script>
+import { DocLink } from '@/settings';
+
+export default { 
+  name: 'Guideline',
+  setup() {
+    return {
+      DocLink,
+    };
+  },
+};
+</script>
+
+<style lang="scss">
+@import "~@/assets/styles/variables.scss";
+
+.doc-link {
+  margin-right: 20px;
+  font-size: 14px;
+  line-height: $navBarHeight;
+  cursor: pointer;
+}
+
+.link-action {
+  display: block;
+  text-align: center;
+  color: $infoColor;
+  &:hover {
+    color: $primaryColor;
+  }
+}
+</style>

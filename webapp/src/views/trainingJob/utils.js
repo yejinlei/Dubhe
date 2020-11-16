@@ -24,3 +24,22 @@ export const trainingStatusMap = {
   5: { statusMap: 'done' },
   7: { tagMap: 'danger', statusMap: 'done' },
 };
+
+// 目录树弹窗文案
+export const modelOfficial = [
+  {
+    'jobResume':'断点续训',
+    'modelDownload':'模型下载',
+    'modelSelect':'模型选择',
+  },
+  {
+    'jobResume':'请选择从哪里开始继续训练',
+    'modelDownload': '请选择需要下载的模型文件目录',
+    'modelSelect': '请选择要保存的模型',
+  },
+  {
+    'jobResume':'暂无数据，无法断点续训',
+    'modelDownload': '暂无数据',
+    'modelSelect': '暂无模型数据',
+  },
+];

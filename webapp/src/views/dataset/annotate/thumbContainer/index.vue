@@ -260,7 +260,6 @@ export default {
   flex-direction: column;
   width: 160px;
   padding-top: 20px;
-  margin-bottom: 34px;
   text-align: center;
   background: #fff;
   box-shadow: 2px 0 6px 0 rgba(0, 0, 0, 0.15);

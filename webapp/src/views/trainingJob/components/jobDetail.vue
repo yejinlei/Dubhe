@@ -144,6 +144,7 @@
     <!--模型下载Dialog-->
     <path-select-dialog
       ref="pathSelect"
+      class-key="ModelDownload"
       type="modelDownload"
       @chooseDone="chooseDone"
     />

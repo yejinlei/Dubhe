@@ -16,6 +16,14 @@
 
 @import "~@/assets/styles/variables.scss";
 
+.group-cascader{
+  .el-cascader-menu__wrap{
+    max-height: 300px;
+    min-height: 100px;
+    max-width: 280px;
+  }
+}
+
 .table-top-row {
   background-color: $menuBg !important;
 }

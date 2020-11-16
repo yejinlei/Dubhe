@@ -42,72 +42,46 @@
           disabled
         />
       </el-form-item>
-      <el-form-item v-if="!state.model.import" label="标签组" prop="labelGroupId">
-        <div v-if="editable" class="label-input">
-          <el-popover
-            ref="popoverRef"
-            v-model="state.popoverVisible"
-            placement="top"
-            trigger="click"
-            popper-class="label-group-popover"
+      <el-form-item v-if="!state.model.import" label="标签组" style="height: 32px;">
+        <div v-if="editable">
+          <el-cascader
+            v-model="state.chosenGroup"
+            placeholder="标签组"
+            :options="state.labelGroupOptions"
+            :props="{expandTrigger: 'hover'}"
+            :show-all-levels="false"
+            filterable
+            :clearable="deletable"
+            popper-class="group-cascader" 
+            style="width:100%; line-height:32px;"
+            @change="handleGroupChange"
           >
-            <div class="add-label-tag">
-              <el-tabs v-model="state.labelGroupTab" type="border-card">
-                <el-tab-pane label="自定义标签组" name="custom">
-                  <el-select 
-                    v-model="state.customLabelGroupId" 
-                    filterable 
-                    placeholder="请选择" 
-                    popper-class="label-group-select"
-                    @change="handleCustomId"
-                  >
-                    <el-option
-                      v-for="item in customLabelGroups"
-                      :key="item.labelGroupId"
-                      :label="item.name"
-                      :value="item.labelGroupId"
-                    >
-                    </el-option>
-                  </el-select>
-                </el-tab-pane>
-                <el-tab-pane label="预置标签组" name="system" :disabled="!systemLabelEnabled">
-                  <el-select 
-                    v-model="state.systemLabelGroupId" 
-                    filterable 
-                    placeholder="请选择" 
-                    @change="handleSystemId"
-                  >
-                    <el-option
-                      v-for="item in systemLabelGroups"
-                      :key="item.labelGroupId"
-                      :label="item.name"
-                      :value="item.labelGroupId"
-                      :disabled="!optionEnabled(item.labelGroupId, state.model.annotateType)"
-                    >
-                    </el-option>
-                  </el-select>
-                </el-tab-pane>
-              </el-tabs>
+            <div slot="empty">
+              <span>没有找到标签组？去</span> 
+              <a
+                target="_blank"
+                type="primary"
+                :underline="false"
+                class="primary"
+                :href="`/data/labelgroup/create`"
+              >
+                新建标签组
+              </a>
+              <span>页面创建</span>
             </div>
-            <el-button slot="reference" type="text">
-              &nbsp;
-              <span v-if="state.model.labelGroupId === null">&nbsp;&nbsp;标签组</span>
-              <el-tag v-else :closable="deletable" @close="handleRemoveLabelGroup()">
-                {{state.model.labelGroupName}}                
-              </el-tag>
-            </el-button>
-          </el-popover>
-          <el-link 
-            v-if="state.model.labelGroupId !== null" 
-            target="_blank" 
-            type="primary" 
-            :underline="false" 
-            class="vm" 
-            :href="`/data/labelgroup/detail?id=${state.model.labelGroupId}`"
-            style="float: right; margin-right: 8px;"  
-          >
-            查看详情
-          </el-link>
+          </el-cascader>
+          <div style="position: relative; float: right; top: -33px; right: 30px;">
+            <el-link 
+              v-if="state.chosenGroupId !== null" 
+              target="_blank"
+              type="primary"
+              :underline="false"
+              class="vm" 
+              :href="`/data/labelgroup/detail?id=${state.chosenGroupId}`"
+            >
+              查看详情
+            </el-link>
+          </div>
         </div>
         <div v-else class="label-input" style="color: #c0c4cc; background-color: #f5f7fa;">
           &nbsp;&nbsp;&nbsp;&nbsp;{{state.model.labelGroupName}}
@@ -124,6 +98,19 @@
           </el-link>
         </div>
       </el-form-item>
+      <div v-if="state.chosenGroupId === null" style=" position: relative; top: -12px; left: 116px;">
+        <span>标签组需要在</span> 
+        <a
+          target="_blank"
+          type="primary"
+          :underline="false"
+          class="primary"
+          :href="`/data/labelgroup/create`"
+        >
+          新建标签组
+        </a>
+        <span>页面创建</span>
+      </div>
       <el-form-item label="数据集描述" prop="remark">
         <el-input
           v-model="state.model.remark"
@@ -140,12 +127,12 @@
 
 <script>
 import {isNil} from 'lodash'; 
-import { watch, reactive, computed, ref, onMounted } from '@vue/composition-api';
+import { watch, reactive, computed, onMounted } from '@vue/composition-api';
 
 import BaseModal from '@/components/BaseModal';
 import InfoSelect from '@/components/InfoSelect';
 import { validateName } from '@/utils/validate';
-import { annotationMap, dataTypeMap, statusCodeMap  } from '@/views/dataset/util';
+import { annotationMap, annotationCodeMap, dataTypeMap, dataTypeCodeMap, statusCodeMap  } from '@/views/dataset/util';
 import { getLabelGroupList } from '@/api/preparation/labelGroup';
 
 export default {
@@ -165,7 +152,6 @@ export default {
     },
     handleCancel: Function,
     handleOk: Function,
-    goLabelGroupDetail: Function,
     row: {
       type: Object,
       default: () => {},
@@ -173,9 +159,6 @@ export default {
   },
   setup(props, { refs }) {
     const { handleOk } = props;
-    const popoverRef = ref(null);
-    const systemLabelGroups = [];
-    const customLabelGroups = [];
 
     const rules= {
       name: [
@@ -199,14 +182,20 @@ export default {
 
     const state = reactive({
       model: buildModel(props.row),
-      popoverVisible: false,
-      labelGroupTab: "custom",
-      customLabelGroupId: null,
-      systeomLabelGroupId: null,
-    });
-
-    const systemLabelEnabled = computed(() => {
-      return props.row.annotateType !== 5;
+      chosenGroupId: null,
+      chosenGroup: null,
+      labelGroupOptions: [{
+        value: 'custom',
+        label: '自定义标签组',
+        disabled: false,
+        children: [],
+      }, 
+      {
+        value: 'system',
+        label: '预置标签组',
+        disabled: false,
+        children: [],
+      }], 
     });
 
     const deletable = computed(() => {
@@ -230,10 +219,10 @@ export default {
       // 如果是视频，只能用目标跟踪
       return rawAnnotationList.map(d => {
         let disabled = false;
-        if (state.model.dataType === 0) {
-          disabled = d.value === 5;
-        } else if (state.model.dataType === 1) {
-          disabled = d.value !== 5;
+        if (state.model.dataType === dataTypeCodeMap.IMAGE) {
+          disabled = d.value === annotationCodeMap.TRACK;
+        } else if (state.model.dataType === dataTypeCodeMap.VIDEO) {
+          disabled = d.value !== annotationCodeMap.TRACK;
         }
         return {
           ...d,
@@ -247,6 +236,7 @@ export default {
     });
         
     const handleEditDataset = () => {
+      state.model.labelGroupId = state.chosenGroupId;
       refs.form.validate(valid => {
         if (!valid) {
           return false;
@@ -255,72 +245,75 @@ export default {
         return null;
       });
     };
-
-    const handleCustomId = () => {
-      Object.assign(state, {
-        popoverVisible: false,
-        systemLabelGroupId: null,
-        model: {
-          ...state.model,
-          labelGroupId: state.customLabelGroupId,
-          labelGroupName: customLabelGroups.find(d => d.labelGroupId === state.customLabelGroupId).name,
-        },
-      });
-    };
-
-    const handleSystemId = () => {
-      Object.assign(state, {
-        popoverVisible: false,
-        customLabelGroupId: null,
-        model: {
-          ...state.model,
-          labelGroupId: state.systemLabelGroupId,
-          labelGroupName: systemLabelGroups.find(d => d.labelGroupId === state.systemLabelGroupId).name,
-        },
-      });
-    };
-        
-    const handleRemoveLabelGroup = () => {
-      Object.assign(state, {
-        customLabelGroupId: null,
-        systemLabelGroupId: null,
-        model: {
-          ...state.model,
-          labelGroupId: null,
-        },
-      });
-      popoverRef.value.doClose();
-    };
-
-    const optionEnabled = (labelGroupId, annotateType) => {
-      if(annotateType === 1) {
-        return labelGroupId === 1;
-      } 
-      if(annotateType === 5) {
-        return false;
+   
+    const handleGroupChange = (val) => {
+      if(val.length === 0) {
+        state.chosenGroup = null;
+        state.chosenGroupId = null;
+      } else {
+        state.chosenGroup = val;
+        // eslint-disable-next-line prefer-destructuring
+        state.chosenGroupId = val[1];
       }
-      return true;
     };
 
     onMounted(() => {
-      getLabelGroupList(1).then(res => res.forEach((item) => {
-        systemLabelGroups.push({
-          labelGroupId: item.id,
-          name: item.name,
+      getLabelGroupList(1).then(res => {
+        res.forEach((item) => {
+          state.labelGroupOptions[1].children.push({
+            value: item.id,
+            label: item.name,
+            disabled: false,
+          });
         });
-      }));
-      getLabelGroupList(0).then(res => res.forEach((item) => {
-        customLabelGroups.push({
-          labelGroupId: item.id,
-          name: item.name,
+      });
+      getLabelGroupList(0).then(res => {
+        res.forEach((item) => {
+          state.labelGroupOptions[0].children.push({
+            value: item.id,
+            label: item.name,
+            disabled: false,
+          });
         });
-      }));
+      });
     });
 
     watch(() => props.row, (next) => {
       Object.assign(state, {
         model: { ...state.model, ...next },
       });
+      // 图像分类可任意选择
+      if(next?.annotateType === annotationCodeMap.CLASSIFY) {
+        state.labelGroupOptions[1].disabled = false;
+        state.labelGroupOptions[1].children.forEach( item => {item.disabled = false;});
+      }
+      // 目标检测和目标跟踪 在预置标签组中只可选择coco
+      if([annotationCodeMap.ANNOTATE, annotationCodeMap.TRACK].includes(next?.annotateType)) {
+        if(state.chosenGroupId !== 1) {
+          state.chosenGroup = null;
+          state.chosenGroupId = null;
+        }
+        state.labelGroupOptions[1].disabled = false;
+        state.labelGroupOptions[1].children.forEach( item => { 
+          if(item.value === 1){
+            item.disabled = false;
+          } else {
+            item.disabled = true;
+          }
+        });
+      }
+      // 读取数据集已有标签组
+      if(!isNil(next?.labelGroupId)) {
+        state.chosenGroupId = next.labelGroupId;
+        if(next.labelGroupType === 0) {
+          state.chosenGroup = ['custom', next.labelGroupId];
+        } else {
+          state.chosenGroup = ['system', next.labelGroupId];
+        }
+      } else {
+        state.chosenGroupId = null;
+        state.chosenGroup = null;
+      }
     });
 
     return {
@@ -328,17 +321,10 @@ export default {
       state,
       deletable,
       editable,
-      systemLabelEnabled,
-      optionEnabled,
-      systemLabelGroups,
-      customLabelGroups,
-      handleCustomId,
-      handleSystemId,
-      handleRemoveLabelGroup,
+      handleGroupChange,
       handleEditDataset,
       dataTypeList,
       annotationList,
-      popoverRef,
     };
   },
 };

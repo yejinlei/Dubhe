@@ -18,6 +18,7 @@
   <!--训练管理页面-断点续训Dialog-->
   <BaseModal
     :visible.sync="visible"
+    :class="classKey"
     :title="title"
     width="600px"
     @open="onDialogOpen"
@@ -48,11 +49,16 @@ import { Loading } from 'element-ui';
 import BaseModal from '@/components/BaseModal';
 import { getTreeListFromFilepath } from '@/utils';
 import { resumeTrain } from '@/api/trainingJob/job';
+import { modelOfficial } from '../utils';
 
 export default {
   name: 'JobResumeDialog',
   components: { BaseModal },
   props: {
+    classKey: {
+      type: String,
+      default: '',
+    },
     type: {
       type: String,
       default: 'jobResume',
@@ -79,7 +85,7 @@ export default {
     };
   },
   methods: {
-    async show(item) {
+    show(item) {
       this.path = item.resumePath;
       this.id = item.id;
       this.fileName = item.fileName;
@@ -90,25 +96,8 @@ export default {
       this.visible = true;
     },
     getCentext(type='', num) {
-      const ctxArr = [
-        {
-          'jobResume':'断点续训',
-          'modelDownload':'模型下载',
-          'modelSelect':'模型选择',
-        },
-        {
-          'jobResume':'请选择从哪里开始继续训练',
-          'modelDownload': '请选择需要下载的模型文件目录',
-          'modelSelect': '请选择要保存的模型',
-        },
-        {
-          'jobResume':'暂无数据，无法断点续训',
-          'modelDownload': '暂无数据',
-          'modelSelect': '暂无模型数据',
-        },
-      ];
-      if(ctxArr[num][type]){
-        return ctxArr[num][type];
+      if(modelOfficial[num][type]){
+        return modelOfficial[num][type];
       }
     },
     // handle
@@ -117,7 +106,7 @@ export default {
       this.treeList = [];
     },
     async onDialogOpened() {
-      const loadingInstance = Loading.service({ target: '.el-dialog__body' });
+      const loadingInstance = Loading.service({ target: `.${this.classKey} .el-dialog__body` });
       [this.treeList, this.defaultExpandedKeys] = await getTreeListFromFilepath(
         this.path,
       );

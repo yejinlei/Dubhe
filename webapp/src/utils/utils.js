@@ -343,3 +343,11 @@ export const getTreeListFromFilepath = async (filepath) => {
 export function getUniqueId() {
   return parseTime(new Date(), '{y}{m}{d}{h}{i}{s}{S}') + nanoid(4);
 }
+
+// 以 MB 为入参单位，格式化上传大小文本
+export function uploadSizeFomatter(size) {
+  if (size >= 1024) {
+    return `${size / 1024} GB`;
+  }
+  return `${size} MB`;
+}

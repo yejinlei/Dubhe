@@ -15,7 +15,7 @@
 */
 
 <template>
-  <BaseLayout :showBack="true" :showSidebar="false">
+  <BaseLayout :showBack="true" :showSidebar="false" :showFooter="false">
     <div slot="left-options" style="margin-left: 10px;">
       <el-tooltip effect="dark" placement="bottom-start">
         <div slot="content">

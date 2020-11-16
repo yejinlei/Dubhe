@@ -14,31 +14,52 @@
 * =============================================================
 */
 
-module.exports = {
-  minIO: {
-    development: {
-      config: {
-        endPoint: '', // MinIO 服务地址
-        port: 9000,
-        useSSL: false,
-      },
-      bucketName: 'dubhe-dev',
+// minIO 参数配置
+export const minIO = {
+  development: {
+    config: {
+      endPoint: '', // MinIO 服务地址
+      port: 9000,
+      useSSL: false,
     },
-    test: {
-      config: {
-        endPoint: '',
-        port: 9000,
-        useSSL: false,
-      },
-      bucketName: 'dubhe-test',
-    },
-    production: {
-      config: {
-        endPoint: '',
-        port: 9000,
-        useSSL: false,
-      },
-      bucketName: 'dubhe-prod',
-    },
+    bucketName: 'dubhe-dev',
   },
+  test: {
+    config: {
+      endPoint: '',
+      port: 9000,
+      useSSL: false,
+    },
+    bucketName: 'dubhe-test',
+  },
+  production: {
+    config: {
+      endPoint: '',
+      port: 9000,
+      useSSL: false,
+    },
+    bucketName: 'dubhe-prod',
+  },
+};
+
+// 训练管理模块参数配置
+export const trainConfig = {
+  trainNodeMax: Infinity, // 分布式训练节点上限
+  delayCreateTimeMax: 168, // 延时启动时间上限
+  delayDeleteTimeMax: 168, // 训练时长上限
+};
+
+// 算法管理参数配置
+export const algorithmConfig = {
+  uploadFileAcceptSize: 1024, // 上传算法文件大小限制，单位为 MB，0 表示不限制大小
+};
+
+// 镜像管理参数配置
+export const imageConfig = {
+  uploadFileAcceptSize: 0, // 上传镜像文件大小限制，单位为 MB，0 表示不限制大小
+};
+
+// 模型管理模块参数配置
+export const modelConfig = {
+  uploadFileAcceptSize: 0, // 上传模型文件大小限制，单位为 MB，0 表示不限制大小
 };
