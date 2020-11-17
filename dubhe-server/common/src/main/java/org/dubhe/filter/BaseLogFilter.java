@@ -55,6 +55,11 @@ public class BaseLogFilter extends AbstractMatcherFilter<ILoggingEvent> {
         return onMismatch;
     }
 
+    /**
+     * 检测日志级别
+     * @param iLoggingEvent 日志事件
+     * @return true 过滤当前级别 false 不过滤当前级别
+     */
     protected boolean checkLevel(ILoggingEvent iLoggingEvent) {
         return this.level != null
                 && iLoggingEvent.getLevel() != null

@@ -73,8 +73,9 @@ public interface RecycleTaskService {
      * 回收文件资源
      *
      * @param recycleTask 回收任务
+     * @return String 回收任务失败返回的失败信息
      */
-    void deleteFileByCMD(RecycleTask recycleTask);
+    String deleteFileByCMD(RecycleTask recycleTask);
 
     /**
      * 修改回收任务状态

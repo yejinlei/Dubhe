@@ -27,13 +27,11 @@ import org.dubhe.data.constant.ErrorEnum;
 import org.dubhe.data.dao.LabelMapper;
 import org.dubhe.data.domain.dto.LabelCreateDTO;
 import org.dubhe.data.domain.dto.LabelDTO;
-import org.dubhe.data.domain.entity.Dataset;
 import org.dubhe.data.domain.entity.DatasetGroupLabel;
 import org.dubhe.data.domain.entity.DatasetLabel;
 import org.dubhe.data.domain.entity.Label;
 import org.dubhe.data.service.DatasetGroupLabelService;
 import org.dubhe.data.service.DatasetLabelService;
-import org.dubhe.data.service.DatasetService;
 import org.dubhe.data.service.LabelService;
 import org.dubhe.enums.LogEnum;
 import org.dubhe.exception.BusinessException;
@@ -92,12 +90,15 @@ public class LabelServiceImpl extends ServiceImpl<LabelMapper, Label> implements
         List<Label> labels =  getBaseMapper().listLabelByDatasetId(datasetId);
         List<Long> pubLabelIds = getPubLabelIds();
         if(!CollectionUtils.isEmpty(labels)){
+            //根据数据集ID查询标签组ID
+            List<LabelDTO> labelDTOS = baseMapper.listByDatesetId(datasetId);
+            Map<Long, Long> labelMap = labelDTOS.stream().collect(Collectors.toMap(LabelDTO::getId, LabelDTO::getLabelGroupId));
             //查询数据集所属标签组下标签
                 return labels.stream().map(a -> {
                     LabelDTO dto = new LabelDTO();
                     dto.setName(a.getName());
                     dto.setColor(a.getColor());
-                    dto.setLabelGroupId(pubLabelIds.contains(a.getId()) ? COCO_ID : null);
+                    dto.setLabelGroupId(pubLabelIds.contains(a.getId()) ? COCO_ID : labelMap.get(a.getId()));
                     dto.setType(a.getType());
                     dto.setId(a.getId());
                     return dto;
@@ -403,7 +404,7 @@ public class LabelServiceImpl extends ServiceImpl<LabelMapper, Label> implements
      */
     @Override
     public int selectCount(Long id) {
-        return baseMapper.listByGroupId(id).size();
+        return datasetGroupLabelService.listByGroupId(id).size();
     }
 
     /**

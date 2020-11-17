@@ -19,6 +19,7 @@ package org.dubhe;
 
 import org.apache.shiro.SecurityUtils;
 import org.apache.shiro.subject.Subject;
+import org.apache.shiro.util.ThreadContext;
 import org.apache.shiro.web.mgt.DefaultWebSecurityManager;
 import org.dubhe.support.login.UsernamePasswordCaptchaToken;
 import org.junit.Assert;
@@ -65,8 +66,9 @@ public class BaseTest {
     public void setup() {
         this.mockMvc = MockMvcBuilders.webAppContextSetup(this.wac).build();
         SecurityUtils.setSecurityManager(defaultWebSecurityManager);
+        ThreadContext.bind(defaultWebSecurityManager);
         Subject subject = SecurityUtils.getSubject();
-        UsernamePasswordCaptchaToken token = new UsernamePasswordCaptchaToken("admin", "admin");
+        UsernamePasswordCaptchaToken token = new UsernamePasswordCaptchaToken("admin", "123456");
         token.setRememberMe(true);
         subject.login(token);
     }

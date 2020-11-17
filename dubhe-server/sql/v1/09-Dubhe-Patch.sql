@@ -225,7 +225,7 @@ start transaction; -- 整个存储过程指定为一个事务
         apply_status   tinyint(1) default 0        not null comment '状态(0无需操作，1未创建，2已创建)',
         stop_unix_time   bigint   default 0        not null comment '资源停止unix时间(精确到秒)',
         stop_display_time         timestamp        null comment '资源停止展示时间',
-        stop_status    tinyint(1) default 0        not null comment '状态(0无需操作，1已停止，2已创建)',
+        stop_status    tinyint(1) default 0        not null comment '状态(0无需操作，1未停止，2已停止)',
         create_time    timestamp  default CURRENT_TIMESTAMP null comment '创建时间',
         create_user_id bigint(20) default 0        null comment '创建用户ID',
         update_time    timestamp  default CURRENT_TIMESTAMP null on update CURRENT_TIMESTAMP comment '更新时间',

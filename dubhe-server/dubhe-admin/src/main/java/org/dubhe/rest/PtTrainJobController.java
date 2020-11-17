@@ -25,6 +25,8 @@ import org.dubhe.annotation.ApiVersion;
 import org.dubhe.base.DataResponseBody;
 import org.dubhe.constant.Permissions;
 import org.dubhe.domain.dto.*;
+import org.dubhe.enums.TrainTypeEnum;
+import org.dubhe.factory.DataResponseFactory;
 import org.dubhe.service.PtTrainJobService;
 import org.dubhe.service.PtTrainJobSpecsService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -94,6 +96,11 @@ public class PtTrainJobController {
     @ApiOperation("创建训练任务")
     @RequiresPermissions(Permissions.TRAINING_JOB)
     public DataResponseBody createTrainJob(@Validated @RequestBody PtTrainJobCreateDTO ptTrainJobCreateDTO) {
+        if (TrainTypeEnum.isDistributeTrain(ptTrainJobCreateDTO.getTrainType())
+            && ptTrainJobCreateDTO.getResourcesPoolNode() < 2) {
+            // 分布式训练节点数校验补偿
+            return DataResponseFactory.failed("分布式训练节点个数至少2个");
+        }
         return new DataResponseBody(ptTrainJobService.createTrainJobVersion(ptTrainJobCreateDTO));
     }
 

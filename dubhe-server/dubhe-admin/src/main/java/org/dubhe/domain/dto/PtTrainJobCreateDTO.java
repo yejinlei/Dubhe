@@ -103,8 +103,7 @@ public class PtTrainJobCreateDTO extends BaseImageDTO {
     private Integer trainType;
 
     @ApiModelProperty(value = "节点个数", required = true)
-    @Min(value = TrainUtil.NUMBER_ONE, message = "节点个数在1~8之间")
-    @Max(value = TrainUtil.NUMBER_EIGHT, message = "节点个数在1~8之间")
+    @Min(value = TrainUtil.NUMBER_ONE, message = "节点个数至少1个")
     @NotNull(message = "节点个数")
     private Integer resourcesPoolNode;
 

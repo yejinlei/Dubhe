@@ -121,7 +121,7 @@ public class PtImageServiceImpl implements PtImageService {
             }
             ptImages = ptImageMapper.selectPage(page, query);
         } catch (Exception e) {
-            LogUtil.error(LogEnum.BIZ_TRAIN, "User {} query mirror list display exception :{}, request information :{}", e, ptImageQueryDTO);
+            LogUtil.error(LogEnum.BIZ_TRAIN, "User {} query mirror list display exception :{}, request information :{}",user.getId() ,e, ptImageQueryDTO);
             throw new BusinessException("查询镜像列表展示异常");
         }
         List<PtImageQueryVO> ptImageQueryResult = ptImages.getRecords().stream().map(x -> {

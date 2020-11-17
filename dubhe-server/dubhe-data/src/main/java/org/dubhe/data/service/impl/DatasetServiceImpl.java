@@ -35,7 +35,6 @@ import org.dubhe.base.MagicNumConstant;
 import org.dubhe.constant.NumberConstant;
 import org.dubhe.data.constant.*;
 import org.dubhe.data.dao.DatasetMapper;
-import org.dubhe.data.dao.DatasetVersionFileMapper;
 import org.dubhe.data.dao.DatasetVersionMapper;
 import org.dubhe.data.dao.TaskMapper;
 import org.dubhe.data.domain.dto.*;
@@ -137,12 +136,6 @@ public class DatasetServiceImpl extends ServiceImpl<DatasetMapper, Dataset> impl
     public FileService fileService;
 
     /**
-     * 数据集转换
-     */
-    @Autowired
-    private DatasetConvert datasetConvert;
-
-    /**
      * 数据集标签服务类
      */
     @Autowired
@@ -200,9 +193,6 @@ public class DatasetServiceImpl extends ServiceImpl<DatasetMapper, Dataset> impl
 
     @Autowired
     private LabelGroupServiceImpl labelGroupService;
-
-    @Autowired
-    private DatasetVersionFileMapper datasetVersionFileMapper;
 
     /**
      * 检测是否为公共数据集
@@ -434,11 +424,9 @@ public class DatasetServiceImpl extends ServiceImpl<DatasetMapper, Dataset> impl
             Map<String, Long> labelNameMap = labelList.stream().collect(Collectors.toMap(Label::getName, Label::getId));
             if(!Objects.isNull(labelNameMap.get(label.getName()))){
                 datasetLabelService.insert(DatasetLabel.builder().datasetId(datasetId).labelId(labelNameMap.get(label.getName())).build());
+                datasetGroupLabelService.insert(DatasetGroupLabel.builder().labelGroupId(dataset.getLabelGroupId()).labelId(labelNameMap.get(label.getName())).build());
             }else {
                 insertLabelData(label,datasetId);
-            }
-            if(!Objects.isNull(dataset.getLabelGroupId()) && COCO_ID.compareTo(dataset.getLabelGroupId()) != 0){
-                datasetGroupLabelService.insert(DatasetGroupLabel.builder().labelGroupId(dataset.getLabelGroupId()).labelId(label.getId()).build());
             }
         }else {
             insertLabelData(label,datasetId);

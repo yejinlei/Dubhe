@@ -98,4 +98,13 @@ public class K8sTask extends BaseEntity{
         boolean needDelete = stopUnixTime < time && K8sTaskStatusEnum.UNEXECUTED.getStatus().equals(stopStatus);
         return needDelete && (needCreate ^ needDelete);
     }
+
+    /**
+     * 判断任务是否已超时
+     * @param time
+     * @return
+     */
+    public boolean overtime(Long time){
+        return applyUnixTime < time && K8sTaskStatusEnum.UNEXECUTED.getStatus().equals(applyStatus) && stopUnixTime < time && K8sTaskStatusEnum.UNEXECUTED.getStatus().equals(stopStatus);
+    }
 }

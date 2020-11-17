@@ -222,7 +222,7 @@ public class NoteBookServiceImpl implements NoteBookService {
             return (HttpUtils.isSuccess(result.getCode())
                     || K8sResponseEnum.EXISTS.getCode().equals(result.getCode()));
         } catch (Exception e) {
-            LogUtil.error(LogEnum.NOTE_BOOK, "createNoteBook调用jupyterResourceApi.createWithPvc异常！", e);
+            LogUtil.error(LogEnum.NOTE_BOOK, "createNoteBook调用jupyterResourceApi.createWithPvc异常！{}", e);
             noteBook.setK8sStatusCode(BLANK);
             noteBook.setK8sStatusInfo(NotebookUtil.getK8sStatusInfo(e));
             return false;
@@ -305,7 +305,7 @@ public class NoteBookServiceImpl implements NoteBookService {
                     returnStr = "删除失败";
                 }
             } catch (Exception e) {
-                LogUtil.error(LogEnum.NOTE_BOOK, "deleteNoteBook调用jupyterResourceApi.delete异常！", e);
+                LogUtil.error(LogEnum.NOTE_BOOK, "deleteNoteBook调用jupyterResourceApi.delete异常！{}", e);
                 noteBook.setK8sStatusCode(BLANK);
                 noteBook.setK8sStatusInfo(NotebookUtil.getK8sStatusInfo(e));
                 returnStr = "删除失败";
@@ -392,7 +392,7 @@ public class NoteBookServiceImpl implements NoteBookService {
                 noteBook.setK8sStatusInfo(NotebookUtil.getK8sStatusInfo(result));
                 return HttpUtils.isSuccess(result.getCode());
             } catch (Exception e) {
-                LogUtil.error(LogEnum.NOTE_BOOK, "notebook调用jupyterResourceApi.createWithPvc异常！", e);
+                LogUtil.error(LogEnum.NOTE_BOOK, "notebook调用jupyterResourceApi.createWithPvc异常！{}", e);
                 noteBook.setK8sStatusCode(BLANK);
                 noteBook.setK8sStatusInfo(NotebookUtil.getK8sStatusInfo(e));
                 return false;
@@ -447,7 +447,7 @@ public class NoteBookServiceImpl implements NoteBookService {
                     returnStr = "停止" + NotebookUtil.FAILED;
                 }
             } catch (Exception e) {
-                LogUtil.error(LogEnum.NOTE_BOOK, "停止notebook调用jupyterResourceApi.delete异常！", e);
+                LogUtil.error(LogEnum.NOTE_BOOK, "停止notebook调用jupyterResourceApi.delete异常！{}", e);
                 noteBook.setK8sStatusCode(BLANK);
                 noteBook.setK8sStatusInfo(NotebookUtil.getK8sStatusInfo(e));
                 returnStr = "停止" + NotebookUtil.FAILED;
@@ -527,7 +527,7 @@ public class NoteBookServiceImpl implements NoteBookService {
             }
             return NoteBookStatusEnum.convert(result.getPhase());
         } catch (Exception e) {
-            LogUtil.error(LogEnum.NOTE_BOOK, "notebook nameSpace:{} resourceName:{} 查询异常！", noteBook.getK8sNamespace(), noteBook.getK8sResourceName(), e);
+            LogUtil.error(LogEnum.NOTE_BOOK, "notebook nameSpace:{} resourceName:{} 查询异常！{}", noteBook.getK8sNamespace(), noteBook.getK8sResourceName(), e);
             noteBook.setK8sStatusCode(BLANK);
             noteBook.setK8sStatusInfo(NotebookUtil.getK8sStatusInfo(e));
             return null;

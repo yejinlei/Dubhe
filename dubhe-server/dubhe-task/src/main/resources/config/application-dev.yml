@@ -8,7 +8,7 @@ spring:
   redis:
     #数据库索引
     database: 0
-    host:
+    host: 127.0.0.1
     port: 6379
     password:
     #连接超时时间
@@ -17,9 +17,9 @@ spring:
     druid:
       db-type: com.alibaba.druid.pool.DruidDataSource
       driverClassName: net.sf.log4jdbc.sql.jdbcapi.DriverSpy
-      url: jdbc:log4jdbc:mysql://127.0.0.1:3306/dubhe-dev?serverTimezone=Asia/Shanghai&characterEncoding=utf8&useSSL=false&allowMultiQueries=true
-      username:
-      password:
+      url: jdbc:log4jdbc:mysql://127.0.0.1:3306/dubhe-dev?serverTimezone=Asia/Shanghai&characterEncoding=utf8&useSSL=false&allowMultiQueries=true&useInformationSchema=true
+      username: test
+      password: test
 
       # 初始化配置
       initial-size: 3
@@ -59,8 +59,8 @@ spring:
         type: com.alibaba.druid.pool.DruidDataSource
         driver-class-name: net.sf.log4jdbc.sql.jdbcapi.DriverSpy
         url: jdbc:log4jdbc:mysql://127.0.0.1:3306/dubhe-dev?serverTimezone=Asia/Shanghai&characterEncoding=utf8&useSSL=false&allowMultiQueries=true&useInformationSchema=true
-        username:
-        password:
+        username: test
+        password: test
 
     #指定data_dataset表 主键id 生成策略
     sharding:
@@ -83,22 +83,22 @@ spring:
           show: true
 
 k8s:
-  # k8s集群配置文件
+  # k8s集群配置文件,将k8s集群master下$HOME/.kube/config文件 复制到dubhe-task/src/main/resources/下 重命名为 kubeconfig
   kubeconfig: kubeconfig
   # nfs服务暴露的IP地址 如需测试需修改为合适的地址
-  nfs:
+  nfs: 127.0.0.1
   #nfs服务端 共享目录
   nfs-root-path: /nfs/
   nfs-root-windows-path: "Z:"
   # 命名空间关键字
   namespace: namespace
   # k8s ingress域名 如需测试需修改为合适的域名
-  host:
-  # k8s ingress-controller 对外port
-  port: 32493
-  # elasticsearch暴露的服务地址
+  host: notebook.test.com
+  # k8s ingress-controller 对外port，获取方式：部署 ingress-controller 后，在k8s master节点执行 kubectl get svc -A | grep 'ingress-nginx-controller' 获取80对应的外部端口
+  port: 33334
+  # elasticsearch暴露的服务地址，获取方式 部署 管理集群日志 后，在k8s msater节点执行 kubectl get svc -A | grep 'elasticsearch' 获取9200对应的外部端口
   elasticsearch:
-    hostlist: ${eshostlist::32321}
+    hostlist: ${eshostlist:127.0.0.1:33333}
     # 日志采集配置信息
     log:
       type: _doc
@@ -116,13 +116,14 @@ k8s:
   # 展示Pod的CPU使用率,Memory使用量,GPU使用率的grafana地址
   pod:
     metrics:
-      grafanaUrl: http://127.0.0.1:30006/d/Sx0_4-WGk/jian-kong-xin-xi?orgId=1&refresh=5s&kiosk&var-pod=
+      grafanaUrl: http://127.0.0.1:30006/d/job/monitor?orgId=1&refresh=5s&kiosk&var-pod=
   nfs-storage-class-name: zjlab-nfs-storage
 #配置harbor
 harbor:
-  address:
-  username:
-  password:
+  # habor服务域名，需要将用户持有域名解析到 harbor服务所在服务器ip
+  address: harbor.test.com
+  username: admin
+  password: Harbor12345
   model-name: train
 # data模块配置
 data:
@@ -157,8 +158,10 @@ data:
 # minio配置
 minio:
   url: http://127.0.0.1:9000/
-  accessKey:
-  secretKey:
+  # 部署 minio 时指定的 MINIO_ACCESS_KEY
+  accessKey: admin
+  # 部署 minio 时指定的 MINIO_SECRET_KEY
+  secretKey: 123@abc.com
   bucketName: dubhe-dev
   presignedUrlExpiryTime: 300
   annotation: /annotation/

@@ -37,23 +37,4 @@ public class K8sTaskBO extends K8sTask {
      */
     private Long maxStopUnixTime;
 
-    public K8sTaskBO(K8sTask k8sTask){
-        this.setId(k8sTask.getId());
-        this.setNamespace(k8sTask.getNamespace());
-        this.setResourceName(k8sTask.getResourceName());
-        this.setTaskYaml(k8sTask.getTaskYaml());
-        this.setBusiness(k8sTask.getBusiness());
-        this.setApplyUnixTime(k8sTask.getApplyUnixTime());
-        this.setApplyDisplayTime(k8sTask.getApplyDisplayTime());
-        this.setApplyStatus(k8sTask.getApplyStatus());
-        this.setStopUnixTime(k8sTask.getStopUnixTime());
-        this.setStopDisplayTime(k8sTask.getStopDisplayTime());
-        this.setStopStatus(k8sTask.getStopStatus());
-        this.setCreateTime(k8sTask.getCreateTime());
-        this.setCreateUserId(k8sTask.getCreateUserId());
-        this.setUpdateTime(k8sTask.getUpdateTime());
-        this.setUpdateUserId(k8sTask.getUpdateUserId());
-        this.setDeleted(k8sTask.getDeleted());
-    }
-
 }

@@ -54,7 +54,6 @@ import org.dubhe.k8s.domain.bo.TaskYamlBO;
 import org.dubhe.k8s.domain.entity.K8sTask;
 import org.dubhe.k8s.domain.resource.BizJob;
 import org.dubhe.k8s.domain.resource.BizPersistentVolumeClaim;
-import org.dubhe.k8s.domain.resource.BizPod;
 import org.dubhe.k8s.domain.vo.PtJupyterJobVO;
 import org.dubhe.k8s.enums.ImagePullPolicyEnum;
 import org.dubhe.k8s.enums.K8sKindEnum;

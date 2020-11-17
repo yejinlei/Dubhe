@@ -97,7 +97,7 @@ public class PodWatcher implements CommandLineRunner, Watcher<Pod> {
      */
     @Override
     public void onClose(KubernetesClientException cause) {
-        LogUtil.warn(LogEnum.BIZ_K8S, cause.getMessage());
+        LogUtil.warn(LogEnum.BIZ_K8S," onClose=>cause : {}", cause.getMessage());
         k8sUtils.getClient().pods().inAnyNamespace().watch(this);
     }
 

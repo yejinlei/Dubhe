@@ -298,7 +298,7 @@ public class HarborApiImpl implements HarborApi {
          //获取harbor中所有项目的名称
          Set<String> names = projectIdMap.keySet();
          //判断harbor中是否具有改项目
-         names.stream().forEach(name->{
+         names.forEach(name->{
              if(urlSplits[MagicNumConstant.ONE].equals(name)){
                  //发送删除请求
                 HttpClientUtils.sendHttpsDelete(tagSearchUrl+dataRep+TAG_SEARCH_PARAMS+SymbolConstant.SLASH+tagUrls[MagicNumConstant.ONE],harborName,harborPassword);

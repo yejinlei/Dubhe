@@ -65,7 +65,7 @@ public class NoteBookAsyncServiceImpl extends AbstractPodCallback implements Pod
             noteBookService.updateById(notebook);
             return true;
         } catch (Exception e) {
-            LogUtil.error(LogEnum.NOTE_BOOK, "NoteBook doCallback error!", e);
+            LogUtil.error(LogEnum.NOTE_BOOK, "NoteBook doCallback error!{}", e);
             return false;
         }
     }

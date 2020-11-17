@@ -59,8 +59,10 @@ public enum LogEnum {
     //DATA_SEQUENCE
     DATA_SEQUENCE,
     //IO UTIL
-    IO_UTIL;
-
+    IO_UTIL,
+    // 日志切面
+    LOG_ASPECT
+    ;
     /**
      * 判断日志类型不能为空
      *

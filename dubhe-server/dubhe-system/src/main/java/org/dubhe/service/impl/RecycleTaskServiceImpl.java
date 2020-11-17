@@ -17,10 +17,12 @@
 package org.dubhe.service.impl;
 
 import cn.hutool.core.date.DateUtil;
+import cn.hutool.core.util.RandomUtil;
 import cn.hutool.core.util.StrUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import org.dubhe.base.MagicNumConstant;
+import org.dubhe.base.ResponseCode;
 import org.dubhe.config.NfsConfig;
 import org.dubhe.config.RecycleConfig;
 import org.dubhe.constatnts.UserConstant;
@@ -31,7 +33,6 @@ import org.dubhe.domain.dto.UserDTO;
 import org.dubhe.domain.entity.RecycleTask;
 import org.dubhe.enums.LogEnum;
 import org.dubhe.enums.RecycleStatusEnum;
-import org.dubhe.enums.RecycleTypeEnum;
 import org.dubhe.exception.BusinessException;
 import org.dubhe.service.RecycleTaskService;
 import org.dubhe.utils.*;
@@ -122,13 +123,6 @@ public class RecycleTaskServiceImpl implements RecycleTaskService {
             recycleTaskCreateDTO.setRecycleDelayDate(recycleConfig.getDate());
         }
 
-        //如果是删除文件任务，校验根目录及系统环境
-        if (Objects.equals(recycleTaskCreateDTO.getRecycleType(), RecycleTypeEnum.FILE.getCode()) &&
-                recycleTaskCreateDTO.getRecycleCondition().startsWith(nfsConfig.getRootDir() + nfsConfig.getBucket())) {
-            LogUtil.error(LogEnum.GARBAGE_RECYCLE, "User {} created recycle task failed,file sourcePath :{} invalid", currentUser.getUsername(), recycleTaskCreateDTO.getRecycleCondition());
-            throw new BusinessException("创建回收文件任务失败");
-        }
-
         RecycleTask recycleTask = new RecycleTask();
         BeanUtils.copyProperties(recycleTaskCreateDTO, recycleTask);
 
@@ -153,11 +147,14 @@ public class RecycleTaskServiceImpl implements RecycleTaskService {
     public void delTempInvalidResources(String sourcePath) {
         UserDTO currentUser = JwtUtils.getCurrentUserDto();
         if (currentUser.getId() != UserConstant.ADMIN_USER_ID) {
-            throw new BusinessException("不支持普通用户操作");
+            throw new BusinessException(ResponseCode.UNAUTHORIZED, "不支持普通用户操作");
         }
         RecycleTask recycleTask = new RecycleTask();
         recycleTask.setRecycleCondition(sourcePath);
-        deleteFileByCMD(recycleTask);
+        String resMsg = deleteFileByCMD(recycleTask);
+        if (StrUtil.isNotEmpty(resMsg)) {
+            throw new BusinessException(ResponseCode.ERROR, resMsg);
+        }
     }
 
     /**
@@ -195,34 +192,47 @@ public class RecycleTaskServiceImpl implements RecycleTaskService {
 
         List<RecycleTask> recycleTaskList = recycleTaskMapper.selectList(new LambdaQueryWrapper<RecycleTask>()
                 .ne(RecycleTask::getRecycleStatus, RecycleStatusEnum.SUCCEEDED.getCode())
-                .le(RecycleTask::getRecycleDelayDate, new Date()));
+                .le(RecycleTask::getRecycleDelayDate, DateUtil.format(new Date(), "yyyy-MM-dd")));
         return recycleTaskList;
+
     }
 
     /**
-     * 回收文件资源
-     *
+     * 回收天枢一站式平台中的无效文件资源
+     * 处理方式：获取到回收任务表中的无效文件路径，通过linux命令进行具体删除
+     * 文件路径必须满足格式如：/nfs/当前系统环境/具体删除的文件或文件夹(至少三层目录)
      * @param recycleTask 回收任务
+     * @return String 回收任务失败返回的失败信息
      */
     @Override
-    public void deleteFileByCMD(RecycleTask recycleTask) {
+    public String deleteFileByCMD(RecycleTask recycleTask) {
         String sourcePath = nfsUtil.formatPath(recycleTask.getRecycleCondition());
         //判断该路径是否存在文件或文件夹
         String emptyDir = "";
-        if (!nfsUtil.fileOrDirIsEmpty(sourcePath) && sourcePath.startsWith(nfsUtil.formatPath(nfsConfig.getRootDir() + nfsConfig.getBucket()))) {
-            try {
-                sourcePath = sourcePath.endsWith(StrUtil.SLASH) ? sourcePath : sourcePath + StrUtil.SLASH;
-                emptyDir = "/tmp/empty_" + recycleTask.getId() + StrUtil.SLASH;
+        String errMsg = "";
+        String nfsBucket = nfsUtil.formatPath(nfsConfig.getRootDir() + nfsConfig.getBucket() + StrUtil.SLASH);
+        sourcePath = sourcePath.endsWith(StrUtil.SLASH) ? sourcePath : sourcePath + StrUtil.SLASH;
+        try {
+            //校验回收文件是否存在以及回收文件必须至少在当前环境目录下还有一层目录，如：/nfs/dubhe-test/xxxx/
+            if (!nfsUtil.fileOrDirIsEmpty(sourcePath)
+                    && sourcePath.startsWith((nfsBucket))
+                    && sourcePath.length() > nfsBucket.length()) {
+                emptyDir = "/tmp/empty_" + (recycleTask.getId() == null ? RandomUtil.randomString(MagicNumConstant.TWO) : recycleTask.getId()) + StrUtil.SLASH;
                 LogUtil.info(LogEnum.GARBAGE_RECYCLE, "recycle task sourcePath:{},emptyDir:{}", sourcePath, emptyDir);
                 Process process = Runtime.getRuntime().exec(new String[]{"/bin/sh", "-c", String.format(RecycleConfig.DEL_COMMAND, userName, nfsIp, emptyDir, emptyDir, sourcePath, emptyDir, sourcePath)});
                 //资源回收完毕修改回收表状态
                 if (recycleTask.getId() != null) {
                     updateRecycleStatus(recycleTask, recycleSourceIsOk(process));
                 }
-            } catch (Exception e) {
-                LogUtil.error(LogEnum.GARBAGE_RECYCLE, "recycle task id:{} Run failed，fail Exception:{}", recycleTask.getId(), e);
+            } else {
+                LogUtil.info(LogEnum.GARBAGE_RECYCLE, "recycle task failure!!!  sourcePath:{}", sourcePath);
+                errMsg = "recycle task failure!!! sourcePath:" + sourcePath;
             }
+        } catch (Exception e) {
+            LogUtil.error(LogEnum.GARBAGE_RECYCLE, "recycle task id:{} Run failed, fail Exception:{}", recycleTask.getId(), e);
+            errMsg = "recycle task failure!!! sourcePath:" + sourcePath + "and exception message:" + e.getMessage();
         }
+        return errMsg;
     }
 
     /**
@@ -316,5 +326,4 @@ public class RecycleTaskServiceImpl implements RecycleTaskService {
             }
         }
     }
-
 }

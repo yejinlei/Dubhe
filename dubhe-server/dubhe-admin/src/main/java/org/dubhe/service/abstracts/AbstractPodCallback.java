@@ -49,7 +49,7 @@ public abstract class AbstractPodCallback implements PodCallbackAsyncService {
                     Thread.sleep(tryTime * 1000);
                     continue;
                 } catch (InterruptedException e) {
-                    LogUtil.error(LogEnum.NOTE_BOOK,"AbstractPodCallback podCallBack InterruptedException", e);
+                    LogUtil.error(LogEnum.NOTE_BOOK,"AbstractPodCallback podCallBack InterruptedException : {}", e);
                     // Restore interrupted state...      
                     Thread.currentThread().interrupt();
                 }
@@ -61,7 +61,7 @@ public abstract class AbstractPodCallback implements PodCallbackAsyncService {
         }
     }
 
-    /**
+     /**
      * pod 异步回调具体实现处理类
      * @param times                    第n次处理
      * @param k8sPodCallbackCreateDTO             k8s回调实体类

@@ -75,11 +75,11 @@ public class LogAspect {
 	
 	private Object combineLogInfo(JoinPoint joinPoint) throws Throwable {
 		Object[] param = joinPoint.getArgs();
-		LogUtil.info(LogEnum.REST_REQ, "uri:{},input:{},==>begin", joinPoint.getSignature(), param);
+		LogUtil.info(LogEnum.LOG_ASPECT, "uri:{},input:{},==>begin", joinPoint.getSignature(), param);
 		long start = System.currentTimeMillis();
 		Object result = ((ProceedingJoinPoint) joinPoint).proceed();
 		long end = System.currentTimeMillis();
-		LogUtil.info(LogEnum.REST_REQ, "uri:{},output:{},proc_time:{},<==end", joinPoint.getSignature().toString(),
+		LogUtil.info(LogEnum.LOG_ASPECT, "uri:{},output:{},proc_time:{},<==end", joinPoint.getSignature().toString(),
 				result, end - start);
 		return result;
 	}

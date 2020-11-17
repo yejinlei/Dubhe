@@ -116,6 +116,11 @@ public class DelayCudResourceTask {
                         k8sTaskService.update(k8sTask);
                     });
                 }
+                if (k8sTask.overtime(curUnixTime)){
+                    k8sTask.setApplyStatus(K8sTaskStatusEnum.EXECUTED.getStatus());
+                    k8sTask.setStopStatus(K8sTaskStatusEnum.EXECUTED.getStatus());
+                    k8sTaskService.update(k8sTask);
+                }
             }
         }catch (Exception e){
             LogUtil.error(LogEnum.BIZ_K8S,"delayCudResource error {}",e);

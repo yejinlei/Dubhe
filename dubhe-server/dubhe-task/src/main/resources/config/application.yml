@@ -8,13 +8,14 @@ spring:
     redis:
       repositories:
         enabled: false
-  # 邮箱配置
+
+  # 邮箱配置，用于发送用户注册邮箱验证码
   mail:
-    host:
+    host: smtp.163.com
     # 邮件的发送者 163邮箱(开发测试时使用 发送延时 20秒，每天发送量限制 50)
-    username:
+    username: test@163.com
     # SMTP授权密码
-    password:
+    password: AAAAAAAAAAAAAAAA
     protocol: smtp
     properties.mail.smtp.auth: true
     properties.mail.smtp.port: 465 #465或者994
@@ -31,10 +32,10 @@ loginCode:
   height: 28
   length: 4
 
-#密码加密传输，前端公钥加密，后端私钥解密
+#密码加密传输，前端公钥加密，后端私钥解密，与前端src/settings.js  publicKey搭配使用；可使用genKeyPair方法进行生成
 rsa:
-  private_key:
-  public_key:
+  private_key: MIIBUwIBADANBgkqhkiG9w0BAQEFAASCAT0wggE5AgEAAkEA0vfvyTdGJkdbHkB8mp0f3FE0GYP3AYPaJF7jUd1M0XxFSE2ceK3k2kw20YvQ09NJKk+OMjWQl9WitG9pB6tSCQIDAQABAkA2SimBrWC2/wvauBuYqjCFwLvYiRYqZKThUS3MZlebXJiLB+Ue/gUifAAKIg1avttUZsHBHrop4qfJCwAI0+YRAiEA+W3NK/RaXtnRqmoUUkb59zsZUBLpvZgQPfj1MhyHDz0CIQDYhsAhPJ3mgS64NbUZmGWuuNKp5coY2GIj/zYDMJp6vQIgUueLFXv/eZ1ekgz2Oi67MNCk5jeTF2BurZqNLR3MSmUCIFT3Q6uHMtsB9Eha4u7hS31tj1UWE+D+ADzp59MGnoftAiBeHT7gDMuqeJHPL4b+kC+gzV4FGTfhR9q3tTbklZkD2A==
+  public_key: MFwwDQYJKoZIhvcNAQEBBQADSwAwSAJBANL378k3RiZHWx5AfJqdH9xRNBmD9wGD2iRe41HdTNF8RUhNnHit5NpMNtGL0NPTSSpPjjI1kJfVorRvaQerUgkCAwEAAQ==
 
 #jwt
 jwt:
@@ -42,7 +43,7 @@ jwt:
   # 令牌前缀
   token-start-with: Bearer
   # 必须使用最少88位的Base64对该令牌进行编码
-  base64-secret:
+  base64-secret: ZmQ0ZGI5NjQ0MDQwY2I4MjMxY2Y3ZmI3MjdhN2ZmMjNhODViOTg1ZGE0NTBjMGM4NDA5NzYxMjdjOWMwYWRmZTBlZjlhNGY3ZTg4Y2U3YTE1ODVkZDU5Y2Y3OGYwZWE1NzUzNWQ2YjFjZDc0NGMxZWU2MmQ3MjY1NzJmMTIzNDU=
   # 令牌过期时间 此处单位/毫秒 ，默认24小时，可在此网站生成 https://www.convertworld.com/zh-hans/time/milliseconds.html
   token-validity-in-seconds: 86400000
   # 在线用户key
@@ -55,7 +56,7 @@ swagger:
   enabled: true
 
 # 后台添加用户的初始密码
-initial_password: ""
+initial_password: "123456"
 
 train-job:
   namespace: "namespace-"
@@ -68,15 +69,23 @@ train-job:
   log-path: "log"
   load-path: "load"
   load-key: "model_load_dir"
+  load-val-dataset-key: "val_data_url"
   visualized-log-path: "visualizedlog"
   docker-dataset-path: "/dataset"
-  docker-train-path: "/train"
+  docker-train-path: "/workspace"
+  docker-model-path: "/modeldir"
+  docker-val-dataset-path: "/valdataset"
   docker-out-path: "train_out=${train-job.docker-train-path}/${train-job.out-path}"
   docker-log-path: "train_log=${train-job.docker-train-path}/${train-job.log-path}"
   docker-visualized-log-path: "train_visualized_log=${train-job.docker-train-path}/${train-job.visualized-log-path}"
   docker-dataset: "data_url=${train-job.docker-dataset-path}"
   eight: "8"
   plus-eight: "+8"
+  node-ips: "node_ips"
+  node-num: "num_nodes"
+  gpu-num-per-node: "gpu_num_per_node"
+
+
 
 minioweb:
   GetToken:
@@ -87,6 +96,7 @@ minioweb:
       method: Web.Login
   zip:
     url: minio/zip?token=
+
 
 train-algorithm:
   #是否输出训练结果
@@ -99,12 +109,7 @@ train-algorithm:
   algorithm-source: 1
   #设置fork默认值
   fork: false
-  #上传算法文件路径名
-  upload-algorithm-path: "upload-temp/algorithm-manage"
 
-docker:
-  host:
-  port:
 
 # 配置slq打印日志
 logging:
@@ -118,7 +123,9 @@ logging:
 dubhe-proxy:
   visual:
     keyword: visual
-    server: 10.5.18.239
+    # 可视化服务后端 ip
+    server: 127.0.0.1
+    # 可视化服务后端 端口
     port: 9898
   refine:
     keyword: refine
@@ -130,3 +137,18 @@ delay:
   notebook:
     #模型开发延时关闭时间
     delete: 240
+
+#垃圾回收默认配置
+recycle:
+  #过期时间设置
+  timeout:
+    #用户上传文件至临时路径下后文件最大有效时长，以小时为单位
+    file-valid: 24
+    #用户删除数据后，默认其文件最大有效时长，以天为单位
+    date: 7
+    #用户删除某一算法后，其算法文件最大有效时长，以天为单位
+    algorithm-valid: 3
+    #用户删除某一模型后，其模型文件最大有效时长，以天为单位
+    model-valid: 3
+    #用户删除训练任务后，其训练管理文件最大有效时长，以天为单位
+    train-valid: 3

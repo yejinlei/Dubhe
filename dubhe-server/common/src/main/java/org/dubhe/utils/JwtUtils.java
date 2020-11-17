@@ -41,7 +41,7 @@ import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 
 /**
- * @description  JWT
+ * @description JWT
  * @date 2020-03-14
  */
 @Component

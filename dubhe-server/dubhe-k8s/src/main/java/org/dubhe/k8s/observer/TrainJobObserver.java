@@ -55,7 +55,7 @@ public class TrainJobObserver implements Observer {
             boolean trainJobFailed = PodPhaseEnum.FAILED.getPhase().equals(pod.getPhase()) && BizEnum.ALGORITHM.getBizCode().equals(pod.getBusinessLabel()) && SpringContextHolder.getActiveProfile().equals(pod.getLabel(K8sLabelConstants.PLATFORM_RUNTIME_ENV));
             if (trainJobFailed){
                 LogUtil.warn(LogEnum.BIZ_K8S,"delete failed train job resourceName {};phase {};podName {}",pod.getLabel(K8sLabelConstants.BASE_TAG_SOURCE),pod.getPhase(),pod.getName());
-                //trainJobApi.delete(pod.getNamespace(),pod.getLabel(K8sLabelConstants.BASE_TAG_SOURCE));
+                trainJobApi.delete(pod.getNamespace(),pod.getLabel(K8sLabelConstants.BASE_TAG_SOURCE));
             }
         }
     }

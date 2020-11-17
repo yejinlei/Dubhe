@@ -583,7 +583,7 @@ public class JupyterResourceApiImpl implements JupyterResourceApi {
             if (delayDelete != null && delayDelete > 0){
                 taskYamlBO.append(statefulSet);
             }
-            LogUtil.info(LogEnum.BIZ_K8S, "Ready to deploy {}, yaml信息为{}", statefulSetName, YamlUtils.dumpAsYaml(statefulSet));
+            LogUtil.info(LogEnum.BIZ_K8S, "Ready to deploy {}, yaml info is : {}", statefulSetName, YamlUtils.dumpAsYaml(statefulSet));
             statefulSet = client.apps().statefulSets().create(statefulSet);
             LogUtil.info(LogEnum.BIZ_K8S, "{} deployed successfully", statefulSetName);
             return statefulSet;
@@ -625,7 +625,7 @@ public class JupyterResourceApiImpl implements JupyterResourceApi {
             if (delayDelete != null && delayDelete > 0){
                 taskYamlBO.append(svc);
             }
-            LogUtil.info(LogEnum.BIZ_K8S, "Ready to deploy {}, yaml信息为{}", svcName, YamlUtils.dumpAsYaml(svc));
+            LogUtil.info(LogEnum.BIZ_K8S, "Ready to deploy {}, yaml info is : {}", svcName, YamlUtils.dumpAsYaml(svc));
             svc = client.services().create(svc);
             LogUtil.info(LogEnum.BIZ_K8S, "{} deployed successfully", svcName);
             return svc;
@@ -674,7 +674,7 @@ public class JupyterResourceApiImpl implements JupyterResourceApi {
             if (delayDelete != null && delayDelete > 0){
                 taskYamlBO.append(ingress);
             }
-            LogUtil.info(LogEnum.BIZ_K8S, "Ready to deploy {}, yaml信息为{}", ingressName, YamlUtils.dumpAsYaml(ingress));
+            LogUtil.info(LogEnum.BIZ_K8S, "Ready to deploy {}, yaml info is : {}", ingressName, YamlUtils.dumpAsYaml(ingress));
             ingress = client.extensions().ingresses().create(ingress);
             LogUtil.info(LogEnum.BIZ_K8S, "{} deployed successfully", ingressName);
             return ingress;
