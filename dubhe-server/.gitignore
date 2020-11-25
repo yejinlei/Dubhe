@@ -2,7 +2,6 @@
 .mvn*
 mvnw
 mvnw.cmd
-kubeconfig
 
 ### STS ###
 .apt_generated
