@@ -1,8 +1,7 @@
 # my
-log/*
 *.log
 *.swp
-.nfs* 
+.nfs*
 core
 *.jpg
 *.JPEG

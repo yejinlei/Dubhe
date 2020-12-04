@@ -26,12 +26,14 @@ import common.RedisUtil as f
 import common.config as config
 import luascript.starttaskscript as start_script
 import logging
+import common.select_gpu as gpu
 
 logging.basicConfig(format='%(asctime)s - %(pathname)s[line:%(lineno)d] - %(levelname)s: %(message)s',
                     level=logging.DEBUG)
 
 if __name__ == '__main__':
     """Imagenet algorithm entry."""
+    gpu.select_gpu()
     jsonData = config.loadJsonData(config.configPath)
     redisClient = f.getRedisConnection(jsonData["ip"], jsonData["port"], jsonData["database"], jsonData["password"])
     logging.info('init redis client %s', redisClient)
