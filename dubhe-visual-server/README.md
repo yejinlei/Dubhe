@@ -3,10 +3,12 @@
 - 依赖 Python3.7 环境，建议使用 Anaconda 创建虚拟环境
 
 ```shell
-# 创建虚拟环境
-conda create --file dubhe_visual.yaml
-# 激活 dubhe_visual
-conda activate dubhe_visual
+# 首次使用，执行
+bash init.sh
+# 创建虚拟环境完毕后，后续启动服务，请执行
+source start_server.sh
+# 关闭服务，请执行
+source stop_server.sh
 ```
 
 - 依赖 [Redis](https://redis.io/download) 作为中间件
