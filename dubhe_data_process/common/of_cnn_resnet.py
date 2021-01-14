@@ -1,6 +1,6 @@
 """
 /**
-* Copyright 2020 Zhejiang Lab. All Rights Reserved.
+* Copyright 2020 Tianshu AI Platform. All Rights Reserved.
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 * you may not use this file except in compliance with the License.
@@ -34,7 +34,7 @@ sys.stdout = codecs.getwriter("utf-8")(sys.stdout.detach())
 
 def init_resnet():
     """Initialize ResNet with pretrained weights"""
-    model_load_dir = 'of_model/resnet_v15_of_best_model_val_top1_773/'
+    model_load_dir = '../of_model/resnet_v15_of_best_model_val_top1_773/'
     assert os.path.isdir(model_load_dir)
     check_point = flow.train.CheckPoint()
     check_point.load(model_load_dir)

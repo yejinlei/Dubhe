@@ -1,6 +1,6 @@
 """
 /**
-* Copyright 2020 Zhejiang Lab. All Rights Reserved.
+* Copyright 2020 Tianshu AI Platform. All Rights Reserved.
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@
 */
 """
 import os
+import random
 import sys
 import pynvml
 import logging
@@ -27,6 +28,7 @@ pynvml.nvmlInit()
 
 def select_gpu():
     deviceCount = pynvml.nvmlDeviceGetCount()
+    gpu_usable = []
     for i in range(deviceCount):
         logging.info('-------------get GPU information--------------')
         handle = pynvml.nvmlDeviceGetHandleByIndex(i)
@@ -34,8 +36,12 @@ def select_gpu():
         gpu_info = pynvml.nvmlDeviceGetMemoryInfo(handle)
         logging.info('free:%s MB', gpu_info.free / (1000 * 1000))
         if gpu_info.free / (1000 * 1000) > 3072:
-            os.environ["CUDA_VISIBLE_DEVICES"] = str(i)
-            logging.info('use GPU:%s %s', i, pynvml.nvmlDeviceGetName(handle))
-            return
-    logging.info('No GPU is currently available')
-    sys.exit()
+            gpu_usable.append(i)
+    gpu_usable_num = len(gpu_usable)
+    if gpu_usable_num == 0:
+        logging.info('No GPU is currently available')
+        sys.exit()
+    random_gpu = random.randint(0, gpu_usable_num - 1)
+    os.environ["CUDA_VISIBLE_DEVICES"] = str(gpu_usable[random_gpu])
+    logging.info('use GPU:%s %s', gpu_usable[random_gpu], pynvml.nvmlDeviceGetName(handle))
+

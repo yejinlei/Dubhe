@@ -1,6 +1,6 @@
 """
 /**
-* Copyright 2020 Zhejiang Lab. All Rights Reserved.
+* Copyright 2020 Tianshu AI Platform. All Rights Reserved.
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 * you may not use this file except in compliance with the License.
@@ -25,6 +25,11 @@ port = 6379
 db = 0
 password = ''
 
+# text_classification
+textClassificationQueue = 'text_classification_task_queue'
+textClassificationStartQueue = 'text_classification_processing_queue'
+textClassificationFinishQueue = 'text_classification_finished_queue'
+
 # annotation
 queue = 'annotation_task_queue'
 annotationStartQueue = 'annotation_processing_queue'
@@ -44,12 +49,18 @@ ofrecordFinishQueue = 'ofrecord_finished_queue'
 trackTaskQueue = 'track_task_queue'
 trackStartQueue = 'track_processing_queue'
 trackFinishQueue = 'track_finished_queue'
+trackFailedQueue = 'track_failed_queue'
 
 # videosample
 videoPendingQueue = "videoSample_unprocessed"
 videoStartQueue = "videoSample_processing"
 videoFinishQueue = "videoSample_finished"
 videoFailedQueue = "videoSample_failed"
+
+# lungsegmentation
+dcmTaskQueue = "dcm_task_queue"
+dcmStartQueue = "dcm_processing_queue"
+dcmFinishQueue = "dcm_finished_queue"
 
 # imgprocess
 imgProcessTaskQueue = 'imgProcess_unprocessed'
