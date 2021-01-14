@@ -1,0 +1,5 @@
+.idea
+/model_compress/distil/data/
+/model_compress/distil/glove/
+/model_compress/distil/models/
+/model_compress/distil/outputs/

@@ -1,0 +1,9 @@
+{
+  "model_config_list": [
+    {
+      "model_name": "resnet_v2_50",
+      "model_path": "/usr/local/projects/TS_Serving/tf_models/resnet_v2_50/",
+      "platform": "tensorflow"
+    }
+  ]
+}

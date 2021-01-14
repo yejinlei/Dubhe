@@ -1,0 +1,18 @@
+syntax = 'proto3';
+ 
+service InferenceService {
+ rpc inference(DataRequest) returns (DataResponse) {}
+}
+
+message DataRequest{
+  repeated Image images = 1;
+}
+
+message Image {
+   string image_file = 1;
+   string image_name = 2;
+}
+
+message DataResponse{
+  string json_result = 1;
+}
