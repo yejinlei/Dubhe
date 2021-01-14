@@ -1,5 +1,5 @@
 /**
- * Copyright 2020 Zhejiang Lab. All Rights Reserved.
+ * Copyright 2020 Tianshu AI Platform. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -86,11 +86,14 @@ public class AnnotationQueueExecuteThread implements Runnable {
             try {
                 Object object = redisUtils.lpop(ANNOTATION_FINISHED_QUEUE);
                 if (ObjectUtil.isNotNull(object)) {
+                    Long start = System.currentTimeMillis();
                     JSONObject jsonObject = JSON.parseObject(JSON.toJSONString(object));
                     String task = jsonObject.getString("task").replaceAll("\"", "");
                     Object taskDetail = redisUtils.get(task);
+                    // 得到一个任务的拆分 包括多个file
                     TaskSplitBO taskSplitBO = JSON.parseObject(JSON.toJSONString(taskDetail), TaskSplitBO.class);
                     JSONArray jsonArray = jsonObject.getJSONArray("annotations");
+
                     List<AnnotationInfoCreateDTO> list = new ArrayList<>();
                     for (int i = 0; i < jsonArray.size(); i++) {
                         list.add(JSON.toJavaObject(jsonArray.getJSONObject(i), AnnotationInfoCreateDTO.class));
@@ -99,6 +102,7 @@ public class AnnotationQueueExecuteThread implements Runnable {
                     batchAnnotationInfoCreateDTO.setAnnotations(list);
                     annotationService.doFinishAuto(taskSplitBO, batchAnnotationInfoCreateDTO.toMap());
                     redisUtils.del(task);
+                    LogUtil.info(LogEnum.BIZ_DATASET, "the time it takes to perform a task is {} second", (System.currentTimeMillis() - start));
                     TimeUnit.MILLISECONDS.sleep(MagicNumConstant.TEN);
                 } else {
                     TimeUnit.MILLISECONDS.sleep(MagicNumConstant.THREE_THOUSAND);

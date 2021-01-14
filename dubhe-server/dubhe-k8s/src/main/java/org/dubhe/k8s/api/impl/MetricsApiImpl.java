@@ -1,5 +1,5 @@
 /**
- * Copyright 2020 Zhejiang Lab. All Rights Reserved.
+ * Copyright 2020 Tianshu AI Platform. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,9 @@
 
 package org.dubhe.k8s.api.impl;
 
+import cn.hutool.core.util.StrUtil;
+import cn.hutool.http.HttpUtil;
+import com.alibaba.fastjson.JSON;
 import io.fabric8.kubernetes.api.model.Quantity;
 import io.fabric8.kubernetes.api.model.metrics.v1beta1.ContainerMetrics;
 import io.fabric8.kubernetes.api.model.metrics.v1beta1.NodeMetricsList;
@@ -24,10 +27,13 @@ import io.fabric8.kubernetes.api.model.metrics.v1beta1.PodMetrics;
 import io.fabric8.kubernetes.api.model.metrics.v1beta1.PodMetricsList;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClientException;
+import org.dubhe.constant.StringConstant;
 import org.dubhe.constant.SymbolConstant;
 import org.dubhe.enums.LogEnum;
 import org.dubhe.k8s.api.MetricsApi;
+import org.dubhe.k8s.api.PodApi;
 import org.dubhe.k8s.constant.K8sParamConstants;
+import org.dubhe.k8s.domain.bo.GpuMetricBO;
 import org.dubhe.k8s.domain.resource.BizContainer;
 import org.dubhe.k8s.domain.resource.BizPod;
 import org.dubhe.k8s.domain.resource.BizQuantity;
@@ -38,6 +44,9 @@ import org.dubhe.k8s.utils.BizConvertUtils;
 import org.dubhe.k8s.utils.K8sUtils;
 import org.dubhe.utils.LogUtil;
 import org.dubhe.utils.StringUtils;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.util.CollectionUtils;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -52,9 +61,19 @@ import java.util.stream.Collectors;
  */
 public class MetricsApiImpl implements MetricsApi {
     private KubernetesClient client;
+
+    @Autowired
+    private PodApi podApi;
+
     public MetricsApiImpl(K8sUtils k8sUtils) {
         this.client = k8sUtils.getClient();
     }
+
+    @Value("${k8s.prometheus.query-url}")
+    private String k8sPrometheusQueryUrl;
+
+    @Value("${k8s.prometheus.gpu-query-param}")
+    private String k8sPrometheusGpuQueryParam;
 
     /**
      * 获取k8s所有节点当前cpu、内存用量
@@ -182,6 +201,105 @@ public class MetricsApiImpl implements MetricsApi {
             LogUtil.error(LogEnum.BIZ_K8S, "MetricsApiImpl.getPodMetricsRealTime error:{}", e);
             return Collections.EMPTY_LIST;
         }
+    }
+
+    /**
+     * 获取k8s resourceName 下pod当前cpu、内存用量的实时使用情况
+     * @param namespace
+     * @param resourceName
+     * @return
+     */
+    @Override
+    public List<PtPodsVO> getPodMetricsRealTime(String namespace, String resourceName) {
+        List<PtPodsVO> ptPodsVOS = new ArrayList<>();
+        if (StringUtils.isEmpty(namespace) || StringUtils.isEmpty(resourceName)){
+            return ptPodsVOS;
+        }
+        List<BizPod> pods = podApi.getListByResourceName(namespace,resourceName);
+        if (CollectionUtils.isEmpty(pods)){
+            return ptPodsVOS;
+        }
+        List<PodMetrics> podMetricsList = client.top().pods().metrics(namespace).getItems();
+        if (!CollectionUtils.isEmpty(pods)){
+            Map<String,PodMetrics> podMetricsMap = podMetricsList.stream().collect(Collectors.toMap(obj -> obj.getMetadata().getName(), obj -> obj));
+            for (BizPod pod : pods){
+                List<PtPodsVO> ptPodsVOList = getPtPodsVO(pod,podMetricsMap.get(pod.getName()));
+                if (!CollectionUtils.isEmpty(ptPodsVOList)){
+                    ptPodsVOS.addAll(ptPodsVOList);
+                }
+            }
+        }
+        for (PtPodsVO ptPodsVO : ptPodsVOS){
+            generateGpuUsage(ptPodsVO);
+            ptPodsVO.calculationPercent();
+        }
+        return ptPodsVOS;
+    }
+
+    /**
+     * 生成Gpu使用率
+     * @param ptPodsVO
+     */
+    private void generateGpuUsage(PtPodsVO ptPodsVO){
+        Map<String, Object> paramMap = new HashMap<>();
+        paramMap.put(StringConstant.QUERY, StrUtil.format(k8sPrometheusGpuQueryParam,ptPodsVO.getPodName()));
+        String metricStr = HttpUtil.get(k8sPrometheusQueryUrl,paramMap);
+        if (StringUtils.isEmpty(metricStr)){
+            return;
+        }
+        try{
+            GpuMetricBO gpuMetricBO = JSON.parseObject(metricStr,GpuMetricBO.class);
+            ptPodsVO.setGpuUsagePersent(gpuMetricBO.getValue());
+        }catch (ClassCastException e){
+            LogUtil.error(LogEnum.BIZ_K8S, "getGpuUsage parse metricStr error:{}", e);
+        }
+        return;
+    }
+
+    /**
+     * assemble PtPodsVO
+     * @param bizPod
+     * @param metric
+     * @return
+     */
+    private List<PtPodsVO> getPtPodsVO(BizPod bizPod,PodMetrics metric){
+        List<PtPodsVO> ptPodsVOList = new ArrayList<>();
+        if (metric == null){
+            return ptPodsVOList;
+        }
+        Map<String,ContainerMetrics> containerMetricsMap = metric.getContainers().stream().collect(Collectors.toMap(obj -> obj.getName(), obj -> obj));
+        for (BizContainer container : bizPod.getContainers()){
+            Map<String, BizQuantity> request = container.getRequests();
+            if (containerMetricsMap.get(container.getName()) == null){
+                continue;
+            }
+            Map<String, Quantity> usage = containerMetricsMap.get(container.getName()).getUsage();
+            PtPodsVO ptContainerMetricsResult = new PtPodsVO(metric.getMetadata().getName(),
+                    request.get(K8sParamConstants.QUANTITY_CPU_KEY) ==null ? null : request.get(K8sParamConstants.QUANTITY_CPU_KEY).getAmount(),
+                    usage.get(K8sParamConstants.QUANTITY_CPU_KEY).getAmount(),
+                    request.get(K8sParamConstants.QUANTITY_CPU_KEY) ==null ? null : request.get(K8sParamConstants.QUANTITY_CPU_KEY).getFormat(),
+                    usage.get(K8sParamConstants.QUANTITY_CPU_KEY).getFormat(),
+                    request.get(K8sParamConstants.QUANTITY_MEMORY_KEY) == null ? null : request.get(K8sParamConstants.QUANTITY_MEMORY_KEY).getAmount(),
+                    usage.get(K8sParamConstants.QUANTITY_MEMORY_KEY).getAmount(),
+                    request.get(K8sParamConstants.QUANTITY_MEMORY_KEY) == null ? null : request.get(K8sParamConstants.QUANTITY_MEMORY_KEY).getFormat(),
+                    usage.get(K8sParamConstants.QUANTITY_MEMORY_KEY).getFormat(),
+                    bizPod.getNodeName(),
+                    bizPod.getPhase(), null
+            );
+
+            Map<String, BizQuantity> limits = container.getLimits();
+            if (limits == null) {
+                ptContainerMetricsResult.setGpuUsed(SymbolConstant.ZERO);
+            } else {
+                BizQuantity bizQuantity = limits.get(K8sParamConstants.GPU_RESOURCE_KEY);
+                String count = bizQuantity != null ? bizQuantity.getAmount() : SymbolConstant.ZERO;
+                /**将显卡数量保存起来**/
+                ptContainerMetricsResult.setGpuUsed(count);
+            }
+            ptPodsVOList.add(ptContainerMetricsResult);
+        };
+
+        return ptPodsVOList;
     }
 
     /**

@@ -1,5 +1,5 @@
 /**
- * Copyright 2020 Zhejiang Lab. All Rights Reserved.
+ * Copyright 2020 Tianshu AI Platform. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,7 +32,7 @@ import org.springframework.test.context.junit4.SpringRunner;
  * @description K8sCallBackToolTest测试类
  * @date 2020-05-28
  */
-@ActiveProfiles(value = "notebook")
+@ActiveProfiles(value = "dev")
 @RunWith(SpringRunner.class)
 @SpringBootTest(classes= AppRun.class,webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT)
 public class K8sCallBackToolTest{
@@ -51,7 +51,7 @@ public class K8sCallBackToolTest{
 
     @Test
     public void getPodCallbackUrl(){
-        Assert.assertEquals("http://xxx.xxx.xxx.xxx:xxxx/api/k8s/callback/pod/notebook",k8sCallBackTool.getPodCallbackUrl(k8sNameTool.getPodLabel(BizEnum.NOTEBOOK)));
+        Assert.assertEquals("localhost:8000/api/k8s/callback/pod/notebook",k8sCallBackTool.getPodCallbackUrl(k8sNameTool.getPodLabel(BizEnum.NOTEBOOK)));
     }
 
 }

@@ -1,5 +1,5 @@
 /**
- * Copyright 2020 Zhejiang Lab. All Rights Reserved.
+ * Copyright 2020 Tianshu AI Platform. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,6 +27,7 @@ import io.fabric8.kubernetes.client.KubernetesClient;
 import lombok.Getter;
 import org.apache.commons.io.IOUtils;
 import org.dubhe.enums.LogEnum;
+import org.dubhe.k8s.constant.K8sLabelConstants;
 import org.dubhe.k8s.properties.ClusterProperties;
 import org.dubhe.utils.LogUtil;
 import org.springframework.beans.BeansException;
@@ -37,6 +38,8 @@ import org.springframework.core.io.ClassPathResource;
 import java.io.File;
 import java.io.IOException;
 import java.util.Base64;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * @description init K8sUtils
@@ -60,6 +63,12 @@ public class K8sUtils implements ApplicationContextAware {
     private String host;
     private String port;
 
+    /**
+     * 获取 k8s 连接配置文件
+     * @param kubeConfig
+     * @return
+     * @throws IOException
+     */
     private String getKubeconfigFile(String kubeConfig) throws IOException {
         kubeConfig = kubeConfig.startsWith(File.separator) ? kubeConfig : File.separator.concat(kubeConfig);
         String path = System.getProperty(USER_DIR_SYSTEM_PROPERTY) + kubeConfig;
@@ -68,6 +77,11 @@ public class K8sUtils implements ApplicationContextAware {
         return path;
     }
 
+    /**
+     * 构造 KubernetesClient
+     * @param clusterProperties
+     * @throws IOException
+     */
     public K8sUtils(ClusterProperties clusterProperties) throws IOException{
         String kubeConfig = clusterProperties.getKubeconfig();
         if (StrUtil.isNotBlank(kubeConfig)) {
@@ -129,5 +143,18 @@ public class K8sUtils implements ApplicationContextAware {
     @Override
     public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
         this.applicationContext = applicationContext;
+    }
+
+    /**
+     * 获取gpu选择label
+     * @param gpuNum
+     * @return
+     */
+    public Map<String, String> gpuSelector(Integer gpuNum) {
+        Map<String, String> gpuSelector = new HashMap<>(2);
+        if (gpuNum != null && gpuNum > 0) {
+            gpuSelector.put(K8sLabelConstants.NODE_GPU_LABEL_KEY, K8sLabelConstants.NODE_GPU_LABEL_VALUE);
+        }
+        return gpuSelector;
     }
 }

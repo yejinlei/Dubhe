@@ -1,5 +1,5 @@
 /**
- * Copyright 2020 Zhejiang Lab. All Rights Reserved.
+ * Copyright 2020 Tianshu AI Platform. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,6 +23,7 @@ import org.apache.shiro.authz.annotation.RequiresPermissions;
 import org.dubhe.base.DataResponseBody;
 import org.dubhe.data.constant.Constant;
 import org.dubhe.data.constant.DatasetLabelEnum;
+import org.dubhe.data.domain.dto.DataFileAnnotationLabelDeleteDTO;
 import org.dubhe.data.domain.dto.LabelCreateDTO;
 import org.dubhe.data.domain.entity.Label;
 import org.dubhe.data.service.DatasetService;
@@ -62,11 +63,11 @@ public class LabelController {
         return new DataResponseBody(labelService.list(datasetId));
     }
 
-    @ApiOperation(value = "支持自动标注的标签查询")
-    @GetMapping(value = "/labels/auto")
+    @ApiOperation(value = "根据类型获取预置标签集合")
+    @GetMapping(value = "/labels/auto/{labelGroupType}")
     @RequiresPermissions(DATA)
-    public DataResponseBody query() {
-        return new DataResponseBody(labelService.listSupportAuto());
+    public DataResponseBody listSupportAutoByType(@PathVariable(value = "labelGroupType") Integer labelGroupType) {
+        return new DataResponseBody(labelService.listSupportAutoByType(labelGroupType));
     }
 
     @ApiOperation(value = "获取预置标签类型")
@@ -87,9 +88,23 @@ public class LabelController {
     @ApiOperation(value = "获取coco预置标签")
     @GetMapping(value = "/pubLabels")
     @RequiresPermissions(DATA)
-    public DataResponseBody getPubLabels() {
-        return new DataResponseBody(labelService.getPubLabels());
+    public DataResponseBody getPubLabels(Integer labelGroupType) {
+        return new DataResponseBody(labelService.getPubLabels(labelGroupType));
     }
 
+    @ApiOperation(value = "根据标签组类型获取标签数据")
+    @GetMapping(value = "/labels/{labelGroupType}")
+    @RequiresPermissions(DATA)
+    public DataResponseBody query(@PathVariable(name = "labelGroupType") Integer labelGroupType) {
+        return new DataResponseBody(labelService.findByLabelGroupType(labelGroupType));
+    }
+
+    @ApiOperation(value = "删除已标注的文本标签")
+    @DeleteMapping(value = "/labels")
+    @RequiresPermissions(DATA)
+    public DataResponseBody deleteFileAnnotationLabel(@Validated @RequestBody DataFileAnnotationLabelDeleteDTO dataFileAnnotationLabelDeleteDTO) {
+        labelService.deleteFileAnnotationLabel(dataFileAnnotationLabelDeleteDTO);
+        return new DataResponseBody();
+    }
 
 }

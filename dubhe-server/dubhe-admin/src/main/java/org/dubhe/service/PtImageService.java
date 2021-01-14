@@ -1,5 +1,5 @@
 /**
- * Copyright 2020 Zhejiang Lab. All Rights Reserved.
+ * Copyright 2020 Tianshu AI Platform. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,11 +17,8 @@
 
 package org.dubhe.service;
 
-import org.dubhe.domain.dto.PtImageDeleteDTO;
-import org.dubhe.domain.dto.PtImageQueryDTO;
-import org.dubhe.domain.dto.PtImageUpdateDTO;
-import org.dubhe.domain.dto.PtImageUploadDTO;
-import org.dubhe.domain.entity.HarborProject;
+import org.dubhe.domain.dto.*;
+import org.dubhe.domain.entity.PtImage;
 
 import java.util.List;
 import java.util.Map;
@@ -51,21 +48,12 @@ public interface PtImageService {
 
 
     /**
-     * 通过imageName查询所含镜像版本信息
+     * 根据镜像获取信息
      *
      * @param imageName 镜像名
      * @return List<String>  镜像集合
      */
-    List<String> searchImages(String imageName);
-
-
-    /**
-     * 查询harbor镜像列表
-     *
-     * @return List<HarborProject> harbor镜像集合
-     **/
-    List<HarborProject> getHarborProjectList();
-
+    List<PtImage> searchImages(Integer projectType, String imageName);
 
     /**
      * 删除镜像
@@ -84,8 +72,24 @@ public interface PtImageService {
 
     /**
      * 获取镜像名称列表
-     *
+     * @param projectType 镜像项目类型
      * @return Set<String> 镜像列表
      */
-    Set<String> getImageNameList();
+    Set<String> getImageNameList(Integer projectType);
+
+    /**
+     * 修改镜像来源(notebook定制)
+     *
+     * @param id 镜像id
+     */
+    void updImageResource(Long id);
+
+    /**
+     * 获取镜像URL
+     *
+     * @param imageQueryUrlDTO 查询镜像路径DTO
+     * @return String 镜像完整路径
+     */
+    String getImageUrl(PtImageQueryUrlDTO imageQueryUrlDTO);
+
 }

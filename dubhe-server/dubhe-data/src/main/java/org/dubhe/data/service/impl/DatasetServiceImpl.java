@@ -1,5 +1,5 @@
 /**
- * Copyright 2020 Zhejiang Lab. All Rights Reserved.
+ * Copyright 2020 Tianshu AI Platform. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,7 +22,6 @@ import cn.hutool.core.util.ObjectUtil;
 import cn.hutool.core.util.StrUtil;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONArray;
-import com.baomidou.mybatisplus.core.conditions.Wrapper;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
@@ -33,9 +32,9 @@ import org.dubhe.base.BaseService;
 import org.dubhe.base.DataContext;
 import org.dubhe.base.MagicNumConstant;
 import org.dubhe.constant.NumberConstant;
+import org.dubhe.constant.SymbolConstant;
 import org.dubhe.data.constant.*;
 import org.dubhe.data.dao.DatasetMapper;
-import org.dubhe.data.dao.DatasetVersionMapper;
 import org.dubhe.data.dao.TaskMapper;
 import org.dubhe.data.domain.dto.*;
 import org.dubhe.data.domain.entity.*;
@@ -43,7 +42,6 @@ import org.dubhe.data.domain.vo.*;
 import org.dubhe.data.machine.constant.DataStateCodeConstant;
 import org.dubhe.data.machine.constant.DataStateMachineConstant;
 import org.dubhe.data.machine.constant.FileStateCodeConstant;
-import org.dubhe.data.machine.dto.StateChangeDTO;
 import org.dubhe.data.machine.enums.DataStateEnum;
 import org.dubhe.data.machine.utils.StateMachineUtil;
 import org.dubhe.data.machine.utils.identify.service.StateIdentify;
@@ -53,6 +51,7 @@ import org.dubhe.data.util.ZipUtil;
 import org.dubhe.domain.dto.CommonPermissionDataDTO;
 import org.dubhe.domain.dto.RecycleTaskCreateDTO;
 import org.dubhe.domain.dto.UserDTO;
+import org.dubhe.dto.StateChangeDTO;
 import org.dubhe.enums.*;
 import org.dubhe.exception.BusinessException;
 import org.dubhe.service.RecycleTaskService;
@@ -68,8 +67,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
 
+import javax.annotation.Resource;
 import javax.servlet.http.HttpServletResponse;
-import java.sql.Timestamp;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -105,11 +104,6 @@ public class DatasetServiceImpl extends ServiceImpl<DatasetMapper, Dataset> impl
         add(DataStateCodeConstant.TARGET_COMPLETE_STATE);
     }};
 
-    /**
-     * 需要同步的状态
-     */
-    private static final DatasetQueryDTO NEED_SYNC_QUERY = DatasetQueryDTO.builder()
-            .status(NEED_SYNC_STATUS).build();
 
     /**
      * bucket
@@ -135,10 +129,12 @@ public class DatasetServiceImpl extends ServiceImpl<DatasetMapper, Dataset> impl
     @Autowired
     public FileService fileService;
 
+
     /**
      * 数据集标签服务类
      */
-    @Autowired
+    @Resource
+    @Lazy
     private LabelService labelService;
 
     /**
@@ -179,8 +175,6 @@ public class DatasetServiceImpl extends ServiceImpl<DatasetMapper, Dataset> impl
     @Autowired
     private DatasetLabelService datasetLabelService;
 
-    @Autowired
-    private DatasetVersionMapper datasetVersionMapper;
 
     @Autowired
     private DatasetGroupLabelService datasetGroupLabelService;
@@ -191,8 +185,12 @@ public class DatasetServiceImpl extends ServiceImpl<DatasetMapper, Dataset> impl
     @Autowired
     private RecycleTaskService recycleTaskService;
 
+    /**
+     * 标签组服务
+     */
     @Autowired
     private LabelGroupServiceImpl labelGroupService;
+
 
     /**
      * 检测是否为公共数据集
@@ -271,6 +269,9 @@ public class DatasetServiceImpl extends ServiceImpl<DatasetMapper, Dataset> impl
         }
         checkPublic(datasetId, OperationTypeEnum.UPDATE);
         Dataset dataset = getBaseMapper().selectById(datasetId);
+
+
+
         List<File> files = fileService.listFile(new QueryWrapper<File>().eq("dataset_id", datasetId));
         if (!dataset.getDataType().equals(datasetCreateDTO.getDataType())
                 && !CollectionUtils.isEmpty(files) && datasetCreateDTO.getDataType() != null) {
@@ -294,32 +295,13 @@ public class DatasetServiceImpl extends ServiceImpl<DatasetMapper, Dataset> impl
             throw new BusinessException(ErrorEnum.DATA_ABSENT_OR_NO_AUTH);
         }
 
-        //原数据集未关联标签组,编辑时候数据集关联标签组
-        List<Label> labels = labelService.listByGroup(datasetCreateDTO.getLabelGroupId());
-        if (Objects.isNull(dataset.getLabelGroupId()) && !Objects.isNull(datasetCreateDTO.getLabelGroupId())) {
-            baseMapper.updateById(Dataset.builder().id(datasetId).labelGroupId(datasetCreateDTO.getLabelGroupId()).build());
-            if (!CollectionUtils.isEmpty(labels)) {
-                datasetLabelService.saveList(
-                        labels.stream()
-                                .map(a -> DatasetLabel.builder().datasetId(datasetId)
-                                        .labelId(a.getId()).build()
-                                ).collect(Collectors.toList())
-                );
-            }
-            //编辑是标签组关联数据集为 未标注 才能修改数据集和标签组的关联关系
-        } else if (!Objects.isNull(dataset.getLabelGroupId()) && DatasetStatusEnum.INIT.getValue() == dataset.getStatus()) {
-            datasetLabelService.del(datasetId);
-            if (!CollectionUtils.isEmpty(labels)) {
-                datasetLabelService.saveList(
-                        labels.stream()
-                                .map(a -> DatasetLabel.builder().datasetId(datasetId)
-                                        .labelId(a.getId()).build()
-                                ).collect(Collectors.toList())
-                );
-            }
-        }
+        //修改数据集和标签的关系
+        doDatasetLabelByUpdate(dataset,datasetCreateDTO,datasetId);
+
         return true;
     }
+
+
 
     /**
      * 更新数据集状态
@@ -419,7 +401,13 @@ public class DatasetServiceImpl extends ServiceImpl<DatasetMapper, Dataset> impl
         checkPublic(dataset, OperationTypeEnum.UPDATE);
 
         //校验是否是预置数据集
-        List<Label> labelList = labelService.getPubLabels();
+        DatatypeEnum enumValue = DatatypeEnum.getEnumValue(dataset.getDataType());
+        List<Label> labelList = labelService.getPubLabels(enumValue.getValue());
+
+        //名称重复性校验
+        if(labelService.checkoutLabelIsRepeat(datasetId,label.getName())){
+            throw new BusinessException(ErrorEnum.LABEL_NAME_REPEAT);
+        }
         if(!CollectionUtils.isEmpty(labelList)){
             Map<String, Long> labelNameMap = labelList.stream().collect(Collectors.toMap(Label::getName, Label::getId));
             if(!Objects.isNull(labelNameMap.get(label.getName()))){
@@ -573,9 +561,10 @@ public class DatasetServiceImpl extends ServiceImpl<DatasetMapper, Dataset> impl
         if (count <= MagicNumConstant.ZERO) {
             throw new BusinessException(ErrorEnum.DATA_ABSENT_OR_NO_AUTH);
         }
+        //根据数据集ID删除数据集标签关联数据
+        labelService.delDataset(id);
 
         //删除版本数据 标注数据
-        labelService.delDataset(id);
         datasetVersionService.datasetVersionDelete(id);
 
         //落地数据文件回收信息
@@ -587,6 +576,7 @@ public class DatasetServiceImpl extends ServiceImpl<DatasetMapper, Dataset> impl
                 .recycleModule(RecycleModuleEnum.BIZ_DATASET.getValue())
                 .recycleNote(RecycleResourceEnum.DATASET_RECYCLE_FILE.getMessage())
                 .build());
+
         //落地数据版本文件回收信息
         recycleTaskService.createRecycleTask(RecycleTaskCreateDTO.builder()
                 .recycleCustom(RecycleResourceEnum.DATASET_RECYCLE_VERSION_FILE.getClassName())
@@ -641,7 +631,7 @@ public class DatasetServiceImpl extends ServiceImpl<DatasetMapper, Dataset> impl
                 for (DatasetVersionFile datasetVersionFile : datasetVersionFiles) {
                     status.add(datasetVersionFile.getStatus());
                 }
-                StateChangeDTO dto = MarkedCompletebuildStateChangeDTO(dataset.getId(),status);
+                StateChangeDTO dto = markedCompleteBuildStateChangeDTO(dataset.getId(),status);
                 if(dto != null){
                     StateMachineUtil.stateChange(dto);
                 }
@@ -660,15 +650,8 @@ public class DatasetServiceImpl extends ServiceImpl<DatasetMapper, Dataset> impl
                 annPaths.add(org.dubhe.utils.StringUtils.substringAfter(annPath, "/"));
             });
             try {
-                //落地 minio 数据文件回收信息
-                if (!Objects.isNull(dataset.getUri())) {
-                    recycleTaskService.createRecycleTask(RecycleTaskCreateDTO.builder()
-                            .recycleCondition(prefixPath + bucket + "/" + annPaths)
-                            .recycleDelayDate(NumberConstant.NUMBER_1)
-                            .recycleType(RecycleTypeEnum.FILE.getCode())
-                            .recycleModule(RecycleModuleEnum.BIZ_DATASET.getValue())
-                            .build());
-                }
+                //新增文件回收任务
+                addRecycleTask(dataset,annPaths);
             } catch (Exception e) {
                 LogUtil.error(LogEnum.BIZ_DATASET, "delete error" + e);
                 throw new BusinessException(ErrorEnum.FILE_DELETE_ERROR);
@@ -676,6 +659,38 @@ public class DatasetServiceImpl extends ServiceImpl<DatasetMapper, Dataset> impl
         }
 
     }
+
+    /**
+     * 新增文件回收任务
+     *
+     * @param dataset   数据集实体
+     * @param annPaths  minio 回收文件路径
+     */
+    public void addRecycleTask(Dataset dataset,List<String> annPaths ){
+        if (!Objects.isNull(dataset.getUri()) && !CollectionUtils.isEmpty(annPaths)) {
+            annPaths.stream().forEach(path->{
+                recycleTaskService.createRecycleTask(RecycleTaskCreateDTO.builder()
+                        .recycleCondition(prefixPath + bucket + SymbolConstant.SLASH + path)
+                        .recycleDelayDate(NumberConstant.NUMBER_1)
+                        .recycleType(RecycleTypeEnum.FILE.getCode())
+                        .recycleModule(RecycleModuleEnum.BIZ_DATASET.getValue())
+                        .build());
+                if(DatatypeEnum.TEXT.getValue().compareTo(dataset.getDataType()) == 0){
+                    String afterPath = StringUtils.substringAfterLast(path, SymbolConstant.SLASH);
+                    String beforePath = StringUtils.substringBeforeLast(path, ANNOTATION_DIRECTORY);
+                    String newPath = beforePath+ORIGIN_DIRECTORY+SymbolConstant.SLASH+ABSTRACT_NAME_PREFIX+afterPath;
+                    recycleTaskService.createRecycleTask(RecycleTaskCreateDTO.builder()
+                            .recycleCondition(prefixPath + bucket + SymbolConstant.SLASH + newPath)
+                            .recycleDelayDate(NumberConstant.NUMBER_1)
+                            .recycleType(RecycleTypeEnum.FILE.getCode())
+                            .recycleModule(RecycleModuleEnum.BIZ_DATASET.getValue())
+                            .build());
+                }
+            });
+
+        }
+    }
+
 
     /**
      * 构建状态机器参数
@@ -738,9 +753,9 @@ public class DatasetServiceImpl extends ServiceImpl<DatasetMapper, Dataset> impl
      *
      * @param status 文件状态
      * @param datasetId  数据集ID
-     * @return
+     * @return  状态机实体
      */
-    public StateChangeDTO MarkedCompletebuildStateChangeDTO(Long datasetId, List<Integer> status) {
+    public StateChangeDTO markedCompleteBuildStateChangeDTO(Long datasetId, List<Integer> status) {
         StateChangeDTO dto = new StateChangeDTO();
         dto.setStateMachineType(DataStateMachineConstant.DATA_STATE_MACHINE);
         dto.setObjectParam(new Object[]{datasetId.intValue()});
@@ -884,11 +899,21 @@ public class DatasetServiceImpl extends ServiceImpl<DatasetMapper, Dataset> impl
             if (!CollectionUtils.isEmpty(records)) {
                 for (Dataset dataset : records) {
                     DatasetVO datasetVO = DatasetVO.from(dataset, null, null);
-                    datasetVO.setProgress(statistics.get(datasetVO.getId()));
-                    if (!Objects.isNull(groupListMap) && !Objects.isNull(dataset.getLabelGroupId()) && !Objects.isNull(groupListMap.get(dataset.getLabelGroupId()))) {
-                        datasetVO.setLabelGroupName(groupListMap.get(dataset.getLabelGroupId()).get(0).getName());
-                        datasetVO.setLabelGroupType(groupListMap.get(dataset.getLabelGroupId()).get(0).getType());
+                    if(dataset.getCurrentVersionName() != null){
+                        DatasetVersion datasetVersion = datasetVersionService
+                                .getVersionByDatasetIdAndVersionName(dataset.getId(), dataset.getCurrentVersionName());
+                        datasetVO.setDataConversion(datasetVersion.getDataConversion());
                     }
+                    datasetVO.setProgress(statistics.get(datasetVO.getId()));
+                    if (!Objects.isNull(groupListMap) && !Objects.isNull(dataset.getLabelGroupId()) &&
+                            !Objects.isNull(groupListMap.get(dataset.getLabelGroupId()))) {
+                        LabelGroup labelGroup = groupListMap.get(dataset.getLabelGroupId()).get(0);
+                        datasetVO.setLabelGroupName(labelGroup.getName());
+                        datasetVO.setLabelGroupType(labelGroup.getType());
+                        datasetVO.setAutoAnnotation(labelGroup.getType() == MagicNumConstant.ONE);
+
+                    }
+
                     datasetVOS.add(datasetVO);
                 }
             }
@@ -948,12 +973,12 @@ public class DatasetServiceImpl extends ServiceImpl<DatasetMapper, Dataset> impl
         }
         checkPublic(datasetId, OperationTypeEnum.UPDATE);
         autoAnnotatingCheck(datasetId);
-        List<Long> list = fileService.saveFiles(datasetId, batchFileCreateDTO.getFiles());
+        List<File> list = fileService.saveFiles(datasetId, batchFileCreateDTO.getFiles());
         if (!CollectionUtils.isEmpty(list)) {
             List<DatasetVersionFile> datasetVersionFiles = new ArrayList<>();
-            for (Long fileId : list) {
+            for (File file : list) {
                 datasetVersionFiles.add(
-                        new DatasetVersionFile(datasetId, dataset.getCurrentVersionName(), fileId)
+                        new DatasetVersionFile(datasetId, dataset.getCurrentVersionName(), file.getId(),file.getName())
                 );
             }
             datasetVersionFileService.insertList(datasetVersionFiles);
@@ -1051,19 +1076,6 @@ public class DatasetServiceImpl extends ServiceImpl<DatasetMapper, Dataset> impl
         baseMapper.updateVersionName(id, versionName);
     }
 
-    /**
-     * 更新时间
-     *
-     * @param fileMap 文件map
-     * @return boolean 更新结果
-     */
-    @Override
-    public boolean updateTimeByIdSet(Map<Long, List<DatasetVersionFile>> fileMap) {
-        Dataset dataset = new Dataset();
-        dataset.setId(fileMap.keySet().iterator().next());
-        dataset.setUpdateTime(new Timestamp(System.currentTimeMillis()));
-        return updateById(dataset);
-    }
 
     /**
      * 查询有版本的数据集
@@ -1106,6 +1118,12 @@ public class DatasetServiceImpl extends ServiceImpl<DatasetMapper, Dataset> impl
         }
         if (CollectionUtil.isEmpty(datasetEnhanceRequestDTO.getTypes())) {
             throw new BusinessException(ErrorEnum.DATASET_LABEL_EMPTY);
+        }
+        //判断数据集是否在发布中
+        if (!StringUtils.isBlank(dataset.getCurrentVersionName())) {
+            if (datasetVersionService.getDatasetVersionSourceVersion(dataset).getDataConversion().equals(NumberConstant.NUMBER_4)) {
+                throw new BusinessException(ErrorEnum.DATASET_PUBLISH_ERROR);
+            }
         }
         //只有是完成状态的数据集才可以进行增强操作
         DataStateEnum dataStateEnum = stateIdentify.getStatus(
@@ -1214,17 +1232,6 @@ public class DatasetServiceImpl extends ServiceImpl<DatasetMapper, Dataset> impl
         return list(datasetQueryWrapper);
     }
 
-    /**
-     * 数据集更新
-     *
-     * @param dataset       数据集对象
-     * @param updateWrapper 更新操作类
-     * @return boolean 更新是否成功
-     */
-    @Override
-    public boolean updateEntity(Dataset dataset, Wrapper<Dataset> updateWrapper) {
-        return update(dataset, updateWrapper);
-    }
 
     /**
      * 导入用户自定义数据集
@@ -1247,25 +1254,7 @@ public class DatasetServiceImpl extends ServiceImpl<DatasetMapper, Dataset> impl
         return dataset.getId();
     }
 
-    /**
-     * 初始化版本数据
-     *
-     * @param dataset 数据集
-     */
-    @Override
-    public void initVersion(Dataset dataset) {
-        DatasetVersion datasetVersion = new DatasetVersion();
-        datasetVersion.setDatasetId(dataset.getId());
-        datasetVersion.setVersionName(DEFAULT_VERSION);
-        datasetVersion.setVersionNote("");
-        datasetVersion.setVersionUrl(DATASET_DIRECTORY + java.io.File.separator + dataset.getId() + VERSION_PATH_NAME + DEFAULT_VERSION);
-        datasetVersion.setDataConversion(ConversionStatusEnum.UNABLE_CONVERSION.getValue());
-        datasetVersion.setCreateUserId(dataset.getCreateUserId());
-        datasetVersionMapper.insert(datasetVersion);
-        dataset.setCurrentVersionName(DEFAULT_VERSION);
-        dataset.setDecompressState(DatasetDecompressStateEnum.DECOMPRESS_COMPLETE.getValue());
-        baseMapper.updateById(dataset);
-    }
+
 
     /**
      * 数据集置顶
@@ -1290,18 +1279,6 @@ public class DatasetServiceImpl extends ServiceImpl<DatasetMapper, Dataset> impl
         dataset.setUpdateTime(null);
         getBaseMapper().updateById(dataset);
     }
-
-    /**
-     * 批量获取获取数据集
-     *
-     * @param datasetIds 数据集Id列表
-     * @return List<Dataset> 数据集列表
-     */
-    @Override
-    public List<Dataset> listDataByIds(List<Long> datasetIds) {
-        return baseMapper.selectBatchIds(datasetIds);
-    }
-
 
     /**
      * 查询数据集状态
@@ -1341,4 +1318,52 @@ public class DatasetServiceImpl extends ServiceImpl<DatasetMapper, Dataset> impl
     }
 
 
+    /**
+     * 修改数据集和标签的关系
+     *
+     * @param dataset           数据集实体
+     * @param datasetCreateDTO  数据集修改实体
+     * @param datasetId         原数据集ID
+     */
+    private void doDatasetLabelByUpdate(Dataset dataset, DatasetCreateDTO datasetCreateDTO, Long datasetId){
+        //数据集未标注状态下可操作标签组
+        if(DataStateCodeConstant.NOT_ANNOTATION_STATE.compareTo(dataset.getStatus()) == 0){
+            List<Label> labels = labelService.listByGroup(datasetCreateDTO.getLabelGroupId());
+            if(!Objects.isNull(dataset.getLabelGroupId()) &&
+                    !dataset.getLabelGroupId().equals(datasetCreateDTO.getLabelGroupId())){
+                //删除原先数据集与标签关系
+                datasetLabelService.del(datasetId);
+                insertDatasetLabelAndUpdateDataset(labels,datasetCreateDTO,datasetId);
+            }else if(Objects.isNull(dataset.getLabelGroupId()) &&
+                    !Objects.isNull(datasetCreateDTO.getLabelGroupId())){
+                //新增数据集标签和修改数据集信息
+                insertDatasetLabelAndUpdateDataset(labels,datasetCreateDTO,datasetId);
+            }
+        }else if(!Objects.isNull(dataset.getLabelGroupId()) &&!Objects.isNull(datasetCreateDTO.getLabelGroupId()) &&
+                !dataset.getLabelGroupId().equals(datasetCreateDTO.getLabelGroupId())){
+            throw new BusinessException(ErrorEnum.LABELGROUP_IN_USE_STATUS);
+        }
+    }
+
+
+    /**
+     * 新增数据集标签和修改数据集信息
+     *
+     * @param labels            标签列表
+     * @param datasetCreateDTO  数据集修改实体
+     * @param datasetId         原数据集ID
+     */
+    private void insertDatasetLabelAndUpdateDataset(List<Label> labels ,DatasetCreateDTO datasetCreateDTO, Long datasetId){
+        //修改数据集标签组ID
+        baseMapper.updateById(Dataset.builder().id(datasetId).labelGroupId(datasetCreateDTO.getLabelGroupId()).build());
+        //新增数据集标签关系
+        if (!CollectionUtils.isEmpty(labels)) {
+            datasetLabelService.saveList(
+                    labels.stream()
+                            .map(a -> DatasetLabel.builder().datasetId(datasetId)
+                                    .labelId(a.getId()).build()
+                            ).collect(Collectors.toList())
+            );
+        }
+    }
 }

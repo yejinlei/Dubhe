@@ -1,5 +1,5 @@
 /**
- * Copyright 2020 Zhejiang Lab. All Rights Reserved.
+ * Copyright 2020 Tianshu AI Platform. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,11 +23,11 @@ import cn.hutool.core.util.StrUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
-import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import org.dubhe.annotation.DataPermissionMethod;
 import org.dubhe.base.MagicNumConstant;
+import org.dubhe.constant.NumberConstant;
 import org.dubhe.data.constant.*;
 import org.dubhe.data.dao.DatasetVersionMapper;
 import org.dubhe.data.domain.dto.ConversionCreateDTO;
@@ -40,7 +40,6 @@ import org.dubhe.data.domain.entity.DatasetVersionFile;
 import org.dubhe.data.domain.entity.Task;
 import org.dubhe.data.domain.vo.DatasetVersionCriteriaVO;
 import org.dubhe.data.domain.vo.DatasetVersionVO;
-import org.dubhe.data.domain.vo.ProgressVO;
 import org.dubhe.data.machine.constant.DataStateCodeConstant;
 import org.dubhe.data.machine.enums.DataStateEnum;
 import org.dubhe.data.machine.utils.identify.service.StateIdentify;
@@ -49,7 +48,6 @@ import org.dubhe.data.service.DatasetVersionFileService;
 import org.dubhe.data.service.DatasetVersionService;
 import org.dubhe.data.service.FileService;
 import org.dubhe.data.service.TaskService;
-import org.dubhe.data.service.http.ConversionHttpService;
 import org.dubhe.data.service.http.DatasetVersionHttpService;
 import org.dubhe.data.util.ConversionUtil;
 import org.dubhe.domain.dto.UserDTO;
@@ -57,22 +55,28 @@ import org.dubhe.domain.dto.UserSmallDTO;
 import org.dubhe.enums.DatasetTypeEnum;
 import org.dubhe.enums.LogEnum;
 import org.dubhe.enums.OperationTypeEnum;
-import org.dubhe.enums.SwitchEnum;
 import org.dubhe.exception.BusinessException;
 import org.dubhe.service.UserService;
 import org.dubhe.utils.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.TransactionStatus;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionCallbackWithoutResult;
+import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.util.CollectionUtils;
 
 import javax.annotation.Resource;
 import java.io.File;
-import java.io.IOException;
 import java.sql.Timestamp;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
 
 import static org.dubhe.data.constant.Constant.*;
 
@@ -139,12 +143,6 @@ public class DatasetVersionServiceImpl extends ServiceImpl<DatasetVersionMapper,
     private BasePool pool;
 
     /**
-     * 二进制转换http服务
-     */
-    @Autowired
-    private ConversionHttpService conversionHttpService;
-
-    /**
      * bucketName
      */
     @Value("${minio.bucketName}")
@@ -165,7 +163,8 @@ public class DatasetVersionServiceImpl extends ServiceImpl<DatasetVersionMapper,
     /**
      * 文件服务
      */
-    @Autowired
+    @Resource
+    @Lazy
     public FileService fileService;
 
     /**
@@ -179,6 +178,9 @@ public class DatasetVersionServiceImpl extends ServiceImpl<DatasetVersionMapper,
      */
     @Autowired
     private ConversionUtil conversionUtil;
+
+    @Autowired
+    private TransactionTemplate transactionTemplate;
 
     private final ConcurrentHashMap<Long, Boolean> copyFlag = new ConcurrentHashMap<>();
 
@@ -196,6 +198,7 @@ public class DatasetVersionServiceImpl extends ServiceImpl<DatasetVersionMapper,
      * @return String 版本名
      */
     @Override
+    @Transactional(rollbackFor = Exception.class)
     public String publish(DatasetVersionCreateDTO datasetVersionCreateDTO) {
         datasetVersionCreateDTO.setVersionName(getNextVersionName(datasetVersionCreateDTO.getDatasetId()));
         Dataset dataset = datasetService.getById(datasetVersionCreateDTO.getDatasetId());
@@ -203,9 +206,15 @@ public class DatasetVersionServiceImpl extends ServiceImpl<DatasetVersionMapper,
         if (null == dataset) {
             throw new BusinessException(ErrorEnum.DATASET_ABSENT, "id:" + datasetVersionCreateDTO.getDatasetId(), null);
         }
+        //判断数据集是否在发布中
+        if (!StringUtils.isBlank(dataset.getCurrentVersionName())) {
+            if (getDatasetVersionSourceVersion(dataset).getDataConversion().equals(NumberConstant.NUMBER_4)) {
+                throw new BusinessException(ErrorEnum.DATASET_PUBLISH_ERROR);
+            }
+        }
         datasetService.checkPublic(dataset, OperationTypeEnum.UPDATE);
         // 数据集标注完成才能发布
-        DataStateEnum currentDatasetStatus = stateIdentify.getStatus(dataset.getId(), dataset.getCurrentVersionName(),false);
+        DataStateEnum currentDatasetStatus = stateIdentify.getStatus(dataset.getId(), dataset.getCurrentVersionName(), false);
         dataset.setStatus(currentDatasetStatus.getCode());
         if (!dataset.getStatus().equals(DataStateCodeConstant.ANNOTATION_COMPLETE_STATE) && !dataset.getStatus().equals(DataStateCodeConstant.AUTO_TAG_COMPLETE_STATE)
                 && !dataset.getStatus().equals(DataStateCodeConstant.TARGET_COMPLETE_STATE)) {
@@ -216,28 +225,6 @@ public class DatasetVersionServiceImpl extends ServiceImpl<DatasetVersionMapper,
                 findDatasetVersion(datasetVersionCreateDTO.getDatasetId(), datasetVersionCreateDTO.getVersionName());
         if (CollectionUtil.isNotEmpty(datasetVersionList)) {
             throw new BusinessException(ErrorEnum.DATASET_VERSION_EXIST, null, null);
-        }
-        String prefixPath = nfsPath + bucketName + File.separator + dataset.getUri() + File.separator;
-        String annotationSourceDir = prefixPath + ANNOTATION +
-                (dataset.getCurrentVersionName() == null ? "" : (File.separator + dataset.getCurrentVersionName()));
-        String annotationTargetDir = prefixPath + ANNOTATION + File.separator + datasetVersionCreateDTO.getVersionName();
-        String annVersionTargetDir = prefixPath + VERSION_FILE + File.separator
-                + datasetVersionCreateDTO.getVersionName() + File.separator + ANNOTATION;
-        String command = String.format(COMMAND, userName, nfsIp, annotationTargetDir, annotationSourceDir
-                , annotationTargetDir, annVersionTargetDir, annotationSourceDir, annVersionTargetDir);
-        String[] cmd = {"/bin/sh", "-c", command};
-
-        LogUtil.debug(LogEnum.BIZ_DATASET, "----------------------------------------");
-        LogUtil.debug(LogEnum.BIZ_DATASET, command);
-        LogUtil.debug(LogEnum.BIZ_DATASET, "----------------------------------------");
-        try {
-            Process process = Runtime.getRuntime().exec(cmd);
-            if (!datasetVersionFileService.getCopyResult(process)) {
-                throw new BusinessException(ErrorEnum.DATASET_VERSION_ANNOTATION_COPY_EXCEPTION);
-            }
-        } catch (IOException e) {
-            LogUtil.error(LogEnum.BIZ_DATASET, ErrorEnum.DATASET_VERSION_ANNOTATION_COPY_EXCEPTION + e.getMessage());
-            throw new BusinessException(ErrorEnum.DATASET_VERSION_ANNOTATION_COPY_EXCEPTION);
         }
         publishDo(dataset, datasetVersionCreateDTO);
         return datasetVersionCreateDTO.getVersionName();
@@ -256,18 +243,10 @@ public class DatasetVersionServiceImpl extends ServiceImpl<DatasetVersionMapper,
         DatasetVersion datasetVersion = new DatasetVersion(dataset.getCurrentVersionName(), versionUrl, datasetVersionCreateDTO);
         datasetVersion.setUpdateTime(new Timestamp(System.currentTimeMillis()));
         datasetVersion.setOriginUserId(dataset.getCreateUserId());
+        datasetVersion.setDataConversion(ConversionStatusEnum.PUBLISHING.getValue());
         //新增数据集版本信息
         datasetVersionMapper.insert(datasetVersion);
-        // 4.写入版本文件关系数据(新版本) - 正常情况
-        saveDatasetVersionFiles(dataset, datasetVersionCreateDTO.getVersionName());
-        // 5.更改新增关系版本信息
-        datasetVersionFileService.newShipVersionNameChange(dataset.getId(),
-                dataset.getCurrentVersionName(), datasetVersionCreateDTO.getVersionName());
-        //6.版本回退
-        if (!datasetVersionFileService.rollbackDataset(dataset)) {
-            throw new BusinessException("rollback failure");
-        }
-        // 7.更新数据集当前版本
+        // 更新数据集当前版本
         datasetService.updateVersionName(dataset.getId(), datasetVersionCreateDTO.getVersionName());
     }
 
@@ -278,17 +257,19 @@ public class DatasetVersionServiceImpl extends ServiceImpl<DatasetVersionMapper,
      * @param datasetVersion 数据集版本
      */
     public void publishCopyFile(Dataset dataset, DatasetVersion datasetVersion) {
+        //标记开始复制操作
         copyFlag.put(datasetVersion.getId(), false);
+        // targetDir = dataset/25/versionFile/V0001（未复制版本版本号（新版本））/origin
         String targetDir = dataset.getUri() + File.separator + VERSION_FILE + File.separator
                 + datasetVersion.getVersionName() + File.separator + "origin";
+        //获取新发布版本的数据集版本中间表的数据
         List<DatasetVersionFile> datasetVersionFiles =
                 datasetVersionFileService.findByDatasetIdAndVersionName(dataset.getId(), datasetVersion.getVersionName());
         //当前发布版本所有图片的文件名
         List<String> picNames = new ArrayList<>();
-        datasetVersionFiles.forEach(f -> {
-            String picUrl = fileService.selectById(f.getFileId(), dataset.getId()).getUrl();
-            picNames.add(StringUtils.substringAfter(picUrl, "/"));
-        });
+        //获取当前版本（新版本）的文件URL
+        List<String> picUrls = fileService.selectUrls(dataset.getId(), datasetVersion.getVersionName());
+        picUrls.forEach(picUrl -> picNames.add(StringUtils.substringAfter(picUrl, "/")));
         try {
             minioUtil.copyDir(bucketName, picNames, targetDir);
             datasetVersion.setDataConversion(ConversionStatusEnum.NOT_CONVERSION.getValue());
@@ -299,7 +280,7 @@ public class DatasetVersionServiceImpl extends ServiceImpl<DatasetVersionMapper,
                 LogUtil.info(LogEnum.BIZ_DATASET, "yolo conversion end");
             }
             copyFlag.remove(datasetVersion.getId());
-            if(dataset.getAnnotateType().equals(MagicNumConstant.TWO)){
+            if (dataset.getAnnotateType().equals(MagicNumConstant.TWO)) {
                 Task task = Task.builder().total(datasetVersionFiles.size())
                         .datasetId(dataset.getId())
                         .type(DataTaskTypeEnum.OFRECORD.getValue())
@@ -352,15 +333,14 @@ public class DatasetVersionServiceImpl extends ServiceImpl<DatasetVersionMapper,
     /**
      * 保存版本文件
      *
-     * @param dataset     数据集id
-     * @param versionName 版本名
+     * @param version     数据集版本
      */
-    public void saveDatasetVersionFiles(Dataset dataset, String versionName) {
+    public void saveDatasetVersionFiles(DatasetVersion version) {
         List<DatasetVersionFile> datasetVersionFiles = datasetVersionFileService.
-                findByDatasetIdAndVersionName(dataset.getId(), dataset.getCurrentVersionName());
+                findByDatasetIdAndVersionName(version.getDatasetId(), version.getVersionSource());
         if (datasetVersionFiles != null && datasetVersionFiles.size() > MagicNumConstant.ZERO) {
             datasetVersionFiles.stream().forEach(datasetVersionFile -> {
-                datasetVersionFile.setVersionName(versionName);
+                datasetVersionFile.setVersionName(version.getVersionName());
                 datasetVersionFile.setBackupStatus(datasetVersionFile.getAnnotationStatus());
             });
             datasetVersionFileService.insertList(datasetVersionFiles);
@@ -392,73 +372,46 @@ public class DatasetVersionServiceImpl extends ServiceImpl<DatasetVersionMapper,
      * 数据集版本列表
      *
      * @param datasetVersionQueryCriteria 查询条件
-     * @param page                        分页查询
      * @return Map<String, Object>        版本列表
      */
     @Override
     @DataPermissionMethod(dataType = DatasetTypeEnum.PUBLIC)
-    public Map<String, Object> getList(DatasetVersionQueryCriteriaDTO datasetVersionQueryCriteria, Page<DatasetVersion> page) {
-        Dataset dataset = datasetService.getById(datasetVersionQueryCriteria.getDatasetId());
-        if (null == dataset) {
-            throw new BusinessException(ErrorEnum.DATASET_ABSENT, "id:" + datasetVersionQueryCriteria.getDatasetId(), null);
+    public Map<String, Object> getList(DatasetVersionQueryCriteriaDTO datasetVersionQueryCriteria) {
+        //校验入参
+        if (datasetVersionQueryCriteria.getCurrent()==null||datasetVersionQueryCriteria.getSize()==null){
+                throw new BusinessException(ErrorEnum.PARAM_ERROR);
         }
-        List<DatasetVersionVO> result = new ArrayList<>();
-
-        LambdaQueryWrapper<DatasetVersion> queryWrapper = new LambdaQueryWrapper<DatasetVersion>()
-                .eq(DatasetVersion::getDatasetId, datasetVersionQueryCriteria.getDatasetId())
-                .eq(DatasetVersion::getDeleted, SwitchEnum.getBooleanValue(SwitchEnum.OFF.getValue()));
-
-        IPage<DatasetVersion> datasetVersionPage = datasetVersionMapper.selectPage(page, WrapperHelp.getWrapper(datasetVersionQueryCriteria));
-
-
-        datasetVersionPage.setTotal(datasetVersionMapper.selectCount(queryWrapper));
-
-
-        Map<Long, UserSmallDTO> userDtoMap = new HashMap<>(MagicNumConstant.SIXTEEN);
-        datasetVersionPage.getRecords().stream().forEach(datasetVersion -> {
-            DatasetVersionVO datasetVersionVO = new DatasetVersionVO(datasetVersion, dataset);
-            if (datasetVersion.getCreateUserId() != null) {
-                datasetVersionVO.setCreateUser(getUserSmallDTO(userDtoMap, datasetVersion));
-            }
-            if (datasetVersion.getUpdateUserId() != null) {
-                datasetVersionVO.setUpdateUser(getUserSmallDTO(userDtoMap, datasetVersion));
-            }
-            List<DatasetVersionFile> datasetVersionFiles = datasetVersionFileService
-                    .getFilesByDatasetIdAndVersionName(dataset.getId(), datasetVersion.getVersionName());
-            List<org.dubhe.data.domain.entity.File> files = new ArrayList<>();
-            if (!CollectionUtils.isEmpty(datasetVersionFiles)) {
-                datasetVersionVO.setFileCount(datasetVersionFiles.size());
-                ProgressVO progressVO = new ProgressVO();
-                datasetVersionFiles.stream().forEach(file -> {
-                    org.dubhe.data.domain.entity.File datasetFile = new org.dubhe.data.domain.entity.File();
-                    datasetFile.setStatus(file.getAnnotationStatus());
-                    datasetFile.setId(file.getFileId());
-                    files.add(datasetFile);
-                    switch (file.getAnnotationStatus()) {
-                        case MagicNumConstant.ZERO:
-                        case MagicNumConstant.ONE:
-                            progressVO.setUnfinished(progressVO.getUnfinished() + MagicNumConstant.ONE);
-                            break;
-                        case MagicNumConstant.TWO:
-                            progressVO.setAutoFinished(progressVO.getAutoFinished() + MagicNumConstant.ONE);
-                            break;
-                        case MagicNumConstant.THREE:
-                            progressVO.setFinished(progressVO.getFinished() + MagicNumConstant.ONE);
-                            break;
-                        case MagicNumConstant.FOUR:
-                            progressVO.setFinishAutoTrack(progressVO.getFinishAutoTrack() + MagicNumConstant.ONE);
-                            break;
-                        default:
+        //校验数据集是否合法
+        Dataset dataset = datasetService.getById(datasetVersionQueryCriteria.getDatasetId());
+        if (dataset==null){
+            throw new BusinessException(ErrorEnum.PARAM_ERROR);
+        }
+        //查询数据集版本历史列表
+        QueryWrapper<DatasetVersion> wrapper = WrapperHelp.getWrapper(datasetVersionQueryCriteria);
+        Page<DatasetVersionVO> pages = new Page<DatasetVersionVO>() {{
+            setCurrent(datasetVersionQueryCriteria.getCurrent());
+            setSize(datasetVersionQueryCriteria.getSize());
+            setTotal(datasetVersionMapper.selectCount(wrapper));
+            List<DatasetVersionVO> collect = datasetVersionMapper.selectList(
+                    wrapper.last(" limit " + (datasetVersionQueryCriteria.getCurrent() - NumberConstant.NUMBER_1)*datasetVersionQueryCriteria.getSize() + ", " + datasetVersionQueryCriteria.getSize())
+            ).stream().map(val -> {
+                        return DatasetVersionVO.from(val,
+                                dataset,
+                                datasetService.progress(new ArrayList<Long>() {{
+                                    add(dataset.getId());
+                                }}).get(dataset.getId()),
+                                datasetVersionFileService.selectDatasetVersionFileCount(val),
+                                getUserSmallDTO(new HashMap<>(MagicNumConstant.SIXTEEN),val),
+                                getUserSmallDTO(new HashMap<>(MagicNumConstant.SIXTEEN),val)
+                        );
                     }
-                });
-                datasetVersionVO.setProgressVO(progressVO);
+            ).collect(Collectors.toList());
+            if (!CollectionUtils.isEmpty(collect)){
+                setRecords(collect);
             }
-            DataStateEnum dataStateEnum = stateIdentify.getStatus(datasetVersionVO.getDatasetId(), datasetVersionVO.getVersionName(),false);
-            datasetVersionVO.setStatus(dataStateEnum == null ? DataStateCodeConstant.NOT_ANNOTATION_STATE : dataStateEnum.getCode());
-            datasetVersionVO.setDataConversion(datasetVersion.getDataConversion());
-            result.add(datasetVersionVO);
-        });
-        return PageUtil.toPage(datasetVersionPage, result);
+        }};
+        return PageUtil.toPage(pages);
+
     }
 
     /**
@@ -489,7 +442,7 @@ public class DatasetVersionServiceImpl extends ServiceImpl<DatasetVersionMapper,
                 .eq("version_name", versionName);
         DatasetVersionFile datasetVersionFile = new DatasetVersionFile();
         datasetVersionFile.setStatus(MagicNumConstant.ONE);
-        datasetVersionFileServiceImpl.getBaseMapper().update(datasetVersionFile,datasetVersionFileUpdateWrapper);
+        datasetVersionFileServiceImpl.getBaseMapper().update(datasetVersionFile, datasetVersionFileUpdateWrapper);
         //删除版本对应的minio文件
         datasetVersionUrls.forEach(dataseturl -> {
             try {
@@ -546,6 +499,12 @@ public class DatasetVersionServiceImpl extends ServiceImpl<DatasetVersionMapper,
         if (null == dataset) {
             throw new BusinessException(ErrorEnum.DATASET_ABSENT, "id:" + datasetId, null);
         }
+        //判断数据集是否在发布中
+        if (!StringUtils.isBlank(dataset.getCurrentVersionName())) {
+            if (getDatasetVersionSourceVersion(dataset).getDataConversion().equals(NumberConstant.NUMBER_4)) {
+                throw new BusinessException(ErrorEnum.DATASET_PUBLISH_ERROR);
+            }
+        }
         // 自动标注中不允许版本切换
         if (dataset.getStatus().equals(DataStateCodeConstant.AUTOMATIC_LABELING_STATE)
                 || dataset.getStatus().equals(DataStateCodeConstant.TARGET_FOLLOW_STATE)
@@ -553,15 +512,13 @@ public class DatasetVersionServiceImpl extends ServiceImpl<DatasetVersionMapper,
         ) {
             throw new BusinessException(ErrorEnum.DATASET_VERSION_STATUS_NO_SWITCH, "id:" + datasetId, null);
         }
-        // 1.数据集版本回退
-        if (!datasetVersionFileService.rollbackDataset(dataset)) {
-            throw new BusinessException("rollback failure");
-        }
+        //版本回退
+        datasetVersionFileService.rollbackDataset(dataset);
         // 2.版本切换
         datasetService.updateVersionName(datasetId, versionName);
         //更新当前版本数据集的状态
-        DataStateEnum status = stateIdentify.getStatus(dataset.getId(), versionName,true);
-        datasetService.updateStatus(dataset.getId(),status);
+        DataStateEnum status = stateIdentify.getStatus(dataset.getId(), versionName, true);
+        datasetService.updateStatus(dataset.getId(), status);
     }
 
     /**
@@ -596,32 +553,6 @@ public class DatasetVersionServiceImpl extends ServiceImpl<DatasetVersionMapper,
         baseMapper.datasetVersionDelete(datasetId);
     }
 
-    /**
-     * 数据转换
-     */
-    @Override
-    public void datasetConvert() {
-        DatasetVersionCriteriaVO needConversion = DatasetVersionCriteriaVO.builder()
-                .deleted(NOT_DELETED).dataConversion(ConversionStatusEnum.NOT_CONVERSION.getValue()).build();
-        QueryWrapper<DatasetVersion> queryWrapper = WrapperHelp.getWrapper(needConversion);
-        String limit = "limit " + MagicNumConstant.TEN;
-        queryWrapper.last(limit);
-        List<DatasetVersion> versions = list(queryWrapper);
-        if (CollectionUtil.isEmpty(versions)) {
-            LogUtil.info(LogEnum.BIZ_DATASET, "no version data to convert");
-            return;
-        }
-        versions.forEach(f -> {
-            Dataset dataset = datasetService.getBaseMapper().selectById(f.getDatasetId());
-            if (AnnotateTypeEnum.CLASSIFICATION.getValue().equals(dataset.getAnnotateType())) {
-                conversionHttpService.convert(f);
-                f.setUpdateTime(new Timestamp(System.currentTimeMillis()));
-            } else {
-                f.setDataConversion(ConversionStatusEnum.UNABLE_CONVERSION.getValue());
-            }
-            getBaseMapper().updateById(f);
-        });
-    }
 
     /**
      * 数据转换回调接口
@@ -650,6 +581,7 @@ public class DatasetVersionServiceImpl extends ServiceImpl<DatasetVersionMapper,
     public void fileCopy() {
         DatasetVersionCriteriaVO needFileCopy = DatasetVersionCriteriaVO.builder()
                 .deleted(NOT_DELETED).dataConversion(ConversionStatusEnum.NOT_COPY.getValue()).build();
+        //查处所有转换状态是未复制的版本
         List<DatasetVersion> versions = list(WrapperHelp.getWrapper(needFileCopy));
         if (CollectionUtil.isEmpty(versions)) {
             LogUtil.info(LogEnum.BIZ_DATASET, "No version data to copy");
@@ -657,14 +589,92 @@ public class DatasetVersionServiceImpl extends ServiceImpl<DatasetVersionMapper,
         }
         versions.forEach(version -> {
             copyFlag.putIfAbsent(version.getId(), true);
+            //如果当前版本状态为未复制
             if (copyFlag.get(version.getId())) {
                 try {
                     Dataset dataset = datasetService.getBaseMapper().selectById(version.getDatasetId());
+                    //未复制状态的版本
                     pool.getExecutor().submit(() -> publishCopyFile(dataset, version));
                 } catch (Exception e) {
                     LogUtil.error(LogEnum.BIZ_DATASET, "copy task is refused", e);
                 }
             }
+        });
+    }
+
+    /**
+     * 标注文件复制
+     */
+    @Override
+    public void annotationFileCopy() {
+        DatasetVersionCriteriaVO needFileCopy = DatasetVersionCriteriaVO.builder()
+                .deleted(NOT_DELETED).dataConversion(ConversionStatusEnum.PUBLISHING.getValue()).build();
+        List<DatasetVersion> versions = list(WrapperHelp.getWrapper(needFileCopy));
+        versions.forEach(version -> {
+            Dataset dataset = datasetService.getBaseMapper().selectById(version.getDatasetId());
+            transactionTemplate.execute(new TransactionCallbackWithoutResult() {
+                @Override
+                protected void doInTransactionWithoutResult(TransactionStatus transactionStatus) {
+                    try{
+                        // 写入版本文件关系数据(新版本) - 正常情况
+                        saveDatasetVersionFiles(version);
+                        // 更改新增关系版本信息
+                        datasetVersionFileService.newShipVersionNameChange(dataset.getId(),
+                                version.getVersionSource(), version.getVersionName());
+                    }catch (Exception e){
+                        LogUtil.error(LogEnum.BIZ_DATASET, "update version information error:{}", e);
+                        transactionStatus.setRollbackOnly();
+                        return;
+                    }
+                }
+            });
+            String prefixPath = dataset.getUri() + "/";
+            String annVersionTargetDir = prefixPath + VERSION_FILE + "/"
+                    + version.getVersionName() + "/" + ANNOTATION;
+            if (version.getVersionSource() == null) {
+                String annotationSourceDir = prefixPath + ANNOTATION;
+                List<String> annotationNames = new ArrayList<>();
+                List<String> picUrls = fileService.selectUrls(dataset.getId(), version.getVersionName());
+                picUrls.forEach(picUrl -> {
+                    String fileName = StringUtils.substringBeforeLast(StringUtils.substringAfterLast(picUrl, "/"), ".");
+                    String annotationUrl = annotationSourceDir + "/" + fileName;
+                    annotationNames.add(annotationUrl);
+                });
+                minioUtil.copyObject(bucketName, annotationNames, annVersionTargetDir);
+            } else {
+                List<String> unChangedNames = fileService.selectNames(dataset.getId(), MagicNumConstant.ZERO, version.getVersionName());
+                String unChangedAnnotationSourceDir = prefixPath + VERSION_FILE;
+                List<String> unChangedAnnotationUrls = new ArrayList<>();
+                unChangedNames.forEach(unChangedName -> {
+                    String annotationUrl = unChangedAnnotationSourceDir + "/" + version.getVersionSource()
+                            + "/" + ANNOTATION + "/" + unChangedName;
+                    unChangedAnnotationUrls.add(annotationUrl);
+                });
+                minioUtil.copyObject(bucketName, unChangedAnnotationUrls, annVersionTargetDir);
+                List<String> changedNames = fileService.selectNames(dataset.getId(), MagicNumConstant.ONE, version.getVersionName());
+                String changedAnnotationSourceDir = prefixPath + ANNOTATION;
+                List<String> changedAnnotationUrls = new ArrayList<>();
+                changedNames.forEach(changedName -> {
+                    String annotationUrl = changedAnnotationSourceDir + "/" + changedName;
+                    changedAnnotationUrls.add(annotationUrl);
+                });
+                minioUtil.copyObject(bucketName, changedAnnotationUrls, annVersionTargetDir);
+            }
+            transactionTemplate.execute(new TransactionCallbackWithoutResult() {
+                @Override
+                protected void doInTransactionWithoutResult(TransactionStatus transactionStatus) {
+                    try{
+                        version.setDataConversion(ConversionStatusEnum.NOT_COPY.getValue());
+                        getBaseMapper().updateById(version);
+                        //版本回退
+                        dataset.setCurrentVersionName(version.getVersionSource());
+                        datasetVersionFileService.rollbackDataset(dataset);
+                    } catch (Exception e){
+                        LogUtil.error(LogEnum.BIZ_DATASET, "update version conversion error:{}", e);
+                        transactionStatus.setRollbackOnly();
+                    }
+                }
+            });
         });
     }
 
@@ -685,7 +695,7 @@ public class DatasetVersionServiceImpl extends ServiceImpl<DatasetVersionMapper,
      * 获取数据集版本详情
      *
      * @param datasetVersionId 数据集版本ID
-     * @return                 数据集版本信息
+     * @return 数据集版本信息
      */
     @Override
     public DatasetVersion detail(Long datasetVersionId) {
@@ -709,4 +719,26 @@ public class DatasetVersionServiceImpl extends ServiceImpl<DatasetVersionMapper,
         baseMapper.update(datasetVersion, datasetVersionUpdateWrapper);
     }
 
+    @Override
+    public DatasetVersion getDatasetVersionSourceVersion(Dataset dataset) {
+        return baseMapper.selectOne(new LambdaQueryWrapper<DatasetVersion>() {{
+            eq(DatasetVersion::getDatasetId, dataset.getId());
+            eq(DatasetVersion::getVersionName, dataset.getCurrentVersionName());
+        }});
+    }
+
+    /**
+     * 获取数据集版本
+     *
+     * @param datasetId 数据集ID
+     * @param versionName  版本名
+     * @return DatasetVersion 数据集版本
+     */
+    @Override
+    public DatasetVersion getVersionByDatasetIdAndVersionName(Long datasetId, String versionName) {
+        QueryWrapper<DatasetVersion> datasetVersionQueryWrapper = new QueryWrapper<>();
+        datasetVersionQueryWrapper.lambda().eq(DatasetVersion::getDatasetId,datasetId)
+                .eq(DatasetVersion::getVersionName,versionName);
+        return getBaseMapper().selectOne(datasetVersionQueryWrapper);
+    }
 }

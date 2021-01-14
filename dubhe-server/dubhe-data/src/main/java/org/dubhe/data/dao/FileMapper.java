@@ -1,5 +1,5 @@
 /**
- * Copyright 2020 Zhejiang Lab. All Rights Reserved.
+ * Copyright 2020 Tianshu AI Platform. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,7 +24,6 @@ import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Select;
 import org.apache.ibatis.annotations.Update;
 import org.dubhe.annotation.DataPermission;
-import org.dubhe.constant.PermissionConstant;
 import org.dubhe.data.domain.dto.FileCreateDTO;
 import org.dubhe.data.domain.entity.File;
 
@@ -34,29 +33,9 @@ import java.util.List;
  * @description 文件信息 Mapper 接口
  * @date 2020-04-10
  */
-@DataPermission(ignoresMethod = {"insert","getOneById","selectFile"})
+@DataPermission(ignoresMethod = {"insert", "getOneById", "selectFile"})
 public interface FileMapper extends BaseMapper<File> {
 
-    /**
-     * 根据offset, limit查询
-     *
-     * @param offset       偏移量
-     * @param limit        页容量
-     * @param queryWrapper 查询条件
-     * @return List<File>  File列表
-     */
-    @Select("select * from data_file ${ew.customSqlSegment} limit #{offset}, #{limit}")
-    List<File> selectListByLimit(@Param("offset") long offset, @Param("limit") int limit, @Param("ew") Wrapper<File> queryWrapper);
-
-    /**
-     * 将文件状态改为采样中
-     *
-     * @param id                    文件ID
-     * @param status                文件状态
-     * @return updateSampleStatus   执行次数
-     */
-    @Update("update data_file set status=1 where id = #{id} and status = #{status}")
-    int updateSampleStatus(@Param("id") Long id, @Param("status") int status);
 
     /**
      * 根据文件ID获取文件
@@ -65,7 +44,7 @@ public interface FileMapper extends BaseMapper<File> {
      * @return File     文件对象
      */
     @Select("select * from data_file where id = #{fileId} and dataset_id = #{datasetId}")
-    File getOneById(@Param("fileId") Long fileId,@Param("datasetId") long datasetId);
+    File getOneById(@Param("fileId") Long fileId, @Param("datasetId") long datasetId);
 
     /**
      * 批量保存
@@ -94,7 +73,7 @@ public interface FileMapper extends BaseMapper<File> {
      * @return File 文件详情
      */
     @Select("select * from data_file where id = #{fileId} and dataset_id=#{datasetId} and deleted=0")
-    File selectFile(@Param("fileId") Long fileId,@Param("datasetId") Long datasetId);
+    File selectFile(@Param("fileId") Long fileId, @Param("datasetId") Long datasetId);
 
     /**
      * 分页获取数据集文件
@@ -108,13 +87,13 @@ public interface FileMapper extends BaseMapper<File> {
     @Select("<script>" +
             "select distinct df.* from data_dataset_version_file ddvf left join data_file df on ddvf.file_id = df.id where ddvf.dataset_id = #{datasetId} " +
             " and df.dataset_id = #{datasetId} " +
-            "<if test='currentVersionName != null'> "+
-                "and ddvf.version_name =  #{currentVersionName} " +
-            "</if>"+
+            "<if test='currentVersionName != null'> " +
+            "and ddvf.version_name =  #{currentVersionName} " +
+            "</if>" +
             "and ddvf.annotation_status = 101 " +
-            "limit #{offset}, #{batchSize} "+
+            "limit #{offset}, #{batchSize} " +
             "</script>")
-    List<File> selectListOne(@Param("datasetId") Long datasetId,@Param("currentVersionName") String currentVersionName,@Param("offset") int offset,@Param("batchSize") int batchSize);
+    List<File> selectListOne(@Param("datasetId") Long datasetId, @Param("currentVersionName") String currentVersionName, @Param("offset") int offset, @Param("batchSize") int batchSize);
 
     /**
      * 更新文件状态
@@ -131,8 +110,32 @@ public interface FileMapper extends BaseMapper<File> {
      *
      * @param datasetId     数据集ID
      * @param limitNumber   删除数量
-     * @return 成功删除条数
+     * @return int 成功删除条数
      */
     @Delete("delete from data_file where dataset_id = #{datasetId} limit #{limitNumber} ")
     int deleteBydatasetId(@Param("datasetId") Long datasetId, @Param("limitNumber") int limitNumber);
+
+    /**
+     * 根据版本和数据集ID获取文件url
+     *
+     * @Param datasetId     数据集ID
+     * @Param versionName   版本名
+     * @return List<String> url列表
+     */
+    @Select("select df.url from data_file df left join data_dataset_version_file ddvf on df.id = ddvf.file_id " +
+            "where ddvf.dataset_id = #{datasetId} and df.dataset_id = #{datasetId} " +
+            "and ddvf.version_name = #{versionName}")
+    List<String> selectUrls(@Param("datasetId") Long datasetId, @Param("versionName") String versionName);
+
+    /**
+     * 根据version.changed获取文件name列表
+     *
+     * @Param datasetId     数据集ID
+     * @Param changed       版本文件是否改动
+     * @return List<name>   名称列表
+     */
+    @Select("select df.name from data_file df left join data_dataset_version_file ddvf on df.id = ddvf.file_id " +
+            "where ddvf.dataset_id = #{datasetId} and df.dataset_id = #{datasetId} " +
+            "and ddvf.changed = #{changed} and ddvf.version_name = #{versionName}")
+    List<String> selectNames(@Param("datasetId") Long datasetId, @Param("changed") Integer changed,@Param("versionName")String versionName);
 }

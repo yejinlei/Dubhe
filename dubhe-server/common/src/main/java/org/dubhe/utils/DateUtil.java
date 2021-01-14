@@ -1,5 +1,5 @@
 /**
- * Copyright 2020 Zhejiang Lab. All Rights Reserved.
+ * Copyright 2020 Tianshu AI Platform. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,10 +20,7 @@ package org.dubhe.utils;
 import java.sql.Timestamp;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
-import java.time.Instant;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.ZoneId;
+import java.time.*;
 import java.util.Date;
 
 /**
@@ -93,6 +90,27 @@ public class DateUtil {
         Date date = new Date();
         DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss SSS");
         return dateFormat.format(date);
+    }
+
+    /**
+     *
+     * @return 当前字符串时间yyyyMMddHHmmss
+     */
+    public static String getTimestampStr() {
+        SimpleDateFormat df = new SimpleDateFormat("yyyyMMddHHmmssSSS");
+        return df.format(System.currentTimeMillis());
+    }
+
+    /**
+     * 获取当前时间与目标时间相差秒数
+     * @param timestamp 目标时间
+     * @return
+     */
+    public static long getSeconds(Timestamp timestamp) {
+        LocalDateTime time = timestamp.toLocalDateTime();
+        LocalDateTime now = LocalDateTime.now();
+        Duration duration = Duration.between(time, now);
+        return duration.abs().getSeconds();
     }
 
 }

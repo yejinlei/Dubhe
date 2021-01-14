@@ -1,5 +1,5 @@
 /**
- * Copyright 2020 Zhejiang Lab. All Rights Reserved.
+ * Copyright 2020 Tianshu AI Platform. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -74,6 +74,7 @@ public class AutoTagCompleteFileState extends AbstractFileState {
         updatawrapper.eq(DatasetVersionFile::getDatasetId, dataset.getId());
         datasetVersionFileMapper.update(new DatasetVersionFile() {{
                                             setAnnotationStatus(FileStateEnum.TARGET_COMPLETE_FILE_STATE.getCode());
+                                            setChanged(Constant.CHANGED);
                                         }},
                 updatawrapper);
         fileStateMachine.setMemoryFileState(fileStateMachine.getTargetCompleteFileState());

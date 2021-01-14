@@ -1,5 +1,5 @@
 /**
- * Copyright 2020 Zhejiang Lab. All Rights Reserved.
+ * Copyright 2020 Tianshu AI Platform. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,14 +33,20 @@ public class SymbolConstant {
     public static final String TOKEN = "token";
     public static final String GET = "get";
     public static final String SET = "set";
-
+	public static final String HTTP = "http";
+	public static final String GRPC = "grpc";
 	public static final String BRACKETS = "{}";
 	public static final String BACKSLASH = "\\";
 	public static final String BACKSLASH_MARK= "\\\"";
 	public static final String DOUBLE_MARK= "\"\"";
 	public static final String MARK= "\"";
-
 	public static final String FLAG_EQUAL = "=";
+	public static final String LEFT_PARENTHESIS = "[";
+	public static final String RIGHT_PARENTHESIS = "]";
+	public static final String APOSTROPHE = "'";
+	public static final String HYPHEN = "-";
+	public static final String EVENT_SEPARATOR = "&&";
+	public static final String POST = "POST";
 
 	private SymbolConstant() {
 	}

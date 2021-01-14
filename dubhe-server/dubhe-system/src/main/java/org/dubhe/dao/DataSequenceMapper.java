@@ -1,5 +1,5 @@
 /**
- * Copyright 2020 Zhejiang Lab. All Rights Reserved.
+ * Copyright 2020 Tianshu AI Platform. All Rights Reserved.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -30,7 +30,7 @@ public interface DataSequenceMapper extends BaseMapper<DataSequence> {
      * @param businessCode  业务编码
      * @return DataSequence 序号
      */
-    @Select("select id, business_code ,start, step from data_sequence where business_code = #{businessCode}")
+    @Select("select id, business_code ,start, step from data_sequence where business_code = #{businessCode} for update")
     DataSequence selectByBusiness(String businessCode);
 
     /**

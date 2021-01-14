@@ -1,5 +1,5 @@
 /**
- * Copyright 2020 Zhejiang Lab. All Rights Reserved.
+ * Copyright 2020 Tianshu AI Platform. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,7 +22,10 @@ import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 import org.dubhe.data.constant.Constant;
 import org.dubhe.utils.StringUtils;
 
@@ -33,6 +36,8 @@ import org.dubhe.utils.StringUtils;
 @Data
 @TableName("data_dataset_version_file")
 @ApiModel(value = "Dataset版本文件关系表", description = "数据集版本文件管理")
+@Builder
+@AllArgsConstructor
 public class DatasetVersionFile {
 
     @TableId(type = IdType.AUTO)
@@ -63,23 +68,31 @@ public class DatasetVersionFile {
     @ApiModelProperty("更改标记，用于版本回退")
     private Integer changed;
 
+    @ApiModelProperty("文件名称")
+    private String fileName;
+
+
+
     public DatasetVersionFile() {
     }
 
-    public DatasetVersionFile(Long datasetId, String versionName, Long fileId) {
+    public DatasetVersionFile(Long datasetId, String versionName, Long fileId,String fileName) {
         this.datasetId = datasetId;
         this.versionName = versionName;
         this.fileId = fileId;
         this.status = 0;
         this.changed = StringUtils.isBlank(versionName) ? Constant.UNCHANGED : Constant.CHANGED;
+        this.fileName=fileName;
     }
 
-    public DatasetVersionFile(Long datasetId, String versionName, Long fileId, Integer annotationStatus) {
+    public DatasetVersionFile(Long datasetId, String versionName, Long fileId, Integer annotationStatus,String fileName,Integer changed) {
         this.datasetId = datasetId;
         this.versionName = versionName;
         this.fileId = fileId;
         this.status = 0;
         this.annotationStatus = annotationStatus;
+        this.fileName=fileName;
+        this.changed=changed;
     }
 
     public DatasetVersionFile(Long datasetId, String versionName, Long fileId, int status) {

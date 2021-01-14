@@ -79,6 +79,12 @@ train-job:
   docker-log-path: "train_log=${train-job.docker-train-path}/${train-job.log-path}"
   docker-visualized-log-path: "train_visualized_log=${train-job.docker-train-path}/${train-job.visualized-log-path}"
   docker-dataset: "data_url=${train-job.docker-dataset-path}"
+  docker-teacher-model-key: "teacher_path_list"
+  docker-teacher-model-path: "/model/teacher"
+  docker-student-model-key: "student_path_list"
+  docker-student-model-path: "/model/student"
+  atlas-anaconda: "cd /root/anaconda3/bin && source activate pytorch_1_3"
+  atlas-pythonioencoding: "PYTHONIOENCODING=utf-8 "
   eight: "8"
   plus-eight: "+8"
   node-ips: "node_ips"
@@ -111,7 +117,7 @@ train-algorithm:
   fork: false
 
 
-# 配置slq打印日志
+# 配置sql打印日志
 logging:
   level:
     com:
@@ -137,6 +143,15 @@ delay:
   notebook:
     #模型开发延时关闭时间
     delete: 240
+
+# 模型优化容器镜像配置
+optimize:
+  image: harbor.dubhe.ai/optimize/oneflow-gpu:base
+
+# # serving模块容器镜像配置
+serving:
+  gpu-image: harbor.dubhe.ai/serving/serving-gpu:base
+  cpu-image: harbor.dubhe.ai/serving/serving-cpu:base
 
 #垃圾回收默认配置
 recycle:

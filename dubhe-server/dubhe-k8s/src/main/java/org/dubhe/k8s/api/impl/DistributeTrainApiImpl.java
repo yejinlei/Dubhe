@@ -1,5 +1,5 @@
 /**
- * Copyright 2020 Zhejiang Lab. All Rights Reserved.
+ * Copyright 2020 Tianshu AI Platform. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,12 +36,16 @@ import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.fabric8.kubernetes.client.dsl.base.CustomResourceDefinitionContext;
+import org.dubhe.base.MagicNumConstant;
 import org.dubhe.constant.SymbolConstant;
 import org.dubhe.enums.LogEnum;
 import org.dubhe.k8s.api.DistributeTrainApi;
+import org.dubhe.k8s.api.NodeApi;
+import org.dubhe.k8s.api.VolumeApi;
 import org.dubhe.k8s.cache.ResourceCache;
 import org.dubhe.k8s.constant.K8sParamConstants;
 import org.dubhe.k8s.domain.PtBaseResult;
+import org.dubhe.k8s.domain.bo.BuildNfsVolumeBO;
 import org.dubhe.k8s.domain.bo.DistributeTrainBO;
 import org.dubhe.k8s.domain.bo.TaskYamlBO;
 import org.dubhe.k8s.domain.cr.DistributeTrain;
@@ -50,9 +54,12 @@ import org.dubhe.k8s.domain.cr.DistributeTrainList;
 import org.dubhe.k8s.domain.cr.DistributeTrainSpec;
 import org.dubhe.k8s.domain.entity.K8sTask;
 import org.dubhe.k8s.domain.resource.BizDistributeTrain;
+import org.dubhe.k8s.domain.vo.PtJupyterJobVO;
+import org.dubhe.k8s.domain.vo.VolumeVO;
 import org.dubhe.k8s.enums.ImagePullPolicyEnum;
 import org.dubhe.k8s.enums.K8sKindEnum;
 import org.dubhe.k8s.enums.K8sResponseEnum;
+import org.dubhe.k8s.enums.LackOfResourcesEnum;
 import org.dubhe.k8s.service.K8sTaskService;
 import org.dubhe.k8s.utils.BizConvertUtils;
 import org.dubhe.k8s.utils.K8sUtils;
@@ -81,19 +88,22 @@ import static org.dubhe.k8s.constant.K8sParamConstants.GPU_RESOURCE_KEY;
  * @date 2020-07-07
  */
 public class DistributeTrainApiImpl implements DistributeTrainApi {
-    private static String CRD_NAME = "distributetrains.onebrain.oneflow.org";
-    private static String CRD_GROUP = "onebrain.oneflow.org";
-    private static String VERSION = "v1alpha1";
-    private static String PLURAL = "distributetrains";
-    private static String SCOPE = "Namespaced";
-    private static String ENABLE_USER_OP = "ENABLE_USER_OP";
-    private static String DATA_ROOT = "DATA_ROOT";
-    private static String NODE_NUM = "NODE_NUM";
-    private static String GPU_NUM_PER_NODE = "GPU_NUM_PER_NODE";
-    private static String ONEFLOW_DEBUG_MODE = "ONEFLOW_DEBUG_MODE";
-    private static String NCCL_DEBUG = "NCCL_DEBUG";
-    private static String INFO = "INFO";
-    private static String DATA_ROOT_VALUE = "/dataset";
+    private static final String CRD_NAME = "distributetrains.onebrain.oneflow.org";
+    private static final String CRD_GROUP = "onebrain.oneflow.org";
+    private static final String VERSION = "v1alpha1";
+    private static final String PLURAL = "distributetrains";
+    private static final String SCOPE = "Namespaced";
+    private static final String ENABLE_USER_OP = "ENABLE_USER_OP";
+    private static final String DATA_ROOT = "DATA_ROOT";
+    private static final String NODE_NUM = "NODE_NUM";
+    private static final String GPU_NUM_PER_NODE = "GPU_NUM_PER_NODE";
+    private static final String ONEFLOW_DEBUG_MODE = "ONEFLOW_DEBUG_MODE";
+    private static final String NCCL_DEBUG = "NCCL_DEBUG";
+    private static final String INFO = "INFO";
+    private static final String DATA_ROOT_VALUE = "/dataset";
+
+    @Value("${k8s.nfs}")
+    String nfsServer;
 
     @Autowired
     private NfsUtil nfsUtil;
@@ -104,8 +114,11 @@ public class DistributeTrainApiImpl implements DistributeTrainApi {
     @Autowired
     private ResourceCache resourceCache;
 
-    @Value("${k8s.nfs}")
-    String nfsServer;
+    @Autowired
+    private VolumeApi volumeApi;
+
+    @Autowired
+    private NodeApi nodeApi;
 
     private KubernetesClient client;
     private MixedOperation<DistributeTrain, DistributeTrainList, DistributeTrainDoneable, Resource<DistributeTrain, DistributeTrainDoneable>> dtClient;
@@ -123,12 +136,22 @@ public class DistributeTrainApiImpl implements DistributeTrainApi {
      */
     @Override
     public BizDistributeTrain create(DistributeTrainBO bo) {
-        if (!nfsUtil.createDirs(true, bo.getWorkspaceStoragePath(), bo.getDatasetStoragePath(), bo.getModelStoragePath())) {
+        if (bo.getGpuNum() != null && bo.getGpuNum() > 0){
+            LackOfResourcesEnum lack = nodeApi.isOutOfTotalAllocatableGpu(bo.getGpuNum()*bo.getSize());
+            if (!LackOfResourcesEnum.ADEQUATE.equals(lack)){
+                return new BizDistributeTrain().error(K8sResponseEnum.LACK_OF_RESOURCES.getCode(),lack.getMessage());
+            }
+        }
+        if (!nfsUtil.createDirs(true, bo.getDirList().toArray(new String[MagicNumConstant.ZERO]))) {
             return new BizDistributeTrain().error(K8sResponseEnum.INTERNAL_SERVER_ERROR.getCode(), K8sResponseEnum.INTERNAL_SERVER_ERROR.getMessage());
+        }
+        VolumeVO volumeVO = volumeApi.buildNfsVolumes(new BuildNfsVolumeBO(bo.getNamespace(),bo.getName(),bo.getNfsMounts(),nfsServer));
+        if (!K8sResponseEnum.SUCCESS.getCode().equals(volumeVO.getCode())){
+            return new BizDistributeTrain().error(volumeVO.getCode(),volumeVO.getMessage());
         }
         //删除pod名称缓存
         resourceCache.deletePodCacheByResourceName(bo.getNamespace(),bo.getName());
-        return new DistributeTrainDeployer(bo).deploy();
+        return new DistributeTrainDeployer(bo,volumeVO).deploy();
     }
 
     public class DistributeTrainDeployer {
@@ -143,16 +166,14 @@ public class DistributeTrainApiImpl implements DistributeTrainApi {
         private Integer gpuNum;
         private String slaveCmd;
         private Map<String,String> env;
-        private String datasetDir;
-        private String workspaceDir;
-        private String modelDir;
         private Map<String, String> baseLabels;
         private String businessLabel;
         private Integer delayCreate;
         private Integer delayDelete;
         private TaskYamlBO taskYamlBO;
+        private VolumeVO volumeVO;
 
-        public DistributeTrainDeployer(DistributeTrainBO bo) {
+        public DistributeTrainDeployer(DistributeTrainBO bo,VolumeVO volumeVO) {
             this.baseName = bo.getName();
             this.distributeTrainName = StrUtil.format(K8sParamConstants.RESOURCE_NAME_TEMPLATE, baseName, RandomUtil.randomString(K8sParamConstants.RESOURCE_NAME_SUFFIX_LENGTH));
             this.namespace = bo.getNamespace();
@@ -164,14 +185,12 @@ public class DistributeTrainApiImpl implements DistributeTrainApi {
             this.gpuNum = bo.getGpuNum();
             this.slaveCmd = bo.getSlaveCmd();
             this.env = bo.getEnv();
-            this.datasetDir = bo.getDatasetStoragePath();
-            this.workspaceDir = bo.getWorkspaceStoragePath();
-            this.modelDir = bo.getModelStoragePath();
             this.businessLabel = bo.getBusinessLabel();
             this.baseLabels = LabelUtils.getChildLabels(baseName, distributeTrainName, K8sKindEnum.DISTRIBUTETRAIN.getKind(), businessLabel);
             this.delayCreate = bo.getDelayCreateTime();
             this.delayDelete = bo.getDelayDeleteTime();
             this.taskYamlBO = new TaskYamlBO();
+            this.volumeVO = volumeVO;
         }
 
         /**
@@ -256,33 +275,8 @@ public class DistributeTrainApiImpl implements DistributeTrainApi {
             }
 
             distributeTrainSpec.setEnv(envVarList);
-            //配置数据集挂载路径
-            Volume datasetStorage = new VolumeBuilder()
-                    .withName("pvc-dataset")
-                    .withNewNfs()
-                    .withPath(datasetDir)
-                    .withServer(nfsServer)
-                    .endNfs()
-                    .build();
-            distributeTrainSpec.setDatasetStorage(datasetStorage);
-            //配置工作目录挂载路径
-            Volume workspaceStorage = new VolumeBuilder()
-                    .withName("pvc-workspace")
-                    .withNewNfs()
-                    .withPath(workspaceDir)
-                    .withServer(nfsServer)
-                    .endNfs()
-                    .build();
-            distributeTrainSpec.setWorkspaceStorage(workspaceStorage);
-            //配置模型路径
-            Volume modelStorage = new VolumeBuilder()
-                    .withName("pvc-model")
-                    .withNewNfs()
-                    .withPath(modelDir)
-                    .withServer(nfsServer)
-                    .endNfs()
-                    .build();
-            distributeTrainSpec.setModelStorage(modelStorage);
+            distributeTrainSpec.setVolumeMounts(volumeVO.getVolumeMounts());
+            distributeTrainSpec.setVolumes(volumeVO.getVolumes());
 
             return distributeTrainSpec;
         }
@@ -349,6 +343,7 @@ public class DistributeTrainApiImpl implements DistributeTrainApi {
                 }
                 if (delayCreate == null || delayCreate == 0){
                     LogUtil.info(LogEnum.BIZ_K8S, "Ready to deploy {}", distributeTrainName);
+                    System.out.println(YamlUtils.dumpAsYaml(distributeTrain));
                     distributeTrain = dtClient.inNamespace(namespace).create(distributeTrain);
                     LogUtil.info(LogEnum.BIZ_K8S, "{} deployed successfully", distributeTrainName);
                 }
@@ -358,8 +353,6 @@ public class DistributeTrainApiImpl implements DistributeTrainApi {
                 LogUtil.error(LogEnum.BIZ_K8S, "DistributeTrainApi.deploy过程错误, 错误信息为{}", e.toString());
                 return new BizDistributeTrain().error(String.valueOf(e.getCode()), e.getMessage());
             }
-
-
         }
     }
 

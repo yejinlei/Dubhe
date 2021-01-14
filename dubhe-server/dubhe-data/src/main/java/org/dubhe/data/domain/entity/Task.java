@@ -1,12 +1,12 @@
 /**
- * Copyright 2020 Zhejiang Lab. All Rights Reserved.
- * 
+ * Copyright 2020 Tianshu AI Platform. All Rights Reserved.
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  * http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -20,14 +20,13 @@ package org.dubhe.data.domain.entity;
 import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
-
-import java.time.LocalDateTime;
-import java.io.Serializable;
-
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 import lombok.*;
 import lombok.experimental.Accessors;
+
+import java.io.Serializable;
+import java.util.Date;
 
 /**
  * @description 标注任务信息
@@ -74,10 +73,10 @@ public class Task implements Serializable {
     private Long createUserId;
 
     @ApiModelProperty(value = "创建时间")
-    private LocalDateTime createTime;
+    private Date createTime;
 
     @ApiModelProperty(value = "更新时间")
-    private LocalDateTime updateTime;
+    private Date updateTime;
 
     @ApiModelProperty(value = "0正常，1已删除")
     private Boolean deleted;
@@ -90,7 +89,7 @@ public class Task implements Serializable {
 
     private String labels;
 
-    @ApiModelProperty(value = "任务类型 0.自动标注 1.ofrecord 2.imageNet 3.数据增强 4.目标跟踪 5.视频采样")
+    @ApiModelProperty(value = "任务类型 0.自动标注 1.ofrecord 2.imageNet 3.数据增强 4.目标跟踪 5.视频采样 6.文本分类")
     private Integer type;
 
     @ApiModelProperty(value = "数据集版本ID")

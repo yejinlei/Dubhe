@@ -1,5 +1,5 @@
 /**
- * Copyright 2020 Zhejiang Lab. All Rights Reserved.
+ * Copyright 2020 Tianshu AI Platform. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,10 +22,10 @@ import cn.hutool.core.util.IdUtil;
 import cn.hutool.core.util.ObjectUtil;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
-import com.alibaba.fastjson.serializer.SerializerFeature;
 import com.google.common.base.Function;
 import com.google.common.collect.Lists;
 import org.dubhe.base.MagicNumConstant;
+import org.dubhe.data.constant.Constant;
 import org.dubhe.data.constant.ErrorEnum;
 import org.dubhe.data.domain.bo.DatasetFileBO;
 import org.dubhe.data.domain.bo.EnhanceTaskSplitBO;
@@ -35,32 +35,24 @@ import org.dubhe.data.domain.dto.FileCreateDTO;
 import org.dubhe.data.domain.entity.DatasetVersionFile;
 import org.dubhe.data.domain.entity.File;
 import org.dubhe.data.domain.entity.Task;
-import org.dubhe.data.machine.enums.DataStateEnum;
-import org.dubhe.data.pool.BasePool;
-import org.dubhe.data.service.*;
-import org.dubhe.data.service.http.EnhanceHttpService;
+import org.dubhe.data.service.DatasetEnhanceService;
+import org.dubhe.data.service.DatasetVersionFileService;
+import org.dubhe.data.service.FileService;
+import org.dubhe.data.service.TaskService;
+import org.dubhe.data.util.FileUtil;
+import org.dubhe.data.util.TaskUtils;
 import org.dubhe.enums.LogEnum;
 import org.dubhe.exception.BusinessException;
 import org.dubhe.utils.LogUtil;
 import org.dubhe.utils.RedisUtils;
-import org.dubhe.utils.StringUtils;
-import org.dubhe.data.util.TaskUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Lazy;
-import org.springframework.data.redis.core.ZSetOperations;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import javax.annotation.Nullable;
-import javax.annotation.PostConstruct;
-import java.math.BigDecimal;
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.PriorityBlockingQueue;
 import java.util.stream.Collectors;
@@ -74,10 +66,6 @@ public class DatasetEnhanceServiceImpl implements DatasetEnhanceService {
 
     static PriorityBlockingQueue<EnhanceTaskSplitBO> queue;
     private ConcurrentHashMap<String, EnhanceTaskSplitBO> enhancing;
-    @Autowired
-    private BasePool pool;
-    @Autowired
-    private EnhanceHttpService enhanceHttpService;
     @Autowired
     private DatasetVersionFileService datasetVersionFileService;
     @Autowired
@@ -93,33 +81,9 @@ public class DatasetEnhanceServiceImpl implements DatasetEnhanceService {
     private Integer taskSplitSize;
     @Value("${k8s.nfs-root-path}")
     private String nfs;
-    @Value("${minio.bucketName}")
-    private String bucketName;
 
-    public static final int QUEUE_SIZE = MagicNumConstant.FIFTY;
-    private static int ENHANCE_TASK_WORKER_NUM = MagicNumConstant.TEN;
-
-    private static final String START_SAMPLE_QUEUE = "imgProcess_processing";
-
-    private static final String SAMPLE_PENDING_QUEUE = "imgProcess_unprocessed";
-
-    /**
-     * 初始化
-     */
-    @PostConstruct
-    public void init() {
-        queue = new PriorityBlockingQueue<>(QUEUE_SIZE, Comparator.comparingInt(EnhanceTaskSplitBO::getPriority).reversed());
-        enhancing = new ConcurrentHashMap<>(MagicNumConstant.SIXTEEN);
-        while (ENHANCE_TASK_WORKER_NUM-- > MagicNumConstant.ZERO) {
-            pool.getExecutor().submit((Runnable) this::enhance);
-        }
-    }
-
-    /**
-     * 增强
-     */
-    private void enhance() {
-    }
+    @Autowired
+    private FileUtil fileUtil;
 
     /**
      * 提交任务
@@ -132,17 +96,22 @@ public class DatasetEnhanceServiceImpl implements DatasetEnhanceService {
     public void commitEnhanceTask(List<DatasetVersionFile> datasetVersionFiles, Task task, DatasetEnhanceRequestDTO datasetEnhanceRequestDTO) {
         Set<File> fileSet = fileService.get(datasetVersionFiles.stream().
                 map(DatasetVersionFile::getFileId).collect(Collectors.toList()), task.getDatasetId());
-        Map<Long, Integer> fileAnnotationStatus = new HashMap<>(datasetVersionFiles.size());
+        Map<Long, DatasetVersionFile> datasetVersionFilesMap = new HashMap<>(datasetVersionFiles.size());
         datasetVersionFiles.stream().forEach(datasetVersionFile -> {
-            fileAnnotationStatus.put(datasetVersionFile.getFileId(), datasetVersionFile.getAnnotationStatus());
+            datasetVersionFilesMap.put(datasetVersionFile.getFileId(), datasetVersionFile);
         });
         List<EnhanceTaskSplitBO> tasks = new ArrayList<>();
         for (int i = MagicNumConstant.ZERO; i < datasetEnhanceRequestDTO.getTypes().size(); i++) {
             List<List<File>> files = CollectionUtil.split(fileSet, taskSplitSize);
             for (List<File> list : files) {
-                EnhanceTaskSplitBO enhanceTaskSplitBO = new EnhanceTaskSplitBO(task.getId(), list, nfs, bucketName,
-                        datasetVersionFiles.get(MagicNumConstant.ZERO).getDatasetId(), datasetVersionFiles.get(MagicNumConstant.ZERO).getVersionName(),
-                        datasetEnhanceRequestDTO, fileAnnotationStatus, datasetEnhanceRequestDTO.getTypes().get(i));
+                EnhanceTaskSplitBO enhanceTaskSplitBO = new EnhanceTaskSplitBO(
+                        task.getId(),
+                        list,
+                        datasetVersionFiles.get(MagicNumConstant.ZERO).getDatasetId(),
+                        datasetVersionFiles.get(MagicNumConstant.ZERO).getVersionName(),
+                        datasetVersionFilesMap,
+                        datasetEnhanceRequestDTO.getTypes().get(i),
+                        fileUtil);
                 String uuid = IdUtil.simpleUUID();
                 try {
                     Boolean imgProcessUnprocessed = taskUtils.zAdd("imgProcess_unprocessed", uuid, 10L);
@@ -157,25 +126,6 @@ public class DatasetEnhanceServiceImpl implements DatasetEnhanceService {
     }
 
     /**
-     * 任务处理
-     *
-     * @param enhanceTaskSplitBO 增强任务条件
-     */
-    private void enhance(EnhanceTaskSplitBO enhanceTaskSplitBO) {
-        if (!TaskServiceImpl.taskIds.contains(enhanceTaskSplitBO.getId())) {
-            return;
-        }
-        String id = enhanceHttpService.enhance(enhanceTaskSplitBO);
-        if (StringUtils.isNotEmpty(id)) {
-            enhanceTaskSplitBO.setSendTime(System.currentTimeMillis());
-            enhancing.putIfAbsent(id, enhanceTaskSplitBO);
-        } else {
-            LogUtil.warn(LogEnum.BIZ_DATASET, "enhancingTask send fail. task:{}", enhanceTaskSplitBO);
-            doRemoveTask(enhanceTaskSplitBO.getId());
-        }
-    }
-
-    /**
      * 获取增加完成任务
      *
      * @return
@@ -186,7 +136,7 @@ public class DatasetEnhanceServiceImpl implements DatasetEnhanceService {
             JSONObject jsonObject = JSON.parseObject(JSON.toJSONString(failedIdKey));
             String failedId = jsonObject.getString("processKey").replaceAll("\"", "");
             Object object = redisUtils.get("imgProcess:" + failedId);
-            String enhanceTaskSplitBOString = JSON.toJSONString(object, SerializerFeature.WriteClassName);
+            String enhanceTaskSplitBOString = JSON.toJSONString(object);
             EnhanceTaskSplitBO enhanceTaskSplitBO = JSON.parseObject(enhanceTaskSplitBOString, EnhanceTaskSplitBO.class);
             Integer fileNum = enhanceTaskSplitBO.getFileDtos().size();
             taskService.finishTaskFile(enhanceTaskSplitBO.getId(), fileNum);
@@ -234,13 +184,18 @@ public class DatasetEnhanceServiceImpl implements DatasetEnhanceService {
         datasetFileBOList.stream().forEach(datasetFileBO -> {
             fileStatus.put(datasetFileBO.getFileId(), datasetFileBO.getAnnotationStatus());
         });
-        List<Long> fileIds = fileService.saveFiles(enhanceTaskSplitBO.getDatasetId(), fileDTOList);
+        List<File> files = fileService.saveFiles(enhanceTaskSplitBO.getDatasetId(), fileDTOList);
         LogUtil.info(LogEnum.BIZ_DATASET, "DatasetEnhanceServiceImpl enhance finish file save success {}", datasetEnhanceFinishDTO.getId());
-        Set<File> files = fileService.get(fileIds, enhanceTaskSplitBO.getDatasetId());
 
         List<DatasetVersionFile> datasetVersionFileList = new ArrayList<>();
         files.forEach(file -> {
-            datasetVersionFileList.add(new DatasetVersionFile(enhanceTaskSplitBO.getDatasetId(), enhanceTaskSplitBO.getVersionName(), file.getId(), fileStatus.get(file.getPid())));
+            datasetVersionFileList.add(new DatasetVersionFile(
+                    enhanceTaskSplitBO.getDatasetId(),
+                    enhanceTaskSplitBO.getVersionName(),
+                    file.getId(),
+                    fileStatus.get(file.getPid()),
+                    file.getName(),
+                    enhanceTaskSplitBO.getVersionName()==null? Constant.UNCHANGED:Constant.UNCHANGED));
         });
         //文件写入关系表
         datasetVersionFileService.insertList(datasetVersionFileList);
@@ -248,15 +203,6 @@ public class DatasetEnhanceServiceImpl implements DatasetEnhanceService {
         taskService.finishTaskFile(enhanceTaskSplitBO.getId(), fileNum);
         redisUtils.del("imgProcess:finished:" + datasetEnhanceFinishDTO.getId());
         redisUtils.del("imgProcess:" + datasetEnhanceFinishDTO.getId());
-    }
-
-    /**
-     * 失败移除任务
-     *
-     * @param taskId 任务ID
-     */
-    public void doRemoveTask(Long taskId) {
-        taskService.doRemoveTask(taskId, null, enhancing);
     }
 
 }

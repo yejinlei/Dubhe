@@ -1,5 +1,5 @@
 /**
- * Copyright 2020 Zhejiang Lab. All Rights Reserved.
+ * Copyright 2020 Tianshu AI Platform. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ package org.dubhe;
 
 import com.alibaba.fastjson.JSON;
 import org.dubhe.domain.dto.PtTrainAlgorithmUsageCreateDTO;
+import org.dubhe.domain.dto.PtTrainAlgorithmUsageDeleteDTO;
 import org.dubhe.domain.dto.PtTrainAlgorithmUsageUpdateDTO;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -57,7 +58,7 @@ public class PtTrainAlgorithmUsageTest extends BaseTest {
     public void createTest() throws Exception {
 
         PtTrainAlgorithmUsageCreateDTO ptTrainAlgorithmUsageCreateDTO = new PtTrainAlgorithmUsageCreateDTO();
-        ptTrainAlgorithmUsageCreateDTO.setAuxInfo("测试");
+        ptTrainAlgorithmUsageCreateDTO.setAuxInfo("untilTesting");
 
         mockMvcTest(MockMvcRequestBuilders.post("/api/v1/algorithmUsage"),
                 JSON.toJSONString(ptTrainAlgorithmUsageCreateDTO), MockMvcResultMatchers.status().is2xxSuccessful(),
@@ -69,8 +70,10 @@ public class PtTrainAlgorithmUsageTest extends BaseTest {
     @Test
     public void deleteTest() throws Exception {
         Long[] longs = new Long[1];
-        longs[0] = 13L;
-        mockMvcTest(MockMvcRequestBuilders.delete("/api/v1/algorithmUsage"), JSON.toJSONString(longs),
+        longs[0] = 38L;
+        PtTrainAlgorithmUsageDeleteDTO ptTrainAlgorithmUsageDeleteDTO = new PtTrainAlgorithmUsageDeleteDTO();
+        ptTrainAlgorithmUsageDeleteDTO.setIds(longs);
+        mockMvcTest(MockMvcRequestBuilders.delete("/api/v1/algorithmUsage"), JSON.toJSONString(ptTrainAlgorithmUsageDeleteDTO),
                 MockMvcResultMatchers.status().is2xxSuccessful(), 200);
 
     }
@@ -79,7 +82,7 @@ public class PtTrainAlgorithmUsageTest extends BaseTest {
     public void updateTest() throws Exception {
         PtTrainAlgorithmUsageUpdateDTO ptTrainAlgorithmUsageUpdateDTO = new PtTrainAlgorithmUsageUpdateDTO();
 
-        ptTrainAlgorithmUsageUpdateDTO.setId(12L);
+        ptTrainAlgorithmUsageUpdateDTO.setId(38L);
         ptTrainAlgorithmUsageUpdateDTO.setAuxInfo("更新测试");
 
         mockMvcTest(MockMvcRequestBuilders.put("/api/v1/algorithmUsage"),

@@ -1,5 +1,5 @@
 /**
- * Copyright 2020 Zhejiang Lab. All Rights Reserved.
+ * Copyright 2020 Tianshu AI Platform. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,10 +23,15 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.experimental.Accessors;
 import org.dubhe.base.BaseImageDTO;
+import org.dubhe.utils.PtModelUtil;
 import org.dubhe.utils.TrainUtil;
 import org.hibernate.validator.constraints.Length;
 
-import javax.validation.constraints.*;
+import javax.validation.constraints.Max;
+import javax.validation.constraints.Min;
+import javax.validation.constraints.NotBlank;
+import javax.validation.constraints.NotNull;
+import javax.validation.constraints.Pattern;
 
 /**
  * @description 任务参数创建条件
@@ -89,21 +94,6 @@ public class PtTrainParamCreateDTO extends BaseImageDTO {
     @ApiModelProperty("是否验证数据集")
     private Integer valType;
 
-    @ApiModelProperty(value = "是否打开模型选择")
-    private Integer modelType;
-
-    @ApiModelProperty(value = "模型类型(0我的模型1预置模型)")
-    private Integer modelResource;
-
-    @ApiModelProperty(value = "模型名称")
-    private String modelName;
-
-    @ApiModelProperty(value = "模型加载路径")
-    private String modelLoadPathDir;
-
-    @ApiModelProperty(value = "模型id")
-    private Integer modelId;
-
     @ApiModelProperty(value = "训练类型 0：普通训练，1：分布式训练", required = true)
     @Min(value = TrainUtil.NUMBER_ZERO, message = "训练类型错误")
     @Max(value = TrainUtil.NUMBER_ONE, message = "训练类型错误")
@@ -115,5 +105,29 @@ public class PtTrainParamCreateDTO extends BaseImageDTO {
     @Max(value = TrainUtil.NUMBER_EIGHT, message = "节点个数在1~8之间")
     @NotNull(message = "节点个数")
     private Integer resourcesPoolNode;
+
+    @ApiModelProperty(value = "模型类型(0我的模型1预置模型2炼知模型)" +
+            "当值为0和1的时候，需要传递ModelId, 当值为2的时候传递teacherModelIds和studentModelIds")
+    @Min(value = PtModelUtil.NUMBER_ZERO, message = "模型来源错误")
+    @Max(value = PtModelUtil.NUMBER_TWO, message = "模型来源错误")
+    private Integer modelResource;
+
+    @ApiModelProperty(value = "模型id")
+    @Min(value = TrainUtil.NUMBER_ONE, message = "id必须大于1")
+    private Long modelId;
+
+    @ApiModelProperty(value = "我的模型版本对应的id")
+    @Min(value = TrainUtil.NUMBER_ONE, message = "模型版本对应的id必须大于1")
+    private Long modelBranchId;
+
+    @ApiModelProperty(value = "教师模型ids,多个id之前用','隔开")
+    @Length(max = TrainUtil.NUMBER_TWO_HUNDRED_AND_FIFTY_FIVE, message = "教师模型长度不能超过255个字符")
+    @Pattern(regexp = "^([1-9][0-9]*,)*[1-9][0-9]*$", message = "教师模型ids参数格式不正确")
+    private String teacherModelIds;
+
+    @ApiModelProperty(value = "学生模型ids,多个id之前用','隔开")
+    @Length(max = TrainUtil.NUMBER_TWO_HUNDRED_AND_FIFTY_FIVE, message = "学生模型长度不能超过255个字符")
+    @Pattern(regexp = "^([1-9][0-9]*,)*[1-9][0-9]*$", message = "学生模型ids参数格式不正确")
+    private String studentModelIds;
 
 }

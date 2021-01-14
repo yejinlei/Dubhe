@@ -1,5 +1,5 @@
 /**
- * Copyright 2020 Zhejiang Lab. All Rights Reserved.
+ * Copyright 2020 Tianshu AI Platform. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,10 +23,7 @@ import org.apache.shiro.authz.annotation.RequiresPermissions;
 import org.dubhe.annotation.ApiVersion;
 import org.dubhe.base.DataResponseBody;
 import org.dubhe.constant.Permissions;
-import org.dubhe.domain.dto.PtImageDeleteDTO;
-import org.dubhe.domain.dto.PtImageQueryDTO;
-import org.dubhe.domain.dto.PtImageUpdateDTO;
-import org.dubhe.domain.dto.PtImageUploadDTO;
+import org.dubhe.domain.dto.*;
 import org.dubhe.service.PtImageService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.validation.annotation.Validated;
@@ -55,8 +52,8 @@ public class PtImageController {
     @ApiOperation("通过projectName查询镜像")
     @GetMapping
     @RequiresPermissions(Permissions.TRAINING_IMAGE)
-    public DataResponseBody getTagsByImageName(@RequestParam String imageName) {
-        return new DataResponseBody(ptImageService.searchImages(imageName));
+    public DataResponseBody getTagsByImageName(@RequestParam Integer projectType, @RequestParam String imageName) {
+        return new DataResponseBody(ptImageService.searchImages(projectType, imageName));
     }
 
     @PostMapping("uploadImage")
@@ -67,18 +64,10 @@ public class PtImageController {
         return new DataResponseBody();
     }
 
-    @GetMapping("/project")
-    @ApiOperation("查询镜像project列表")
-    @RequiresPermissions(Permissions.TRAINING_IMAGE)
-    public DataResponseBody getHarborProjectList() {
-        return new DataResponseBody(ptImageService.getHarborProjectList());
-    }
-
-
     @DeleteMapping
     @ApiOperation("删除镜像")
     @RequiresPermissions(Permissions.TRAINING_IMAGE)
-    public DataResponseBody deleteTrainImage(@RequestBody PtImageDeleteDTO ptImageDeleteDTO) {
+    public DataResponseBody deleteTrainImage(@Validated @RequestBody PtImageDeleteDTO ptImageDeleteDTO) {
         ptImageService.deleteTrainImage(ptImageDeleteDTO);
         return new DataResponseBody();
     }
@@ -94,7 +83,22 @@ public class PtImageController {
     @GetMapping("/imageNameList")
     @ApiOperation("获取镜像名称列表")
     @RequiresPermissions(Permissions.TRAINING_IMAGE)
-    public DataResponseBody getImageNameList() {
-        return new DataResponseBody(ptImageService.getImageNameList());
+    public DataResponseBody getImageNameList(@RequestParam Integer projectType) {
+        return new DataResponseBody(ptImageService.getImageNameList(projectType));
+    }
+
+    @PutMapping("/imageResource")
+    @ApiOperation("修改镜像来源(notebook定制)")
+    @RequiresPermissions(Permissions.TRAINING_IMAGE)
+    public DataResponseBody updateImageResource(@RequestParam Long id) {
+        ptImageService.updImageResource(id);
+        return new DataResponseBody();
+    }
+
+    @GetMapping("/imageUrl")
+    @ApiOperation("查询镜像url")
+    @RequiresPermissions(Permissions.TRAINING_IMAGE)
+    public DataResponseBody getImageUrl(PtImageQueryUrlDTO ptImageQueryUrlDTO) {
+        return new DataResponseBody(ptImageService.getImageUrl(ptImageQueryUrlDTO));
     }
 }

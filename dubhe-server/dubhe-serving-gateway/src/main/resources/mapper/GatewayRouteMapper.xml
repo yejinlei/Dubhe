@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+
+<mapper namespace="org.dubhe.dao.GatewayRouteMapper">
+
+    <select id="findActiveById" resultType="org.dubhe.domain.entity.GatewayRoute">
+        select smc.id id, si.id serviceInfoId, si.uuid patternPath, smc.release_rate weight, smc.url uri
+        from serving_model_config smc
+        left join serving_info si on si.id = smc.serving_id
+        where si.`status` = 2 and si.deleted = 0 and smc.ready_replicas > 0 and smc.deleted = 0
+        and smc.id = #{id}
+    </select>
+    <select id="findAllActiveRoute" resultType="org.dubhe.domain.entity.GatewayRoute">
+        select smc.id id, si.id serviceInfoId, si.uuid patternPath, smc.release_rate weight, smc.url uri
+        from serving_model_config smc
+        left join serving_info si on si.id = smc.serving_id
+        where si.`status` = 2 and si.deleted = 0 and smc.ready_replicas > 0 and smc.deleted = 0
+    </select>
+</mapper>

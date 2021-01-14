@@ -1,5 +1,5 @@
 /**
- * Copyright 2020 Zhejiang Lab. All Rights Reserved.
+ * Copyright 2020 Tianshu AI Platform. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -172,6 +172,42 @@ public class RedisUtils {
         }
     }
 
+    /**
+     *
+     * @param script 脚本字符串
+     * @param key 键
+     * @param args 脚本其他参数
+     * @return
+     */
+    public Object executeRedisScript(String script, String key, Object... args) {
+        try {
+            RedisScript<Long> redisScript = new DefaultRedisScript<>(script, Long.class);
+            redisTemplate.setValueSerializer(new Jackson2JsonRedisSerializer<>(Object.class));
+            return redisTemplate.execute(redisScript, Collections.singletonList(key), args);
+        } catch (Exception e) {
+            LogUtil.error(LogEnum.SYS_ERR, "executeRedisScript script {} key {} expireTime {} args {} error:{}", script, key, args, e);
+            return MagicNumConstant.ZERO_LONG;
+        }
+    }
+
+    /**
+     *
+     * @param script 脚本字符串
+     * @param key 键
+     * @param args 脚本其他参数
+     * @return
+     */
+    public Object executeRedisObjectScript(String script, String key, Object... args) {
+        try {
+            RedisScript<Object> redisScript = new DefaultRedisScript<>(script, Object.class);
+            redisTemplate.setValueSerializer(new Jackson2JsonRedisSerializer<>(Object.class));
+            return redisTemplate.execute(redisScript, Collections.singletonList(key), args);
+        } catch (Exception e) {
+            LogUtil.error(LogEnum.SYS_ERR, "executeRedisObjectScript script {} key {} expireTime {} args {} error:{}", script, key, args, e);
+            return null;
+        }
+    }
+
     // ============================String=============================
 
     /**
@@ -283,24 +319,6 @@ public class RedisUtils {
         String script = "if redis.call('get', KEYS[1]) == ARGV[1] then return redis.call('del', KEYS[1]) else return 0 end";
         Object result = executeRedisScript(script, key, requestId);
         return result != null && result.equals(MagicNumConstant.ONE_LONG);
-    }
-
-    /**
-     *
-     * @param script 脚本字符串
-     * @param key 键
-     * @param args 脚本其他参数
-     * @return
-     */
-    public Object executeRedisScript(String script, String key, Object... args) {
-        try {
-            RedisScript<Long> redisScript = new DefaultRedisScript<>(script, Long.class);
-            redisTemplate.setValueSerializer(new Jackson2JsonRedisSerializer<>(Object.class));
-            return redisTemplate.execute(redisScript, Collections.singletonList(key), args);
-        } catch (Exception e) {
-            LogUtil.error(LogEnum.SYS_ERR, "executeRedisScript script {} key {} expireTime {} args {} error:{}", script, key, args, e);
-            return MagicNumConstant.ZERO_LONG;
-        }
     }
 
     // ================================Map=================================
@@ -576,6 +594,25 @@ public class RedisUtils {
     }
 
     /**
+     * 将zSet数据放入缓存
+     * @param key 健
+     * @param score 分数
+     * @param value 值
+     * @return
+     */
+    public Boolean zAdd(String key,Long score,Object value){
+        try{
+            if (StringUtils.isEmpty(key) || score == null || value == null){
+                return false;
+            }
+            return redisTemplate.opsForZSet().add(key, value, score);
+        }catch (Exception e){
+            LogUtil.error(LogEnum.SYS_ERR, "RedisUtils zAdd key {} score {} value {} error:{}", key, score, value, e.getMessage(), e);
+            return false;
+        }
+    }
+
+    /**
      * 返回有序集合所有成员，从大到小排序
      *
      * @param key
@@ -588,6 +625,47 @@ public class RedisUtils {
             LogUtil.error(LogEnum.SYS_ERR, "RedisUtils zGet key {} error:{}", key, e.getMessage(), e);
             return null;
         }
+    }
+
+    /**
+     * 弹出有序集合 score 在 [min,max] 内由小到大从 offset 取 count 个
+     * @param key 健
+     * @param min score最小值
+     * @param max score最大值
+     * @param offset 起始下标
+     * @param count 偏移量
+     * @return
+     */
+    public List<Object> zRangeByScorePop(String key,double min,double max,long offset,long count){
+        try{
+            String script = "local elementSet = redis.call('ZRANGEBYSCORE',KEYS[1],ARGV[1],ARGV[2],'LIMIT',ARGV[3],ARGV[4]) if elementSet ~= false and #elementSet ~= 0 then redis.call('ZREM' , KEYS[1] , elementSet[1]) end return elementSet";
+            Object result = executeRedisObjectScript(script, key, min, max,offset,count);
+            return (List<Object>) result;
+        }catch (Exception e){
+            LogUtil.error(LogEnum.SYS_ERR, "RedisUtils zRangeByScorePop key {} min {} max {} offset {} count {} error:{}", key,min, max, offset, count, e.getMessage(), e);
+            return new ArrayList<>();
+        }
+    }
+
+    /**
+     * 弹出有序集合 score 在 [min,max] 内由小到大从 0 取 1 个
+     * @param key 健
+     * @param min score最小值
+     * @param max score最大值
+     * @return
+     */
+    public List<Object> zRangeByScorePop(String key,double min, double max){
+        return zRangeByScorePop( key,min, max,0,1);
+    }
+
+    /**
+     * 弹出有序集合 score 在 [0,max] 内由小到大从 offset 取 count 个
+     * @param key 健
+     * @param max score最大值
+     * @return
+     */
+    public List<Object> zRangeByScorePop(String key,double max){
+        return zRangeByScorePop( key,0, max,0,1);
     }
 
 

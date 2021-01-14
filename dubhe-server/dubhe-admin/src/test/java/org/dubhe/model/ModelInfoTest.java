@@ -1,12 +1,12 @@
 /**
- * Copyright 2020 Zhejiang Lab. All Rights Reserved.
- * 
+ * Copyright 2020 Tianshu AI Platform. All Rights Reserved.
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  * http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -17,19 +17,19 @@
 
 package org.dubhe.model;
 
+import com.alibaba.fastjson.JSON;
+import org.dubhe.BaseTest;
 import org.dubhe.domain.dto.PtModelInfoCreateDTO;
 import org.dubhe.domain.dto.PtModelInfoDeleteDTO;
-import org.dubhe.domain.dto.PtModelInfoQueryDTO;
 import org.dubhe.domain.dto.PtModelInfoUpdateDTO;
-import org.dubhe.domain.vo.PtModelInfoCreateVO;
-import org.dubhe.service.impl.PtModelInfoServiceImpl;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.annotation.Rollback;
 import org.springframework.test.context.junit4.SpringRunner;
-
-import java.util.Map;
+import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
+import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
+import org.springframework.transaction.annotation.Transactional;
 
 /**
  * @description 模型管理模块单元测试
@@ -37,61 +37,63 @@ import java.util.Map;
  */
 @RunWith(SpringRunner.class)
 @SpringBootTest
-public class ModelInfoTest {
-    @Autowired
-    private PtModelInfoServiceImpl ptModelInfoServiceImpl;
+public class ModelInfoTest extends BaseTest {
 
     /**
      * 查询任务参数列表
      * 无条件分页查询
      */
     @Test
-    public void ptModelInfoQueryTest() {
-        PtModelInfoQueryDTO ptModelInfoQueryCriteria = new PtModelInfoQueryDTO();
+    public void ptModelInfoQueryTest() throws Exception {
+        mockMvcWithNoRequestBody(mockMvc.perform(MockMvcRequestBuilders.get("/api/ptModelInfo"))
+                .andExpect(MockMvcResultMatchers.status().isOk()).andReturn().getResponse(), 200);
 
-        Map<String, Object> results = ptModelInfoServiceImpl.queryAll(ptModelInfoQueryCriteria);
-        System.out.println(results.toString());
     }
 
     /**
      * 新增ModelInfo
      */
     @Test
-    public void ptModelInfoCreateTest() {
+    @Transactional(rollbackFor = Exception.class)
+    @Rollback(false)
+    public void ptModelInfoCreateTest() throws Exception {
         PtModelInfoCreateDTO ptModelInfoCreateDTO = new PtModelInfoCreateDTO();
-        ptModelInfoCreateDTO.setName("test")
+        ptModelInfoCreateDTO.setName("untilTestingCreateTest")
                 .setFrameType(1)
                 .setModelType(1)
                 .setModelClassName("测试")
-                .setModelDescription("test");
-        PtModelInfoCreateVO ptModelInfoCreateVO = ptModelInfoServiceImpl.create(ptModelInfoCreateDTO);
-        System.out.println(ptModelInfoCreateVO.toString());
+                .setModelDescription("untilTestingCreateTest");
+        mockMvcTest(MockMvcRequestBuilders.post("/api/ptModelInfo"), JSON.toJSONString(ptModelInfoCreateDTO), MockMvcResultMatchers.status().isOk(), 200);
     }
 
     /**
      * 更新ModelInfo
      */
     @Test
-    public void ptModelInfoUpdateTest() {
+    @Transactional(rollbackFor = Exception.class)
+    @Rollback(false)
+    public void ptModelInfoUpdateTest() throws Exception {
         PtModelInfoUpdateDTO ptModelInfoUpdateDTO = new PtModelInfoUpdateDTO();
-        ptModelInfoUpdateDTO.setId((long) 1)
-                .setName("test")
+        ptModelInfoUpdateDTO.setId(117L)
+                .setName("untilTestingUpdateTest" + System.currentTimeMillis())
                 .setFrameType(1)
                 .setModelType(1)
                 .setModelClassName("测试")
-                .setModelDescription("test");
-        ptModelInfoServiceImpl.update(ptModelInfoUpdateDTO);
+                .setModelDescription("untilTestingUpdateTest");
+        mockMvcTest(MockMvcRequestBuilders.put("/api/ptModelInfo"), JSON.toJSONString(ptModelInfoUpdateDTO), MockMvcResultMatchers.status().isOk(), 200);
     }
 
     /**
      * 删除任务参数
      */
     @Test
-    public void ptTrainAlgorithmDeleteTest() {
-        Long[] ids = {(long) 1, (long) 2};
+    @Transactional(rollbackFor = Exception.class)
+    @Rollback(false)
+    public void ptTrainAlgorithmDeleteTest() throws Exception {
+        Long[] ids = {117L};
         PtModelInfoDeleteDTO ptModelInfoDeleteDTO = new PtModelInfoDeleteDTO();
         ptModelInfoDeleteDTO.setIds(ids);
-        ptModelInfoServiceImpl.deleteAll(ptModelInfoDeleteDTO);
+        mockMvcTest(MockMvcRequestBuilders.delete("/api/ptModelInfo"), JSON.toJSONString(ptModelInfoDeleteDTO), MockMvcResultMatchers.status().isOk(), 200);
     }
 
 

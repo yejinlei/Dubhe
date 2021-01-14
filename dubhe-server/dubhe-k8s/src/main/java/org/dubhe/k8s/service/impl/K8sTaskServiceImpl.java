@@ -1,5 +1,5 @@
 /**
- * Copyright 2020 Zhejiang Lab. All Rights Reserved.
+ * Copyright 2020 Tianshu AI Platform. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,11 +16,18 @@
  */
 package org.dubhe.k8s.service.impl;
 
+import com.alibaba.fastjson.JSON;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import org.dubhe.base.MagicNumConstant;
+import org.dubhe.constant.RedisConstants;
+import org.dubhe.enums.LogEnum;
 import org.dubhe.k8s.dao.K8sTaskMapper;
 import org.dubhe.k8s.domain.bo.K8sTaskBO;
 import org.dubhe.k8s.domain.entity.K8sTask;
+import org.dubhe.k8s.enums.K8sTaskStatusEnum;
 import org.dubhe.k8s.service.K8sTaskService;
+import org.dubhe.utils.LogUtil;
+import org.dubhe.utils.RedisUtils;
 import org.dubhe.utils.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -31,13 +38,15 @@ import java.util.List;
 
 /**
  * @description k8s任务服务实现类
- * @date 2020-8-31
+ * @date 2020-08-31
  */
 @Service
 public class K8sTaskServiceImpl implements K8sTaskService {
 
     @Autowired
     K8sTaskMapper k8sTaskMapper;
+    @Autowired
+    private RedisUtils redisUtils;
     /**
      * 创建或者更新任务
      *
@@ -51,10 +60,12 @@ public class K8sTaskServiceImpl implements K8sTaskService {
         }
         List<K8sTask> oldK8sTaskList = selectByNamespaceAndResourceName(k8sTask);
         if (CollectionUtils.isEmpty(oldK8sTaskList)){
+            addRedisDelayTask(k8sTask);
             return k8sTaskMapper.insert(k8sTask);
         }else {
             k8sTask.setId(oldK8sTaskList.get(0).getId());
             k8sTask.setDeleted(false);
+            addRedisDelayTask(k8sTask);
             return update(k8sTask);
         }
     }
@@ -68,6 +79,7 @@ public class K8sTaskServiceImpl implements K8sTaskService {
         if (k8sTask == null){
             return 0;
         }
+        addRedisDelayTask(k8sTask);
         if (k8sTask.getId() != null){
             return k8sTaskMapper.updateById(k8sTask);
         }
@@ -108,5 +120,45 @@ public class K8sTaskServiceImpl implements K8sTaskService {
             return new ArrayList<>();
         }
         return k8sTaskMapper.seleteUnexecutedTask(k8sTaskBO);
+    }
+
+    @Override
+    public List<K8sTask> seleteUnexecutedTask() {
+        K8sTaskBO k8sTaskBO = new K8sTaskBO();
+        Long curUnixTime = System.currentTimeMillis()/ MagicNumConstant.ONE_THOUSAND;
+        k8sTaskBO.setMaxApplyUnixTime(curUnixTime);
+        k8sTaskBO.setMaxStopUnixTime(curUnixTime);
+        k8sTaskBO.setApplyStatus(K8sTaskStatusEnum.UNEXECUTED.getStatus());
+        k8sTaskBO.setStopStatus(K8sTaskStatusEnum.UNEXECUTED.getStatus());
+        LogUtil.info(LogEnum.BIZ_K8S,"seleteUnexecutedTask {}", JSON.toJSONString(k8sTaskBO));
+        return seleteUnexecutedTask(k8sTaskBO);
+    }
+
+    /**
+     * 添加redis延时队列
+     * @param k8sTask
+     * @return
+     */
+    @Override
+    public boolean addRedisDelayTask(K8sTask k8sTask) {
+        if (k8sTask == null || StringUtils.isEmpty(k8sTask.getNamespace()) || StringUtils.isEmpty(k8sTask.getResourceName())){
+            return false;
+        }
+        boolean success = true;
+        if (k8sTask.getApplyUnixTime() != null && k8sTask.getApplyUnixTime() > 0){
+            success &= redisUtils.zAdd(RedisConstants.DELAY_APPLY_ZSET_KEY,k8sTask.getApplyUnixTime(), String.format(RedisConstants.DELAY_ZSET_VALUE,k8sTask.getNamespace(),k8sTask.getResourceName()));
+        }
+        if (k8sTask.getStopUnixTime() != null && k8sTask.getStopUnixTime() > 0){
+            success &= redisUtils.zAdd(RedisConstants.DELAY_STOP_ZSET_KEY,k8sTask.getStopUnixTime(),String.format(RedisConstants.DELAY_ZSET_VALUE,k8sTask.getNamespace(),k8sTask.getResourceName()));
+        }
+        return success;
+    }
+
+    /**
+     * 加载任务到延时队列
+     */
+    @Override
+    public void loadTaskToRedis(){
+        seleteUnexecutedTask().forEach(x->addRedisDelayTask(x));
     }
 }

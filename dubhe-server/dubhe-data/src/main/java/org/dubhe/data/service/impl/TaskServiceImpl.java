@@ -1,5 +1,5 @@
 /**
- * Copyright 2020 Zhejiang Lab. All Rights Reserved.
+ * Copyright 2020 Tianshu AI Platform. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,37 +29,28 @@ import org.dubhe.base.MagicNumConstant;
 import org.dubhe.constant.NumberConstant;
 import org.dubhe.data.constant.*;
 import org.dubhe.data.dao.TaskMapper;
-import org.dubhe.data.domain.bo.EnhanceTaskSplitBO;
 import org.dubhe.data.domain.bo.TaskSplitBO;
 import org.dubhe.data.domain.dto.AutoAnnotationCreateDTO;
 import org.dubhe.data.domain.entity.*;
 import org.dubhe.data.machine.constant.DataStateCodeConstant;
 import org.dubhe.data.machine.constant.DataStateMachineConstant;
 import org.dubhe.data.machine.constant.FileStateCodeConstant;
-import org.dubhe.data.machine.dto.StateChangeDTO;
 import org.dubhe.data.machine.enums.DataStateEnum;
 import org.dubhe.data.machine.utils.StateMachineUtil;
 import org.dubhe.data.machine.utils.identify.service.StateIdentify;
 import org.dubhe.data.pool.BasePool;
-import org.dubhe.data.service.DatasetLabelService;
-import org.dubhe.data.service.DatasetVersionFileService;
-import org.dubhe.data.service.FileService;
-import org.dubhe.data.service.TaskService;
+import org.dubhe.data.service.*;
+import org.dubhe.dto.StateChangeDTO;
 import org.dubhe.enums.LogEnum;
 import org.dubhe.enums.OperationTypeEnum;
 import org.dubhe.exception.BusinessException;
 import org.dubhe.utils.LogUtil;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.ApplicationArguments;
-import org.springframework.boot.ApplicationRunner;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
 
-import java.time.LocalDateTime;
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 /**
@@ -74,12 +65,6 @@ public class TaskServiceImpl extends ServiceImpl<TaskMapper, Task> implements Ta
         add(DataStateCodeConstant.MANUAL_ANNOTATION_STATE);
     }};
 
-    /**
-     * 任务不更新时间超过failTime，则会变成失败。单位s
-     */
-    @Value("${data.annotation.task.failTime}")
-    private Integer failTime;
-
     @Autowired
     private FileService fileService;
     @Autowired
@@ -92,6 +77,8 @@ public class TaskServiceImpl extends ServiceImpl<TaskMapper, Task> implements Ta
     private BasePool pool;
     @Autowired
     private StateIdentify stateIdentify;
+    @Autowired
+    private LabelGroupService labelGroupService;
 
     public static ConcurrentHashSet<Long> taskIds = new ConcurrentHashSet<>();
 
@@ -121,7 +108,11 @@ public class TaskServiceImpl extends ServiceImpl<TaskMapper, Task> implements Ta
         if (ArrayUtil.isEmpty(autoAnnotationCreateDTO.getDatasetIds())) {
             return Collections.emptyList();
         }
-        return Arrays.stream(autoAnnotationCreateDTO.getDatasetIds()).map(this::create).collect(Collectors.toList());
+        List<Long> result = new ArrayList<>();
+        Arrays.stream(autoAnnotationCreateDTO.getDatasetIds()).forEach(aLong -> {
+            result.add(create(aLong, autoAnnotationCreateDTO.getType()));
+        });
+        return result;
     }
 
     /**
@@ -131,16 +122,16 @@ public class TaskServiceImpl extends ServiceImpl<TaskMapper, Task> implements Ta
      * 如果待标注的文件为空，则抛异常
      *
      * @param datasetId 数据集id
+     * @param type      标注类型
      * @return Long 父任务id
      */
     @Transactional(rollbackFor = Exception.class)
-    public Long create(Long datasetId) {
+    public Long create(Long datasetId, Integer type) {
         if (datasetId == null) {
             return MagicNumConstant.ZERO_LONG;
         }
 
         Dataset dataset = datasetService.getById(datasetId);
-
         datasetService.checkPublic(dataset, OperationTypeEnum.UPDATE);
         //当前不是手动标注和未标注报错
         if (dataset == null || !NEED_AUTO_ANNOTATE.contains(dataset.getStatus())) {
@@ -154,13 +145,19 @@ public class TaskServiceImpl extends ServiceImpl<TaskMapper, Task> implements Ta
         } else {
             wrapper.eq(DatasetVersionFile::getVersionName, dataset.getCurrentVersionName());
         }
-        wrapper.eq(DatasetVersionFile::getAnnotationStatus,DataStateEnum.NOT_ANNOTATION_STATE.getCode());
+        if(type == null) {
+            wrapper.eq(DatasetVersionFile::getAnnotationStatus,DataStateEnum.NOT_ANNOTATION_STATE.getCode());
+        }
         wrapper.ne(DatasetVersionFile::getStatus,NumberConstant.NUMBER_1);
         Integer filesCount = datasetVersionFileService.getFileCountByDatasetIdAndVersion(wrapper);
         if (filesCount<NumberConstant.NUMBER_1) {
             throw new BusinessException(ErrorEnum.AUTO_FILE_EMPTY);
         }
 
+        if(DatatypeEnum.TEXT.getValue().compareTo(dataset.getDataType()) == 0 &&
+                !labelGroupService.isAnnotationByGroupId(dataset.getLabelGroupId())){
+            throw new BusinessException(ErrorEnum.LABEL_PREPARE_IS_TXT);
+        }
         List<Label> labels = datasetLabelService.listLabelByDatasetId(datasetId);
         if (CollectionUtils.isEmpty(labels) ||
                 CollectionUtils.isEmpty(labels.stream().filter(label -> (!label.getType().equals(DatasetLabelEnum.CUSTOM))).collect(Collectors.toList()))) {
@@ -170,7 +167,12 @@ public class TaskServiceImpl extends ServiceImpl<TaskMapper, Task> implements Ta
         labels.forEach(label -> {
             labelIds.add(label.getId());
         });
-
+        Integer dataType = dataset.getDataType();
+        Integer taskType = DataTaskTypeEnum.ANNOTATION.getValue();
+        // 如果是数据集是文本类型，执行的任务 = 标注类型
+        if (DatatypeEnum.TEXT.getValue().equals(dataType)){
+            taskType =  DataTaskTypeEnum.TEXT_CLASSIFICATION.getValue();
+        }
         Task task = Task.builder()
                 .status(TaskStatusEnum.INIT.getValue())
                 .datasets(JSON.toJSONString(datasetIds))
@@ -181,7 +183,7 @@ public class TaskServiceImpl extends ServiceImpl<TaskMapper, Task> implements Ta
                 .finished(MagicNumConstant.ZERO)
                 .total(filesCount)
                 .datasetId(datasetId)
-                .type(DataTaskTypeEnum.ANNOTATION.getValue())
+                .type(taskType)
                 .build();
         baseMapper.insert(task);
 
@@ -229,18 +231,6 @@ public class TaskServiceImpl extends ServiceImpl<TaskMapper, Task> implements Ta
 
     /**
      * 任务失败
-     */
-    @Override
-    public void fail() {
-        QueryWrapper<Task> taskQueryWrapper = new QueryWrapper<>();
-        taskQueryWrapper.lambda().select(Task::getId, Task::getDatasets).eq(Task::getStatus, TaskStatusEnum.ING.getValue())
-                .lt(Task::getUpdateTime, LocalDateTime.now().minusSeconds(failTime));
-        List<Task> tasks = getBaseMapper().selectList(taskQueryWrapper);
-        tasks.forEach(this::fail);
-    }
-
-    /**
-     * 任务失败
      *
      * @param task 只能有id，或者其它字段与数据库保持一致，否则会被写入数据库
      */
@@ -258,22 +248,6 @@ public class TaskServiceImpl extends ServiceImpl<TaskMapper, Task> implements Ta
                     );
                 }
         );
-    }
-
-    /**
-     * 只允许按数据集的方式提交任务，如果提交零散文件，会导致状态出错
-     *
-     * @param dataset 其中属性除了状态，不持久化的属性不可更改，否则会写入数据库
-     */
-    public void finish(Dataset dataset) {
-        if (dataset == null) {
-            return;
-        }
-        if (fileService.hasManualAnnotating(dataset.getId())) {
-            datasetService.transferStatus(dataset, DataStateEnum.MANUAL_ANNOTATION_STATE);
-            return;
-        }
-        datasetService.transferStatus(dataset, DataStateEnum.AUTO_TAG_COMPLETE_STATE);
     }
 
     /**
@@ -402,59 +376,6 @@ public class TaskServiceImpl extends ServiceImpl<TaskMapper, Task> implements Ta
             AnnotationServiceImpl.queue.addAll(ts);
             LogUtil.info(LogEnum.BIZ_DATASET, "commit task. ts:{}", ts);
         });
-    }
-
-    /**
-     * 未完成任务列表
-     *
-     * @return List<Task> 未完成任务列表
-     */
-    public List<Task> listUnfinished() {
-        QueryWrapper<Task> queryWrapper = new QueryWrapper<>();
-        queryWrapper.lambda().eq(Task::getStatus, TaskStatusEnum.ING.getValue());
-        return baseMapper.selectList(queryWrapper);
-    }
-
-    /**
-     * 任务失败
-     *
-     * @param id             任务id 为空则代表是定时任务
-     * @param autoAnnotating ignoresMethod
-     * @param enhancing      数据增强
-     */
-    @Override
-    public void doRemoveTask(Long id, ConcurrentHashMap<String, TaskSplitBO> autoAnnotating, ConcurrentHashMap<String, EnhanceTaskSplitBO> enhancing) {
-        //删除子任务
-        if (autoAnnotating != null) {
-            autoAnnotating.forEach((k, v) -> {
-                if (id == null ? v.getSendTime() < System.currentTimeMillis() - FAIL_TIME : v.getTaskId().equals(id)) {
-                    autoAnnotating.remove(k);
-                    LogUtil.warn(LogEnum.BIZ_DATASET, "the autoAnnotating task was removed :{}", v);
-                    if (id == null) {
-                        taskIds.remove(v.getTaskId());
-                        fail(getById(v.getTaskId()));
-                    }
-                }
-            });
-        }
-        if (enhancing != null) {
-            enhancing.forEach((k, v) -> {
-                if (id == null ? v.getSendTime() < System.currentTimeMillis() - FAIL_TIME : v.getId().equals(id)) {
-                    enhancing.remove(k);
-                    LogUtil.warn(LogEnum.BIZ_DATASET, "the enhancing task was removed :{}", v);
-                    if (id == null) {
-                        taskIds.remove(v.getId());
-                        fail(getById(v.getId()));
-                    }
-                }
-            });
-        }
-        if (id != null) {
-            LogUtil.warn(LogEnum.BIZ_DATASET, "the task was removed :{}", id);
-            taskIds.remove(id);
-            fail(getById(id));
-        }
-
     }
 
     /**

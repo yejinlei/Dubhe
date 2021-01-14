@@ -1,5 +1,5 @@
 /**
- * Copyright 2020 Zhejiang Lab. All Rights Reserved.
+ * Copyright 2020 Tianshu AI Platform. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,7 +26,6 @@ import org.dubhe.base.PageQueryBase;
 
 import java.io.Serializable;
 import java.sql.Timestamp;
-import java.time.LocalDateTime;
 
 /**
  * @description 标签组列表查询条件
@@ -79,4 +78,9 @@ public class LabelGroupQueryVO extends PageQueryBase implements Serializable {
      * 操作类型 1:Json编辑器操作类型 2:自定义操作类型 3:导入操作类型
      */
     private Integer operateType;
+
+    /**
+     * 标签组类型:0:视觉,1:文本
+     */
+    private Integer labelGroupType;
 }

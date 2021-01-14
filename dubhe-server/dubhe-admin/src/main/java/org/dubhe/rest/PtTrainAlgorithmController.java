@@ -1,5 +1,5 @@
 /**
- * Copyright 2020 Zhejiang Lab. All Rights Reserved.
+ * Copyright 2020 Tianshu AI Platform. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,10 +23,7 @@ import org.apache.shiro.authz.annotation.RequiresPermissions;
 import org.dubhe.annotation.ApiVersion;
 import org.dubhe.base.DataResponseBody;
 import org.dubhe.constant.Permissions;
-import org.dubhe.domain.dto.PtTrainAlgorithmCreateDTO;
-import org.dubhe.domain.dto.PtTrainAlgorithmDeleteDTO;
-import org.dubhe.domain.dto.PtTrainAlgorithmQueryDTO;
-import org.dubhe.domain.dto.PtTrainAlgorithmUpdateDTO;
+import org.dubhe.domain.dto.*;
 import org.dubhe.service.PtTrainAlgorithmService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.validation.annotation.Validated;
@@ -79,6 +76,13 @@ public class PtTrainAlgorithmController {
     public DataResponseBody deleteAll(@Validated @RequestBody PtTrainAlgorithmDeleteDTO ptTrainAlgorithmDeleteDTO) {
         ptTrainAlgorithmService.deleteAll(ptTrainAlgorithmDeleteDTO);
         return new DataResponseBody();
+    }
+
+    @PostMapping("/uploadAlgorithm")
+    @ApiOperation("模型优化上传算法")
+    @RequiresPermissions(Permissions.DEVELOPMENT_ALGORITHM)
+    public DataResponseBody modelOptimizationUploadAlgorithm(@Validated @RequestBody PtModelAlgorithmCreateDTO ptModelAlgorithmCreateDTO) {
+        return new DataResponseBody(ptTrainAlgorithmService.modelOptimizationUploadAlgorithm(ptModelAlgorithmCreateDTO));
     }
 
 }

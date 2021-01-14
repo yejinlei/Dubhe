@@ -1,5 +1,5 @@
 /**
- * Copyright 2020 Zhejiang Lab. All Rights Reserved.
+ * Copyright 2020 Tianshu AI Platform. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -67,11 +67,13 @@ public class K8sCallBackTool {
      * k8s 回调路径
      */
     private static final String K8S_CALLBACK_PATH_POD = "/api/k8s/callback/pod/";
+    private static final String K8S_CALLBACK_PATH_DEPLOYMENT = "/api/k8s/callback/deployment/";
 
     static {
         K8S_CALLBACK_PATH = new ArrayList<>();
         // 添加需要token权限校验的地址（Shiro匿名访问的地址）
         K8S_CALLBACK_PATH.add(K8S_CALLBACK_PATH_POD + "**");
+        K8S_CALLBACK_PATH.add(K8S_CALLBACK_PATH_DEPLOYMENT + "**");
     }
 
     /**
@@ -131,6 +133,16 @@ public class K8sCallBackTool {
      */
     public String getPodCallbackUrl(String podLabel) {
         return url + K8S_CALLBACK_PATH_POD + podLabel;
+    }
+
+    /**
+     * 获取回调地址
+     *
+     * @param businessLabel
+     * @return String
+     */
+    public String getDeploymentCallbackUrl(String businessLabel) {
+        return url + K8S_CALLBACK_PATH_DEPLOYMENT + businessLabel;
     }
 
 

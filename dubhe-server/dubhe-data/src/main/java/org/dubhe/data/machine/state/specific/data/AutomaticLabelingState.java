@@ -1,5 +1,5 @@
 /**
- * Copyright 2020 Zhejiang Lab. All Rights Reserved.
+ * Copyright 2020 Tianshu AI Platform. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,15 +16,15 @@
  */
 package org.dubhe.data.machine.state.specific.data;
 
+import org.dubhe.constant.ErrorMessageConstant;
 import org.dubhe.data.dao.DatasetMapper;
 import org.dubhe.data.domain.entity.Dataset;
-import org.dubhe.data.exception.StateMachineException;
-import org.dubhe.data.machine.constant.ErrorMessageConstant;
 import org.dubhe.data.machine.enums.DataStateEnum;
 import org.dubhe.data.machine.state.AbstractDataState;
 import org.dubhe.data.machine.statemachine.DataStateMachine;
 import org.dubhe.data.machine.utils.identify.service.StateIdentify;
 import org.dubhe.enums.LogEnum;
+import org.dubhe.exception.StateMachineException;
 import org.dubhe.utils.LogUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;

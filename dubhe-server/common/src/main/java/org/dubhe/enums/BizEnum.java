@@ -1,5 +1,5 @@
 /**
- * Copyright 2020 Zhejiang Lab. All Rights Reserved.
+ * Copyright 2020 Tianshu AI Platform. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,15 +32,32 @@ public enum BizEnum {
     /**
      * 模型开发
      */
-    NOTEBOOK("模型开发","notebook",0),
+    NOTEBOOK("模型开发", "notebook", 0),
     /**
      * 算法管理
      */
-    ALGORITHM("算法管理","algorithm",1),
+    ALGORITHM("算法管理", "algorithm", 1),
     /**
      * 模型管理
      */
-    MODEL("模型管理","model",2),
+    MODEL("模型管理", "model", 2),
+
+    /**
+     * 训练管理
+     */
+    TRAIN("训练管理", "train", 3),
+    /**
+     * 云端Serving-在线服务
+     */
+    SERVING("云端Serving", "serving", 4),
+    /**
+     * 批量服务
+     */
+    BATCH_SERVING("批量服务", "batchserving", 5),
+    /**
+     * 模型优化
+     */
+    MODEL_OPT("模型优化管理","modelopt",6),
     ;
 
     /**
@@ -56,28 +73,42 @@ public enum BizEnum {
      */
     private Integer createResource;
 
-    BizEnum(String bizName,String bizCode, Integer createResource) {
+    BizEnum(String bizName, String bizCode, Integer createResource) {
         this.createResource = createResource;
         this.bizName = bizName;
         this.bizCode = bizCode;
     }
 
-    private static final Map<Integer,BizEnum> RESOURCE_ENUM_MAP = new HashMap<Integer,BizEnum>(){
+    private static final Map<Integer, BizEnum> RESOURCE_ENUM_MAP = new HashMap<Integer, BizEnum>() {
         {
-            for (BizEnum enums:BizEnum.values()){
-                put(enums.getCreateResource(),enums);
+            for (BizEnum enums : BizEnum.values()) {
+                put(enums.getCreateResource(), enums);
             }
         }
     };
 
     /**
      * 根据createResource获取BizEnum
-     * @param createResource
-     * @return
+     * @param createResource 业务源代号
+     * @return 枚举对象
      */
-    public static BizEnum getByCreateResource(int createResource){
+    public static BizEnum getByCreateResource(int createResource) {
         return RESOURCE_ENUM_MAP.get(createResource);
     }
 
+    /**
+     * 根据createResource获取code
+     *
+     * @param createResource  业务源代号
+     * @return String 业务模块名称
+     */
+    public static String getCodeByResource(Integer createResource) {
+        for (BizEnum enums : BizEnum.values()) {
+            if (enums.getCreateResource().equals(createResource)) {
+                return enums.getBizCode();
+            }
+        }
+        return null;
+    }
 
 }

@@ -1,5 +1,5 @@
 /**
- * Copyright 2020 Zhejiang Lab. All Rights Reserved.
+ * Copyright 2020 Tianshu AI Platform. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -57,7 +57,7 @@ public interface FileService {
      * @param fileQueryCriteria 查询文件参数
      * @return Map<String, Object> 文件查询列表
      */
-    Map<String, Object> listVO(Long datasetId, Page page, FileQueryCriteriaVO fileQueryCriteria);
+    Map<String, Object> listPage(Long datasetId, Page page, FileQueryCriteriaVO fileQueryCriteria);
 
     /**
      * 文件查询，物体检测标注页面使用
@@ -160,7 +160,7 @@ public interface FileService {
      * @param files         file文件
      * @return List<Long>   保存文件数量
      */
-    List<Long> saveFiles(Long fileId, List<FileCreateDTO> files);
+    List<File> saveFiles(Long fileId, List<FileCreateDTO> files);
 
     /**
      * 数据集标注进度
@@ -235,4 +235,40 @@ public interface FileService {
      */
     void expireSampleTask();
 
+    /**
+     * 根据版本和数据集ID获取文件url
+     *
+     * @param datasetId     数据集ID
+     * @param versionName   版本名
+     * @return List<String> url列表
+     */
+    List<String> selectUrls(Long datasetId,String versionName);
+
+    /**
+     * 根据version.changed获取文件name列表
+     *
+     * @param datasetId     数据集ID
+     * @param changed       版本文件是否改动
+     * @param versionName   版本名称
+     * @return List<name>   名称列表
+     */
+    List<String> selectNames(Long datasetId, Integer changed,String versionName);
+
+    /**
+     * 文本数据集文件查询
+     *
+     * @param datasetId         数据集id
+     * @param page              分页条件
+     * @param fileQueryCriteria 查询文件参数
+     * @return Map<String, Object> 文件查询列表
+     */
+    Map<String, Object> txtFilesByPage(Long datasetId, Page page, FileQueryCriteriaVO fileQueryCriteria);
+
+    /**
+     * 文本状态数量统计
+     *
+     * @param datasetId 数据集ID
+     * @return 文本状态数量统计
+     */
+    ProgressVO getFileCountByStatus(Long datasetId);
 }

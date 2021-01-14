@@ -1,5 +1,5 @@
 /**
- * Copyright 2020 Zhejiang Lab. All Rights Reserved.
+ * Copyright 2020 Tianshu AI Platform. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -41,12 +41,15 @@ public class DistributeTrainSpec implements KubernetesResource {
     private String slaveCmd;
     private ResourceRequirements slaveResources;
     private Map<String, String> nodeSelector = new HashMap<>();
-    private List<EnvVar> env = new ArrayList<EnvVar>();
-    private Volume datasetStorage;
-    private Volume workspaceStorage;
-    private Volume modelStorage;
-
-
+    private List<EnvVar> env = new ArrayList<>();
+    /**
+     * 内部映射
+     */
+    private List<VolumeMount> volumeMounts;
+    /**
+     * 外部挂载
+     */
+    private List<Volume> volumes;
 
     public Integer getSize() {
         return size;
@@ -120,27 +123,19 @@ public class DistributeTrainSpec implements KubernetesResource {
         this.env = env;
     }
 
-    public Volume getDatasetStorage() {
-        return datasetStorage;
+    public List<VolumeMount> getVolumeMounts() {
+        return volumeMounts;
     }
 
-    public void setDatasetStorage(Volume datasetStorage) {
-        this.datasetStorage = datasetStorage;
+    public void setVolumeMounts(List<VolumeMount> volumeMounts) {
+        this.volumeMounts = volumeMounts;
     }
 
-    public Volume getWorkspaceStorage() {
-        return workspaceStorage;
+    public List<Volume> getVolumes() {
+        return volumes;
     }
 
-    public void setWorkspaceStorage(Volume workspaceStorage) {
-        this.workspaceStorage = workspaceStorage;
-    }
-    public void setModelStorage(Volume modelStorage) {
-        this.modelStorage = modelStorage;
-    }
-
-    public Volume getModelStorage() {
-
-        return modelStorage;
+    public void setVolumes(List<Volume> volumes) {
+        this.volumes = volumes;
     }
 }

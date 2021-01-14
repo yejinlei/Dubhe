@@ -1,5 +1,5 @@
 /**
- * Copyright 2020 Zhejiang Lab. All Rights Reserved.
+ * Copyright 2020 Tianshu AI Platform. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,12 +19,11 @@ package org.dubhe.k8s.observer;
 
 import org.dubhe.enums.BizEnum;
 import org.dubhe.enums.LogEnum;
-import org.dubhe.k8s.api.LogMonitoringApi;
 import org.dubhe.k8s.api.TrainJobApi;
 import org.dubhe.k8s.constant.K8sLabelConstants;
 import org.dubhe.k8s.domain.resource.BizPod;
 import org.dubhe.k8s.enums.PodPhaseEnum;
-import org.dubhe.k8s.event.callback.WatcherCallback;
+import org.dubhe.k8s.event.callback.PodCallback;
 import org.dubhe.utils.LogUtil;
 import org.dubhe.utils.SpringContextHolder;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -41,11 +40,9 @@ import java.util.Observer;
 public class TrainJobObserver implements Observer {
     @Autowired
     private TrainJobApi trainJobApi;
-    @Autowired
-    private LogMonitoringApi logMonitoringApi;
 
-    public TrainJobObserver(WatcherCallback watcherCallback){
-        watcherCallback.addObserver(this);
+    public TrainJobObserver(PodCallback podCallback){
+        podCallback.addObserver(this);
     }
 
     @Override

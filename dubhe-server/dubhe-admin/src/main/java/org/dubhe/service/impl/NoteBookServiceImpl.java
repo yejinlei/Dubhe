@@ -1,12 +1,12 @@
 /**
- * Copyright 2020 Zhejiang Lab. All Rights Reserved.
- * 
+ * Copyright 2020 Tianshu AI Platform. All Rights Reserved.
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  * http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -19,6 +19,7 @@ package org.dubhe.service.impl;
 
 import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.util.RandomUtil;
+import cn.hutool.core.util.StrUtil;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
@@ -27,47 +28,33 @@ import org.dubhe.base.MagicNumConstant;
 import org.dubhe.constant.SymbolConstant;
 import org.dubhe.dao.NoteBookMapper;
 import org.dubhe.dao.NoteBookModelMapper;
-import org.dubhe.domain.dto.NoteBookListQueryDTO;
-import org.dubhe.domain.dto.NoteBookQueryDTO;
-import org.dubhe.domain.dto.NoteBookStatusDTO;
-import org.dubhe.domain.dto.SourceNoteBookDTO;
+import org.dubhe.domain.dto.*;
 import org.dubhe.domain.entity.NoteBook;
 import org.dubhe.domain.entity.NoteBookModel;
 import org.dubhe.domain.vo.NoteBookVO;
 import org.dubhe.enums.*;
+import org.dubhe.exception.BusinessException;
 import org.dubhe.exception.NotebookBizException;
-import org.dubhe.harbor.api.HarborApi;
-import org.dubhe.k8s.api.PodApi;
 import org.dubhe.k8s.api.JupyterResourceApi;
 import org.dubhe.k8s.api.NamespaceApi;
+import org.dubhe.k8s.api.PodApi;
 import org.dubhe.k8s.domain.PtBaseResult;
 import org.dubhe.k8s.domain.resource.BizNamespace;
 import org.dubhe.k8s.domain.resource.BizPod;
 import org.dubhe.k8s.domain.vo.PtJupyterDeployVO;
 import org.dubhe.k8s.enums.K8sResponseEnum;
-import org.dubhe.service.HarborProjectService;
 import org.dubhe.service.NoteBookService;
+import org.dubhe.service.PtImageService;
 import org.dubhe.service.convert.NoteBookConvert;
 import org.dubhe.service.convert.PtJupyterResourceConvert;
-import org.dubhe.utils.HttpUtils;
-import org.dubhe.utils.K8sNameTool;
-import org.dubhe.utils.LogUtil;
-import org.dubhe.utils.NotebookUtil;
-import org.dubhe.utils.NumberUtil;
-import org.dubhe.utils.PageUtil;
-import org.dubhe.utils.WrapperHelp;
+import org.dubhe.utils.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
@@ -99,10 +86,7 @@ public class NoteBookServiceImpl implements NoteBookService {
     private K8sNameTool k8sNameTool;
 
     @Autowired
-    private HarborApi harborApi;
-
-    @Autowired
-    private HarborProjectService harborProjectService;
+    private PtImageService ptImageService;
 
     @Value("${delay.notebook.delete}")
     private Integer notebookDelayDeleteTime;
@@ -121,21 +105,21 @@ public class NoteBookServiceImpl implements NoteBookService {
         QueryWrapper<NoteBook> queryWrapper = WrapperHelp.getWrapper(noteBookListQueryDTO);
         queryWrapper.ne(true, NoteBook.COLUMN_STATUS, NoteBookStatusEnum.DELETE.getCode())
                 .ne(true, "deleted", NoteBookStatusEnum.STOP.getCode());
-        if (noteBookListQueryDTO.getStatus() != null){
-            if (noteBookListQueryDTO.getStatus().equals(NoteBookStatusEnum.RUN.getCode())){
+        if (noteBookListQueryDTO.getStatus() != null) {
+            if (noteBookListQueryDTO.getStatus().equals(NoteBookStatusEnum.RUN.getCode())) {
                 //运行中的notebook必须有url
                 queryWrapper.eq(NoteBook.COLUMN_STATUS, NoteBookStatusEnum.RUN.getCode())
-                        .ne(NoteBook.COLUMN_URL,SymbolConstant.BLANK);
-            }else if (noteBookListQueryDTO.getStatus().equals(NoteBookStatusEnum.STARTING.getCode())){
+                        .ne(NoteBook.COLUMN_URL, SymbolConstant.BLANK);
+            } else if (noteBookListQueryDTO.getStatus().equals(NoteBookStatusEnum.STARTING.getCode())) {
                 //启动中的notebook还包括运行中但没有url
-                queryWrapper.and((qw)->
+                queryWrapper.and((qw) ->
                         qw.eq(NoteBook.COLUMN_STATUS, NoteBookStatusEnum.RUN.getCode()).eq(NoteBook.COLUMN_URL, SymbolConstant.BLANK)
                                 .or()
-                                .eq(NoteBook.COLUMN_STATUS,NoteBookStatusEnum.STARTING.getCode())
+                                .eq(NoteBook.COLUMN_STATUS, NoteBookStatusEnum.STARTING.getCode())
                 );
-            }else {
+            } else {
                 // 其他状态照常
-                queryWrapper.eq(NoteBook.COLUMN_STATUS, NoteBookStatusEnum.RUN.getCode());
+                queryWrapper.eq(NoteBook.COLUMN_STATUS, noteBookListQueryDTO.getStatus());
             }
         }
         queryWrapper.orderBy(true, false, "id");
@@ -158,22 +142,18 @@ public class NoteBookServiceImpl implements NoteBookService {
     /**
      * 获取镜像路径
      *
-     * @param bizEnum
-     * @return String
+     * @return String 镜像路径
      */
-    private String getDefaultImage(BizEnum bizEnum) {
-        if (bizEnum == null) {
-            throw new NotebookBizException("业务模块未识别！无法获取默认镜像。");
+    private String getDefaultImage() {
+        PtImageQueryUrlDTO imageQueryUrlDTO = new PtImageQueryUrlDTO();
+        imageQueryUrlDTO.setProjectType(ImageTypeEnum.NOTEBOOK.getType())
+                .setImageResource(ImageSourceEnum.PRE.getCode());
+        String imageUrl = ptImageService.getImageUrl(imageQueryUrlDTO);
+        if (StrUtil.isEmpty(imageUrl)) {
+            throw new BusinessException(ImageTypeEnum.NOTEBOOK.getCode() + "未配置默认镜像！");
         }
-        List<String> projectList = harborProjectService.getHarborProjects(bizEnum.getCreateResource());
-        if (CollUtil.isEmpty(projectList)) {
-            throw new NotebookBizException("此模块" + bizEnum.getBizName() + "未配置Project！无法获取默认镜像。");
-        }
-        List<String> imageList = harborApi.searchImageNames(projectList);
-        if (CollUtil.isEmpty(imageList)) {
-            throw new NotebookBizException("此模块" + bizEnum.getBizName() + "未配置镜像！");
-        }
-        return imageList.get(MagicNumConstant.ZERO);
+
+        return imageUrl;
     }
 
     /**
@@ -181,11 +161,12 @@ public class NoteBookServiceImpl implements NoteBookService {
      *
      * @param noteBook
      * @return NoteBookVO
+     *
      */
     @Override
     @Transactional(rollbackFor = Exception.class)
     public NoteBookVO createNoteBook(NoteBook noteBook) {
-        if (noteBookMapper.findByNameAndStatus(noteBook.getNoteBookName(),NoteBookStatusEnum.DELETE.getCode()) != null) {
+        if (noteBookMapper.findByNameAndStatus(noteBook.getNoteBookName(), NoteBookStatusEnum.DELETE.getCode()) != null) {
             throw new NotebookBizException("Notebook名称已使用过！请重新提交。");
         }
         if (StringUtils.isEmpty(noteBook.getName())) {
@@ -575,7 +556,7 @@ public class NoteBookServiceImpl implements NoteBookService {
         noteBook.setDescription(bizNfsEnum.getBizName());
         noteBook.setName(k8sNameTool.getK8sName());
         String notebookName = NotebookUtil.generateName(bizNfsEnum, sourceNoteBookDTO.getSourceId());
-        if (noteBookMapper.findByNameAndStatus(notebookName,NoteBookStatusEnum.DELETE.getCode()) != null) {
+        if (noteBookMapper.findByNameAndStatus(notebookName, NoteBookStatusEnum.DELETE.getCode()) != null) {
             // 重名随机符号拼接
             notebookName += RandomUtil.randomString(MagicNumConstant.TWO);
         }
@@ -588,7 +569,7 @@ public class NoteBookServiceImpl implements NoteBookService {
         noteBook.setAlgorithmId(sourceNoteBookDTO.getSourceId());
 
         noteBook.setK8sPvcPath(k8sPvcPath);
-        noteBook.setK8sImageName(getDefaultImage(BizEnum.NOTEBOOK));
+        noteBook.setK8sImageName(getDefaultImage());
         return noteBook;
     }
 
@@ -737,9 +718,9 @@ public class NoteBookServiceImpl implements NoteBookService {
     @Override
     public List<NoteBookVO> getNotebookDetail(Set<Long> noteBookIds) {
         QueryWrapper<NoteBook> queryWrapper = new QueryWrapper<>();
-        queryWrapper.in("id",noteBookIds);
-        queryWrapper.ne(NoteBook.COLUMN_STATUS,NoteBookStatusEnum.DELETE.getCode());
-        List<NoteBook> noteBookList =  noteBookMapper.selectList(queryWrapper);
+        queryWrapper.in("id", noteBookIds);
+        queryWrapper.ne(NoteBook.COLUMN_STATUS, NoteBookStatusEnum.DELETE.getCode());
+        List<NoteBook> noteBookList = noteBookMapper.selectList(queryWrapper);
         return noteBookConvert.toDto(noteBookList);
     }
 
@@ -751,6 +732,6 @@ public class NoteBookServiceImpl implements NoteBookService {
      */
     @Override
     public List<NoteBook> getRunNotUrlList(Page page) {
-        return noteBookMapper.selectRunNotUrlList(page,NoteBookStatusEnum.RUN.getCode());
+        return noteBookMapper.selectRunNotUrlList(page, NoteBookStatusEnum.RUN.getCode());
     }
 }

@@ -1,5 +1,5 @@
 /**
- * Copyright 2020 Zhejiang Lab. All Rights Reserved.
+ * Copyright 2020 Tianshu AI Platform. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -60,7 +60,7 @@ public class HarborImagePushAsync {
     @Async
     public void execShell(String imagePath, String imageNameandTag, PtImage ptImage) {
         try {
-            String imageResource = trainHarborConfig.getAddress() + StrUtil.SLASH + trainHarborConfig.getModelName()
+            String imageResource = trainHarborConfig.getAddress() + StrUtil.SLASH + ptImage.getProjectName()
                     + StrUtil.SLASH + imageNameandTag;
             String cmdStr = "docker login --username=" + trainHarborConfig.getUsername() + " " + trainHarborConfig.getAddress() + " --password=" + trainHarborConfig.getPassword() + " ; docker " +
                     "load < " + imagePath + " |awk '{print $3}' |xargs -I str docker tag str " + imageResource + " ; docker push " + imageResource + "; docker rmi " + imageResource;

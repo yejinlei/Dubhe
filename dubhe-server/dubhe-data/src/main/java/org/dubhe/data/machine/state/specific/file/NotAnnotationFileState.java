@@ -1,5 +1,5 @@
 /**
- * Copyright 2020 Zhejiang Lab. All Rights Reserved.
+ * Copyright 2020 Tianshu AI Platform. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,11 +16,19 @@
  */
 package org.dubhe.data.machine.state.specific.file;
 
+import com.alibaba.druid.support.json.JSONParser;
+import com.alibaba.druid.support.json.JSONUtils;
+import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.JSONObject;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
+import com.fasterxml.jackson.jaxrs.json.annotation.JSONP;
+import com.google.gson.Gson;
+import com.google.gson.JsonArray;
+import com.google.gson.reflect.TypeToken;
+import org.dubhe.constant.NumberConstant;
 import org.dubhe.data.constant.Constant;
 import org.dubhe.data.dao.DatasetVersionFileMapper;
-import org.dubhe.data.domain.bo.FileBO;
-import org.dubhe.data.domain.bo.TaskSplitBO;
+import org.dubhe.data.domain.dto.AnnotationInfoCreateDTO;
 import org.dubhe.data.domain.entity.DatasetVersionFile;
 import org.dubhe.data.machine.enums.FileStateEnum;
 import org.dubhe.data.machine.state.AbstractFileState;
@@ -31,8 +39,11 @@ import org.dubhe.utils.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
+import java.lang.reflect.Type;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
-import java.util.stream.Collectors;
+import java.util.Map;
 
 /**
  * @description 未标注状态类

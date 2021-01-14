@@ -1,5 +1,5 @@
 /**
- * Copyright 2020 Zhejiang Lab. All Rights Reserved.
+ * Copyright 2020 Tianshu AI Platform. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,14 +17,14 @@
 package org.dubhe.data.machine.statemachine;
 
 import lombok.Data;
+import org.dubhe.constant.ErrorMessageConstant;
 import org.dubhe.data.dao.DatasetMapper;
 import org.dubhe.data.domain.entity.Dataset;
-import org.dubhe.data.exception.StateMachineException;
-import org.dubhe.data.machine.constant.ErrorMessageConstant;
 import org.dubhe.data.machine.enums.DataStateEnum;
 import org.dubhe.data.machine.state.AbstractDataState;
 import org.dubhe.data.machine.state.specific.data.*;
 import org.dubhe.data.machine.utils.identify.service.StateIdentify;
+import org.dubhe.exception.StateMachineException;
 import org.dubhe.utils.SpringContextHolder;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -379,14 +379,12 @@ public class DataStateMachine extends AbstractDataState implements Serializable 
     public void finishManualEvent(Dataset dataset) {
         //当前实时状态不是标注完成时不作处理
         initMemoryDataState(dataset.getId().intValue());
-        if (memoryDataState == annotationCompleteState) {
-            return;
-        }
         if (
                 memoryDataState != notAnnotationState &&
                         memoryDataState != manualAnnotationState &&
                         memoryDataState != autoTagCompleteState &&
-                        memoryDataState != targetCompleteState
+                        memoryDataState != targetCompleteState&&
+                        memoryDataState != annotationCompleteState
         ) {
             throw new StateMachineException(ErrorMessageConstant.DATASET_CHANGE_ERR_MESSAGE);
         }

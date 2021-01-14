@@ -1,5 +1,5 @@
 /**
- * Copyright 2020 Zhejiang Lab. All Rights Reserved.
+ * Copyright 2020 Tianshu AI Platform. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,11 +21,13 @@ import cn.hutool.core.collection.CollectionUtil;
 import cn.hutool.core.util.ObjectUtil;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.bytedeco.javacv.FFmpegFrameGrabber;
 import org.dubhe.base.MagicNumConstant;
 import com.alibaba.fastjson.support.spring.FastJsonRedisSerializer;
+import org.dubhe.constant.NumberConstant;
 import org.dubhe.data.constant.DatasetLabelEnum;
 import org.dubhe.data.domain.bo.TaskSplitBO;
 import org.dubhe.data.domain.dto.DatasetEnhanceRequestDTO;
@@ -39,9 +41,12 @@ import org.dubhe.data.domain.entity.Task;
 import org.dubhe.data.domain.vo.DatasetVO;
 import org.dubhe.data.service.*;
 import org.dubhe.data.util.TaskUtils;
+import org.dubhe.dcm.domain.entity.DataMedicineFile;
+import org.dubhe.dcm.service.DataMedicineFileService;
 import org.dubhe.enums.LogEnum;
 import org.dubhe.utils.LogUtil;
 import org.dubhe.utils.RedisUtils;
+import org.dubhe.utils.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.dao.DataAccessException;
@@ -91,6 +96,8 @@ public class DataTaskExecuteThread implements Runnable {
     private AnnotationService annotationService;
     @Autowired
     private DatasetEnhanceService datasetEnhanceService;
+    @Autowired
+    private DataMedicineFileService dataMedicineFileService;
 
     @Resource
     private TaskUtils taskUtils;
@@ -106,11 +113,15 @@ public class DataTaskExecuteThread implements Runnable {
      */
     @Value("${k8s.nfs-root-path:/nfs/}")
     private String prefixPath;
-
     /**
      * 标注任务一次查询的数量
      */
     private static final Integer ANNOTATION_BATCH_SIZE = MagicNumConstant.SIXTEEN * MagicNumConstant.TEN_THOUSAND;
+
+    /**
+     * 文本分类算法待处理任务队列
+     */
+    private static final String TC_TASK_QUEUE = "text_classification_task_queue";
     /**
      * 标注算法待处理任务队列
      */
@@ -127,6 +138,10 @@ public class DataTaskExecuteThread implements Runnable {
      * 目标跟踪算法待处理任务队列
      */
     private static final String TRACK_TASK_QUEUE = "track_task_queue";
+    /**
+     * 医学标注算法待处理任务队列
+     */
+    private static final String MEDICINE_PENDING_QUEUE = "dcm_task_queue";
 
     /**
      * 启动生成任务线程
@@ -175,7 +190,7 @@ public class DataTaskExecuteThread implements Runnable {
         if (count != 0) {
             switch (task.getType()) {
                 case MagicNumConstant.ZERO:
-                    annotationExecute(task);
+                    annotationExecute(NumberConstant.NUMBER_0,task);
                     break;
                 case MagicNumConstant.ONE:
                     ofRecordExecute(task);
@@ -189,8 +204,18 @@ public class DataTaskExecuteThread implements Runnable {
                 case MagicNumConstant.FIVE:
                     videoSampleExecute(task);
                     break;
+                case MagicNumConstant.SIX:
+                    medicineExecute(task);
+                    break;
+                case MagicNumConstant.SEVEN:
+                    textClassificationExecute(task);
+                    break;
+                case MagicNumConstant.EIGHT:
+                    annotationService.deleteAnnotating(task.getDatasetId());
+                    annotationExecute(NumberConstant.NUMBER_0,task);
+                    break;
                 default:
-                    LogUtil.info(LogEnum.BIZ_DATASET,"未识别任务");
+                    LogUtil.info(LogEnum.BIZ_DATASET, "未识别任务");
                     break;
             }
             taskService.updateTaskStatus(task.getId(), MagicNumConstant.ONE, MagicNumConstant.TWO);
@@ -220,15 +245,16 @@ public class DataTaskExecuteThread implements Runnable {
         redisUtils.zSet(TRACK_TASK_QUEUE, -1, taskId);
     }
 
+
     /**
      * 标注任务处理
      *
      * @param task 任务信息
      */
-    public void annotationExecute(Task task) {
+    public void textClassificationExecute(Task task) {
         int offset = 0;
         while (true) {
-            if (!generateAnnotationTask(offset, task)) {
+            if (!generateTextClassificationTask(offset, task)) {
                 break;
             }
         }
@@ -247,11 +273,11 @@ public class DataTaskExecuteThread implements Runnable {
         });
         DatasetVersion datasetVersion = datasetVersionService.detail(task.getDatasetVersionId());
         int partSize = MagicNumConstant.INTEGER_TWO_HUNDRED_AND_FIFTY_FIVE + 1;
-        int batchSize = task.getTotal() <= partSize ? 1: (task.getTotal() / partSize);
+        int batchSize = task.getTotal() <= partSize ? 1 : (task.getTotal() / partSize);
         Integer offset = 0;
         int partNum = 0;
         while (true) {
-            if(task.getTotal() > partSize && partNum == MagicNumConstant.INTEGER_TWO_HUNDRED_AND_FIFTY_FIVE) {
+            if (task.getTotal() > partSize && partNum == MagicNumConstant.INTEGER_TWO_HUNDRED_AND_FIFTY_FIVE) {
                 batchSize = Integer.MAX_VALUE;
             }
             offset = generateOfRecordTask(offset, task, datasetLabels, batchSize, datasetVersion, partNum);
@@ -296,6 +322,41 @@ public class DataTaskExecuteThread implements Runnable {
     }
 
     /**
+     * 生成自动文本分类任务
+     *
+     * @param offset  偏移量
+     * @param task    任务信息
+     * @return
+     */
+    @Transactional(rollbackFor = Exception.class)
+    public Boolean generateTextClassificationTask(int offset, Task task) {
+        List<File> files = fileService.listBatchFile(task.getDatasetId(), offset, ANNOTATION_BATCH_SIZE);
+        if (CollectionUtil.isNotEmpty(files)) {
+            //处理文件生成任务
+            DatasetVO datasetVO = datasetService.get(task.getDatasetId());
+            DatasetLabelEnum datasetLabelEnum = datasetService.getDatasetLabelType(task.getDatasetId());
+            List<TaskSplitBO> taskSplitBOList = fileService.split(files, task);
+            taskSplitBOList.stream().forEach(taskSplitBO -> {
+                if (ObjectUtil.isNotNull(datasetLabelEnum)) {
+                    taskSplitBO.setDatasetId(datasetVO.getId());
+                    taskSplitBO.setVersionName(datasetVO.getCurrentVersionName());
+                    taskSplitBO.setLabelType(datasetLabelEnum.getType());
+                }
+            });
+
+            String queue = TC_TASK_QUEUE;
+            redisPipeline(taskSplitBOList, queue);
+            if (files.size() < ANNOTATION_BATCH_SIZE) {
+                return false;
+            } else {
+                return true;
+            }
+        } else {
+            return false;
+        }
+    }
+
+    /**
      * 生成自动标注任务
      *
      * @param offset  偏移量
@@ -303,10 +364,9 @@ public class DataTaskExecuteThread implements Runnable {
      * @return
      */
     @Transactional(rollbackFor = Exception.class)
-    public Boolean generateAnnotationTask(int offset, Task task) {
+    public void annotationExecute(int offset, Task task) {
         List<File> files = fileService.listBatchFile(task.getDatasetId(), offset, ANNOTATION_BATCH_SIZE);
         if (CollectionUtil.isNotEmpty(files)) {
-            offset += files.size();
             //处理文件生成任务
             DatasetVO datasetVO = datasetService.get(task.getDatasetId());
             DatasetLabelEnum datasetLabelEnum = datasetService.getDatasetLabelType(task.getDatasetId());
@@ -323,13 +383,9 @@ public class DataTaskExecuteThread implements Runnable {
                 queue = IMAGENET_TASK_QUEUE;
             }
             redisPipeline(taskSplitBOList, queue);
-            if (files.size() < ANNOTATION_BATCH_SIZE) {
-                return false;
-            } else {
-                return true;
+            if (files.size() >= ANNOTATION_BATCH_SIZE) {
+                annotationExecute(offset, task);
             }
-        } else {
-            return false;
         }
     }
 
@@ -402,7 +458,7 @@ public class DataTaskExecuteThread implements Runnable {
             i += task.getFrameInterval();
         }
         List<List<Integer>> framesSplitTasks = CollectionUtil.split(frames, 500);
-        taskService.setTaskTotal(task.getId(),framesSplitTasks.size());
+        taskService.setTaskTotal(task.getId(), framesSplitTasks.size());
         AtomicInteger j = new AtomicInteger(1);
         framesSplitTasks.forEach(framesSplitTask -> {
             JSONObject param = new JSONObject();
@@ -416,6 +472,37 @@ public class DataTaskExecuteThread implements Runnable {
             taskUtils.addTask(samplePendingQueue, taskDetails, String.valueOf(task.getDatasetId())
                     , taskType, String.valueOf(j), datasetIdKey, Integer.valueOf(String.valueOf(j)));
             j.addAndGet(1);
+        });
+    }
+
+    /**
+     * 医学标注
+     *
+     * @param task 任务详情
+     */
+    private void medicineExecute(Task task) {
+        QueryWrapper<DataMedicineFile> wrapper = new QueryWrapper<>();
+        wrapper.lambda().eq(DataMedicineFile::getMedicineId, task.getDatasetId());
+        List<DataMedicineFile> dataMedicineFiles = dataMedicineFileService.listFile(wrapper);
+        List<List<DataMedicineFile>> medicalTasks = CollectionUtil.split(dataMedicineFiles, 16);
+        medicalTasks.forEach(medicalTask -> {
+            JSONObject jsonObject = new JSONObject();
+            jsonObject.put("taskId", task.getId().toString());
+            List<String> dataMedicineFilesPaths = new ArrayList<>();
+            medicalTask.forEach(dataMedicineFile -> {
+                String dataMedicineFilesPath = "/nfs/" + dataMedicineFile.getUrl();
+                dataMedicineFilesPaths.add(dataMedicineFilesPath);
+            });
+            jsonObject.put("dcms", dataMedicineFilesPaths);
+            List<String> medicineFileIds = new ArrayList<>();
+            medicalTask.forEach(dataMedicineFile -> medicineFileIds.add(dataMedicineFile.getId().toString()));
+            jsonObject.put("medicineFileIds", medicineFileIds);
+            String medicineFileUrl = dataMedicineFilesPaths.get(0);
+            jsonObject.put("annotationPath", StringUtils.substringBeforeLast(medicineFileUrl, "/")
+                    .replace("origin", "annotation"));
+            String detailKey = UUID.randomUUID().toString();
+            redisUtils.set(detailKey, jsonObject);
+            taskUtils.zAdd(MEDICINE_PENDING_QUEUE, detailKey, 10L);
         });
     }
 

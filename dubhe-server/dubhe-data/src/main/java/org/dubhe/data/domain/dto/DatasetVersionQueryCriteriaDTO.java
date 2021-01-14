@@ -1,5 +1,5 @@
 /**
- * Copyright 2020 Zhejiang Lab. All Rights Reserved.
+ * Copyright 2020 Tianshu AI Platform. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,20 +20,20 @@ package org.dubhe.data.domain.dto;
 import io.swagger.annotations.ApiModelProperty;
 import lombok.Data;
 import org.dubhe.annotation.Query;
+import org.dubhe.base.PageQueryBase;
 import org.dubhe.constant.NumberConstant;
+import org.dubhe.constant.SymbolConstant;
 
 import javax.validation.constraints.Min;
 import javax.validation.constraints.NotNull;
 import java.io.Serializable;
-
-import java.util.Set;
 
 /**
  * @description 数据集版本查询
  * @date 2020-05-25
  */
 @Data
-public class DatasetVersionQueryCriteriaDTO implements Serializable {
+public class DatasetVersionQueryCriteriaDTO extends PageQueryBase implements Serializable{
 
     private static final long serialVersionUID = 1L;
 
@@ -44,7 +44,7 @@ public class DatasetVersionQueryCriteriaDTO implements Serializable {
     private Long datasetId;
 
     @Query(propName = "deleted", type = Query.Type.EQ)
-    @ApiModelProperty(hidden = true)
+    @ApiModelProperty(hidden = true,value = SymbolConstant.ZERO)
     private int deleted;
 
 }

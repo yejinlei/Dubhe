@@ -1,5 +1,5 @@
 /**
- * Copyright 2020 Zhejiang Lab. All Rights Reserved.
+ * Copyright 2020 Tianshu AI Platform. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -76,6 +76,9 @@ public class FileCreateDTO implements Serializable {
 
     @ApiModelProperty(value = "文件名")
     private String name;
+
+    @ApiModelProperty(value = "文件内容")
+    private String content;
 
 
     public FileCreateDTO(String url, Long pid, Integer status, Integer enhanceType, Long userId, Integer width, Integer height) {

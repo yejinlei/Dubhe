@@ -1,5 +1,5 @@
 /**
- * Copyright 2020 Zhejiang Lab. All Rights Reserved.
+ * Copyright 2020 Tianshu AI Platform. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,17 +18,19 @@ package org.dubhe.data.machine.statemachine;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import lombok.Data;
+import org.dubhe.constant.ErrorMessageConstant;
 import org.dubhe.constant.NumberConstant;
 import org.dubhe.data.dao.DatasetVersionFileMapper;
 import org.dubhe.data.domain.entity.Dataset;
 import org.dubhe.data.domain.entity.DatasetVersionFile;
-import org.dubhe.data.exception.StateMachineException;
-import org.dubhe.data.machine.constant.ErrorMessageConstant;
 import org.dubhe.data.machine.enums.DataStateEnum;
 import org.dubhe.data.machine.enums.FileStateEnum;
 import org.dubhe.data.machine.state.AbstractFileState;
 import org.dubhe.data.machine.state.specific.file.*;
 import org.dubhe.data.machine.utils.identify.service.StateIdentify;
+import org.dubhe.enums.LogEnum;
+import org.dubhe.exception.StateMachineException;
+import org.dubhe.utils.LogUtil;
 import org.dubhe.utils.SpringContextHolder;
 import org.dubhe.utils.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -168,15 +170,13 @@ public class FileStateMachine extends AbstractFileState implements Serializable 
     @Override
     public void manualAnnotationSaveEvent(DatasetVersionFile datasetVersionFile) {
         initMemoryFileState(datasetVersionFile.getDatasetId(), datasetVersionFile.getFileId(), datasetVersionFile.getVersionName());
-        if (memoryFileState == manualAnnotationFileState) {
-            return;
-        }
         if (
                 memoryFileState != notAnnotationFileState &&
                         memoryFileState != autoTagCompleteFileState &&
                         memoryFileState != annotationCompleteFileState &&
                         memoryFileState != targetCompleteFileState &&
-                        memoryFileState != annotationNotDistinguishFileState
+                        memoryFileState != annotationNotDistinguishFileState&&
+                        memoryFileState != manualAnnotationFileState
         ) {
             throw new StateMachineException(ErrorMessageConstant.FILE_CHANGE_ERR_MESSAGE);
         }
@@ -191,15 +191,13 @@ public class FileStateMachine extends AbstractFileState implements Serializable 
     @Override
     public void saveCompleteEvent(DatasetVersionFile datasetVersionFile) {
         initMemoryFileState(datasetVersionFile.getDatasetId(), datasetVersionFile.getFileId(), datasetVersionFile.getVersionName());
-        if (memoryFileState == annotationCompleteFileState) {
-            return;
-        }
         if (
                 memoryFileState != notAnnotationFileState &&
                         memoryFileState != autoTagCompleteFileState &&
                         memoryFileState != manualAnnotationFileState &&
                         memoryFileState != targetCompleteFileState &&
-                        memoryFileState != annotationNotDistinguishFileState
+                        memoryFileState != annotationNotDistinguishFileState&&
+                        memoryFileState != annotationCompleteFileState
 
         ) {
             throw new StateMachineException(ErrorMessageConstant.FILE_CHANGE_ERR_MESSAGE);
@@ -232,6 +230,7 @@ public class FileStateMachine extends AbstractFileState implements Serializable 
     public void doFinishAutoAnnotationBatchEvent(HashSet<Long> filesId, Long datasetId, String versionName) {
         initMemoryFileListState(filesId, datasetId, versionName);
         if (memoryFileState != notAnnotationFileState) {
+            LogUtil.error(LogEnum.BIZ_DATASET,"doFinishAutoAnnotationInfoIsEmptyBatchEvent fail"+filesId+memoryFileState);
             throw new StateMachineException(ErrorMessageConstant.FILE_CHANGE_ERR_MESSAGE);
         }
         memoryFileState.doFinishAutoAnnotationBatchEvent(filesId, datasetId, versionName);
@@ -259,6 +258,7 @@ public class FileStateMachine extends AbstractFileState implements Serializable 
     public void doFinishAutoAnnotationInfoIsEmptyBatchEvent(HashSet<Long> filesId, Long datasetId, String versionName) {
         initMemoryFileListState(filesId, datasetId, versionName);
         if (memoryFileState != notAnnotationFileState) {
+            LogUtil.error(LogEnum.BIZ_DATASET,"doFinishAutoAnnotationInfoIsEmptyBatchEvent fail"+filesId+memoryFileState);
             throw new StateMachineException(ErrorMessageConstant.FILE_CHANGE_ERR_MESSAGE);
         }
         memoryFileState.doFinishAutoAnnotationInfoIsEmptyBatchEvent(filesId, datasetId, versionName);

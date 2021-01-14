@@ -1,5 +1,5 @@
 /**
- * Copyright 2020 Zhejiang Lab. All Rights Reserved.
+ * Copyright 2020 Tianshu AI Platform. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,10 +20,12 @@ package org.dubhe.service.impl;
 import org.dubhe.dao.DataSequenceMapper;
 import org.dubhe.domain.entity.DataSequence;
 import org.dubhe.enums.LogEnum;
+import org.dubhe.exception.DataSequenceException;
 import org.dubhe.service.DataSequenceService;
 import org.dubhe.utils.LogUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 
 /**
@@ -62,4 +64,22 @@ public class DataSequenceServiceImpl implements DataSequenceService {
         String oldTableName = tableName.substring(0,tableName.lastIndexOf("_"));
         dataSequenceMapper.createNewTable(tableName,oldTableName);
     }
+
+    /**
+     * 扩容可用数量
+     *
+     * @param businessCode 业务编码
+     * @return DataSequence 数据ID序列
+     */
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public DataSequence expansionUsedNumber(String businessCode) {
+        DataSequence dataSequenceNew = getSequence(businessCode);
+        if (dataSequenceNew == null || dataSequenceNew.getStart() == null || dataSequenceNew.getStep() == null) {
+            throw new DataSequenceException("配置出错，请检查data_sequence表配置");
+        }
+        updateSequenceStart(businessCode);
+        return dataSequenceNew;
+    }
+
 }

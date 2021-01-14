@@ -1,5 +1,5 @@
 /**
- * Copyright 2020 Zhejiang Lab. All Rights Reserved.
+ * Copyright 2020 Tianshu AI Platform. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -266,8 +266,6 @@ public class JupyterResourceApiImpl implements JupyterResourceApi {
     }
 
     private class JupyterDeployer {
-        private static final String SUB_RESOURCE_NAME_TEMPLATE = "{}-{}-{}";
-
         private String baseName;
         private String statefulSetName;
         private String secretName;
@@ -684,9 +682,9 @@ public class JupyterResourceApiImpl implements JupyterResourceApi {
          * 生成资源名
          */
         private void generateResourceName() {
-            this.secretName = StrUtil.format(SUB_RESOURCE_NAME_TEMPLATE, baseName, SymbolConstant.TOKEN, RandomUtil.randomString(MagicNumConstant.FIVE));
-            this.ingressName = StrUtil.format(SUB_RESOURCE_NAME_TEMPLATE, baseName, K8sParamConstants.INGRESS_SUFFIX, RandomUtil.randomString(MagicNumConstant.FIVE));
-            this.svcName = StrUtil.format(SUB_RESOURCE_NAME_TEMPLATE, baseName, K8sParamConstants.SVC_SUFFIX, RandomUtil.randomString(MagicNumConstant.FIVE));
+            this.secretName = StrUtil.format(K8sParamConstants.SUB_RESOURCE_NAME_TEMPLATE, baseName, SymbolConstant.TOKEN, RandomUtil.randomString(MagicNumConstant.FIVE));
+            this.ingressName = StrUtil.format(K8sParamConstants.SUB_RESOURCE_NAME_TEMPLATE, baseName, K8sParamConstants.INGRESS_SUFFIX, RandomUtil.randomString(MagicNumConstant.FIVE));
+            this.svcName = StrUtil.format(K8sParamConstants.SUB_RESOURCE_NAME_TEMPLATE, baseName, K8sParamConstants.SVC_SUFFIX, RandomUtil.randomString(MagicNumConstant.FIVE));
         }
     }
 }

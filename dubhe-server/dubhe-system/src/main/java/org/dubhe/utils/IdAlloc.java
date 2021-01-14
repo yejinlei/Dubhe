@@ -1,5 +1,5 @@
 /**
- * Copyright 2020 Zhejiang Lab. All Rights Reserved.
+ * Copyright 2020 Tianshu AI Platform. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,10 @@
 package org.dubhe.utils;
 
 import lombok.Data;
+import org.dubhe.domain.entity.DataSequence;
+
+import java.util.LinkedList;
+import java.util.Queue;
 
 /**
  * @description 表ID值存储
@@ -25,25 +29,41 @@ import lombok.Data;
  */
 @Data
 public class IdAlloc {
-    /**
-     * 起始位置
-     */
-    private long startNumber;
 
-    /**
-     * 结束位置
-     */
-    private long endNumber;
+    private Queue<Long> ids;
 
-    /**
-     * 可用数量
-     */
-    private long usedNumber;
+    private Long unUsed;
 
     public IdAlloc() {
-        this.startNumber = 0;
-        this.endNumber = 0;
-        this.usedNumber = 0;
+        ids = new LinkedList<>();
+        unUsed = 0L;
+    }
+
+    /**
+     * 补充ID
+     *
+     * @param dataSequence 序列表实体
+     */
+    public void add(DataSequence dataSequence) {
+        for (Long i = dataSequence.getStart(); i < dataSequence.getStart() + dataSequence.getStep(); i++) {
+            ids.add(i);
+            unUsed++;
+        }
+    }
+
+    /**
+     * 队列ID减少
+     *
+     * @param number 减少数量
+     * @return  队列
+     */
+    public Queue<Long> poll(int number) {
+        Queue<Long> result = new LinkedList<>();
+        for (int i = 0; i < number; i++) {
+            result.add(ids.poll());
+            unUsed--;
+        }
+        return result;
     }
 
 }

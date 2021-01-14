@@ -1,5 +1,5 @@
 /**
- * Copyright 2020 Zhejiang Lab. All Rights Reserved.
+ * Copyright 2020 Tianshu AI Platform. All Rights Reserved.
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,22 +28,26 @@ import java.util.regex.Pattern;
  */
 @Slf4j
 public class RegexUtil {
-    private static  final String DIGIT = "^[0-9]*$";
+    private static final String DIGIT = "^[0-9]*$";
+    private static final String FLOAT = "^[-+]?[0-9]*\\.?[0-9]+$";
+
     /**
-     * str待匹配文本
-     * regex 正则表达式
-     *返回str中匹配regex的第一个子串
+     * 字符串匹配
+     *
+     * @param str 待匹配文本
+     * @param regex 正则表达式
+     * @return 返回str中匹配regex的第一个子串
      */
-    public static String getMatcher(String str,String regex) {
-        try{
-            if (StringUtils.isEmpty(str) || StringUtils.isEmpty(regex)){
+    public static String getMatcher(String str, String regex) {
+        try {
+            if (StringUtils.isEmpty(str) || StringUtils.isEmpty(regex)) {
                 return "";
             }
             Pattern p = Pattern.compile(regex, Pattern.CASE_INSENSITIVE);
             Matcher matcher = p.matcher(str);
             matcher.find();
             return matcher.group();
-        }catch (IllegalStateException e){
+        } catch (IllegalStateException e) {
             log.error(e.getMessage(), e);
             return "";
         }
@@ -51,13 +55,27 @@ public class RegexUtil {
 
     /**
      * 数字匹配
+     *
      * @param str
      * @return
      */
-    public static boolean isDigits(String str){
-        if (StringUtils.isEmpty(str)){
+    public static boolean isDigits(String str) {
+        if (StringUtils.isEmpty(str)) {
             return false;
         }
         return str.matches(DIGIT);
+    }
+
+    /**
+     * 浮点数匹配
+     *
+     * @param str
+     * @return
+     */
+    public static boolean isFloat(String str) {
+        if (StringUtils.isEmpty(str)) {
+            return false;
+        }
+        return str.matches(FLOAT);
     }
 }

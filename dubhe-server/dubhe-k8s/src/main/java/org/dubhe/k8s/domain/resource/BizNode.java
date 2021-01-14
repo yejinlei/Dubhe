@@ -1,5 +1,5 @@
 /**
- * Copyright 2020 Zhejiang Lab. All Rights Reserved.
+ * Copyright 2020 Tianshu AI Platform. All Rights Reserved.
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@
 package org.dubhe.k8s.domain.resource;
 
 import cn.hutool.core.collection.CollectionUtil;
+import io.fabric8.kubernetes.api.model.Taint;
 import org.dubhe.k8s.annotation.K8sField;
 import org.dubhe.k8s.domain.PtBaseResult;
 import com.google.common.collect.Maps;
@@ -65,6 +66,12 @@ public class BizNode extends PtBaseResult<BizNode> {
      */
     @K8sField("spec:unschedulable")
     private boolean unschedulable;
+    /**
+     * 污点
+     */
+    @K8sField("spec:taints")
+    private List<BizTaint> taints;
+
     /**
      * 节点可到达的地址列表，主机名和ip
      */

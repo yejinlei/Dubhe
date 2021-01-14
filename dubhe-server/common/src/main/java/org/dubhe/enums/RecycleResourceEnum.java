@@ -1,5 +1,5 @@
 /**
- * Copyright 2020 Zhejiang Lab. All Rights Reserved.
+ * Copyright 2020 Tianshu AI Platform. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,10 +33,20 @@ public enum RecycleResourceEnum {
      * 数据集文件回收
      */
     DATASET_RECYCLE_FILE("datasetRecycleFile", "数据集文件回收"),
+
+    /**
+     * 医学数据集文件回收
+     */
+    DATAMEDICINE_RECYCLE_FILE("dataMedicineRecycleFile", "数据集文件回收"),
+
     /**
      * 数据集版本文件回收
      */
     DATASET_RECYCLE_VERSION_FILE("datasetRecycleVersionFile", "数据集版本文件回收"),
+    /**
+     * 云端Serving输入文件回收
+     */
+    SERVING_RECYCLE_FILE("servingRecycleFile", "云端Serving文件回收"),
 
     ;
 

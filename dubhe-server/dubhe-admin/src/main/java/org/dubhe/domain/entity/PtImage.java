@@ -1,5 +1,5 @@
 /**
- * Copyright 2020 Zhejiang Lab. All Rights Reserved.
+ * Copyright 2020 Tianshu AI Platform. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,7 +30,7 @@ import org.dubhe.base.BaseEntity;
 @EqualsAndHashCode(callSuper = true)
 @Data
 @Accessors(chain = true)
-@TableName(value = "pt_image")
+@TableName(value = "pt_image", autoResultMap = true)
 public class PtImage extends BaseEntity {
 
     /**
@@ -85,6 +85,6 @@ public class PtImage extends BaseEntity {
     /**
      * 资源拥有者ID
      */
-    @TableField(value = "origin_user_id",fill = FieldFill.INSERT)
+    @TableField(value = "origin_user_id", fill = FieldFill.INSERT)
     private Long originUserId;
 }

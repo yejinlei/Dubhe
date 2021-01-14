@@ -1,5 +1,5 @@
 /**
- * Copyright 2020 Zhejiang Lab. All Rights Reserved.
+ * Copyright 2020 Tianshu AI Platform. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,13 +18,15 @@
 package org.dubhe.data.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
-import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import org.dubhe.data.dao.DatasetGroupLabelMapper;
 import org.dubhe.data.domain.entity.DatasetGroupLabel;
 import org.dubhe.data.service.DatasetGroupLabelService;
+import org.dubhe.data.service.LabelGroupService;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 
+import javax.annotation.Resource;
 import java.util.List;
 
 /**
@@ -35,6 +37,10 @@ import java.util.List;
 public class DatasetGroupLabelServiceImpl extends ServiceImpl<DatasetGroupLabelMapper, DatasetGroupLabel> implements DatasetGroupLabelService {
 
 
+    @Resource
+    @Lazy
+    private LabelGroupService labelGroupService;
+    
     /**
      * 新增标签组标签中间表信息
      *
@@ -77,6 +83,7 @@ public class DatasetGroupLabelServiceImpl extends ServiceImpl<DatasetGroupLabelM
      */
     @Override
     public void deleteById(Long groupId) {
-        getBaseMapper().delete(new LambdaUpdateWrapper<DatasetGroupLabel>().eq(DatasetGroupLabel::getLabelGroupId,groupId));
+        getBaseMapper().deleteByGroupId(groupId);
     }
+
 }

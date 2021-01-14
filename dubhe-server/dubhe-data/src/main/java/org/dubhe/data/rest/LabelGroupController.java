@@ -1,5 +1,5 @@
 /**
- * Copyright 2020 Zhejiang Lab. All Rights Reserved.
+ * Copyright 2020 Tianshu AI Platform. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,10 +23,8 @@ import io.swagger.annotations.ApiOperation;
 import org.apache.shiro.authz.annotation.RequiresPermissions;
 import org.dubhe.base.DataResponseBody;
 import org.dubhe.data.constant.Constant;
-import org.dubhe.data.domain.dto.LabelGroupCopyDTO;
-import org.dubhe.data.domain.dto.LabelGroupCreateDTO;
-import org.dubhe.data.domain.dto.LabelGroupDeleteDTO;
-import org.dubhe.data.domain.dto.LabelGroupImportDTO;
+import org.dubhe.data.domain.dto.*;
+import org.dubhe.data.domain.entity.LabelGroup;
 import org.dubhe.data.domain.vo.LabelGroupQueryVO;
 import org.dubhe.data.domain.vo.LabelGroupVO;
 import org.dubhe.data.service.LabelGroupService;
@@ -34,6 +32,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+
+import java.util.List;
 
 import static org.dubhe.constant.Permissions.DATA;
 
@@ -73,10 +73,12 @@ public class LabelGroupController {
     }
 
     @ApiOperation(value = "标签组列表")
-    @GetMapping(value = "/labelGroup/getList/{type}")
+    @GetMapping(value = "/labelGroup/getList")
     @RequiresPermissions(DATA)
-    public DataResponseBody query(@PathVariable(name = "type") Integer type) {
-        return new DataResponseBody(labelGroupService.getList(type));
+    public DataResponseBody query(@Validated LabelGroupQueryDTO labelGroupQueryDTO) {
+        List<LabelGroup> list = labelGroupService.getList(labelGroupQueryDTO);
+        return new DataResponseBody(list);
+
     }
 
     @ApiOperation(value = "标签组编辑")

@@ -1,5 +1,5 @@
 /**
- * Copyright 2020 Zhejiang Lab. All Rights Reserved.
+ * Copyright 2020 Tianshu AI Platform. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -142,31 +142,24 @@ public class PtTrainParam extends BaseEntity {
      */
     @TableField(value = "val_type")
     private Integer valType;
-    /**
-     * 模型名称
-     */
-    @TableField(value = "model_name")
-    private String modelName;
+
     /**
      * 模型id
      */
     @TableField(value = "model_id")
-    private Integer modelId;
+    private Long modelId;
+
+    /**
+     * 模型版本对应id
+     */
+    @TableField(value = "model_branch_id")
+    private Long modelBranchId;
+
     /**
      * 模型来源
      */
     @TableField(value = "model_resource")
     private Integer modelResource;
-    /**
-     * 模型类型
-     */
-    @TableField(value = "model_type")
-    private Integer modelType;
-    /**
-     * 模型路径
-     */
-    @TableField(value = "model_load_dir")
-    private String modelLoadPathDir;
 
     /**
      * 训练类型,0:普通训练，1：分布式训练
@@ -179,6 +172,12 @@ public class PtTrainParam extends BaseEntity {
      */
     @TableField(value = "origin_user_id",fill = FieldFill.INSERT)
     private Long originUserId;
+
+    @TableField(value = "teacher_model_ids")
+    private String teacherModelIds;
+
+    @TableField(value = "student_model_ids")
+    private String studentModelIds;
 
 }
 

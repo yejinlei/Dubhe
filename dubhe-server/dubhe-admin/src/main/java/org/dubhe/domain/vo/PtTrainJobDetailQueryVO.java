@@ -1,5 +1,5 @@
 /**
- * Copyright 2020 Zhejiang Lab. All Rights Reserved.
+ * Copyright 2020 Tianshu AI Platform. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -161,6 +161,18 @@ public class PtTrainJobDetailQueryVO implements Serializable {
     @ApiModelProperty("训练信息(失败信息)")
     private String trainMsg;
 
-    @ApiModelProperty("模型名称")
-    private String modelName;
+    @ApiModelProperty(value = "模型类型(0我的模型1预置模型2炼知模型)")
+    private Integer modelResource;
+
+    @ApiModelProperty(value = "非炼知模型id")
+    private Long modelId;
+
+    @ApiModelProperty(value = "我的模型版本对应的id")
+    private Long modelBranchId;
+
+    @ApiModelProperty(value = "炼知教师模型ids,多个id之前用','隔开")
+    private String teacherModelIds;
+
+    @ApiModelProperty(value = "炼知学生模型ids,多个id之前用','隔开")
+    private String studentModelIds;
 }

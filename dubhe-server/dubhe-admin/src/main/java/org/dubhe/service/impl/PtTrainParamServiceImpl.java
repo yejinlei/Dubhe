@@ -1,5 +1,5 @@
 /**
- * Copyright 2020 Zhejiang Lab. All Rights Reserved.
+ * Copyright 2020 Tianshu AI Platform. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,36 +17,55 @@
 
 package org.dubhe.service.impl;
 
+import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.util.StrUtil;
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import org.dubhe.annotation.DataPermissionMethod;
 import org.dubhe.base.MagicNumConstant;
 import org.dubhe.base.ResponseCode;
-import org.dubhe.constant.SymbolConstant;
 import org.dubhe.config.TrainJobConfig;
-import org.dubhe.dao.ModelQueryMapper;
+import org.dubhe.constant.SymbolConstant;
+import org.dubhe.dao.PtModelBranchMapper;
+import org.dubhe.dao.PtModelInfoMapper;
 import org.dubhe.dao.PtTrainAlgorithmMapper;
 import org.dubhe.dao.PtTrainParamMapper;
 import org.dubhe.data.constant.Constant;
-import org.dubhe.domain.dto.*;
-import org.dubhe.domain.entity.ModelQuery;
-import org.dubhe.domain.entity.ModelQueryBrance;
+import org.dubhe.domain.PtModelBranch;
+import org.dubhe.domain.PtModelInfo;
+import org.dubhe.domain.dto.BaseTrainParamDTO;
+import org.dubhe.domain.dto.PtTrainParamCreateDTO;
+import org.dubhe.domain.dto.PtTrainParamDeleteDTO;
+import org.dubhe.domain.dto.PtTrainParamQueryDTO;
+import org.dubhe.domain.dto.PtTrainParamUpdateDTO;
+import org.dubhe.domain.dto.UserDTO;
 import org.dubhe.domain.entity.PtTrainAlgorithm;
 import org.dubhe.domain.entity.PtTrainParam;
 import org.dubhe.domain.vo.PtTrainParamQueryVO;
 import org.dubhe.enums.DatasetTypeEnum;
 import org.dubhe.enums.LogEnum;
+import org.dubhe.enums.ModelResourceEnum;
 import org.dubhe.exception.BusinessException;
 import org.dubhe.service.PtTrainParamService;
-import org.dubhe.utils.*;
+import org.dubhe.utils.ImageUtil;
+import org.dubhe.utils.JwtUtils;
+import org.dubhe.utils.LogUtil;
+import org.dubhe.utils.PageUtil;
+import org.dubhe.utils.StringUtils;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
@@ -66,7 +85,11 @@ public class PtTrainParamServiceImpl implements PtTrainParamService {
     private ImageUtil imageUtil;
 
     @Autowired
-    private ModelQueryMapper modelQueryMapper;
+    private PtModelInfoMapper ptModelInfoMapper;
+
+    @Autowired
+    private PtModelBranchMapper ptModelBranchMapper;
+
     /**
      * 参数列表展示
      *
@@ -148,20 +171,11 @@ public class PtTrainParamServiceImpl implements PtTrainParamService {
         Integer algorithmSource = ptTrainAlgorithm.getAlgorithmSource();
         //保存任务参数
         PtTrainParam ptTrainParam = new PtTrainParam();
-        //模型名称
-        ModelQuery modelName = modelQueryMapper.findModelNameById(ptTrainParamCreateDTO.getModelId());
-        //模型版本
-        ModelQueryBrance modelVersion = modelQueryMapper.findModelVersionByUrl(ptTrainParamCreateDTO.getModelLoadPathDir());
-        if(modelName!=null){
-            String name = modelName.getName();
-            if(modelVersion!=null){
-                ptTrainParamCreateDTO.setModelName(name+ SymbolConstant.COLON +modelVersion.getVersion());
-            }else {
-                //设置预置模型的url路径
-                ptTrainParamCreateDTO.setModelLoadPathDir(modelName.getUrl());
-                ptTrainParamCreateDTO.setModelName(name);
-            }
-        }
+        //模型检测
+        BaseTrainParamDTO baseTrainParamDTO = new BaseTrainParamDTO();
+        BeanUtil.copyProperties(ptTrainParamCreateDTO, baseTrainParamDTO);
+        checkModel(user, baseTrainParamDTO);
+
         BeanUtils.copyProperties(ptTrainParamCreateDTO, ptTrainParam);
         //获取镜像
         String images = imageUtil.getImageUrl(ptTrainParamCreateDTO, user);
@@ -175,6 +189,92 @@ public class PtTrainParamServiceImpl implements PtTrainParamService {
         //返回新增任务参数id
         LogUtil.info(LogEnum.BIZ_TRAIN, "End of user {} saving task parameters, return new task parameter ID ={}", user.getUsername(), ptTrainParam.getId());
         return Collections.singletonList(ptTrainParam.getId());
+    }
+
+    /**
+     * 检查模型是否合法
+     *
+     * @param currentUser         用户
+     * @param baseTrainParamDTO   基础训练模板参数
+     */
+    private void checkModel(UserDTO currentUser, BaseTrainParamDTO baseTrainParamDTO) {
+
+        Integer modelResource = baseTrainParamDTO.getModelResource();
+        if(null == modelResource ) {
+            if(null == baseTrainParamDTO.getModelId() &&
+                    StringUtils.isBlank(baseTrainParamDTO.getStudentModelIds()) &&
+                    StringUtils.isBlank(baseTrainParamDTO.getStudentModelIds())) {
+                return;
+            } else {
+                logErrorInfoOnModel(currentUser.getUsername());
+            }
+        }
+        switch (ModelResourceEnum.getType(modelResource)) {
+            case MINE:
+                if(null == baseTrainParamDTO.getModelBranchId() || null == baseTrainParamDTO.getModelId() ||
+                        StringUtils.isNotBlank(baseTrainParamDTO.getTeacherModelIds()) ||
+                        StringUtils.isNotBlank(baseTrainParamDTO.getStudentModelIds())) {
+                    logErrorInfoOnModel(currentUser.getUsername());
+                }
+                PtModelBranch ptModelBranch = ptModelBranchMapper.selectById(baseTrainParamDTO.getModelBranchId());
+                if(null == ptModelBranch || ptModelBranch.getParentId().compareTo(baseTrainParamDTO.getModelId()) != 0 ||
+                        StringUtils.isBlank(ptModelBranch.getModelAddress())) {
+                    logErrorInfoOnModel(currentUser.getUsername());
+                }
+                PtModelInfo ptModelInfo = ptModelInfoMapper.selectById(ptModelBranch.getParentId());
+                if(null == ptModelInfo || ptModelInfo.getModelResource().compareTo(baseTrainParamDTO.getModelResource()) != 0){
+                    logErrorInfoOnModel(currentUser.getUsername());
+                }
+                break;
+            case PRESET:
+                if(null == baseTrainParamDTO.getModelId() || StringUtils.isNotBlank(baseTrainParamDTO.getTeacherModelIds()) ||
+                        StringUtils.isNotBlank(baseTrainParamDTO.getStudentModelIds())) {
+                    logErrorInfoOnModel(currentUser.getUsername());
+                }
+                PtModelInfo ptModelInfoPreset = ptModelInfoMapper.selectById(baseTrainParamDTO.getModelId());
+                if(null == ptModelInfoPreset || StringUtils.isBlank(ptModelInfoPreset.getUrl()) ||
+                        ptModelInfoPreset.getModelResource().compareTo(baseTrainParamDTO.getModelResource()) != 0) {
+                    logErrorInfoOnModel(currentUser.getUsername());
+                }
+                break;
+            case ATLAS:
+                if(StringUtils.isBlank(baseTrainParamDTO.getTeacherModelIds()) || null != baseTrainParamDTO.getModelId()){
+                    logErrorInfoOnModel(currentUser.getUsername());
+                }
+                Set<Long> ids = new HashSet<>();
+                Set<Long> teacherModelList = new HashSet<>();
+                Arrays.stream(baseTrainParamDTO.getTeacherModelIds().trim().split(SymbolConstant.COMMA))
+                        .forEach(id -> teacherModelList.add(Long.parseLong(id)));
+                ids.addAll(teacherModelList);
+
+                Set<Long> studentModelList = new HashSet<>();
+                if(StringUtils.isNotBlank(baseTrainParamDTO.getStudentModelIds())) {
+                    Arrays.stream(baseTrainParamDTO.getStudentModelIds().trim().split(SymbolConstant.COMMA))
+                            .forEach(id -> studentModelList.add(Long.parseLong(id)));
+                    ids.addAll(studentModelList);
+                }
+                if(ids.isEmpty()) {
+                    logErrorInfoOnModel(currentUser.getUsername());
+                }
+                LambdaQueryWrapper<PtModelInfo> query = new LambdaQueryWrapper<>();
+                query.eq(PtModelInfo::getModelResource, baseTrainParamDTO.getModelResource())
+                        .in(PtModelInfo::getId, ids).isNotNull(PtModelInfo::getUrl).ne(PtModelInfo::getUrl, SymbolConstant.BLANK);
+                List<PtModelInfo> modelInfoList = ptModelInfoMapper.selectList(query);
+                if(null == modelInfoList || modelInfoList.size() < ids.size()) {
+                    logErrorInfoOnModel(currentUser.getUsername());
+                }
+                break;
+        }
+    }
+
+    /**
+     * 打印训练模板中模型相关的错误日志
+     *
+     * @param username
+     */
+    private void logErrorInfoOnModel(String username){
+        LogUtil.error(LogEnum.BIZ_TRAIN, "User {} operating training param, error on model......", username);
+        throw new BusinessException("模型参数不合法");
     }
 
     /**
@@ -194,21 +294,10 @@ public class PtTrainParamServiceImpl implements PtTrainParamService {
         checkUpdateTrainParam(ptTrainParamUpdateDTO, user);
         //修改任务参数
         PtTrainParam ptTrainParam = new PtTrainParam();
-        //模型名称
-        ModelQuery modelName = modelQueryMapper.findModelNameById(ptTrainParamUpdateDTO.getModelId());
-        //模型版本
-        ModelQueryBrance modelVersion = modelQueryMapper.findModelVersionByUrl(ptTrainParamUpdateDTO.getModelLoadPathDir());
-        //设置版本
-        if(modelName!=null){
-           String name=modelName.getName();
-           if(modelVersion!=null){
-               ptTrainParamUpdateDTO.setModelName(name+SymbolConstant.COLON+modelVersion.getVersion());
-           }else {
-               //设置预置模型的url值
-               ptTrainParamUpdateDTO.setModelLoadPathDir(modelName.getUrl());
-               ptTrainParamUpdateDTO.setModelName(name);
-           }
-        }
+        //模型检测
+        BaseTrainParamDTO baseTrainParamDTO = new BaseTrainParamDTO();
+        BeanUtil.copyProperties(ptTrainParamUpdateDTO, baseTrainParamDTO);
+        checkModel(user, baseTrainParamDTO);
 
         BeanUtils.copyProperties(ptTrainParamUpdateDTO, ptTrainParam);
         ptTrainParam.setUpdateUserId(user.getId());

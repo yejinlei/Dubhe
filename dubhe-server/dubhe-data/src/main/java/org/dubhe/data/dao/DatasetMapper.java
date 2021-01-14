@@ -1,5 +1,5 @@
 /**
- * Copyright 2020 Zhejiang Lab. All Rights Reserved.
+ * Copyright 2020 Tianshu AI Platform. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,10 +20,10 @@ package org.dubhe.data.dao;
 import com.baomidou.mybatisplus.core.conditions.Wrapper;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
-import org.apache.ibatis.annotations.*;
-import org.apache.ibatis.mapping.FetchType;
+import org.apache.ibatis.annotations.Param;
+import org.apache.ibatis.annotations.Select;
+import org.apache.ibatis.annotations.Update;
 import org.dubhe.annotation.DataPermission;
-import org.dubhe.constant.PermissionConstant;
 import org.dubhe.data.domain.entity.Dataset;
 
 /**
@@ -49,7 +49,7 @@ public interface DatasetMapper extends BaseMapper<Dataset> {
      * @param id          数据集ID
      * @param versionName 数据集版本名称
      */
-    @Update("update data_dataset set current_version_name = #{versionName} where id = #{id}")
+    @Update("update data_dataset set current_version_name = #{versionName}  where id = #{id}")
     void updateVersionName(@Param("id") Long id, @Param("versionName") String versionName);
 
     /**
@@ -61,21 +61,12 @@ public interface DatasetMapper extends BaseMapper<Dataset> {
     @Update("update data_dataset set status = #{status} where id = #{datasetId}")
     void updateStatus(@Param("datasetId") Long datasetId, @Param("status") Integer status);
 
-    /**
-     * 更新数据集解压状态
-     * @param datasetId   数据集ID
-     * @param sourceState 压缩开始状态
-     * @param targetState 压缩结束状态
-     * @return int 被修改行数
-     */
-    @Update("update data_dataset set decompress_state = #{targetState} where id = #{datasetId} and decompress_state = #{sourceState}")
-    int updateDecompressState(@Param("datasetId") Long datasetId, @Param("sourceState") Integer sourceState, @Param("targetState") Integer targetState);
 
     /**
      * 获取指定类型数据集的数量
      *
      * @param type 数据集类型
-     * @return     公共数据集的数量
+     * @return int  公共数据集的数量
      */
     @Select("SELECT count(1) FROM data_dataset where type = #{type}")
     int selectCountByPublic(@Param("type") Integer type);
@@ -85,7 +76,7 @@ public interface DatasetMapper extends BaseMapper<Dataset> {
      * 根据标签组ID查询关联的数据集数量
      *
      * @param labelGroupId 标签组ID
-     * @return 数量
+     * @return int 数量
      */
     @Select("SELECT count(1) FROM data_dataset where label_group_id = #{labelGroupId}")
     int getCountByLabelGroupId(@Param("labelGroupId")Long labelGroupId);

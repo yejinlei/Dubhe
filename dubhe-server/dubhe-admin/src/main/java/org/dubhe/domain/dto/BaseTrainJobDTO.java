@@ -1,5 +1,5 @@
 /**
- * Copyright 2020 Zhejiang Lab. All Rights Reserved.
+ * Copyright 2020 Tianshu AI Platform. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,6 +22,7 @@ import lombok.experimental.Accessors;
 import org.dubhe.domain.entity.PtTrainJobSpecs;
 
 import java.io.Serializable;
+import java.util.List;
 
 /**
  * @description 创建训练任务的数据包
@@ -42,6 +43,14 @@ public class BaseTrainJobDTO implements Serializable {
     private String visualizedLogPath;
     private Integer delayCreateTime;
     private Integer delayDeleteTime;
+    private String modelPath;
+    private List<String> teacherModelPathList;
+    private List<String> studentModelPathList;
+    private Long modelId;
+    private Long modelBranchId;
+    private Integer modelResource;
+    private String teacherModelIds;
+    private String studentModelIds;
 
     /**
      * @return 每个节点的GPU数量

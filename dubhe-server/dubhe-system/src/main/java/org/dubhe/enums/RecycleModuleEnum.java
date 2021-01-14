@@ -1,5 +1,5 @@
 /**
- * Copyright 2020 Zhejiang Lab. All Rights Reserved.
+ * Copyright 2020 Tianshu AI Platform. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,7 +28,9 @@ public enum RecycleModuleEnum {
     BIZ_ALGORITHM(4, "算法管理"),
     BIZ_IMAGE(5, "镜像管理"),
     BIZ_MODEL_OPT(6, "模型优化"),
-    BIZ_MODEL(7, "模型管理");
+    BIZ_MODEL(7, "模型管理"),
+    BIZ_SERVING(8, "云端Serving"),
+    BIZ_DATAMEDICINE(9, "医学影像");
 
     private Integer value;
 

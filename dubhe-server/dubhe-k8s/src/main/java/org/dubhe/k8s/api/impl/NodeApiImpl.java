@@ -1,5 +1,5 @@
 /**
- * Copyright 2020 Zhejiang Lab. All Rights Reserved.
+ * Copyright 2020 Tianshu AI Platform. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@
 
 package org.dubhe.k8s.api.impl;
 
+import cn.hutool.core.collection.CollectionUtil;
 import com.alibaba.fastjson.JSON;
 import com.baomidou.mybatisplus.core.toolkit.CollectionUtils;
 import io.fabric8.kubernetes.api.model.Node;
@@ -42,13 +43,8 @@ import org.dubhe.utils.LogUtil;
 import org.dubhe.utils.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.math.BigDecimal;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
@@ -272,6 +268,19 @@ public class NodeApiImpl implements NodeApi {
         return LackOfResourcesEnum.ADEQUATE;
     }
 
+    /**
+     * 判断是否超出总可分配gpu数
+     * @param gpuNum
+     * @return LackOfResourcesEnum 资源缺乏枚举类
+     */
+    public LackOfResourcesEnum isOutOfTotalAllocatableGpu(Integer gpuNum){
+        Integer remainingGpuNum = getTotalGpuNum() - getAllocatedGpuNum();
+        if (gpuNum > remainingGpuNum){
+            return LackOfResourcesEnum.LACK_OF_GPU;
+        }else {
+            return LackOfResourcesEnum.ADEQUATE;
+        }
+    }
 
     /**
      * 查询节点内存资源是否可分配
@@ -340,7 +349,6 @@ public class NodeApiImpl implements NodeApi {
         });
 
         return nodeItemResults;
-
     }
 
 
@@ -356,12 +364,7 @@ public class NodeApiImpl implements NodeApi {
         List<String> nodeNameList = new ArrayList<>();
         nodeItems = nodeItems.stream().filter(node -> node.getStatus().getCapacity().containsKey(K8sParamConstants.GPU_RESOURCE_KEY)).collect(Collectors.toList());
 
-        PodList podList = client.pods().list();
-        List<Pod> podItems = podList.getItems();
-        podItems = podItems.stream().filter(pod ->
-                pod.getSpec().getContainers().get(0).getResources().getLimits() != null
-                        && pod.getSpec().getContainers().get(0).getResources().getLimits().containsKey(K8sParamConstants.GPU_RESOURCE_KEY)
-                        && pod.getStatus().getPhase().equals(PodPhaseEnum.RUNNING.getPhase())).collect(Collectors.toList());
+        List<Pod> podItems = filterRequestGpuPod();
         Map<String, Integer> allocatableGpu = new HashMap();
 
         for (Node nodeItem : nodeItems) {
@@ -389,5 +392,41 @@ public class NodeApiImpl implements NodeApi {
             nodeItemResults.addAll(collect);
         }
         return nodeItemResults;
+    }
+
+    /**
+     * 获取申请了gpu的pod列表
+     * @return
+     */
+    private List<Pod> filterRequestGpuPod(){
+        PodList podList = client.pods().list();
+        if (CollectionUtil.isNotEmpty(podList.getItems())){
+            return podList.getItems().stream().filter(pod ->
+                    pod.getSpec().getContainers().get(0).getResources().getLimits() != null &&
+                    pod.getSpec().getContainers().get(0).getResources().getLimits().containsKey(K8sParamConstants.GPU_RESOURCE_KEY) &&
+                    pod.getStatus().getPhase().equals(PodPhaseEnum.RUNNING.getPhase())).collect(Collectors.toList());
+        }
+        return new ArrayList<>();
+    }
+
+    /**
+     * 查询集群已分配gpu数量
+     * @return
+     */
+    private Integer getAllocatedGpuNum(){
+        return filterRequestGpuPod().stream().mapToInt(pod->
+                pod.getSpec().getContainers().stream().mapToInt(container ->
+                        Integer.valueOf(String.valueOf(container.getResources().getLimits().get(K8sParamConstants.GPU_RESOURCE_KEY).getAmount()))).sum())
+                .sum();
+    }
+
+    /**
+     * 查询集群总gpu数量
+     * @return
+     */
+    private Integer getTotalGpuNum(){
+        return listAll().stream()
+                .filter(node -> !node.isUnschedulable() && node.getCapacity().containsKey(K8sParamConstants.GPU_RESOURCE_KEY) && CollectionUtils.isEmpty(node.getTaints()))
+                .mapToInt(node -> Integer.valueOf(String.valueOf(node.getCapacity().get(K8sParamConstants.GPU_RESOURCE_KEY).getAmount()))).sum();
     }
 }

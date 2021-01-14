@@ -1,5 +1,5 @@
 /**
- * Copyright 2020 Zhejiang Lab. All Rights Reserved.
+ * Copyright 2020 Tianshu AI Platform. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,37 +20,34 @@ package org.dubhe.data.service.impl;
 import cn.hutool.core.collection.CollectionUtil;
 import cn.hutool.core.collection.ConcurrentHashSet;
 import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.JSONObject;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import org.dubhe.annotation.DataPermissionMethod;
 import org.dubhe.base.MagicNumConstant;
 import org.dubhe.base.ResponseCode;
-import org.dubhe.data.constant.Constant;
-import org.dubhe.data.constant.DataTaskTypeEnum;
-import org.dubhe.data.constant.DatatypeEnum;
-import org.dubhe.data.constant.ErrorEnum;
+import org.dubhe.constant.NumberConstant;
+import org.dubhe.data.constant.*;
 import org.dubhe.data.domain.bo.TaskSplitBO;
 import org.dubhe.data.domain.dto.*;
-import org.dubhe.data.domain.entity.Dataset;
-import org.dubhe.data.domain.entity.DatasetVersionFile;
-import org.dubhe.data.domain.entity.File;
-import org.dubhe.data.domain.vo.FileVO;
+import org.dubhe.data.domain.entity.*;
 import org.dubhe.data.machine.constant.DataStateMachineConstant;
 import org.dubhe.data.machine.constant.FileStateCodeConstant;
 import org.dubhe.data.machine.constant.FileStateMachineConstant;
-import org.dubhe.data.machine.dto.StateChangeDTO;
+import org.dubhe.data.machine.enums.FileStateEnum;
 import org.dubhe.data.machine.utils.StateMachineUtil;
 import org.dubhe.data.service.*;
 import org.dubhe.data.service.store.IStoreService;
 import org.dubhe.data.service.store.MinioStoreServiceImpl;
+import org.dubhe.dto.StateChangeDTO;
 import org.dubhe.enums.LogEnum;
 import org.dubhe.enums.OperationTypeEnum;
 import org.dubhe.exception.BusinessException;
 import org.dubhe.utils.LogUtil;
-import org.dubhe.utils.MinioUtil;
+import org.dubhe.utils.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.CollectionUtils;
 
 import javax.annotation.PostConstruct;
 import javax.annotation.Resource;
@@ -96,23 +93,6 @@ public class AnnotationServiceImpl implements AnnotationService {
     @Autowired
     private DatasetVersionFileService datasetVersionFileService;
 
-    /**
-     * minIO桶名
-     */
-    @Value("${minio.bucketName}")
-    private String bucket;
-
-    /**
-     * minIO工具类
-     */
-    @Autowired
-    private MinioUtil client;
-
-    /**
-     * 标注信息路径
-     */
-    @Value("${minio.annotation}")
-    private String annotation;
 
     /**
      * 标注任务队列
@@ -125,6 +105,18 @@ public class AnnotationServiceImpl implements AnnotationService {
     private ConcurrentHashMap<String, TaskSplitBO> autoAnnotating;
 
     /**
+     * 版本服务类
+     */
+    @Autowired
+    private DatasetVersionService datasetVersionService;
+
+    /**
+     * 数据文件标注服务
+     */
+    @Autowired
+    private DataFileAnnotationService dataFileAnnotationService;
+
+    /**
      * 目标跟踪任务
      */
     private ConcurrentHashSet<Long> tracking;
@@ -135,7 +127,6 @@ public class AnnotationServiceImpl implements AnnotationService {
     @Autowired
     private org.dubhe.data.util.FileUtil fileUtil;
 
-
     /**
      * 队列长度
      */
@@ -145,7 +136,6 @@ public class AnnotationServiceImpl implements AnnotationService {
      * 跟踪数量
      */
     public static final int TRACKING_SIZE = MagicNumConstant.FIVE;
-
 
     /**
      * 初始化
@@ -180,16 +170,23 @@ public class AnnotationServiceImpl implements AnnotationService {
      */
     @Override
     public void save(Long datasetId,AnnotationInfoCreateDTO annotationInfoCreateDTO) {
-        FileVO fileVO = fileService.get(annotationInfoCreateDTO.getId(),datasetId);
-        Dataset dataset = datasetService.getOneById(fileVO.getDatasetId());
+        Dataset dataset = datasetService.getOneById(datasetId);
+        //判断数据集是否在发布中
+        if (!StringUtils.isBlank(dataset.getCurrentVersionName())) {
+            if (datasetVersionService.getDatasetVersionSourceVersion(dataset).getDataConversion().equals(NumberConstant.NUMBER_4)) {
+                throw new BusinessException(ErrorEnum.DATASET_PUBLISH_ERROR);
+            }
+        }
         datasetService.checkPublic(dataset, OperationTypeEnum.UPDATE);
         annotationInfoCreateDTO.setDatasetId(datasetId);
+        annotationInfoCreateDTO.setCurrentVersionName(dataset.getCurrentVersionName());
+        annotationInfoCreateDTO.setDataType(dataset.getDataType());
         doSave(annotationInfoCreateDTO);
         //改变文件的状态为标注完成
         StateMachineUtil.stateChange(new StateChangeDTO() {{
             setObjectParam(new Object[]{new DatasetVersionFile() {{
                 setDatasetId(dataset.getId());
-                setFileId(fileVO.getId());
+                setFileId(annotationInfoCreateDTO.getId());
                 setVersionName(dataset.getCurrentVersionName());
             }}});
             setEventMethodName(FileStateMachineConstant.FILE_SAVE_COMPLETE_EVENT);
@@ -207,25 +204,28 @@ public class AnnotationServiceImpl implements AnnotationService {
      * 标注保存(单个)
      *
      * @param annotationInfoCreateDTO 标注信息
-     * @return int 标注成功数量
      */
     @Transactional(rollbackFor = Exception.class)
     @Override
     @DataPermissionMethod
     public void save(Long fileId,Long datasetId, AnnotationInfoCreateDTO annotationInfoCreateDTO) {
-        FileVO fileVO = fileService.get(fileId,datasetId);
-        if (fileVO == null) {
-            throw new BusinessException(ErrorEnum.FILE_ABSENT);
-        }
-        Dataset dataset = datasetService.getOneById(fileVO.getDatasetId());
-
+        Dataset dataset = datasetService.getOneById(datasetId);
         if (dataset == null) {
             throw new BusinessException(ErrorEnum.DATASET_ABSENT);
+        }
+        //判断数据集是否在发布中
+        if (!StringUtils.isBlank(dataset.getCurrentVersionName())) {
+            if (datasetVersionService.getDatasetVersionSourceVersion(dataset).getDataConversion().equals(NumberConstant.NUMBER_4)) {
+                throw new BusinessException(ErrorEnum.DATASET_PUBLISH_ERROR);
+            }
         }
         datasetService.checkPublic(dataset, OperationTypeEnum.UPDATE);
         annotationInfoCreateDTO.setId(fileId);
         annotationInfoCreateDTO.setDatasetId(datasetId);
+        annotationInfoCreateDTO.setCurrentVersionName(dataset.getCurrentVersionName());
+        annotationInfoCreateDTO.setDataType(dataset.getDataType());
         doSave(annotationInfoCreateDTO);
+
         //改变数据集的状态为标注中
         StateMachineUtil.stateChange(new StateChangeDTO() {{
             setObjectParam(new Object[]{dataset});
@@ -250,6 +250,7 @@ public class AnnotationServiceImpl implements AnnotationService {
      * @param annotationInfoCreateDTO 标注信息
      */
     private void doSave(AnnotationInfoCreateDTO annotationInfoCreateDTO) {
+
         if (annotationInfoCreateDTO == null || annotationInfoCreateDTO.getAnnotation() == null
                 || annotationInfoCreateDTO.getId() == null) {
             LogUtil.warn(LogEnum.BIZ_DATASET, "annotation info invalid. annotation:{}", annotationInfoCreateDTO);
@@ -264,9 +265,53 @@ public class AnnotationServiceImpl implements AnnotationService {
             throw new BusinessException(ErrorEnum.FILE_ABSENT);
         }
         datasetService.autoAnnotatingCheck(fileOne);
-        String filePath = fileUtil.getAnnotationAbsPath(fileOne.getDatasetId(), fileOne.getName());
-        storeService.write(filePath, annotationInfoCreateDTO.getAnnotation());
+        String filePath = fileUtil.getWriteAnnotationAbsPath(fileOne.getDatasetId(), fileOne.getName());
+        String annotation = annotationInfoCreateDTO.getAnnotation();
+        storeService.write(filePath, annotation);
+
+
     }
+
+    /**
+     * 保存数据集文件标注信息
+     *
+     * @param annotationInfoCreateDTO   标注详情实体
+     */
+    private void saveDatasetFileAnnotations(AnnotationInfoCreateDTO annotationInfoCreateDTO ){
+        List<AnnotationDTO> annotationDTOS = JSONObject.parseArray(annotationInfoCreateDTO.getAnnotation(), AnnotationDTO.class);
+        Long datasetId = annotationInfoCreateDTO.getDatasetId();
+        DatasetVersionFile datasetVersionFile = datasetVersionFileService.getDatasetVersionFile(
+                datasetId, annotationInfoCreateDTO.getCurrentVersionName(), annotationInfoCreateDTO.getId());
+        if(Objects.isNull(datasetVersionFile)){
+            throw new BusinessException(ErrorEnum.DATASET_VERSION_FILE_IS_ERROR);
+        }
+        if(!CollectionUtil.isEmpty(annotationDTOS)){
+            Long versionFileId = datasetVersionFile.getId();
+            List<Long> fileLabelIds = annotationDTOS.stream().map(a -> a.getCategoryId()).collect(Collectors.toList());
+            List<Long> dbLabelIds = dataFileAnnotationService.findInfoByVersionId(versionFileId);
+            if(!CollectionUtil.isEmpty(dbLabelIds)){
+                dataFileAnnotationService.deleteAnnotationFileByVersionIdAndLabelIds(versionFileId,dbLabelIds);
+            }
+            dataFileAnnotationService.insertAnnotationFileByVersionIdAndLabelIds(datasetId,versionFileId,fileLabelIds);
+            //改变文件的状态为标注完成
+            StateMachineUtil.stateChange(new StateChangeDTO() {{
+                setObjectParam(new Object[]{new DatasetVersionFile() {{
+                    setDatasetId(annotationInfoCreateDTO.getDatasetId());
+                    setFileId(annotationInfoCreateDTO.getId());
+                    setVersionName(annotationInfoCreateDTO.getCurrentVersionName());
+                }}});
+                setEventMethodName(FileStateMachineConstant.FILE_SAVE_COMPLETE_EVENT);
+                setStateMachineType(FileStateMachineConstant.FILE_STATE_MACHINE);
+            }});
+        }else {
+            datasetVersionFileService.updateStatusById(
+                    DatasetVersionFile.builder().id(datasetVersionFile.getId())
+                            .datasetId(datasetVersionFile.getDatasetId())
+                            .annotationStatus(FileStateEnum.NOT_ANNOTATION_FILE_STATE.getCode()).build());
+            dataFileAnnotationService.deleteBatch(Arrays.asList(datasetVersionFile.getId()));
+        }
+    }
+
 
     /**
      * 标注完成
@@ -280,21 +325,33 @@ public class AnnotationServiceImpl implements AnnotationService {
     @DataPermissionMethod
     public void finishManual(Long fileId,Long datasetId, AnnotationInfoCreateDTO annotationInfoCreateDTO) {
         annotationInfoCreateDTO.setDatasetId(datasetId);
-        FileVO fileVO = fileService.get(fileId,datasetId);
-        Dataset dataset = datasetService.getOneById(fileVO.getDatasetId());
+        Dataset dataset = datasetService.getOneById(datasetId);
+        //判断数据集是否在发布中
+        if (!StringUtils.isBlank(dataset.getCurrentVersionName())) {
+            if (datasetVersionService.getDatasetVersionSourceVersion(dataset).getDataConversion().equals(NumberConstant.NUMBER_4)) {
+                throw new BusinessException(ErrorEnum.DATASET_PUBLISH_ERROR);
+            }
+        }
         datasetService.checkPublic(dataset, OperationTypeEnum.UPDATE);
         annotationInfoCreateDTO.setId(fileId);
+        annotationInfoCreateDTO.setDataType(dataset.getDataType());
+        annotationInfoCreateDTO.setCurrentVersionName(dataset.getCurrentVersionName());
         doSave(annotationInfoCreateDTO);
-        //改变文件的状态为标注完成
-        StateMachineUtil.stateChange(new StateChangeDTO() {{
-            setObjectParam(new Object[]{new DatasetVersionFile() {{
-                setDatasetId(dataset.getId());
-                setFileId(fileVO.getId());
-                setVersionName(dataset.getCurrentVersionName());
-            }}});
-            setEventMethodName(FileStateMachineConstant.FILE_SAVE_COMPLETE_EVENT);
-            setStateMachineType(FileStateMachineConstant.FILE_STATE_MACHINE);
-        }});
+        //解析文本标注Json串将数据保存到DB
+        if(DatatypeEnum.TEXT.getValue().compareTo(annotationInfoCreateDTO.getDataType()) == 0){
+            saveDatasetFileAnnotations(annotationInfoCreateDTO);
+        }else {
+            //改变文件的状态为标注完成
+            StateMachineUtil.stateChange(new StateChangeDTO() {{
+                setObjectParam(new Object[]{new DatasetVersionFile() {{
+                    setDatasetId(dataset.getId());
+                    setFileId(fileId);
+                    setVersionName(dataset.getCurrentVersionName());
+                }}});
+                setEventMethodName(FileStateMachineConstant.FILE_SAVE_COMPLETE_EVENT);
+                setStateMachineType(FileStateMachineConstant.FILE_STATE_MACHINE);
+            }});
+        }
         //改变数据集的状态为标注完成
         StateMachineUtil.stateChange(new StateChangeDTO() {{
             setObjectParam(new Object[]{dataset});
@@ -314,16 +371,34 @@ public class AnnotationServiceImpl implements AnnotationService {
     @DataPermissionMethod
     public void reAuto(AnnotationDeleteDTO annotationDeleteDTO) {
         Dataset dataset = datasetService.getOneById(annotationDeleteDTO.getDatasetId());
+        //判断数据集是否在发布中
+        if (!StringUtils.isBlank(dataset.getCurrentVersionName())) {
+            if (datasetVersionService.getDatasetVersionSourceVersion(dataset).getDataConversion().equals(NumberConstant.NUMBER_4)) {
+                throw new BusinessException(ErrorEnum.DATASET_PUBLISH_ERROR);
+            }
+        }
+        //改数据集相关状态
         StateMachineUtil.stateChange(new StateChangeDTO() {{
             setStateMachineType(DataStateMachineConstant.DATA_STATE_MACHINE);
             setEventMethodName(DataStateMachineConstant.DATA_DELETE_ANNOTATING_EVENT);
             setObjectParam(new Object[]{annotationDeleteDTO.getDatasetId().intValue()});
         }});
-        //删除数据集标注信息 改数据集相关状态
-        deleteMinioAnnotation(dataset);
-        taskService.auto(new AutoAnnotationCreateDTO() {{
+
+        //根据当前数据集ID修改Changed字段为改变
+        datasetVersionFileService.updateChanged(annotationDeleteDTO.getDatasetId(),dataset.getCurrentVersionName());
+
+        List<Long> taskIds = taskService.auto(new AutoAnnotationCreateDTO() {{
             setDatasetIds(new Long[]{annotationDeleteDTO.getDatasetId()});
+            setType(DataTaskTypeEnum.AGAIN_ANNOTATION.getValue());
         }});
+        //更新task任务类型为重新自动标注
+        if (CollectionUtil.isNotEmpty(taskIds)) {
+            taskIds.stream().forEach(aLong -> {
+                Task task = taskService.detail(aLong);
+                task.setType(DataTaskTypeEnum.AGAIN_ANNOTATION.getValue());
+                taskService.updateByTaskId(task);
+            });
+        }
     }
 
     /**
@@ -344,7 +419,7 @@ public class AnnotationServiceImpl implements AnnotationService {
         if (file == null) {
             return;
         }
-        String filePath = fileUtil.getAnnotationAbsPath(file.getDatasetId(), file.getName());
+        String filePath = fileUtil.getWriteAnnotationAbsPath(file.getDatasetId(), file.getName());
         storeService.delete(filePath);
         LogUtil.info(LogEnum.BIZ_DATASET, "delete file. file:{}", filePath);
     }
@@ -457,23 +532,34 @@ public class AnnotationServiceImpl implements AnnotationService {
         //图片状态变更为自动标注完成
         Dataset dataset = datasetService.getOneById(taskSplit.getDatasetId());
         //保存标注信息
-        taskSplit.getFiles().forEach(fileBO -> {
-            AnnotationInfoCreateDTO annotationInfo = resMap.get(fileBO.getId());
-            if (annotationInfo == null) {
-                return;
-            }
-            storeService.write(fileUtil.getAnnotationAbsPath(taskSplit.getDatasetId(), fileBO.getName()), annotationInfo.getAnnotation());
-
-        });
+        if(AnnotateTypeEnum.TEXT_CLASSIFICATION.getValue().equals(taskSplit.getAnnotateType())) {
+            taskSplit.getFiles().forEach(fileBO -> {
+                AnnotationInfoCreateDTO annotationInfo = resMap.get(fileBO.getId());
+                if (annotationInfo == null) {
+                    return;
+                }
+                storeService.write(fileUtil.getAnnotationAbsPath(taskSplit.getDatasetId(), fileBO.getName()), annotationInfo.getAnnotation());
+            });
+        }
         taskSplit.setVersionName(dataset.getCurrentVersionName());
-
+        List<DatasetVersionFile> VersionFileIds = datasetVersionFileService.getVersionFileByDatasetAndFile(dataset.getId(),dataset.getCurrentVersionName(),resMap.keySet());
+        //写入标签关系
+        if (!CollectionUtils.isEmpty(resMap)&& AnnotateTypeEnum.TEXT_CLASSIFICATION.getValue().equals(dataset.getAnnotateType())){
+            List<DataFileAnnotation> dataFileAnnotations=new ArrayList<>();
+            VersionFileIds.forEach(versionFileId->{
+                    List<AnnotationDTO> annotationDTOS = JSONObject.parseArray(resMap.get(versionFileId.getFileId()).getAnnotation(), AnnotationDTO.class);
+                    annotationDTOS.forEach(annotationDTO -> {
+                        dataFileAnnotations.add(new DataFileAnnotation(dataset.getId(),annotationDTO.getCategoryId(),versionFileId.getId(),annotationDTO.getScore()));
+                    });
+            });
+            dataFileAnnotationService.insertDataFileBatch(dataFileAnnotations);
+        }
         HashSet<Long> annotationInfoIsNotEmpty = new HashSet<Long>() {{
             addAll(resMap.keySet().stream().filter(k -> !JSON.parseArray(resMap.get(k).getAnnotation()).isEmpty()).collect(Collectors.toSet()));
         }};
         //嵌入状态机（改变文件状态，标记文件状态被改变）->改变有标注数据的文件
         if (!annotationInfoIsNotEmpty.isEmpty()) {
-            StateMachineUtil.stateChange(
-                    new StateChangeDTO() {{
+            StateMachineUtil.stateChange(new StateChangeDTO() {{
                         setObjectParam(new Object[]{annotationInfoIsNotEmpty, taskSplit.getDatasetId(), taskSplit.getVersionName()});
                         setEventMethodName(FileStateMachineConstant.FILE_DO_FINISH_AUTO_ANNOTATION_BATCH_EVENT);
                         setStateMachineType(FileStateMachineConstant.FILE_STATE_MACHINE);
@@ -491,7 +577,6 @@ public class AnnotationServiceImpl implements AnnotationService {
             }});
         }
         //任务加文件数量
-        // 判断是否需要去做目标跟踪
         taskService.finishFile(taskSplit.getTaskId(), taskSplit.getFiles().size(), dataset);
     }
 
@@ -501,7 +586,6 @@ public class AnnotationServiceImpl implements AnnotationService {
      *
      * @param datasetId          数据集id
      * @param autoTrackCreateDTO 自动跟踪结果
-     * @return boolean 目标跟踪是否成功
      */
     @Transactional(rollbackFor = Exception.class)
     @Override
@@ -546,21 +630,23 @@ public class AnnotationServiceImpl implements AnnotationService {
         if (dataset == null|| !DatatypeEnum.VIDEO.getValue().equals(dataset.getDataType())) {
             throw new BusinessException(ErrorEnum.DATASET_TRACK_TYPE_ERROR);
         }
+        //判断数据集是否在发布中
+        if (!StringUtils.isBlank(dataset.getCurrentVersionName())) {
+            if (datasetVersionService.getDatasetVersionSourceVersion(dataset).getDataConversion().equals(NumberConstant.NUMBER_4)) {
+                throw new BusinessException(ErrorEnum.DATASET_PUBLISH_ERROR);
+            }
+        }
         taskService.track(dataset);
     }
 
     /**
-     * 删除minio上标注文件
+     * 重新自动标注更新文件状态
      *
-     * @param dataset 数据集
+     * @param datasetId  数据集ID
      */
-    public void deleteMinioAnnotation(Dataset dataset) {
-        try {
-            client.del(bucket, dataset.getUri() + annotation +
-                    (dataset.getCurrentVersionName() == null ? "" : (dataset.getCurrentVersionName())));
-        } catch (Exception e) {
-            LogUtil.error(LogEnum.BIZ_DATASET, "MinIO delete the dataset annotation file error", e);
-        }
+    @Override
+    public void deleteAnnotating(Long datasetId) {
+        datasetVersionFileService.deleteAnnotating(datasetId);
     }
 
 }

@@ -1,5 +1,5 @@
 /**
- * Copyright 2020 Zhejiang Lab. All Rights Reserved.
+ * Copyright 2020 Tianshu AI Platform. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,7 +22,6 @@ import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Select;
 import org.dubhe.data.domain.dto.LabelDTO;
 import org.dubhe.data.domain.entity.Label;
-import org.springframework.security.core.parameters.P;
 
 import java.util.List;
 
@@ -38,7 +37,7 @@ public interface LabelMapper extends BaseMapper<Label> {
      * @param datasetId 数据集ID
      * @return List<Label> 数据集下所有标签
      */
-    @Select("select dl.* from data_label dl left join data_dataset_label ddl on dl.id = ddl.label_id where ddl.dataset_id = #{datasetId}")
+    @Select("select dl.* from data_label dl left join data_dataset_label ddl on dl.id = ddl.label_id where ddl.dataset_id = #{datasetId}  and dl.deleted = 0")
     List<Label> listLabelByDatasetId(@Param("datasetId") Long datasetId);
 
     /**
@@ -47,7 +46,7 @@ public interface LabelMapper extends BaseMapper<Label> {
      * @param datasetId 数据集ID
      * @return List<Integer> 数据集下所有标签类型
      */
-    @Select("select distinct dl.type from data_label dl left join data_dataset_label ddl on dl.id = ddl.label_id where ddl.dataset_id = #{datasetId}")
+    @Select("select distinct dl.type from data_label dl left join data_dataset_label ddl on dl.id = ddl.label_id where ddl.dataset_id = #{datasetId} and dl.deleted = 0")
     List<Integer> getDatasetLabelTypes(@Param("datasetId") Long datasetId);
 
     /**
@@ -75,37 +74,17 @@ public interface LabelMapper extends BaseMapper<Label> {
      * @return List<Label> 标签组列表
      */
     @Select("select dl.* from data_label dl left join data_group_label dgl on dl.id = dgl.label_id\n" +
-            "where dgl.label_group_id = #{labelGroupId} and dgl.deleted = 0")
+            "where dgl.label_group_id = #{labelGroupId} and dl.deleted = 0")
     List<Label> listByGroupId(@Param("labelGroupId") Long labelGroupId);
 
 
-
-    /**
-     * 获取预置标签组下的标签
-     *
-     * @param startLabelId 初始标签ID
-     * @param endLabelId 最大标签ID
-     * @return 标签列表
-     */
-    @Select("select * from data_label where id <= #{endLabelId} and id> #{startLabelId}  and deleted = 0")
-    List<Label> getPubLabels(@Param("startLabelId") int startLabelId, @Param("endLabelId") int  endLabelId);
-
-    /**
-     * 获取预置标签组下的标签
-     *
-     * @param startLabelId 初始标签ID
-     * @param endLabelId 最大标签ID
-     * @return 预置标签ids
-     */
-    @Select("select id from data_label where id <= #{endLabelId} and id> #{startLabelId} and deleted = 0")
-    List<Long> getPubLabelIds(@Param("startLabelId") int startLabelId, @Param("endLabelId") int  endLabelId);
 
 
     /**
      * 根据数据集ID获取数据集对应标签组下的标签列表
      *
      * @param datasetId 数据集ID
-     * @return 标签列表
+     * @return List<LabelDTO> 标签列表
      */
     @Select("select dl.*,dd.label_group_id from data_label dl\n" +
             "left join data_group_label dgl on dl.id = dgl.label_id\n" +

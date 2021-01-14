@@ -22,8 +22,8 @@ usage() {
 
 start_application() {
     echo "starting java process"
-    echo "nohup java -jar ${JAR_NAME} > ${JAVA_OUT} --spring.profiles.active=${ENV} 2>&1 &"
-    nohup java -jar ${JAR_NAME} > ${JAVA_OUT} --spring.profiles.active=${ENV} 2>&1 &
+    echo "nohup java -Dfile.encoding=utf-8 -jar ${JAR_NAME} > ${JAVA_OUT} --spring.profiles.active=${ENV} 2>&1 &"
+    nohup java -Dfile.encoding=utf-8 -jar ${JAR_NAME} > ${JAVA_OUT} --spring.profiles.active=${ENV} 2>&1 &
     echo "started java process"
 }
 

@@ -1,5 +1,5 @@
 /**
- * Copyright 2020 Zhejiang Lab. All Rights Reserved.
+ * Copyright 2020 Tianshu AI Platform. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,8 +19,8 @@ package org.dubhe.async;
 import cn.hutool.core.util.StrUtil;
 import com.alibaba.fastjson.JSONObject;
 import org.dubhe.base.MagicNumConstant;
-import org.dubhe.constant.SymbolConstant;
 import org.dubhe.config.TrainJobConfig;
+import org.dubhe.constant.SymbolConstant;
 import org.dubhe.dao.PtTrainJobMapper;
 import org.dubhe.domain.dto.BaseTrainJobDTO;
 import org.dubhe.domain.dto.UserDTO;
@@ -28,6 +28,7 @@ import org.dubhe.domain.entity.PtTrainJob;
 import org.dubhe.domain.vo.PtImageAndAlgorithmVO;
 import org.dubhe.enums.BizEnum;
 import org.dubhe.enums.LogEnum;
+import org.dubhe.enums.ModelResourceEnum;
 import org.dubhe.enums.ResourcesPoolTypeEnum;
 import org.dubhe.enums.TrainJobStatusEnum;
 import org.dubhe.exception.BusinessException;
@@ -39,9 +40,15 @@ import org.dubhe.k8s.domain.bo.PtJupyterJobBO;
 import org.dubhe.k8s.domain.resource.BizDistributeTrain;
 import org.dubhe.k8s.domain.resource.BizNamespace;
 import org.dubhe.k8s.domain.vo.PtJupyterJobVO;
-import org.dubhe.utils.*;
+import org.dubhe.utils.K8sNameTool;
+import org.dubhe.utils.LocalFileUtil;
+import org.dubhe.utils.LogUtil;
+import org.dubhe.utils.NfsUtil;
+import org.dubhe.utils.StringUtils;
+import org.dubhe.utils.TrainUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -75,6 +82,12 @@ public class TrainJobAsync {
 
     @Autowired
     private DistributeTrainApi distributeTrainApi;
+
+    public static final String DATASET_VOLUME_MOUNTS = "/dataset";
+
+    public static final String WORKSPACE_VOLUME_MOUNTS = "/workspace";
+
+    public static final String MODEL_VOLUME_MOUNTS = "/model";
 
 
     /**
@@ -113,7 +126,7 @@ public class TrainJobAsync {
     }
 
     /**
-     * 构造分布式训练DistributeTrainBO
+     * 构造分布式训练DistributeTrainBO(炼知模型暂不支持)
      *
      * @param baseTrainJobDTO           训练任务信息
      * @param currentUser               用户
@@ -171,6 +184,11 @@ public class TrainJobAsync {
         }
         // 拼接python固定参数 数据集
         sb.append(paramPrefix).append(trainJobConfig.getDockerDataset());
+
+        // 模型路径挂载及其参数拼接
+        DistributeTrainBO distributeTrainBO = new DistributeTrainBO();
+        buildBoAboutModel(baseTrainJobDTO, distributeTrainBO, sb);
+
         JSONObject runParams = baseTrainJobDTO.getRunParams();
         if (null != runParams && !runParams.isEmpty()) {
             // 拼接用户自定义参数
@@ -190,7 +208,7 @@ public class TrainJobAsync {
                 + " ' && "
                 + mainCommand
                 + " && echo 'Distribute training mission is over' ";
-        DistributeTrainBO distributeTrainBO = new DistributeTrainBO()
+        distributeTrainBO
                 .setNamespace(namespace)
                 .setName(baseTrainJobDTO.getJobName())
                 .setSize(ptTrainJob.getResourcesPoolNode())
@@ -198,9 +216,9 @@ public class TrainJobAsync {
                 .setMasterCmd(wholeCommand)
                 .setMemNum(baseTrainJobDTO.getMenNum())
                 .setCpuNum(baseTrainJobDTO.getCpuNum())
-                .setDatasetStoragePath(k8sNameTool.getAbsoluteNfsPath(baseTrainJobDTO.getDataSourcePath()))
-                .setWorkspaceStoragePath(localFileUtil.formatPath(nfsUtil.getNfsConfig().getRootDir() + basePath))
-                .setModelStoragePath(k8sNameTool.getAbsoluteNfsPath(relativePath + StrUtil.SLASH + trainJobConfig.getOutPath()))
+                .putNfsMounts(DATASET_VOLUME_MOUNTS,k8sNameTool.getAbsoluteNfsPath(baseTrainJobDTO.getDataSourcePath()))
+                .putNfsMounts(WORKSPACE_VOLUME_MOUNTS,localFileUtil.formatPath(nfsUtil.getNfsConfig().getRootDir() + basePath))
+                .putNfsMounts(MODEL_VOLUME_MOUNTS,k8sNameTool.getAbsoluteNfsPath(relativePath + StrUtil.SLASH + trainJobConfig.getOutPath()))
                 .setBusinessLabel(k8sNameTool.getPodLabel(BizEnum.ALGORITHM));
         //延时启动，单位为分钟
         if (baseTrainJobDTO.getDelayCreateTime() != null && baseTrainJobDTO.getDelayCreateTime() > 0) {
@@ -309,6 +327,7 @@ public class TrainJobAsync {
         }
 
         List<String> list = new ArrayList<>();
+        PtJupyterJobBO jobBo = new PtJupyterJobBO();
         JSONObject runParams = baseTrainJobDTO.getRunParams();
 
         StringBuilder sb = new StringBuilder();
@@ -336,12 +355,8 @@ public class TrainJobAsync {
         if (StringUtils.isNotBlank(valDataSourcePath)) {
             sb.append(pattern).append(trainJobConfig.getLoadValDatasetKey()).append(SymbolConstant.FLAG_EQUAL).append(trainJobConfig.getDockerValDatasetPath());
         }
-        //将模型加载路径拼接到
-        String modelLoadPathDir = baseTrainJobDTO.getModelLoadPathDir();
-        if (StringUtils.isNotBlank(modelLoadPathDir)) {
-            //将模型路径model_load_dir路径
-            sb.append(pattern).append(trainJobConfig.getLoadKey()).append(SymbolConstant.FLAG_EQUAL).append(trainJobConfig.getDockerModelPath());
-        }
+        //模型路径挂载及其参数拼接
+        buildBoAboutModel(baseTrainJobDTO, jobBo, sb);
 
         if (null != runParams && !runParams.isEmpty()) {
             runParams.forEach((k, v) ->
@@ -357,20 +372,25 @@ public class TrainJobAsync {
         list.add("-c");
 
         String workPath = trainJobConfig.getDockerTrainPath() + StrUtil.SLASH + workspaceDir;
-        String command = "echo 'training mission begins... " + executeCmd + "\r\n '" +
-                " && cd " + workPath +
-                " && " + executeCmd +
-                " && echo 'the training mission is over' ";
+        String command;
+        Integer modelResource = baseTrainJobDTO.getModelResource();
+        if(null != modelResource && modelResource.intValue() == ModelResourceEnum.ATLAS.getType().intValue()) {
+            command = "&& " + trainJobConfig.getAtlasAnaconda() +
+                    " && cd " + workPath +
+                    " && " + trainJobConfig.getAtlasPythonioencoding() + executeCmd;
+        } else {
+            command = " && cd " + workPath + " && " + executeCmd;
+        }
+        command = "echo 'training mission begins... " + executeCmd + "\r\n '" + command + " && echo 'the training mission is over' ";
+
         list.add(command);
 
-        PtJupyterJobBO jobBo = new PtJupyterJobBO();
         jobBo.setNamespace(namespace)
                 .setName(baseTrainJobDTO.getJobName())
                 .setImage(ptImageAndAlgorithmVO.getImageName())
                 .putNfsMounts(trainJobConfig.getDockerDatasetPath(), nfsUtil.getNfsConfig().getRootDir() + nfsUtil.getNfsConfig().getBucket().substring(1) + baseTrainJobDTO.getDataSourcePath())
                 .setCmdLines(list)
                 .putNfsMounts(trainJobConfig.getDockerTrainPath(), nfsUtil.getNfsConfig().getRootDir() + commonPath.substring(1))
-                .putNfsMounts(trainJobConfig.getDockerModelPath(), nfsUtil.formatPath(nfsUtil.getAbsolutePath(modelLoadPathDir)))
                 .putNfsMounts(trainJobConfig.getDockerValDatasetPath(), nfsUtil.formatPath(nfsUtil.getAbsolutePath(valDataSourcePath)))
                 .setBusinessLabel(k8sNameTool.getPodLabel(BizEnum.ALGORITHM));
         //延时启动，单位为分钟
@@ -388,6 +408,80 @@ public class TrainJobAsync {
             jobBo.setUseGpu(false);
         }
         return jobBo;
+    }
+
+    /**
+     * 模型路径挂载及其参数拼接
+     *
+     * @param baseTrainJobDTO    训练任务基本信息
+     * @param jobBo              训练任务实体
+     * @param sb                 训练命令参数
+     */
+    private void buildBoAboutModel(BaseTrainJobDTO baseTrainJobDTO, Object jobBo, StringBuilder sb) {
+        if(null == baseTrainJobDTO.getModelResource()) {
+            return;
+        }
+        String modelLoadPathDir = baseTrainJobDTO.getModelLoadPathDir();
+        //非炼知模型
+        if (StringUtils.isNotBlank(modelLoadPathDir)) {
+            //将模型路径model_load_dir路径
+            sb.append(trainJobConfig.getPythonFormat()).append(trainJobConfig.getLoadKey()).append(SymbolConstant.FLAG_EQUAL).append(trainJobConfig.getDockerModelPath());
+            if(jobBo instanceof PtJupyterJobBO) {
+                PtJupyterJobBO ptJupyterJobBO = (PtJupyterJobBO)jobBo;
+                ptJupyterJobBO.putNfsMounts(trainJobConfig.getDockerModelPath(), nfsUtil.formatPath(nfsUtil.getAbsolutePath(modelLoadPathDir)));
+            } else if(jobBo instanceof DistributeTrainBO) {
+                DistributeTrainBO distributeTrainBO = (DistributeTrainBO)jobBo;
+                distributeTrainBO.putNfsMounts(trainJobConfig.getDockerModelPath(), nfsUtil.formatPath(nfsUtil.getAbsolutePath(modelLoadPathDir)));
+            }
+            return;
+        }
+        //炼知模型中的教师模型
+        appendAtlasModelPath(baseTrainJobDTO.getTeacherModelPathList(), jobBo, sb, true);
+        //炼知模型中的学生模型
+        appendAtlasModelPath(baseTrainJobDTO.getStudentModelPathList(), jobBo, sb, false);
+    }
+
+    /**
+     * 炼知模型路径挂载及其参数拼接
+     *
+     * @param modelPathList      模型路径集合
+     * @param jobBo              训练任务实体
+     * @param sb                 训练命令参数
+     * @param isTeacher          是否教师模型
+     */
+    private void appendAtlasModelPath(List<String> modelPathList, Object jobBo, StringBuilder sb, boolean isTeacher) {
+        if(null == modelPathList || modelPathList.isEmpty()) {
+            return;
+        }
+        StringBuilder appendModelPath = new StringBuilder();
+        String preModelKey;
+        String preModelPath;
+        if(isTeacher){
+            preModelKey = trainJobConfig.getDockerTeacherModelKey();
+            preModelPath = trainJobConfig.getDockerTeacherModelPath();
+        } else {
+            preModelKey = trainJobConfig.getDockerStudentModelKey();
+            preModelPath = trainJobConfig.getDockerStudentModelPath();
+        }
+        modelPathList.stream()
+                .forEach(modelPath -> {
+                    String[] urlArray = modelPath.split(SymbolConstant.SLASH);
+                    String dockerModelPath = urlArray[urlArray.length - TrainUtil.NUMBER_ONE];
+                    String mountPath = preModelPath + SymbolConstant.SLASH + dockerModelPath;
+                    appendModelPath.append(mountPath).append(SymbolConstant.COMMA);
+                    if(jobBo instanceof PtJupyterJobBO) {
+                        PtJupyterJobBO ptJupyterJobBO = (PtJupyterJobBO)jobBo;
+                        ptJupyterJobBO.putNfsMounts(mountPath, nfsUtil.formatPath(nfsUtil.getAbsolutePath(modelPath)));
+                    } else if(jobBo instanceof DistributeTrainBO) {
+                        DistributeTrainBO distributeTrainBO = (DistributeTrainBO)jobBo;
+                        distributeTrainBO.putNfsMounts(mountPath, nfsUtil.formatPath(nfsUtil.getAbsolutePath(modelPath)));
+                    }
+                });
+        String resultPath = SymbolConstant.MARK +
+                appendModelPath.toString().substring(TrainUtil.NUMBER_ZERO, appendModelPath.toString().length() - TrainUtil.NUMBER_ONE) +
+                SymbolConstant.MARK;
+
+        sb.append(trainJobConfig.getPythonFormat()).append(preModelKey).append(SymbolConstant.FLAG_EQUAL).append(resultPath);
     }
 
     /**

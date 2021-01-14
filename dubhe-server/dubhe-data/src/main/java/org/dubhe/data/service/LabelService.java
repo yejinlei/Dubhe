@@ -1,5 +1,5 @@
 /**
- * Copyright 2020 Zhejiang Lab. All Rights Reserved.
+ * Copyright 2020 Tianshu AI Platform. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@
 
 package org.dubhe.data.service;
 
+import org.dubhe.data.domain.dto.DataFileAnnotationLabelDeleteDTO;
 import org.dubhe.data.domain.dto.LabelCreateDTO;
 import org.dubhe.data.domain.dto.LabelDTO;
 import org.dubhe.data.domain.entity.Label;
@@ -38,11 +39,12 @@ public interface LabelService {
     List<LabelDTO> list(Long datasetId);
 
     /**
-     * 获取所有自动标注标签
+     * 根据类型获取预置标签集合
      *
-     * @return List<Label> 获取所有自动标注标签
+     * @param labelGroupType 标签组类型
+     * @return List<Label> 预置标签集合
      */
-    List<Label> listSupportAuto();
+    List<Label> listSupportAutoByType(Integer labelGroupType);
 
     /**
      * 保存标签
@@ -93,12 +95,6 @@ public interface LabelService {
      */
     List<Label> listByGroup(Long labelGroupId);
 
-    /**
-     * 保存标签
-     *
-     * @param label 标签
-     */
-    void saveLabel(Label label);
 
     /**
      * 批量删除标签
@@ -143,16 +139,18 @@ public interface LabelService {
     /**
      * 获取预置标签组下的标签id
      *
+     * @param labelGroupType 标签组类型
      * @return 预置标签ids
      */
-    List<Long> getPubLabelIds();
+    List<Long> getPubLabelIds(Integer labelGroupType);
 
     /**
      * 获取预置标签组下的标签
      *
+     * @param labelGroupType 标签组类型
      * @return 预置标签集合
      */
-    List<Label> getPubLabels();
+    List<Label> getPubLabels(Integer labelGroupType);
 
     /**
      * 获取标签数量
@@ -161,4 +159,28 @@ public interface LabelService {
      * @return  标签数量
      */
     int selectCount(Long id);
+
+    /**
+     * 根据标签组类型获取标签列表
+     *
+     * @param labelGroupType 标签组类型
+     * @return List<Label> 标签组列表
+     */
+    List<Label> findByLabelGroupType(Integer labelGroupType);
+
+    /**
+     * 删除已标注的文本标签
+     *
+     * @param dataFileAnnotationLabelDeleteDTO 数据文件注释标签删除DTO
+     */
+    void deleteFileAnnotationLabel(DataFileAnnotationLabelDeleteDTO dataFileAnnotationLabelDeleteDTO);
+
+    /**
+     * 校验数据集下标签名称是否重复
+     *
+     * @param datasetId 数据集ID
+     * @param labelName 标签名称
+     * @return 是否重复
+     */
+    boolean checkoutLabelIsRepeat(Long datasetId,String labelName);
 }

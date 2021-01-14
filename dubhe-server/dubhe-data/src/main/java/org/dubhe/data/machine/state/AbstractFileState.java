@@ -1,5 +1,5 @@
 /**
- * Copyright 2020 Zhejiang Lab. All Rights Reserved.
+ * Copyright 2020 Tianshu AI Platform. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,13 +16,12 @@
  */
 package org.dubhe.data.machine.state;
 
-import com.alibaba.fastjson.JSON;
-import org.dubhe.data.domain.bo.TaskSplitBO;
+import org.dubhe.data.domain.dto.AnnotationInfoCreateDTO;
 import org.dubhe.data.domain.entity.Dataset;
 import org.dubhe.data.domain.entity.DatasetVersionFile;
 
 import java.util.HashSet;
-import java.util.stream.Collectors;
+import java.util.Map;
 
 /**
  * @description 文件抽象类
@@ -60,7 +59,7 @@ public abstract class AbstractFileState {
      * @param datasetId     数据集ID
      * @param versionName   数据集版本名称
      */
-    public void doFinishAutoAnnotationBatchEvent(HashSet<Long> filesId,Long datasetId,String versionName){
+    public void doFinishAutoAnnotationBatchEvent(HashSet<Long> filesId, Long datasetId, String versionName){
     }
 
     /**

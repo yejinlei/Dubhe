@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <parent>
+        <artifactId>dubheplatform</artifactId>
+        <groupId>zhejianglab</groupId>
+        <version>1.0</version>
+    </parent>
+    <modelVersion>4.0.0</modelVersion>
+    <artifactId>dubhe-dcm</artifactId>
+    <name>医学影像</name>
+
+    <properties>
+        <java.version>1.8</java.version>
+        <dcm4che.version>5.19.1</dcm4che.version>
+    </properties>
+
+    <dependencies>
+
+        <dependency>
+            <groupId>zhejianglab</groupId>
+            <artifactId>common</artifactId>
+            <version>1.0</version>
+        </dependency>
+
+        <dependency>
+            <groupId>zhejianglab</groupId>
+            <artifactId>dubhe-data</artifactId>
+            <version>1.0</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+            <optional>true</optional>
+        </dependency>
+        <dependency>
+            <groupId>org.dcm4che</groupId>
+            <artifactId>dcm4che-core</artifactId>
+            <version>${dcm4che.version}</version>
+            <scope>system</scope>
+            <systemPath>${project.basedir}/lib/dcm4che-core-5.19.1.jar</systemPath>
+        </dependency>
+
+    </dependencies>
+
+</project>

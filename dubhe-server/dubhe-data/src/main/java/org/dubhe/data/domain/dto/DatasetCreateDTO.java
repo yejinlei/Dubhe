@@ -1,5 +1,5 @@
 /**
- * Copyright 2020 Zhejiang Lab. All Rights Reserved.
+ * Copyright 2020 Tianshu AI Platform. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -66,12 +66,12 @@ public class DatasetCreateDTO implements Serializable {
     @ApiModelProperty(notes = "团队编号")
     private Long teamId;
 
-    @ApiModelProperty(notes = "数据类型:0图片，1视频")
+    @ApiModelProperty(notes = "数据类型:0图片，1视频, 2文本")
     @NotNull(message = "数据类型不能为空", groups = Create.class)
     @EnumValue(enumClass = DatatypeEnum.class, enumMethod = "isValid", message = Constant.DATA_TYPE_RULE, groups = Create.class)
     private Integer dataType;
 
-    @ApiModelProperty(notes = "标注类型：2分类,1目标检测,5目标跟踪")
+    @ApiModelProperty(notes = "标注类型：2分类,1目标检测,5目标跟踪 6 文本分类")
     @NotNull(message = "数据用于标注的类型不能为空", groups = Create.class)
     @EnumValue(enumClass = AnnotateTypeEnum.class, enumMethod = "isValid", message = Constant.ANNOTATE_TYPE_RULE, groups = Create.class)
     private Integer annotateType;

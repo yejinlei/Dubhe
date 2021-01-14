@@ -4,7 +4,7 @@
 <mapper namespace="org.dubhe.data.dao.DatasetVersionFileMapper">
     <insert id="saveList">
         INSERT INTO data_dataset_version_file (id, dataset_id, version_name,file_id, `status`, annotation_status,
-        backup_status)
+        backup_status,changed,file_name)
         values
         <foreach collection="datasetVersionFiles" item="temp" separator=",">
             (#{temp.id}, #{temp.datasetId}, #{temp.versionName}, #{temp.fileId}, #{temp.status},
@@ -14,9 +14,11 @@
                     , #{temp.backupStatus}
                 </when>
                 <otherwise>
-                    ,0
+                    ,101
                 </otherwise>
             </choose>
+            ,#{temp.changed}
+            ,#{temp.fileName}
             )
         </foreach>
     </insert>
@@ -78,24 +80,25 @@
         group by annotation_status
     </select>
 
-    <select id="getListByDatasetIdAndAnnotationStatus" resultType="org.dubhe.data.domain.entity.DatasetVersionFile">
-        select * from data_dataset_version_file a INNER JOIN(select id from data_dataset_version_file
-        where dataset_id=#{datasetId} and status in (0,2) and annotation_status in
-        <foreach item="status" collection="status" separator="," open="(" close=")">
-            #{status}
-        </foreach>
-        <if test="versionName != null">
-            and version_name = #{versionName}
-        </if>
-        order by file_id
-        limit #{offset}, #{limit}) b on a.id = b.id
-    </select>
-
     <select id="findFileStatusListByDatasetAndVersion" resultType="java.lang.Integer">
         select distinct annotation_status from data_dataset_version_file where dataset_id = #{datasetId} and status !=1
         <if test="versionName != null">
             and version_name = #{versionName}
         </if>
+    </select>
+
+    <select id="findByDatasetIdAndVersionName" resultType="org.dubhe.data.domain.entity.DatasetVersionFile">
+        select * from data_dataset_version_file where dataset_id = #{datasetId}
+        and version_name
+        <choose>
+            <when test = "versionName == null">
+                is
+            </when>
+            <otherwise>
+                =
+            </otherwise>
+        </choose>
+        #{versionName} and status = 2
     </select>
 
     <update id="newShipVersionNameChange">
@@ -141,4 +144,79 @@
             and version_name = #{versionName}
         </if>
     </select>
+
+    <select id="getIdByDatasetIdAndAnnotationStatus"  resultType="java.lang.Integer">
+        select ddvf.id from data_dataset_version_file ddvf
+                                left join data_file_annotation dfa on ddvf.id = dfa.version_file_id
+        where ddvf.dataset_id=#{datasetId} and ddvf.status in (0,2) and ddvf.annotation_status in
+        <foreach item="status" collection="status" separator="," open="(" close=")">
+            #{status}
+        </foreach>
+        <if test="versionName != null">
+            and ddvf.version_name = #{versionName}
+        </if>
+        <if test="labelId != null">
+            and dfa.label_id = #{labelId}
+        </if>
+        <choose>
+            <when test="orderByName=='name'">
+                order by ddvf.file_name
+            </when>
+            <when test="orderByName=='prediction'">
+                order by dfa.prediction ${order}
+            </when>
+            <otherwise>
+                order by ddvf.id desc
+            </otherwise>
+        </choose>
+            limit #{offset}, #{limit}
+    </select>
+
+    <select id="getListByDatasetIdAndAnnotationStatus" resultType="org.dubhe.data.domain.dto.DatasetVersionFileDTO">
+
+        select ddvf.dataset_id,ddvf.file_id,ddvf.status,ddvf.annotation_status,ddvf.backup_status
+        ,ddvf.changed,ddvf.file_name,dfa.label_id,dfa.prediction from data_dataset_version_file ddvf
+        left join data_file_annotation dfa on ddvf.id = dfa.version_file_id
+        where ddvf.dataset_id=#{datasetId} and ddvf.status in (0,2) and ddvf.id in
+        <foreach item="id" collection="versionFileIdList" separator="," open="(" close=")">
+            #{id}
+        </foreach>
+        <choose>
+            <when test="orderByName=='name'">
+                order by ddvf.file_name
+            </when>
+            <when test="orderByName=='prediction'">
+                order by dfa.prediction ${order}
+            </when>
+            <otherwise>
+                order by ddvf.id desc
+            </otherwise>
+        </choose>
+    </select>
+
+
+    <update id="updateByFileIdAndCurrentVersionName">
+        update data_dataset_version_file set prediction = #{prediction}
+        <where>
+            dataset_id = #{datasetId}   and file_id = #{fileId}
+            <if test="currentVersionName != null">
+                and version_name = #{currentVersionName}
+            </if>
+        </where>
+    </update>
+
+
+    <select id="selectByDatasetIdAndVersionNameAndFileIds" resultType="org.dubhe.data.domain.entity.DatasetVersionFile">
+        select ddvf.id,ddvf.dataset_id,ddvf.file_id,ddvf.status,ddvf.annotation_status,ddvf.backup_status
+                ,ddvf.changed,ddvf.file_name from data_dataset_version_file ddvf
+        where ddvf.dataset_id=#{datasetId} and ddvf.status in (0,2)
+          <if test="versionName != null">
+              and ddvf.version_name =#{versionName}
+          </if>
+           and ddvf.file_id in
+           <foreach item="fileId" collection="fileIds" separator="," open="(" close=")">
+              #{fileId}
+            </foreach>
+    </select>
+
 </mapper>

@@ -1,5 +1,5 @@
 /**
- * Copyright 2020 Zhejiang Lab. All Rights Reserved.
+ * Copyright 2020 Tianshu AI Platform. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -40,51 +40,37 @@ import org.springframework.transaction.annotation.Transactional;
 @SpringBootTest
 public class PtTrainModelOptJobApiTest extends BaseTest {
 
-
     /**
-     * 修改任务参数 算法id=2在算法表中runcommand为空
+     * 作业列表展示
      *
+     * @throws Exception
      */
-    @Test
-    @Transactional(rollbackFor = Exception.class)
-    public void createTrainJobTest() throws Exception {
-        PtTrainJobCreateDTO ptTrainJobCreateDTO = new PtTrainJobCreateDTO();
-        ptTrainJobCreateDTO.setAlgorithmId(18L);
-        ptTrainJobCreateDTO.setDataSourceName("dataset/68");
-        ptTrainJobCreateDTO.setDataSourcePath("dataset/68");
-        ptTrainJobCreateDTO.setDescription("job描述");
-        ptTrainJobCreateDTO.setTrainJobSpecsName("11111111111111").setRunCommand("python p.py").setImageName("tensorflow").setImageTag("latest");
-        JSONObject runParams = new JSONObject();
-        runParams.put("key1", 33);
-        runParams.put("key2", 33);
-        runParams.put("key3", 33);
-        runParams.put("key4", 33);
-        ptTrainJobCreateDTO.setRunParams(runParams);
-        ptTrainJobCreateDTO.setSaveParams(true);
-        ptTrainJobCreateDTO.setTrainName("trainjobtest");
-        ptTrainJobCreateDTO.setTrainParamDesc("job描述");
-        ptTrainJobCreateDTO.setTrainParamName("paramname5");
-
-        mockMvcTest(MockMvcRequestBuilders.post("/api/v1/trainJob"), JSON.toJSONString(ptTrainJobCreateDTO),
-                MockMvcResultMatchers.status().is2xxSuccessful(), 200);
-    }
-
     @Test
     public void getTrainJobTest() throws Exception {
         mockMvcWithNoRequestBody(mockMvc.perform(MockMvcRequestBuilders.get("/api/v1/trainJob"))
                 .andExpect(MockMvcResultMatchers.status().isOk()).andReturn().getResponse(), 200);
     }
 
+    /**
+     * 规格展示
+     *
+     * @throws Exception
+     */
     @Test
     public void getTrainJobSpecsTest() throws Exception {
         mockMvcWithNoRequestBody(mockMvc.perform(MockMvcRequestBuilders.get("/api/v1/trainJob/trainJobSpecs").param("resourcesPoolType", "0"))
                 .andExpect(MockMvcResultMatchers.status().isOk()).andReturn().getResponse(), 200);
     }
 
+    /**
+     * 根据jobId查询训练任务详情
+     *
+     * @throws Exception
+     */
     @Test
     public void getTrainJobDetailTest() throws Exception {
         mockMvcWithNoRequestBody(
-                mockMvc.perform(MockMvcRequestBuilders.get("/api/v1/trainJob/jobDetail").param("id", "20"))
+                mockMvc.perform(MockMvcRequestBuilders.get("/api/v1/trainJob/jobDetail").param("id", "538"))
                         .andExpect(MockMvcResultMatchers.status().isOk()).andReturn().getResponse(),
                 200);
     }
@@ -101,6 +87,8 @@ public class PtTrainModelOptJobApiTest extends BaseTest {
     }
 
     /**
+     * 作业不同版本任务列表展示
+     *
      * @param @throws Exception 入参
      * @return void 返回类型
      * @throws @date 2020年6月16日 上午10:19:12
@@ -109,12 +97,14 @@ public class PtTrainModelOptJobApiTest extends BaseTest {
      */
     @Test
     public void getTrainJobVersionTest() throws Exception {
-        mockMvcWithNoRequestBody(mockMvc.perform(MockMvcRequestBuilders.get("/api/v1/trainJob/10"))
+        mockMvcWithNoRequestBody(mockMvc.perform(MockMvcRequestBuilders.get("/api/v1/trainJob/trainJobVersionDetail").param("trainId", String.valueOf(371L)))
                 .andExpect(MockMvcResultMatchers.status().isOk()).andReturn().getResponse(), 200);
 
     }
 
     /**
+     * 数据集状态展示
+     *
      * @param @throws Exception 入参
      * @return void 返回类型
      * @throws @date 2020年6月16日 上午10:31:25
@@ -123,11 +113,36 @@ public class PtTrainModelOptJobApiTest extends BaseTest {
      */
     @Test
     public void getTrainDataSourceStatusTest() throws Exception {
-        mockMvcWithNoRequestBody(mockMvc
-                .perform(MockMvcRequestBuilders.get("/api/v1/trainJob/dataSourceStatus").param("dataSourcePath",
-                        "dataset/68,dataset/20741/versionFile/V0003"))
+        mockMvcWithNoRequestBody(mockMvc.perform(MockMvcRequestBuilders.get("/api/v1/trainJob/dataSourceStatus").param("dataSourcePath",
+                "dataset/68,dataset/20741/versionFile/V0003"))
                 .andExpect(MockMvcResultMatchers.status().isOk()).andReturn().getResponse(), 200);
 
+    }
+
+    /**
+     * 创建训练任务
+     *
+     */
+    @Test
+    @Transactional(rollbackFor = Exception.class)
+    public void createTrainJobTest() throws Exception {
+        PtTrainJobCreateDTO ptTrainJobCreateDTO = new PtTrainJobCreateDTO();
+        ptTrainJobCreateDTO.setTrainName("创建训练任务单元测试");
+        ptTrainJobCreateDTO.setAlgorithmId(134L);
+        ptTrainJobCreateDTO.setDataSourceName("CUB-200-2011:V0002");
+        ptTrainJobCreateDTO.setDataSourcePath("dataset/242/versionFile/V0002/ofrecord/train");
+        ptTrainJobCreateDTO.setDescription("创建训练任务单元测试");
+        ptTrainJobCreateDTO.setResourcesPoolType(1).setResourcesPoolNode(1).setTrainType(0);
+        ptTrainJobCreateDTO.setTrainJobSpecsName("1Core4GB 1TITAN V").setTrainJobSpecsInfo("1Core4GB 1TITAN V").setRunCommand("python atlas_knowledge_distillation.py").setImageName("atlas").setImageTag("2.1");
+        JSONObject runParams = new JSONObject();
+        runParams.put("epochs", 100);
+        runParams.put("batch_size", 16);
+        runParams.put("weight_decay", 1e-4);
+        runParams.put("learning_rate", 1e-4);
+        ptTrainJobCreateDTO.setRunParams(runParams);
+
+        mockMvcTest(MockMvcRequestBuilders.post("/api/v1/trainJob"), JSON.toJSONString(ptTrainJobCreateDTO),
+                MockMvcResultMatchers.status().is2xxSuccessful(), 200);
     }
 
     /**
@@ -143,11 +158,19 @@ public class PtTrainModelOptJobApiTest extends BaseTest {
     public void updateTrainJobTest() throws Exception {
         // TODO Auto-generated method stub
         PtTrainJobUpdateDTO ptTrainJobUpdateDTO = new PtTrainJobUpdateDTO();
-        ptTrainJobUpdateDTO.setId(39L);
-        ptTrainJobUpdateDTO.setAlgorithmId(91L);
-        ptTrainJobUpdateDTO.setDataSourceName("dataset/68");
-        ptTrainJobUpdateDTO.setDataSourcePath("dataset/68");
-        ptTrainJobUpdateDTO.setTrainJobSpecsName("").setRunCommand("python p.py").setImageName("tensorflow").setImageTag("latest");
+        ptTrainJobUpdateDTO.setId(537L);
+        ptTrainJobUpdateDTO.setAlgorithmId(134L);
+        ptTrainJobUpdateDTO.setDataSourceName("CUB-200-2011:V0002");
+        ptTrainJobUpdateDTO.setDataSourcePath("dataset/242/versionFile/V0002/ofrecord/train");
+        ptTrainJobUpdateDTO.setDescription("修改训练任务单元测试");
+        ptTrainJobUpdateDTO.setResourcesPoolType(1).setResourcesPoolNode(1).setTrainType(0);
+        ptTrainJobUpdateDTO.setTrainJobSpecsName("1Core4GB 1TITAN V").setTrainJobSpecsInfo("1Core4GB 1TITAN V").setRunCommand("python atlas_knowledge_distillation.py").setImageName("atlas").setImageTag("2.1");
+        JSONObject runParams = new JSONObject();
+        runParams.put("epochs", 100);
+        runParams.put("batch_size", 16);
+        runParams.put("weight_decay", 1e-4);
+        runParams.put("learning_rate", 1e-4);
+        ptTrainJobUpdateDTO.setRunParams(runParams);
         mockMvcTest(MockMvcRequestBuilders.put("/api/v1/trainJob"), JSON.toJSONString(ptTrainJobUpdateDTO),
                 MockMvcResultMatchers.status().is2xxSuccessful(), 200);
 
@@ -167,13 +190,18 @@ public class PtTrainModelOptJobApiTest extends BaseTest {
     public void deleteTrainJobTest() throws Exception {
         // TODO Auto-generated method stub
         PtTrainJobDeleteDTO ptTrainJobDeleteDTO = new PtTrainJobDeleteDTO();
-        ptTrainJobDeleteDTO.setId(38L);
-        ptTrainJobDeleteDTO.setTrainId(36L);
+        ptTrainJobDeleteDTO.setId(118L);
+        ptTrainJobDeleteDTO.setTrainId(87L);
         mockMvcTest(MockMvcRequestBuilders.delete("/api/v1/trainJob"), JSON.toJSONString(ptTrainJobDeleteDTO),
                 MockMvcResultMatchers.status().is2xxSuccessful(), 200);
 
     }
 
+    /**
+     *
+     *
+     * @throws Exception
+     */
     @Test
     public void deleteTrainJobWithNoIdTest() throws Exception {
         // TODO Auto-generated method stub

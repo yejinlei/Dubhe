@@ -1,5 +1,5 @@
 /**
- * Copyright 2020 Zhejiang Lab. All Rights Reserved.
+ * Copyright 2020 Tianshu AI Platform. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,7 +35,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
+
 import java.util.List;
+
 import static org.dubhe.constant.Permissions.DATA;
 
 /**
@@ -99,21 +101,31 @@ public class FileController {
         return new DataResponseBody();
     }
 
-    @ApiOperation(value = "文件详情", notes = "状态:101-未标注，102-标注中，104-自动标注完成，105-已标注完成")
+    @ApiOperation(value = "文件详情", notes = "状态: 101-未标注, 102-手动标注中, 103-自动标注完成, 104-标注完成, 105-标注未识别, 201-目标跟踪完成")
     @GetMapping(value = "/files/{datasetId}/{fileId}/info")
     @RequiresPermissions(DATA)
     public DataResponseBody get(@PathVariable(name = "fileId") Long fileId,@PathVariable(name = "datasetId") Long datasetId) {
         return new DataResponseBody(fileService.get(fileId,datasetId));
     }
 
-    @ApiOperation(value = "文件查询", notes = "状态:101-未标注，102-标注中，104-自动标注完成，105-已标注完成")
+    @ApiOperation(value = "文件查询", notes = "状态: 101-未标注, 102-手动标注中, 103-自动标注完成, 104-标注完成, 105-标注未识别, 201-目标跟踪完成")
     @GetMapping(value = "/{datasetId}/files")
     @RequiresPermissions(DATA)
     public DataResponseBody query(@PathVariable(name = "datasetId") Long datasetId, Page page, FileQueryCriteriaVO fileQueryCriteria) {
-        return new DataResponseBody(fileService.listVO(datasetId, page, fileQueryCriteria));
+        return new DataResponseBody(fileService.listPage(datasetId, page, fileQueryCriteria));
     }
 
-    @ApiOperation(value = "文件查询，物体检测标注页面使用", notes = "状态:101-未标注，102-标注中，104-自动标注完成，105-已标注完成")
+
+    @ApiOperation(value = "文本数据集文件查询", notes = "状态: 101-未标注, 102-手动标注中, 103-自动标注完成, 104-标注完成, 105-标注未识别")
+    @GetMapping(value = "/{datasetId}/files/txt")
+    @RequiresPermissions(DATA)
+    public DataResponseBody txtFilesByPage(@PathVariable(name = "datasetId") Long datasetId, Page page, FileQueryCriteriaVO fileQueryCriteria) {
+        return new DataResponseBody(fileService.txtFilesByPage(datasetId, page, fileQueryCriteria));
+    }
+
+
+
+    @ApiOperation(value = "文件查询，物体检测标注页面使用", notes = "状态: 101-未标注, 102-手动标注中, 103-自动标注完成, 104-标注完成, 105-标注未识别, 201-目标跟踪完成")
     @GetMapping(value = "/{datasetId}/files/detection")
     @RequiresPermissions(DATA)
     public DataResponseBody query(@PathVariable(name = "datasetId") Long datasetId,
@@ -175,5 +187,13 @@ public class FileController {
     public DataResponseBody getEnhanceFileList(@PathVariable(value = "fileId") Long fileId,@PathVariable(value = "datasetId") Long datasetId) {
         return new DataResponseBody(fileService.getEnhanceFileList(fileId,datasetId));
     }
+
+    @ApiOperation("文本状态数量统计")
+    @GetMapping(value = "/{datasetId}/count")
+    @RequiresPermissions(DATA)
+    public DataResponseBody getFileCountByStatus(@PathVariable(value = "datasetId") Long datasetId) {
+        return new DataResponseBody(fileService.getFileCountByStatus(datasetId));
+    }
+
 
 }

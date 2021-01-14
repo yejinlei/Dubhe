@@ -1,5 +1,5 @@
 /**
- * Copyright 2020 Zhejiang Lab. All Rights Reserved.
+ * Copyright 2020 Tianshu AI Platform. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,14 +17,10 @@
 
 package org.dubhe.service;
 
-import org.dubhe.domain.PtModelInfo;
-import org.dubhe.domain.dto.PtModelInfoCreateDTO;
-import org.dubhe.domain.dto.PtModelInfoDeleteDTO;
-import org.dubhe.domain.dto.PtModelInfoQueryDTO;
-import org.dubhe.domain.dto.PtModelInfoUpdateDTO;
+import org.dubhe.domain.dto.*;
+import org.dubhe.domain.vo.PtModelInfoByResourceVO;
 import org.dubhe.domain.vo.PtModelInfoCreateVO;
 import org.dubhe.domain.vo.PtModelInfoDeleteVO;
-import org.dubhe.domain.vo.PtModelInfoQueryVO;
 import org.dubhe.domain.vo.PtModelInfoUpdateVO;
 
 import java.util.List;
@@ -67,11 +63,21 @@ public interface PtModelInfoService {
      * @return PtModelInfoDeleteVO 模型管理返回删除VO
      */
     PtModelInfoDeleteVO deleteAll(PtModelInfoDeleteDTO ptModelInfoDeleteDTO);
+
     /**
      * 根据模型来源查询模型信息
      *
-     * @param ptModelInfoQueryDTO 模型查询对象
-     * @return  PtModelInfoQueryVO 模型管理返回查询VO
+     * @param ptModelInfoByResourceDTO   模型查询对象
+     * @return PtModelInfoByResourceVO  模型返回查询VO
      */
-    List<PtModelInfoQueryVO> findModelByResource(PtModelInfoQueryDTO ptModelInfoQueryDTO);
+    List<PtModelInfoByResourceVO> getModelByResource(PtModelInfoByResourceDTO ptModelInfoByResourceDTO);
+
+    /**
+     * 模型优化上传模型
+     *
+     * @param ptModelOptimizationCreateDTO 模型优化上传模型入参
+     * @return PtModelInfoByResourceVO  模型优化上传模型返回值
+     */
+    PtModelInfoByResourceVO modelOptimizationUploadModel(PtModelOptimizationCreateDTO ptModelOptimizationCreateDTO);
+
 }

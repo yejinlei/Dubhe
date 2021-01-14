@@ -1,5 +1,5 @@
 /**
- * Copyright 2020 Zhejiang Lab. All Rights Reserved.
+ * Copyright 2020 Tianshu AI Platform. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -122,4 +122,12 @@ public interface PtTrainJobService {
      * @return List<PtJobMetricsGrafanaVO>    Pod Metrics Grafana url
      */
     List<PtJobMetricsGrafanaVO> getGrafanaUrl(Long jobId);
+
+    /**
+     * 获取训练使用的模型信息
+     *
+     * @param ptTrainModelDTO
+     * @return PtTrainJobModelVO
+     */
+    PtTrainJobModelVO getTrainJobModel(PtTrainModelDTO ptTrainModelDTO);
 }

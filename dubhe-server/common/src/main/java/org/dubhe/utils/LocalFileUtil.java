@@ -1,5 +1,5 @@
 /**
- * Copyright 2020 Zhejiang Lab. All Rights Reserved.
+ * Copyright 2020 Tianshu AI Platform. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,6 +31,7 @@ import org.springframework.util.FileCopyUtils;
 
 import java.io.*;
 import java.util.Enumeration;
+import java.util.Objects;
 import java.util.zip.ZipEntry;
 
 /**
@@ -53,6 +54,27 @@ public class LocalFileUtil {
     private static final String OS_NAME = "os.name";
 
     private static final String WINDOWS = "Windows";
+
+    /**
+     * nfs服务暴露的IP地址
+     */
+    @Value("${k8s.nfs}")
+    private String nfsIp;
+
+    /**
+     * 文件存储服务器用户名
+     */
+    @Value("${data.server.userName}")
+    private String userName;
+
+    /**
+     * 拷贝文件命令
+     */
+    public static final String COPY_COMMAND = "ssh %s@%s \"mkdir -p %s && cp -r %s %s && echo success\"";
+    /**
+     * 拷贝文件夹下文件命令
+     */
+    public static final String COPY_DIR_COMMAND = "ssh %s@%s \"mkdir -p %s && cp -rf %s* %s && echo success\"";
 
     @Value("${k8s.nfs-root-path}")
     private String nfsRootPath;
@@ -198,6 +220,30 @@ public class LocalFileUtil {
         }
     }
 
+
+    /**
+     * 复制单个文件到指定目录下  单个文件
+     *
+     * @param sourcePath 需要复制的文件  例如：/abc/def/cc.txt
+     * @param targetPath 需要放置的目标目录 例如：/abc/dd
+     * @return boolean
+     */
+    private boolean copyLocalFile(String sourcePath, String targetPath) {
+        if (StringUtils.isEmpty(sourcePath) || StringUtils.isEmpty(targetPath)) {
+            return false;
+        }
+        sourcePath = formatPath(sourcePath);
+        targetPath = formatPath(targetPath);
+        try (InputStream input = new FileInputStream(sourcePath);
+             FileOutputStream output = new FileOutputStream(targetPath)) {
+            FileCopyUtils.copy(input, output);
+            return true;
+        } catch (IOException e) {
+            LogUtil.error(LogEnum.LOCAL_FILE_UTIL, " failed to copy file original path: {} ,target path： {} ,copyLocalFile:{} ", sourcePath, targetPath, e);
+            return false;
+        }
+    }
+
     /**
      * NFS 复制目录到指定目录下  多个文件  包含目录与文件并存情况
      *
@@ -220,30 +266,6 @@ public class LocalFileUtil {
             return false;
         }
     }
-
-    /**
-     * 复制文件到指定目录下  单个文件
-     *
-     * @param sourcePath 需要复制的文件  例如：/abc/def/cc.txt
-     * @param targetPath 需要放置的目标目录 例如：/abc/dd
-     * @return boolean
-     */
-    private boolean copyLocalFile(String sourcePath, String targetPath) {
-        if (StringUtils.isEmpty(sourcePath) || StringUtils.isEmpty(targetPath)) {
-            return false;
-        }
-        sourcePath = formatPath(sourcePath);
-        targetPath = formatPath(targetPath);
-        try (InputStream input = new FileInputStream(sourcePath);
-             FileOutputStream output = new FileOutputStream(targetPath)) {
-            FileCopyUtils.copy(input, output);
-            return true;
-        } catch (IOException e) {
-            LogUtil.error(LogEnum.LOCAL_FILE_UTIL, " failed to copy file original path: {} ,target path： {} ,copyLocalFile:{} ", sourcePath, targetPath, e);
-            return false;
-        }
-    }
-
 
     /**
      * 复制文件 到指定目录下  多个文件  包含目录与文件并存情况
@@ -302,6 +324,79 @@ public class LocalFileUtil {
             return path.replaceAll("///*", FILE_SEPARATOR);
         }
         return path;
+    }
+
+    /**
+     * 拷贝文件
+     *
+     * @param sourcePath 需要复制的文件  例如：/abc/def/cc.txt
+     * @param targetPath 需要放置的目标目录 例如：/abc/dd
+     * @return
+     */
+    public boolean copyFile(String sourcePath, String targetPath) {
+        //绝对路径
+        String sourceAbsolutePath = formatPath(nfsConfig.getRootDir() + sourcePath);
+        String targetPathAbsolutePath = formatPath(nfsConfig.getRootDir() + targetPath);
+        String[] command = new String[]{"/bin/sh", "-c", String.format(COPY_COMMAND, userName, nfsIp, targetPathAbsolutePath, sourceAbsolutePath, targetPathAbsolutePath)};
+        boolean flag = false;
+        Process process;
+        try {
+            process = Runtime.getRuntime().exec(command);
+            if (isCopySuccess(process)) {
+                flag = true;
+            }
+        } catch (IOException e) {
+            LogUtil.error(LogEnum.LOCAL_FILE_UTIL, "copy file failed, filePath:{}, targetPath:{}", sourcePath, targetPath, e);
+        }
+        return flag;
+    }
+
+    /**
+     * 拷贝文件夹下内容
+     * @param sourcePath 需要复制的文件目录 例如：/abc/dd
+     * @param targetPath 需要放置的目标目录 例如：/abc/dd
+     * @return
+     */
+    public boolean copyDir(String sourcePath, String targetPath) {
+        //绝对路径
+        String sourceAbsolutePath = formatPath(nfsConfig.getRootDir() + sourcePath);
+        String targetPathAbsolutePath = formatPath(nfsConfig.getRootDir() + targetPath);
+        String[] command = new String[]{"/bin/sh", "-c", String.format(COPY_DIR_COMMAND, userName, nfsIp, targetPathAbsolutePath, sourceAbsolutePath, targetPathAbsolutePath)};
+        boolean flag = false;
+        Process process;
+        try {
+            process = Runtime.getRuntime().exec(command);
+            if (isCopySuccess(process)) {
+                flag = true;
+            }
+        } catch (IOException e) {
+            LogUtil.error(LogEnum.LOCAL_FILE_UTIL, "copy file failed, filePath:{}, targetPath:{}", sourcePath, targetPath, e);
+        }
+        return flag;
+    }
+
+    /**
+     * 判断拷贝结果
+     *
+     * @param process
+     * @return
+     */
+    public boolean isCopySuccess(Process process) {
+        boolean flag = false;
+        try (InputStream stream = process.getInputStream();
+             InputStreamReader iReader = new InputStreamReader(stream);
+             BufferedReader bReader = new BufferedReader(iReader)) {
+            String line;
+            while (Objects.nonNull(line = bReader.readLine())) {
+                boolean temp = line.contains("success");
+                if (temp) {
+                    flag = true;
+                }
+            }
+        } catch (Exception e) {
+            LogUtil.error(LogEnum.SERVING, "Read stream failed : {}", e);
+        }
+        return flag;
     }
 
 }

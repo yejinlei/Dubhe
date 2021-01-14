@@ -14,9 +14,11 @@
         <module>dubhe-system</module>
         <module>dubhe-admin</module>
         <module>dubhe-data</module>
+        <module>dubhe-dcm</module>
         <module>dubhe-model</module>
         <module>dubhe-k8s</module>
         <module>dubhe-task</module>
+        <module>dubhe-serving</module>
     </modules>
     <name>之江天枢一站式人工智能开源平台</name>
     <parent>
@@ -131,8 +133,8 @@
         <!-- druid数据源驱动 -->
         <dependency>
             <groupId>com.alibaba</groupId>
-            <artifactId>druid-spring-boot-starter</artifactId>
-            <version>${druid.version}</version>
+            <artifactId>druid</artifactId>
+            <version>1.1.6</version>
         </dependency>
 
         <!--lombok插件-->
@@ -224,7 +226,7 @@
         <dependency>
             <groupId>org.apache.shardingsphere</groupId>
             <artifactId>sharding-jdbc-spring-boot-starter</artifactId>
-            <version>4.0.0-RC1</version>
+            <version>4.1.1</version>
         </dependency>
 
     </dependencies>

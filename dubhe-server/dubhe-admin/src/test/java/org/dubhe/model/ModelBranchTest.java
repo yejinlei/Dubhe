@@ -1,5 +1,5 @@
 /**
- * Copyright 2020 Zhejiang Lab. All Rights Reserved.
+ * Copyright 2020 Tianshu AI Platform. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,19 +18,18 @@
 package org.dubhe.model;
 
 
+import com.alibaba.fastjson.JSON;
+import org.dubhe.BaseTest;
 import org.dubhe.domain.dto.PtModelBranchCreateDTO;
 import org.dubhe.domain.dto.PtModelBranchDeleteDTO;
-import org.dubhe.domain.dto.PtModelBranchQueryDTO;
-import org.dubhe.domain.dto.PtModelBranchUpdateDTO;
-import org.dubhe.domain.vo.PtModelBranchCreateVO;
-import org.dubhe.service.impl.PtModelBranchServiceImpl;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.annotation.Rollback;
 import org.springframework.test.context.junit4.SpringRunner;
-
-import java.util.Map;
+import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
+import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
+import org.springframework.transaction.annotation.Transactional;
 
 /**
  * @description 分支管理
@@ -38,21 +37,16 @@ import java.util.Map;
  */
 @RunWith(SpringRunner.class)
 @SpringBootTest
-public class ModelBranchTest {
-    @Autowired
-    private PtModelBranchServiceImpl ptModelBranchServiceImpl;
+public class ModelBranchTest extends BaseTest {
 
     /**
      * 查询ModelBranch
      */
     @Test
-    public void ptModelBranchQueryTest() {
-        PtModelBranchQueryDTO ptModelBranchQueryCriteria = new PtModelBranchQueryDTO();
-        ptModelBranchQueryCriteria.setParentId(1);
+    public void ptModelBranchQueryTest() throws Exception {
+        mockMvcWithNoRequestBody(mockMvc.perform(MockMvcRequestBuilders.get("/api/ptModelBranch").param("parentId", String.valueOf(111)))
+                .andExpect(MockMvcResultMatchers.status().isOk()).andReturn().getResponse(), 200);
 
-
-        Map<String, Object> results = ptModelBranchServiceImpl.queryAll(ptModelBranchQueryCriteria);
-        System.out.println(results.toString());
     }
 
 
@@ -60,34 +54,27 @@ public class ModelBranchTest {
      * 新增ModelBranch
      */
     @Test
-    public void ptModelBranchCreateTest() {
+    @Transactional(rollbackFor = Exception.class)
+    @Rollback(false)
+    public void ptModelBranchCreateTest() throws Exception {
         PtModelBranchCreateDTO ptModelBranchCreateDTO = new PtModelBranchCreateDTO();
-        ptModelBranchCreateDTO.setParentId((long) 1)
-                .setModelAddress("http://10.0.0.1");
-        PtModelBranchCreateVO ptModelBranchCreateVO = ptModelBranchServiceImpl.create(ptModelBranchCreateDTO);
-        System.out.println(ptModelBranchCreateVO.toString());
+        ptModelBranchCreateDTO.setParentId(114L)
+                .setModelAddress("/model/1/20201130170019114pij1/").setModelSource(1);
+        mockMvcTest(MockMvcRequestBuilders.post("/api/ptModelBranch"), JSON.toJSONString(ptModelBranchCreateDTO), MockMvcResultMatchers.status().isOk(), 200);
     }
 
-    /**
-     * 修改ModelBranch
-     */
-    @Test
-    public void ptModelBranchUpdateTest() {
-        PtModelBranchUpdateDTO ptModelBranchUpdateDTO = new PtModelBranchUpdateDTO();
-        ptModelBranchUpdateDTO.setParentId((long) 1)
-                .setModelAddress("http://10.0.0.1");
-        ptModelBranchServiceImpl.update(ptModelBranchUpdateDTO);
-    }
 
     /**
      * 删除ModelBranch
      */
     @Test
-    public void ptModelBranchDeleteTest() {
-        Long[] ids = {(long) 1, (long) 2};
-        PtModelBranchDeleteDTO ptModelBranchDeleteDTO =new PtModelBranchDeleteDTO();
+    @Transactional(rollbackFor = Exception.class)
+    @Rollback(false)
+    public void ptModelBranchDeleteTest() throws Exception {
+        Long[] ids = {94L};
+        PtModelBranchDeleteDTO ptModelBranchDeleteDTO = new PtModelBranchDeleteDTO();
         ptModelBranchDeleteDTO.setIds(ids);
+        mockMvcTest(MockMvcRequestBuilders.delete("/api/ptModelBranch"), JSON.toJSONString(ptModelBranchDeleteDTO), MockMvcResultMatchers.status().isOk(), 200);
 
-        ptModelBranchServiceImpl.deleteAll(ptModelBranchDeleteDTO);
     }
 }

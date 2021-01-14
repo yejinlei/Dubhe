@@ -1,5 +1,5 @@
 /**
- * Copyright 2020 Zhejiang Lab. All Rights Reserved.
+ * Copyright 2020 Tianshu AI Platform. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,8 +32,12 @@ public class K8sParamConstants {
     public static final String NODE_STATUS_TRUE = "Ready";
     public static final String NODE_STATUS_FALSE = "NotReady";
     public static final String MEM_UNIT = "Mi";
+    public static final String MEM_UNIT_GI = "Gi";
+    public static final String MEM_UNIT_KI = "Ki";
     public static final String CPU_UNIT = "m";
+    public static final String CPU_UNIT_N = "n";
     public static final String RESOURCE_NAME_TEMPLATE = "{}-{}";
+    public static final String SUB_RESOURCE_NAME_TEMPLATE = "{}-{}-{}";
     public static final String SECRET_PWD_KEY = "jupyter.default.pwd";
     public static final String SECRET_URL_KEY = "jupyter.base.url";
     public static final String ENV_PWD_KEY = "JUPYTER_DEFAULT_PWD";
@@ -44,8 +48,20 @@ public class K8sParamConstants {
     public static final String TOKEN="token=";
     public static final String SVC_SUFFIX = "svc";
     public static final String INGRESS_SUFFIX = "ingress";
+    public static final String SHM_NAME = "shm";
+    public static final String SHM_MEDIUM = "Memory";
+    public static final String SHM_MOUNTPATH = "/dev/shm";
+    public static final String INGRESS_MAX_UPLOAD_SIZE = "100m";
 
+    public static final String SECRET_TLS_TYPE = "kubernetes.io/tls";
+    public static final String SECRET_TLS_TLS_CRT = "tls.crt";
+    public static final String SECRET_TLS_TLS_KEY = "tls.key";
+
+    //Ingress annotations key
     public static final String INGRESS_PROXY_BODY_SIZE_KEY = "nginx.ingress.kubernetes.io/proxy-body-size";
+    public static final String INGRESS_CLASS_KEY = "kubernetes.io/ingress.class";
+    public static final String INGRESS_SSL_REDIRECT_KEY = "nginx.ingress.kubernetes.io/ssl-redirect";
+    public static final String INGRESS_BACKEND_PROTOCOL_KEY = "nginx.ingress.kubernetes.io/backend-protocol";
     /**
      * k8s资源对象名称校验正则表达式
      */
@@ -54,4 +70,12 @@ public class K8sParamConstants {
      * resourceName最大长度
      */
     public static final Integer RESOURCE_NAME_LENGTH = 45;
+    /**
+     * prometheus查询url
+     */
+    public static String PROMETHEUS_QUERY_URL =  "http://{}:{}/api/v1/query";
+    /**
+     * prometheus查询gpu参数
+     */
+    public static String PROMETHEUS_QUERY_GPU_PARAM = "sum(container_accelerator_duty_cycle{pod=\"{}\"})by(pod,acc_id)";
 }

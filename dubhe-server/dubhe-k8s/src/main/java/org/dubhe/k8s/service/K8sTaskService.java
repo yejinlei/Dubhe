@@ -1,5 +1,5 @@
 /**
- * Copyright 2020 Zhejiang Lab. All Rights Reserved.
+ * Copyright 2020 Tianshu AI Platform. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,7 +24,7 @@ import java.util.List;
 
 /**
  * @description k8s任务服务
- * @date 2020-8-31
+ * @date 2020-08-31
  */
 public interface K8sTaskService {
     /**
@@ -50,9 +50,27 @@ public interface K8sTaskService {
     List<K8sTask> selectByNamespaceAndResourceName(K8sTask k8sTask);
 
     /**
-     * 查询
+     * 根据条件查询未执行的任务
      * @param k8sTaskBO k8s任务参数
      * @return List<k8sTask> k8s任务类集合
      */
     List<K8sTask> seleteUnexecutedTask(K8sTaskBO k8sTaskBO);
+
+    /**
+     * 查询未执行的任务
+     * @return List<k8sTask> k8s任务类集合
+     */
+    List<K8sTask> seleteUnexecutedTask();
+
+    /**
+     * 添加redis延时队列
+     * @param k8sTask
+     * @return
+     */
+    boolean addRedisDelayTask(K8sTask k8sTask);
+
+    /**
+     * 加载任务到延时队列
+     */
+    void loadTaskToRedis();
 }

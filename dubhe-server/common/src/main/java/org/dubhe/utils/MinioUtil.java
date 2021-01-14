@@ -1,5 +1,5 @@
 /**
- * Copyright 2020 Zhejiang Lab. All Rights Reserved.
+ * Copyright 2020 Tianshu AI Platform. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ package org.dubhe.utils;
 import cn.hutool.core.io.IoUtil;
 import cn.hutool.http.HttpRequest;
 import com.alibaba.fastjson.JSONObject;
+import io.minio.CopyConditions;
 import io.minio.MinioClient;
 import io.minio.PutObjectOptions;
 import io.minio.Result;
@@ -31,6 +32,7 @@ import io.swagger.annotations.ApiModelProperty;
 import lombok.Data;
 import org.apache.commons.lang.StringUtils;
 import org.dubhe.base.MagicNumConstant;
+import org.dubhe.constant.NumberConstant;
 import org.dubhe.enums.LogEnum;
 import org.dubhe.exception.BusinessException;
 import org.springframework.beans.factory.annotation.Value;
@@ -40,12 +42,7 @@ import javax.annotation.PostConstruct;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.Charset;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 /**
  * @description Minio工具类
@@ -92,6 +89,22 @@ public class MinioUtil {
     }
 
     /**
+     * 写文件
+     *
+     * @param bucket       桶名称
+     * @param fullFilePath 文件存储的全路径，包括文件名，非'/'开头. e.g. dataset/12/annotation/test.txt
+     * @param inputStream  file inputStream. can not be null
+     */
+    public void writeInputStream(String bucket, String fullFilePath, InputStream inputStream) throws Exception {
+        boolean isExist = client.bucketExists(bucket);
+        if (!isExist) {
+            client.makeBucket(bucket);
+        }
+        PutObjectOptions options = new PutObjectOptions(inputStream.available(), MagicNumConstant.NEGATIVE_ONE);
+        client.putObject(bucket, fullFilePath, inputStream, options);
+    }
+
+    /**
      * 读取文件
      *
      * @param bucket       桶
@@ -125,10 +138,10 @@ public class MinioUtil {
     /**
      * 批量删除文件
      *
-     * @param bucket       桶
-     * @param objectNames  对象名称
+     * @param bucket      桶
+     * @param objectNames 对象名称
      */
-    public void delFiles(String bucket,List<String> objectNames) throws Exception{
+    public void delFiles(String bucket, List<String> objectNames) throws Exception {
         Iterable<Result<DeleteError>> results = client.removeObjects(bucket, objectNames);
         for (Result<DeleteError> result : results) {
             result.get();
@@ -138,15 +151,15 @@ public class MinioUtil {
     /**
      * 获取对象名称
      *
-     * @param bucketName  桶名称
-     * @param prefix      前缀
-     * @return
+     * @param bucketName 桶名称
+     * @param prefix     前缀
+     * @return List<String> 对象名称列表
      * @throws Exception
      */
-    public List<String> getObjects(String bucketName, String prefix)throws Exception{
+    public List<String> getObjects(String bucketName, String prefix) throws Exception {
         List<String> fileNames = new ArrayList<>();
         Iterable<Result<Item>> results = client.listObjects(bucketName, prefix);
-        for(Result<Item> result:results){
+        for (Result<Item> result : results) {
             Item item = result.get();
             fileNames.add(item.objectName());
         }
@@ -154,14 +167,31 @@ public class MinioUtil {
     }
 
     /**
+     * 获取路径下文件数量
+     *
+     * @param bucketName 桶名称
+     * @param prefix     前缀
+     * @return InputStream 文件流
+     * @throws Exception
+     */
+    public int getCount(String bucketName, String prefix) throws Exception {
+        int count = NumberConstant.NUMBER_0;
+        Iterable<Result<Item>> results = client.listObjects(bucketName, prefix);
+        for (Result<Item> result : results) {
+            count++;
+        }
+        return count;
+    }
+
+    /**
      * 获取文件流
      *
      * @param bucket     桶
      * @param objectName 对象名称
-     * @return
+     * @return InputStream 文件流
      * @throws Exception
      */
-    public InputStream getObjectInputStream(String bucket,String objectName)throws Exception{
+    public InputStream getObjectInputStream(String bucket, String objectName) throws Exception {
         return client.getObject(bucket, objectName);
     }
 
@@ -201,6 +231,25 @@ public class MinioUtil {
         });
     }
 
+    /**
+     * minio拷贝操作
+     *
+     * @Param bucket        桶名
+     * @Param sourceFiles   需要复制的标注文件名
+     * @Param targetDir     目标文件夹路径
+     */
+    public void copyObject(String bucket, List<String> sourceFiles, String targetDir) {
+        CopyConditions copyConditions = new CopyConditions();
+        sourceFiles.forEach(sourceFile -> {
+            try {
+                String targetName = targetDir + "/" + org.dubhe.utils.StringUtils.substringAfterLast(sourceFile, "/");
+                client.copyObject(bucket, targetName, null, null, bucket, sourceFile, null, copyConditions);
+            } catch (Exception e) {
+                LogUtil.error(LogEnum.BIZ_DATASET, "MinIO file copy failed, {}", e);
+            }
+        });
+    }
+
     @Data
     @Service
     public class MinioWebTokenBody {
@@ -219,9 +268,9 @@ public class MinioUtil {
         /**
          * 生成文件下载请求参数方法
          *
-         * @param bucketName  桶名称
-         * @param prefix      前缀
-         * @param objects     对象名称
+         * @param bucketName 桶名称
+         * @param prefix     前缀
+         * @param objects    对象名称
          * @return MinioDownloadDto 下载请求参数
          */
         public MinioDownloadDto getDownloadParam(String bucketName, String prefix, List<String> objects, String zipName) {

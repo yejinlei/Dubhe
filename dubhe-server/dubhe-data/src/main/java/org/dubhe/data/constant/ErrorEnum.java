@@ -1,5 +1,5 @@
 /**
- * Copyright 2020 Zhejiang Lab. All Rights Reserved.
+ * Copyright 2020 Tianshu AI Platform. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -80,10 +80,12 @@ public enum ErrorEnum implements ErrorCode {
      */
     LABEL_ERROR(1600, "标签名不能为空或非系统自动标注支持的标签"),
     LABEL_NAME_EXIST(1601, "本数据集已有同名标签"),
-    LABEL_NAME_DUPLICATION(1602,"标签名重复，请检查"),
+    LABEL_NAME_DUPLICATION(1602,"标签名称或标签ID重复，请检查"),
     LABEL_NOT_EXISTS(1603,"标签不存在"),
     LABEL_NAME_COLOR_NOT_NULL(1604,"JSON文件中标签名称和颜色不能为空"),
     LABEL_PUBLIC_EORROR(1605,"不允许操作公共标签"),
+    LABEL_GROUP_ID_IS_NULL(1606,"标签组ID为null"),
+    LABEL_FORMAT_IS_ERROR(1607,"标签格式不正确"),
 
     /**
      * 数据集操作错误
@@ -102,6 +104,9 @@ public enum ErrorEnum implements ErrorCode {
     DATASET_ENHANCEMENT(1711, "该数据集正在增强中,请稍等"),
     DATASET_TRACK_TYPE_ERROR(1712, "数据集类型只能是目标跟踪才能进行跟踪!"),
     DATASET_DELETE_ERROR(1713, "数据集数据大数据删除异常!"),
+    DATASET_PUBLISH_ERROR(1714, "数据集必须是发布后才能操作!"),
+    DATASET_SWITCH_VERSION_ERROR(1715, "数据集必须版本回退后才能操作!"),
+    DATASET_VERSION_FILE_IS_ERROR(1716, "数据集版本文件不存在!"),
 
     /**
      * 数据集版本校验
@@ -127,7 +132,17 @@ public enum ErrorEnum implements ErrorCode {
     LABELGROUP_LABEL_NAME_ERROR(1911,"请输入正确预置标签组标签"),
     LABELGROUP_LABEL_GROUP_EDIT_ERROR(1912,"标签组下标签不许修改"),
     LABELGROUP_LABEL_GROUP_QUOTE_DEL_ERROR(1913,"标签组已被数据集引用,无法删除!"),
-    ;
+    LABEL_NAME_REPEAT(1914,"标签名称已存在!"),
+    LABEL_PREPARE_IS_TXT(1915,"请选择文本预制标签进行自动标注!"),
+
+    /**
+     * 医学数据集错误
+     */
+    MEDICINE_AUTO_DATASET_ERROR(2001,"当前医学数据集不可自动标注"),
+    MEDICINE_MEDICAL_ALREADY_EXISTS(2002,"当前类型的医学数据集已存在"),
+    DATAMEDICINE_ABSENT(2003, "医学数据集不存在"),
+    DATAMEDICINE_AUTOMATIC(2004,"数据集正在自动标注中,请稍等!"),
+    MEDICINE_NAME_ERROR(2005,"当前名称已存在")
     ;
 
     ErrorEnum(int code, String msg) {

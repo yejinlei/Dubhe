@@ -1,5 +1,5 @@
 /**
- * Copyright 2020 Zhejiang Lab. All Rights Reserved.
+ * Copyright 2020 Tianshu AI Platform. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -53,15 +53,15 @@ public class ResourceCache {
     /**podNmae/resourceName缓存失效时间 单位秒**/
     private static final Long TIME_OUT = 7*24*3600L;
     /**缓存击穿前缀**/
-    @Value("${spring.profiles.active}_cache_breakdown_")
+    @Value("K8sClient:Pod:"+"${spring.profiles.active}_cache_breakdown_")
     private String cacheBreakdownPrefix;
     /**缓存穿透标记过期时间**/
     private static final Integer CACHE_BREAKDOWN = 30;
 
-    @Value("${spring.profiles.active}_k8s_pod_resourcename_")
+    @Value("K8sClient:Pod:"+"${spring.profiles.active}_k8s_pod_resourcename_")
     private String resourceNamePrefix;
 
-    @Value("${spring.profiles.active}_k8s_pod_name_")
+    @Value("K8sClient:Pod:"+"${spring.profiles.active}_k8s_pod_name_")
     private String podNamePrefix;
 
     /**

@@ -1,5 +1,5 @@
 /**
- * Copyright 2020 Zhejiang Lab. All Rights Reserved.
+ * Copyright 2020 Tianshu AI Platform. All Rights Reserved.
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -48,6 +48,12 @@ public class PtModelInfo extends BaseEntity {
      */
     @TableField(value = "name")
     private String name;
+
+    /**
+     * 模型路径
+     */
+    @TableField(value = "url")
+    private String url;
 
     /**
      * 框架类型(OneFlow、TensorFlow、Pytroch、Keras、Caffe、Blade)

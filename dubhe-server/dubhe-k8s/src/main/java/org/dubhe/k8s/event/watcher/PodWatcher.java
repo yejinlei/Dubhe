@@ -1,5 +1,5 @@
 /**
- * Copyright 2020 Zhejiang Lab. All Rights Reserved.
+ * Copyright 2020 Tianshu AI Platform. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,7 +25,7 @@ import io.fabric8.kubernetes.client.Watcher;
 import org.dubhe.enums.LogEnum;
 import org.dubhe.k8s.domain.resource.BizPod;
 import org.dubhe.k8s.enums.WatcherActionEnum;
-import org.dubhe.k8s.event.callback.WatcherCallback;
+import org.dubhe.k8s.event.callback.PodCallback;
 import org.dubhe.k8s.utils.BizConvertUtils;
 import org.dubhe.k8s.utils.K8sUtils;
 import org.dubhe.utils.LogUtil;
@@ -85,8 +85,8 @@ public class PodWatcher implements CommandLineRunner, Watcher<Pod> {
         LogUtil.info(LogEnum.BIZ_K8S, "received event pod {} action {}",pod.getMetadata().getName(),JSON.toJSONString(action));
 
         /**回调podCallback方法**/
-        WatcherCallback watcherCallback = SpringContextHolder.getBean("watcherCallback");
-        watcherCallback.podCallback(watcherActionEnum, bizPod);
+        PodCallback podCallback = SpringContextHolder.getBean(PodCallback.class);
+        podCallback.podCallback(watcherActionEnum, bizPod);
     }
 
     /**

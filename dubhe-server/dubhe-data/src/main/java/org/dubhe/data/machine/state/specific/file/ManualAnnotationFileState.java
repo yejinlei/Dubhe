@@ -1,5 +1,5 @@
 /**
- * Copyright 2020 Zhejiang Lab. All Rights Reserved.
+ * Copyright 2020 Tianshu AI Platform. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -57,7 +57,7 @@ public class ManualAnnotationFileState extends AbstractFileState {
             updatawrapper.eq(DatasetVersionFile::getVersionName, datasetVersionFile.getVersionName());
         }
         updatawrapper.eq(DatasetVersionFile::getDatasetId, datasetVersionFile.getDatasetId());
-        updatawrapper.eq(DatasetVersionFile::getFileId,datasetVersionFile.getFileId());
+        updatawrapper.eq(DatasetVersionFile::getFileId, datasetVersionFile.getFileId());
         datasetVersionFileMapper.update(new DatasetVersionFile() {{
                                             setAnnotationStatus(FileStateEnum.ANNOTATION_COMPLETE_FILE_STATE.getCode());
                                             if (datasetVersionFile.getVersionName() != null) {
@@ -67,6 +67,33 @@ public class ManualAnnotationFileState extends AbstractFileState {
                 updatawrapper);
         fileStateMachine.setMemoryFileState(fileStateMachine.getAnnotationCompleteFileState());
         LogUtil.debug(LogEnum.STATE_MACHINE, " 【未标注】 执行事件后内存状态机的切换： {}", fileStateMachine.getMemoryFileState());
+    }
+
+    /**
+     * 文件 手动标注中-->手动标注文件点击保存-->标注中
+     *
+     * @param datasetVersionFile 版本文件对象
+     */
+    @Override
+    public void manualAnnotationSaveEvent(DatasetVersionFile datasetVersionFile) {
+        LogUtil.debug(LogEnum.STATE_MACHINE, " 【手动标注中】 执行事件前内存中状态机的状态 :{} ", fileStateMachine.getMemoryFileState());
+        LogUtil.debug(LogEnum.STATE_MACHINE, " 接受参数： {} ", datasetVersionFile.toString());
+        if (datasetVersionFile.getVersionName() != null) {
+            LambdaUpdateWrapper<DatasetVersionFile> updatawrapper = new LambdaUpdateWrapper<>();
+            if ((datasetVersionFile.getVersionName() == null)) {
+                updatawrapper.isNull(DatasetVersionFile::getVersionName);
+            } else {
+                updatawrapper.eq(DatasetVersionFile::getVersionName, datasetVersionFile.getVersionName());
+            }
+            updatawrapper.eq(DatasetVersionFile::getDatasetId, datasetVersionFile.getDatasetId());
+            updatawrapper.eq(DatasetVersionFile::getFileId, datasetVersionFile.getFileId());
+            datasetVersionFileMapper.update(new DatasetVersionFile() {{
+                                                setChanged(Constant.CHANGED);
+                                            }},
+                    updatawrapper);
+        }
+        fileStateMachine.setMemoryFileState(fileStateMachine.getManualAnnotationFileState());
+        LogUtil.debug(LogEnum.STATE_MACHINE, " 【手动标注中】 执行事件后内存状态机的切换： {}", fileStateMachine.getMemoryFileState());
     }
 
 }

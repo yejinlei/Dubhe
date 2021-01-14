@@ -10,7 +10,7 @@
     <groupId>org.dubhe</groupId>
     <artifactId>dubhe-task</artifactId>
     <version>1.0</version>
-    <name>dubhe-task</name>
+    <name>任务管理</name>
     <description>任务管理</description>
 
     <properties>
@@ -40,6 +40,7 @@
                 <configuration>
                     <skip>false</skip>
                     <fork>true</fork>
+                    <includeSystemScope>true</includeSystemScope>
                 </configuration>
             </plugin>
             <!-- 跳过单元测试 -->

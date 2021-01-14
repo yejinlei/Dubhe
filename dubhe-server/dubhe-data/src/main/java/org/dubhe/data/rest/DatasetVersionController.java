@@ -1,5 +1,5 @@
 /**
- * Copyright 2020 Zhejiang Lab. All Rights Reserved.
+ * Copyright 2020 Tianshu AI Platform. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,6 @@
 
 package org.dubhe.data.rest;
 
-import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import org.apache.shiro.authz.annotation.RequiresPermissions;
@@ -65,8 +64,8 @@ public class DatasetVersionController {
     @ApiOperation("数据集版本列表")
     @GetMapping
     @RequiresPermissions(DATA)
-    public DataResponseBody datasetVersionList(@Validated DatasetVersionQueryCriteriaDTO datasetVersionQueryCriteria, Page page) {
-        return new DataResponseBody(datasetVersionService.getList(datasetVersionQueryCriteria, page));
+    public DataResponseBody datasetVersionList(@Validated DatasetVersionQueryCriteriaDTO datasetVersionQueryCriteria) {
+        return new DataResponseBody(datasetVersionService.getList(datasetVersionQueryCriteria));
     }
 
     @ApiOperation("数据集版本切换")

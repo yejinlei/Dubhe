@@ -1,4 +1,4 @@
-/** Copyright 2020 Zhejiang Lab. All Rights Reserved.
+/** Copyright 2020 Tianshu AI Platform. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,8 +16,6 @@
 
 package org.dubhe;
 
-import com.alibaba.fastjson.JSON;
-import org.dubhe.domain.dto.PtTrainAlgorithmQueryDTO;
 import org.junit.Test;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
@@ -30,8 +28,7 @@ import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
 public class ForwardTest extends BaseTest {
     @Test
     public void ForwardControllerTest() throws Exception {
-        PtTrainAlgorithmQueryDTO ptTrainAlgorithmQueryDTO = new PtTrainAlgorithmQueryDTO();
-        ptTrainAlgorithmQueryDTO.setAlgorithmSource(1).setCurrent(1).setSize(10).setSort("id").setOrder("asc");
-        mockMvcTest(MockMvcRequestBuilders.get("/forward/v1/algorithm"), JSON.toJSONString(ptTrainAlgorithmQueryDTO), MockMvcResultMatchers.status().isOk(), 200);
+        mockMvcWithNoRequestBody(mockMvc.perform(MockMvcRequestBuilders.get("/api/v1/algorithm").param("algorithmSource", "2"))
+                .andExpect(MockMvcResultMatchers.status().isOk()).andReturn().getResponse(), 200);
     }
 }

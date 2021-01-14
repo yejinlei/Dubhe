@@ -1,5 +1,5 @@
 /**
- * Copyright 2020 Zhejiang Lab. All Rights Reserved.
+ * Copyright 2020 Tianshu AI Platform. All Rights Reserved.
  *
  * Licensed un   der the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,11 +20,13 @@ package org.dubhe.data.domain.bo;
 import cn.hutool.core.util.ObjectUtil;
 import lombok.Data;
 import org.dubhe.base.MagicNumConstant;
+import org.dubhe.constant.NumberConstant;
 import org.dubhe.data.constant.Constant;
-import org.dubhe.data.domain.dto.DatasetEnhanceRequestDTO;
+import org.dubhe.data.domain.entity.DatasetVersionFile;
 import org.dubhe.data.domain.entity.File;
+import org.dubhe.data.util.FileUtil;
 import org.dubhe.utils.JwtUtils;
-import org.dubhe.utils.StringUtils;
+
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
@@ -90,20 +92,10 @@ public class EnhanceTaskSplitBO implements Serializable {
     public EnhanceTaskSplitBO() {
     }
 
-    public EnhanceTaskSplitBO(Long taskId, List<File> files, String nfs, String bucketName,
-                              Long datasetId, String versionName, DatasetEnhanceRequestDTO datasetEnhanceRequestDTO,
-                              Map<Long, Integer> fileAnnotationStatus, Integer enhanceType) {
-        StringBuilder stringBuilder = new StringBuilder();
-        stringBuilder.append(nfs).append(bucketName)
-                .append(java.io.File.separator).append("dataset").append(java.io.File.separator).append(datasetId)
-                .append(java.io.File.separator);
-        this.enhanceFilePath = stringBuilder.toString() + "origin";
-        stringBuilder.append("annotation");
+    public EnhanceTaskSplitBO(Long taskId, List<File> files, Long datasetId, String versionName, Map<Long, DatasetVersionFile> datasetVersionFilesMap, Integer enhanceType,FileUtil fileUtil) {
 
-        if (StringUtils.isNotEmpty(versionName)) {
-            stringBuilder.append(java.io.File.separator).append(versionName);
-        }
-        this.enhanceAnnotationPath = stringBuilder.toString();
+        this.enhanceFilePath = fileUtil.getOriginFileAbsPath(datasetId,null,false);
+        this.enhanceAnnotationPath = fileUtil.getNfsWriteAnnotationAbsPath(datasetId);
         this.priority = Constant.DEFAULT_PRIORITY;
         this.id = taskId;
         this.datasetId = datasetId;
@@ -111,8 +103,13 @@ public class EnhanceTaskSplitBO implements Serializable {
         this.type = enhanceType;
         List<DatasetFileBO> fileDtos = new ArrayList<>();
         files.stream().forEach(file -> {
-            fileDtos.add(new DatasetFileBO(nfs + file.getUrl(), stringBuilder.toString() + java.io.File.separator + file.getName(),
-                    file.getId(), fileAnnotationStatus.get(file.getId()), file.getWidth(), file.getHeight()));
+            fileDtos.add(new DatasetFileBO(
+                    fileUtil.getOriginFileAbsPath(file.getUrl()),
+                    fileUtil.getNfsReadAnnotationAbsPath(datasetId,file.getName(),versionName,datasetVersionFilesMap.get(file.getId()).getChanged()== NumberConstant.NUMBER_0),
+                    file.getId(),
+                    datasetVersionFilesMap.get(file.getId()).getAnnotationStatus(),
+                    file.getWidth(),
+                    file.getHeight()));
         });
         this.fileDtos = fileDtos;
         if (ObjectUtil.isNotNull(JwtUtils.getCurrentUserDto())) {

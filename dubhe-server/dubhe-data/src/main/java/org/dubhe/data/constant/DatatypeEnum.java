@@ -1,5 +1,5 @@
 /**
- * Copyright 2020 Zhejiang Lab. All Rights Reserved.
+ * Copyright 2020 Tianshu AI Platform. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,7 +33,11 @@ public enum DatatypeEnum {
     /**
      * 视频
      */
-    VIDEO(1, "视频");
+    VIDEO(1, "视频"),
+    /**
+     * 文本
+     */
+    TEXT(2, "文本");
 
     DatatypeEnum(Integer value, String msg) {
         this.value = value;
@@ -56,6 +60,25 @@ public enum DatatypeEnum {
             }
         }
         return false;
+    }
+
+    /**
+     * 获取数据类型枚举
+     *
+     * @param value 获取数据类型枚举值
+     * @return  数据类型枚举
+     */
+    public static DatatypeEnum getEnumValue(Integer value) {
+        switch (value) {
+            case 0:
+                return IMAGE;
+            case 1:
+                return VIDEO;
+            case 2:
+                return TEXT;
+            default:
+                return IMAGE;
+        }
     }
 
 }

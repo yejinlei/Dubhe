@@ -1,5 +1,5 @@
 /**
- * Copyright 2020 Zhejiang Lab. All Rights Reserved.
+ * Copyright 2020 Tianshu AI Platform. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -45,6 +45,14 @@ public class DatasetCustomCreateDTO implements Serializable {
     @ApiModelProperty(value = "数据集压缩包地址")
     @NotNull(message = "请上传压缩包!", groups = Create.class)
     private String archiveUrl;
+
+    @ApiModelProperty(value = "数据集类型")
+    @NotNull(message = "请指定上传的数据集类型!", groups = Create.class)
+    private Integer datasetType;
+
+    @ApiModelProperty(value = "标注类型")
+    @NotNull(message = "请指定需要的标注类型!", groups = Create.class)
+    private Integer annotateType;
 
     public @interface Create {
     }

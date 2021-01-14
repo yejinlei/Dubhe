@@ -1,5 +1,5 @@
 /**
- * Copyright 2020 Zhejiang Lab. All Rights Reserved.
+ * Copyright 2020 Tianshu AI Platform. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,9 +25,7 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import org.dubhe.annotation.DataPermissionMethod;
 import org.dubhe.base.MagicNumConstant;
-import org.dubhe.data.constant.Constant;
-import org.dubhe.data.constant.DatasetLabelEnum;
-import org.dubhe.data.constant.ErrorEnum;
+import org.dubhe.data.constant.*;
 import org.dubhe.data.dao.DatasetMapper;
 import org.dubhe.data.dao.LabelGroupMapper;
 import org.dubhe.data.domain.dto.*;
@@ -104,10 +102,9 @@ public class LabelGroupServiceImpl extends ServiceImpl<LabelGroupMapper, LabelGr
             throw new BusinessException(ErrorEnum.LABELGROUP_JSON_FILE_ERROR);
         }
         //3 标签校验json格式校验
-        //4 解析标签信息
         List<LabelDTO> labelList = analyzeLabelData(labelGroupCreateDTO.getLabels());
 
-        //5 组装原标签数据
+        //4 组装原标签数据
         if (!CollectionUtils.isEmpty(labelList)) {
             buildLabelDataByCreate(labelGroup, labelList);
         }
@@ -150,7 +147,7 @@ public class LabelGroupServiceImpl extends ServiceImpl<LabelGroupMapper, LabelGr
             List<Label> dbLabels = labelService.listByGroupId(labelGroup.getId());
             if (!CollectionUtils.isEmpty(dbLabels)) {
                 //获取预置标签信息
-                Map<Long, String> pubLabels = getPubLabels();
+                Map<Long, String> pubLabels = getPubLabels(labelGroupCreateDTO.getLabelGroupType());
                 Map<Long, List<Label>> dbListMap = dbLabels.stream().collect(Collectors.groupingBy(Label::getId));
                 //校验标签组是否关联数据集
                 int count = datasetService.getCountByLabelGroupId(labelGroupId);
@@ -166,16 +163,20 @@ public class LabelGroupServiceImpl extends ServiceImpl<LabelGroupMapper, LabelGr
     /**
      * 构建编辑标签组方法
      *
-     * @param dbListMap 数据库标签map key: 标签id value: 标签
+     * @param dbListMap  数据库标签map key: 标签id value: 标签
      * @param labelGroup 标签组
-     * @param labelList 标签列表
-     * @param pubLabels 公共标签
+     * @param labelList  标签列表
+     * @param pubLabels  公共标签
      */
     private void buildLabelDataByUpdate(Map<Long, List<Label>> dbListMap, LabelGroup labelGroup, List<LabelDTO> labelList, Map<Long, String> pubLabels) {
 
         //删除标签和标签组的关联关系
         datasetGroupLabelService.deleteById(labelGroup.getId());
+
+        Map<String, Long> nameMap = new HashMap<>(labelList.size());
+
         for (LabelDTO dto : labelList) {
+            checkoutNameAndColor(dto, nameMap);
             //校验id是否存在
             if (!Objects.isNull(dto.getId())) {
                 //公共数据集
@@ -252,7 +253,7 @@ public class LabelGroupServiceImpl extends ServiceImpl<LabelGroupMapper, LabelGr
             throw new BusinessException(ErrorEnum.LABELGROUP_PUBLIC_ERROR);
         }
         //校验标签组是否被数据集引用
-        if(datasetService.getCountByLabelGroupId(labelGroupId) > 0){
+        if (datasetService.getCountByLabelGroupId(labelGroupId) > 0) {
             throw new BusinessException(ErrorEnum.LABELGROUP_LABEL_GROUP_QUOTE_DEL_ERROR);
         }
 
@@ -261,7 +262,7 @@ public class LabelGroupServiceImpl extends ServiceImpl<LabelGroupMapper, LabelGr
         if (!CollectionUtils.isEmpty(labels)) {
 
             //过滤预置标签组
-            List<Long> ids = labelService.getPubLabelIds();
+            List<Long> ids = labelService.getPubLabelIds(labelGroup.getLabelGroupType());
             if (!CollectionUtils.isEmpty(ids)) {
                 labels = labels.stream().filter(label -> !ids.contains(label.getId())).collect(Collectors.toList());
             }
@@ -274,7 +275,7 @@ public class LabelGroupServiceImpl extends ServiceImpl<LabelGroupMapper, LabelGr
                 //删除标签
                 labelService.deleteByIds(labelIds);
                 //删除标签和标签组关联关系
-                labelService.deleteByIds(labelIds);
+                datasetGroupLabelService.deleteById(labelGroupId);
             }
 
         }
@@ -319,6 +320,9 @@ public class LabelGroupServiceImpl extends ServiceImpl<LabelGroupMapper, LabelGr
         if (labelGroupId != null) {
             queryWrapper.or().eq("id", labelGroupId);
         }
+        if(!Objects.isNull(labelGroupQueryVO.getLabelGroupType())){
+            queryWrapper.eq("label_group_type",labelGroupQueryVO.getLabelGroupType());
+        }
         if (StringUtils.isNotEmpty(labelGroupQueryVO.getSort()) && StringUtils.isNotEmpty(labelGroupQueryVO.getOrder())) {
             queryWrapper.orderBy(true, SORT_ASC.equals(labelGroupQueryVO.getOrder().toLowerCase()),
                     StringUtils.humpToLine(labelGroupQueryVO.getSort())
@@ -329,15 +333,16 @@ public class LabelGroupServiceImpl extends ServiceImpl<LabelGroupMapper, LabelGr
         Page<LabelGroup> labelGroupPage = baseMapper.selectPage(page, queryWrapper);
 
         List<LabelGroupQueryVO> labelGroups = labelGroupPage.getRecords().stream().map(labelGroup -> {
-            LabelGroupQueryVO labelGroupQueryVO1 = LabelGroupQueryVO.builder()
+            LabelGroupQueryVO labelGroupQuery = LabelGroupQueryVO.builder()
                     .id(labelGroup.getId()).name(labelGroup.getName())
                     .operateType(labelGroup.getOperateType())
                     .type(labelGroup.getType())
                     .createTime(labelGroup.getCreateTime())
+                    .labelGroupType(labelGroup.getLabelGroupType())
                     .remark(labelGroup.getRemark()).updateTime(labelGroup.getUpdateTime()).build();
             int count = labelService.selectCount(labelGroup.getId());
-            labelGroupQueryVO1.setCount(count);
-            return labelGroupQueryVO1;
+            labelGroupQuery.setCount(count);
+            return labelGroupQuery;
         }).collect(Collectors.toList());
         Map<String, Object> stringObjectMap = PageUtil.toPage(page, labelGroups);
         return stringObjectMap;
@@ -358,7 +363,7 @@ public class LabelGroupServiceImpl extends ServiceImpl<LabelGroupMapper, LabelGr
         }
         List<Label> labels = labelService.listByGroupId(labelGroup.getId());
         List<LabelVO> labelVOS = new ArrayList<>();
-        if(!CollectionUtils.isEmpty(labels)){
+        if (!CollectionUtils.isEmpty(labels)) {
             labelVOS = labels.stream().map(a -> {
                 return LabelVO.builder().id(a.getId()).color(a.getColor()).name(a.getName()).build();
             }).collect(Collectors.toList());
@@ -367,24 +372,39 @@ public class LabelGroupServiceImpl extends ServiceImpl<LabelGroupMapper, LabelGr
                 .id(labelGroupId)
                 .type(labelGroup.getType())
                 .name(labelGroup.getName())
+                .remark(labelGroup.getRemark())
                 .operateType(labelGroup.getOperateType())
+                .labelGroupType(labelGroup.getLabelGroupType())
                 .labels(labelVOS).build();
     }
 
     /**
      * 标签组列表
      *
-     * @param type 标签组类型
+     * @param labelGroupQueryDTO 查询条件
      * @return List<LabelGroup> 查询出对应的标签组
      */
     @Override
     @DataPermissionMethod(dataType = DatasetTypeEnum.PUBLIC)
-    public List<LabelGroup> getList(Integer type) {
-        QueryWrapper<LabelGroup> labelGroupQueryWrapper = new QueryWrapper<>();
-        labelGroupQueryWrapper.eq("deleted", MagicNumConstant.ZERO)
-                .eq("type", type);
-        return baseMapper.selectList(labelGroupQueryWrapper);
+    public List<LabelGroup> getList(LabelGroupQueryDTO labelGroupQueryDTO) {
+        Integer groupType = LabelGroupTypeEnum.convertGroup(DatatypeEnum.getEnumValue(labelGroupQueryDTO.getDataType())).getValue();
+        LambdaQueryWrapper<LabelGroup> labelGroupLambdaQueryWrapper = new LambdaQueryWrapper<>();
+        labelGroupLambdaQueryWrapper.eq(LabelGroup::getDeleted, MagicNumConstant.ZERO)
+                .eq(LabelGroup::getType, labelGroupQueryDTO.getType())
+                .eq(LabelGroup::getLabelGroupType,groupType);
+        if (MagicNumConstant.ONE == labelGroupQueryDTO.getType()) {
+            if(AnnotateTypeEnum.OBJECT_DETECTION.getValue().compareTo(labelGroupQueryDTO.getAnnotateType()) == 0
+                    || AnnotateTypeEnum.OBJECT_TRACK.getValue().compareTo(labelGroupQueryDTO.getAnnotateType()) == 0){
+                labelGroupLambdaQueryWrapper.eq(LabelGroup::getId,MagicNumConstant.ONE);
+            }
+            labelGroupLambdaQueryWrapper.orderByAsc(LabelGroup::getId);
+        }else {
+            labelGroupLambdaQueryWrapper.orderByDesc(LabelGroup::getUpdateTime);
+        }
+        return baseMapper.selectList(labelGroupLambdaQueryWrapper);
+
     }
+
 
     /**
      * 导入标签组
@@ -408,6 +428,7 @@ public class LabelGroupServiceImpl extends ServiceImpl<LabelGroupMapper, LabelGr
         LabelGroupCreateDTO createDTO = LabelGroupCreateDTO.builder()
                 .labels(labels)
                 .name(labelGroupImportDTO.getName())
+                .labelGroupType(labelGroupImportDTO.getLabelGroupType())
                 .remark(labelGroupImportDTO.getRemark()).build();
 
         //调用新增标签方法
@@ -436,12 +457,14 @@ public class LabelGroupServiceImpl extends ServiceImpl<LabelGroupMapper, LabelGr
         LabelGroup labelGroup = getBaseMapper().selectOne(
                 new LambdaUpdateWrapper<LabelGroup>().eq(LabelGroup::getName, labelGroupCopyDTO.getName()));
         if (!Objects.isNull(labelGroup)) {
-            group.setName(labelGroup.getName() + RandomUtil.randomCode());
+            group.setName(buildLabelGroupName(labelGroup.getName()));
         }
 
 
         //落地标签组数据
-        LabelGroup dbLabelGroup = LabelGroup.builder().name(group.getName()).remark(group.getRemark()).originUserId(oldLabelGroup.getCreateUserId()).build();
+        LabelGroup dbLabelGroup = LabelGroup.builder()
+                .labelGroupType(oldLabelGroup.getLabelGroupType())
+                .name(group.getName()).remark(group.getRemark()).originUserId(oldLabelGroup.getCreateUserId()).build();
         baseMapper.insert(dbLabelGroup);
 
         //获取标签组关联关系
@@ -454,7 +477,7 @@ public class LabelGroupServiceImpl extends ServiceImpl<LabelGroupMapper, LabelGr
             labelListMap = labels.stream().collect(Collectors.groupingBy(Label::getId));
         }
 
-        List<Label> pubLabels = labelService.getPubLabels();
+        List<Label> pubLabels = labelService.getPubLabels(oldLabelGroup.getLabelGroupType());
         Map<Long, String> longListMap = new HashMap<>(pubLabels.size());
         if (!CollectionUtils.isEmpty(pubLabels)) {
             longListMap = pubLabels.stream().collect(Collectors.toMap(Label::getId, Label::getName));
@@ -488,6 +511,40 @@ public class LabelGroupServiceImpl extends ServiceImpl<LabelGroupMapper, LabelGr
         }
     }
 
+
+    /**
+     * 构建标签组名称
+     *
+     * @param name 原标签组名称
+     * @return  构建后标签组名称
+     */
+    private String buildLabelGroupName(String name){
+        int length = name.length();
+        if(name.length() > MagicNumConstant.TWENTY){
+            name = name.substring(0,length-MagicNumConstant.SEVEN);
+        }
+        return name+ RandomUtil.randomCode();
+    }
+
+    /**
+     * 根据标签组ID 校验是否能自动标注
+     *
+     * @param labelGroupId  标签组
+     * @return  true: 能  false: 否
+     */
+    @Override
+    public boolean isAnnotationByGroupId(Long labelGroupId) {
+        if(Objects.isNull(labelGroupId)){
+            throw new BusinessException(ErrorEnum.LABEL_GROUP_ID_IS_NULL);
+        }
+        LabelGroup labelGroup = baseMapper.selectById(labelGroupId);
+        if(Objects.isNull(labelGroup)){
+            throw new BusinessException(ErrorEnum.LABELGROUP_DOES_NOT_EXIST);
+        }
+        return MagicNumConstant.ONE == labelGroup.getType();
+    }
+
+
     /**
      * 校验标签组名称重复接口
      *
@@ -509,14 +566,14 @@ public class LabelGroupServiceImpl extends ServiceImpl<LabelGroupMapper, LabelGr
      * 新增时构建标签数据
      *
      * @param labelGroup 标签组
-     * @param labelList 标签集合
+     * @param labelList  标签集合
      */
     private void buildLabelDataByCreate(LabelGroup labelGroup, List<LabelDTO> labelList) {
 
         //获取预置标签信息
-        Map<Long, String> pubLabels = getPubLabels();
+        Map<Long, String> pubLabels = getPubLabels(labelGroup.getLabelGroupType());
 
-        Map<String, String> nameMap = new HashMap<>(labelList.size());
+        Map<String, Long> nameMap = new HashMap<>(labelList.size());
         for (LabelDTO label : labelList) {
 
             // 5-1 校验标签名称 颜色 标签组内名称唯一
@@ -561,10 +618,11 @@ public class LabelGroupServiceImpl extends ServiceImpl<LabelGroupMapper, LabelGr
     /**
      * 获取预置标签信息
      *
+     * @param labelGroupType 标签组类型
      * @return 预置标签信息 key: 标签id value: 标签名称
      */
-    private Map<Long, String> getPubLabels() {
-        List<Label> pubLabels = labelService.getPubLabels();
+    private Map<Long, String> getPubLabels(Integer labelGroupType) {
+        List<Label> pubLabels = labelService.getPubLabels(labelGroupType);
         Map<Long, String> pubListMap = new HashMap<>(pubLabels.size());
         if (!CollectionUtils.isEmpty(pubLabels)) {
             pubListMap = pubLabels.stream().collect(Collectors.toMap(Label::getId, Label::getName));
@@ -590,20 +648,21 @@ public class LabelGroupServiceImpl extends ServiceImpl<LabelGroupMapper, LabelGr
         } catch (Exception e) {
             throw new BusinessException(ErrorEnum.LABELGROUP_JSON_FILE_FORMAT_ERROR);
         }
+
         return labelList;
     }
 
     /**
      * 修改时构建标签数据
      *
-     * @param dbListMap 数据库标签map key: 标签id value: 标签
+     * @param dbListMap  数据库标签map key: 标签id value: 标签
      * @param labelGroup 标签组
-     * @param labelList 标签列表
-     * @param pubLabels 公共标签
+     * @param labelList  标签列表
+     * @param pubLabels  公共标签
      */
     private void buildLabelDataByUpdate(LabelGroup labelGroup, List<LabelDTO> labelList, Map<Long, List<Label>> dbListMap, Map<Long, String> pubLabels) {
 
-        Map<String, String> nameMap = new HashMap<>(labelList.size());
+        Map<String, Long> nameMap = new HashMap<>(labelList.size());
 
         for (LabelDTO label : labelList) {
             List<Label> labels = dbListMap.get(label.getId());
@@ -663,22 +722,24 @@ public class LabelGroupServiceImpl extends ServiceImpl<LabelGroupMapper, LabelGr
     /**
      * 校验标签名称 颜色 标签组内名称唯一
      *
-     * @param label 标签实体
-     * @param nameMap 标签名称 map
+     * @param label   标签实体
+     * @param nameMap 标签名称Map key:标签名称 value:标签ID
      */
-    private void checkoutNameAndColor(LabelDTO label, Map<String, String> nameMap) {
+    private void checkoutNameAndColor(LabelDTO label, Map<String, Long> nameMap) {
 
-        // 6-1 名称和颜色校验
+        //名称和颜色字段校验
         if (Objects.isNull(label.getName()) || Objects.isNull(label.getColor())) {
-            throw new BusinessException(ErrorEnum.LABEL_NAME_COLOR_NOT_NULL);
+            throw new BusinessException(ErrorEnum.LABEL_FORMAT_IS_ERROR);
         }
 
-        // 6-3 同标签组内名称唯一校验
-        String name = nameMap.get(label.getName());
-        if (!Objects.isNull(name)) {
+        //同标签组内名称/ID唯一校验
+        Long labelId = nameMap.get(label.getName());
+        if (nameMap.containsKey(label.getName()) ||
+                ((!Objects.isNull(labelId)) && labelId.equals(label.getId()))
+        ) {
             throw new BusinessException(ErrorEnum.LABEL_NAME_DUPLICATION);
         }
-        nameMap.put(label.getName(), label.getName());
+        nameMap.put(label.getName(), label.getId());
     }
 
 }

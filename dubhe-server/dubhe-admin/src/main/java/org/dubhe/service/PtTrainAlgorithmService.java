@@ -1,5 +1,5 @@
 /**
- * Copyright 2020 Zhejiang Lab. All Rights Reserved.
+ * Copyright 2020 Tianshu AI Platform. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,12 +17,9 @@
 
 package org.dubhe.service;
 
-import org.dubhe.domain.dto.PtTrainAlgorithmCreateDTO;
-import org.dubhe.domain.dto.PtTrainAlgorithmDeleteDTO;
-import org.dubhe.domain.dto.PtTrainAlgorithmQueryDTO;
-import org.dubhe.domain.dto.PtTrainAlgorithmUpdateDTO;
+import org.dubhe.domain.dto.*;
+import org.dubhe.domain.entity.PtTrainAlgorithm;
 
-import java.util.List;
 import java.util.Map;
 
 /**
@@ -45,7 +42,7 @@ public interface PtTrainAlgorithmService {
      * @param resources 新增算法条件
      * @return PtTrainAlgorithmCreateVO  新建训练算法
      */
-    List<Long> create(PtTrainAlgorithmCreateDTO resources);
+    Long create(PtTrainAlgorithmCreateDTO resources);
 
     /**
      * 修改算法
@@ -53,7 +50,7 @@ public interface PtTrainAlgorithmService {
      * @param resources 修改算法条件
      * @return PtTrainAlgorithmUpdateVO  修改训练算法
      */
-    List<Long> update(PtTrainAlgorithmUpdateDTO resources);
+    Long update(PtTrainAlgorithmUpdateDTO resources);
 
     /**
      * 删除算法
@@ -67,5 +64,12 @@ public interface PtTrainAlgorithmService {
      */
     Map<String, Object> getAlgorithmCount();
 
+    /**
+     * 模型优化上传算法
+     *
+     * @param ptModelAlgorithmCreateDTO 模型优化上传算法入参
+     * @return PtTrainAlgorithm 新增算法信息
+     */
+    PtTrainAlgorithm modelOptimizationUploadAlgorithm(PtModelAlgorithmCreateDTO ptModelAlgorithmCreateDTO);
 
 }

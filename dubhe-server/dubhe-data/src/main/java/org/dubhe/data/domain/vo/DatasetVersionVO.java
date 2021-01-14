@@ -1,5 +1,5 @@
 /**
- * Copyright 2020 Zhejiang Lab. All Rights Reserved.
+ * Copyright 2020 Tianshu AI Platform. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -67,6 +67,31 @@ public class DatasetVersionVO implements Serializable {
     private Integer dataConversion;
     @ApiModelProperty("图片数量")
     private Integer imageCounts;
+
+
+
+    public static DatasetVersionVO from(DatasetVersion datasetVersion, Dataset dataset, ProgressVO progress,Integer fileCount,UserSmallDTO createUser,UserSmallDTO updateUser) {
+        if (dataset == null || datasetVersion == null) {
+            return null;
+        }
+        return new DatasetVersionVO(){{
+            setDatasetId(dataset.getId());
+            setDataType(dataset.getDataType());
+            setAnnotateType(dataset.getAnnotateType());
+            setName(dataset.getName());
+            setVersionName(datasetVersion.getVersionName());
+            setCreateTime(datasetVersion.getCreateTime());
+            setVersionNote(datasetVersion.getVersionNote());
+            setIsCurrent(dataset.getCurrentVersionName() == null || dataset.getCurrentVersionName().equals(datasetVersion.getVersionName()));
+            setStatus(dataset.getStatus());
+            setFileCount(fileCount);
+            setProgressVO(progress);
+            setCreateUser(createUser);
+            setUpdateUser(updateUser);
+            setDataConversion(datasetVersion.getDataConversion());
+            setImageCounts(fileCount);
+        }};
+    }
 
     public DatasetVersionVO() {
     }

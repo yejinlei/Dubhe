@@ -1,5 +1,5 @@
 /**
- * Copyright 2020 Zhejiang Lab. All Rights Reserved.
+ * Copyright 2020 Tianshu AI Platform. All Rights Reserved.
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,6 @@
 
 package org.dubhe.domain.dto;
 
-import com.baomidou.mybatisplus.annotation.TableField;
 import io.swagger.annotations.ApiModelProperty;
 import lombok.Data;
 import org.dubhe.base.PageQueryBase;
@@ -44,9 +43,7 @@ public class PtModelInfoQueryDTO extends PageQueryBase {
 
     @ApiModelProperty("模型是否为预置模型（0默认模型，1预置模型）")
     @Min(value = PtModelUtil.NUMBER_ZERO, message = "模型来源错误")
-    @Max(value = PtModelUtil.NUMBER_ONE, message = "模型来源错误")
+    @Max(value = PtModelUtil.NUMBER_TWO, message = "模型来源错误")
     private Integer modelResource;
 
-    @ApiModelProperty("是否进行过滤")
-    private Boolean filter;
 }

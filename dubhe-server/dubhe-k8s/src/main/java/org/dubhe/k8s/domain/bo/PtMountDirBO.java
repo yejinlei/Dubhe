@@ -1,5 +1,5 @@
 /**
- * Copyright 2020 Zhejiang Lab. All Rights Reserved.
+ * Copyright 2020 Tianshu AI Platform. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,9 +35,9 @@ public class PtMountDirBO {
     private boolean readOnly;
     /**是否回收  true:创建pv、pvc进行挂载,删除时同时删除数据 false:直接挂载**/
     private boolean recycle;
-    /**存储配额 示例：500Mi 仅在pvc=true时生效**/
+    /**存储配额 示例：500Mi 仅在recycle=true时生效**/
     private String request;
-    /**存储限额 示例：500Mi 仅在pvc=true时生效**/
+    /**存储限额 示例：500Mi 仅在recycle=true时生效**/
     private String limit;
 
     public PtMountDirBO(String dir){

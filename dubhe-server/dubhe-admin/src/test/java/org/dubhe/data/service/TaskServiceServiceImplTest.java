@@ -1,5 +1,5 @@
 /**
- * Copyright 2020 Zhejiang Lab. All Rights Reserved.
+ * Copyright 2020 Tianshu AI Platform. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,24 +17,19 @@
 
 package org.dubhe.data.service;
 
-
 import cn.hutool.core.lang.UUID;
 import org.dubhe.BaseTest;
 import org.dubhe.data.domain.dto.AutoAnnotationCreateDTO;
 import org.dubhe.data.domain.dto.DatasetCreateDTO;
 import org.dubhe.data.domain.entity.File;
 import org.dubhe.data.domain.vo.ProgressVO;
-import org.dubhe.data.service.http.AnnotationHttpService;
 import org.dubhe.data.service.impl.DatasetServiceImpl;
 import org.dubhe.data.service.impl.FileServiceImpl;
 import org.dubhe.data.service.impl.TaskServiceImpl;
 import org.junit.Before;
 import org.junit.Test;
-import org.mockito.Mockito;
 import org.mockito.stubbing.Answer;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.mock.mockito.MockBean;
-
 import java.util.*;
 
 /**
@@ -49,8 +44,6 @@ public class TaskServiceServiceImplTest extends BaseTest {
     private DatasetServiceImpl datasetService;
     @Autowired
     private FileServiceImpl fileService;
-    @MockBean
-    private AnnotationHttpService annotationHttpService;
 
     public static final int FILE_SIZE = 100;
 
@@ -64,9 +57,6 @@ public class TaskServiceServiceImplTest extends BaseTest {
             TASK_IDS.add(id);
             return id;
         };
-
-        Mockito.when(annotationHttpService.annotate(Mockito.any())).then(answer);
-
         dsId = initDataset();
         addFile(dsId);
     }
@@ -107,9 +97,5 @@ public class TaskServiceServiceImplTest extends BaseTest {
         }
     }
 
-    @Test
-    public void fail() {
-        taskService.fail();
-    }
 
 }

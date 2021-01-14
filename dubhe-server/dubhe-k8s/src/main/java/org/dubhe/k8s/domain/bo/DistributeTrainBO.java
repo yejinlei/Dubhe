@@ -1,5 +1,5 @@
 /**
- * Copyright 2020 Zhejiang Lab. All Rights Reserved.
+ * Copyright 2020 Tianshu AI Platform. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,11 +17,19 @@
 
 package org.dubhe.k8s.domain.bo;
 
+import cn.hutool.core.collection.CollectionUtil;
 import lombok.Data;
 import lombok.experimental.Accessors;
+import org.dubhe.base.MagicNumConstant;
 import org.dubhe.k8s.annotation.K8sValidation;
 import org.dubhe.k8s.enums.ValidationTypeEnum;
+import org.dubhe.utils.StringUtils;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * @description DistributeTrainBO
@@ -73,18 +81,6 @@ public class DistributeTrainBO {
      **/
     private Map<String,String> env;
     /**
-     * datasetStorage nfs存储路径
-     **/
-    private String datasetStoragePath;
-    /**
-     * workspaceStorage nfs存储路径
-     **/
-    private String workspaceStoragePath;
-    /**
-     * modelStorage nfs存储路径
-     **/
-    private String modelStoragePath;
-    /**
      * 业务标签,用于标识业务模块
      **/
     private String businessLabel;
@@ -96,4 +92,51 @@ public class DistributeTrainBO {
      * 定时删除时间，相对于实际创建时间，单位：分钟
      **/
     private Integer delayDeleteTime;
+    /**
+     * nfs挂载 key：pod内挂载路径  value：nfs路径及配置
+     **/
+    private Map<String,PtMountDirBO> nfsMounts;
+
+    /**
+     * 设置nfs挂载
+     * @param mountPath pod内挂载路径
+     * @param dir nfs路径
+     * @return
+     */
+    public DistributeTrainBO putNfsMounts(String mountPath,String dir){
+        if (StringUtils.isNotEmpty(mountPath) && StringUtils.isNotEmpty(dir)){
+            if (nfsMounts == null){
+                nfsMounts = new HashMap<>(MagicNumConstant.EIGHT);
+            }
+            nfsMounts.put(mountPath,new PtMountDirBO(dir));
+        }
+        return this;
+    }
+
+    /**
+     * 设置nfs挂载
+     * @param mountPath pod内挂载路径
+     * @param dir nfs路径及配置
+     * @return
+     */
+    public DistributeTrainBO putNfsMounts(String mountPath,PtMountDirBO dir){
+        if (StringUtils.isNotEmpty(mountPath) && dir != null){
+            if (nfsMounts == null){
+                nfsMounts = new HashMap<>(MagicNumConstant.EIGHT);
+            }
+            nfsMounts.put(mountPath,dir);
+        }
+        return this;
+    }
+
+    /**
+     * 获取 nfs路径列表
+     * @return
+     */
+    public List<String> getDirList(){
+        if (CollectionUtil.isNotEmpty(nfsMounts)){
+            return nfsMounts.values().stream().map(PtMountDirBO::getDir).collect(Collectors.toList());
+        }
+        return new ArrayList<>();
+    }
 }

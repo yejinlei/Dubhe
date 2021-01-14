@@ -1,5 +1,5 @@
 /**
- * Copyright 2020 Zhejiang Lab. All Rights Reserved.
+ * Copyright 2020 Tianshu AI Platform. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -295,6 +295,10 @@ public class TrainJobApiImpl implements TrainJobApi {
          * @return JupyterDeployer Jupyter Job 部署类
          */
         private JupyterDeployer buildVolumes(){
+
+            // 针对于共享内存挂载存储
+            buildSharedMemoryVolume();
+
             if (CollectionUtil.isNotEmpty(nfsMounts)){
                 int i = MagicNumConstant.ZERO;
                 for (Map.Entry<String, PtMountDirBO> mount : nfsMounts.entrySet()) {
@@ -309,6 +313,23 @@ public class TrainJobApiImpl implements TrainJobApi {
                 }
             }
             return this;
+        }
+
+        /**
+         * 针对于共享内存挂载存储
+         *
+         */
+        private void buildSharedMemoryVolume(){
+            volumeMounts.add(new VolumeMountBuilder()
+                    .withName(K8sParamConstants.SHM_NAME)
+                    .withMountPath(K8sParamConstants.SHM_MOUNTPATH)
+                    .build());
+            volumes.add(new VolumeBuilder()
+                    .withName(K8sParamConstants.SHM_NAME)
+                    .withNewEmptyDir()
+                    .withMedium(K8sParamConstants.SHM_MEDIUM)
+                    .endEmptyDir()
+                    .build());
         }
 
 

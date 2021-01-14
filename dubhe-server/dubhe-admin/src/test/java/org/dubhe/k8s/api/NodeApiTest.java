@@ -1,5 +1,5 @@
 /**
- * Copyright 2020 Zhejiang Lab. All Rights Reserved.
+ * Copyright 2020 Tianshu AI Platform. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,8 @@
 package org.dubhe.k8s.api;
 
 import com.alibaba.fastjson.JSON;
+import com.baomidou.mybatisplus.core.toolkit.CollectionUtils;
+import org.dubhe.k8s.constant.K8sParamConstants;
 import org.dubhe.k8s.domain.resource.BizNode;
 import org.dubhe.k8s.enums.LackOfResourcesEnum;
 import org.junit.Test;
@@ -31,6 +33,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * @description NodeApiTest测试类
@@ -94,8 +97,12 @@ public class NodeApiTest {
     @Test
     public void isAllocatable(){
         LackOfResourcesEnum flag;
-        flag = nodeApi.isAllocatable(10000,300000 ,30 );
+        flag = nodeApi.isAllocatable(10000,300000 ,30);
         System.out.println(flag.getMessage());
     }
 
+    @Test
+    public void isOutOfTotalAllocatableGpu(){
+        System.out.println(nodeApi.isOutOfTotalAllocatableGpu(3));
+    }
 }

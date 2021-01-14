@@ -1,5 +1,5 @@
 /**
- * Copyright 2020 Zhejiang Lab. All Rights Reserved.
+ * Copyright 2020 Tianshu AI Platform. All Rights Reserved.
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -101,6 +101,10 @@ public interface NodeApi {
      */
     LackOfResourcesEnum isAllocatable(Integer cpuNum, Integer memNum, Integer gpuNum);
 
-
-
+    /**
+     * 判断是否超出总可分配gpu数
+     * @param gpuNum
+     * @return LackOfResourcesEnum 资源缺乏枚举类
+     */
+    LackOfResourcesEnum isOutOfTotalAllocatableGpu(Integer gpuNum);
 }

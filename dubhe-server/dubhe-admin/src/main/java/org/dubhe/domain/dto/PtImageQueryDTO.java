@@ -1,5 +1,5 @@
 /**
- * Copyright 2020 Zhejiang Lab. All Rights Reserved.
+ * Copyright 2020 Tianshu AI Platform. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ package org.dubhe.domain.dto;
 import io.swagger.annotations.ApiModelProperty;
 import lombok.Data;
 import lombok.experimental.Accessors;
+import org.dubhe.annotation.FlagValidator;
 import org.dubhe.base.PageQueryBase;
 
 import java.io.Serializable;
@@ -34,6 +35,7 @@ public class PtImageQueryDTO extends PageQueryBase implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
+
     @ApiModelProperty(value = "镜像来源(0为我的镜像, 1为预置镜像)")
     private Integer imageResource;
 
@@ -42,5 +44,9 @@ public class PtImageQueryDTO extends PageQueryBase implements Serializable {
 
     @ApiModelProperty(value = "镜像名称或id")
     private String imageNameOrId;
+
+    @ApiModelProperty(value = "镜像项目类型(0:notebook , 1:train)")
+    @FlagValidator(value = {"0", "1"}, message = "镜像项目类型不支持")
+    private Integer projectType;
 
 }

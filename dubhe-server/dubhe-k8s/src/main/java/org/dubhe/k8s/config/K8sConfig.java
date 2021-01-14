@@ -1,5 +1,5 @@
 /**
- * Copyright 2020 Zhejiang Lab. All Rights Reserved.
+ * Copyright 2020 Tianshu AI Platform. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,6 +29,7 @@ import org.dubhe.k8s.api.LimitRangeApi;
 import org.dubhe.k8s.api.LogMonitoringApi;
 import org.dubhe.k8s.api.MetricsApi;
 import org.dubhe.k8s.api.ModelOptJobApi;
+import org.dubhe.k8s.api.ModelServingApi;
 import org.dubhe.k8s.api.NamespaceApi;
 import org.dubhe.k8s.api.NativeResourceApi;
 import org.dubhe.k8s.api.NodeApi;
@@ -43,6 +44,7 @@ import org.dubhe.k8s.api.impl.LimitRangeApiImpl;
 import org.dubhe.k8s.api.impl.LogMonitoringApiImpl;
 import org.dubhe.k8s.api.impl.MetricsApiImpl;
 import org.dubhe.k8s.api.impl.ModelOptJobApiImpl;
+import org.dubhe.k8s.api.impl.ModelServingApiImpl;
 import org.dubhe.k8s.api.impl.NamespaceApiImpl;
 import org.dubhe.k8s.api.impl.NativeResourceApiImpl;
 import org.dubhe.k8s.api.impl.NodeApiImpl;
@@ -193,5 +195,10 @@ public class K8sConfig {
 
             }
         }));
+    }
+
+    @Bean
+    public ModelServingApi modelServingApi(K8sUtils k8sUtils){
+        return new ModelServingApiImpl(k8sUtils);
     }
 }

@@ -7,7 +7,7 @@
 ### 准备环境
 安装如下软件环境。
 - OpenJDK：1.8+
-- Redis: 3.0+
+- Redis: 5.0+
 - Maven: 3.0+
 - MYSQL: 5.7.0+
 
@@ -46,6 +46,9 @@ java -jar ./dubhe-admin/target/dubhe-admin-1.0-exec.jar --spring.profiles.active
 
 ## task模块
 java -jar ./dubhe-task/target/dubhe-task-1.0.jar --spring.profiles.active=prod
+
+## serving gateway模块
+java -jar ./dubhe-serving-gateway/target/dubhe-serving-gateway.jar --spring.profiles.active=prod
 ```
 
 ## 本地开发
@@ -80,6 +83,8 @@ java -jar ./dubhe-task/target/dubhe-task-1.0.jar --spring.profiles.active=prod
 ├── dubhe-model  模型管理模块
 ├── dubhe-system  系统管理
 ├── dubhe-task   定时任务模块
+├── dubhe-serving   云端serving模块
+├── dubhe-serving-gateway   云端serving gateway网关模块
 ``` 
 
 ## docker服务器

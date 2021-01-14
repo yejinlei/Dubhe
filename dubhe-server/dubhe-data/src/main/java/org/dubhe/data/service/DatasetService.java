@@ -1,5 +1,5 @@
 /**
- * Copyright 2020 Zhejiang Lab. All Rights Reserved.
+ * Copyright 2020 Tianshu AI Platform. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -177,13 +177,6 @@ public interface DatasetService {
      */
     void autoAnnotatingCheck(File file);
 
-    /**
-     * 更新时间
-     *
-     * @param fileMap 文件map
-     * @return boolean 更新结果
-     */
-    boolean updateTimeByIdSet(Map<Long, List<DatasetVersionFile>> fileMap);
 
     /**
      * 条件查询数据集
@@ -211,14 +204,6 @@ public interface DatasetService {
      */
     boolean updateStatus(Long id, DataStateEnum to);
 
-    /**
-     * 数据集更新
-     *
-     * @param dataset       数据集对象
-     * @param updateWrapper 更新操作类
-     * @return boolean 更新是否成功
-     */
-    boolean updateEntity(Dataset dataset, Wrapper<Dataset> updateWrapper);
 
     /**
      * 更改数据集状态
@@ -236,14 +221,6 @@ public interface DatasetService {
      * @return Long 数据集ID
      */
     Long importDataset(DatasetCustomCreateDTO datasetCustomCreateDTO);
-
-    /**
-     * 初始化版本数据
-     *
-     * @param dataset 数据集
-     */
-    @Transactional(rollbackFor = Exception.class)
-    void initVersion(Dataset dataset);
 
     /**
      * 数据集置顶
@@ -268,13 +245,6 @@ public interface DatasetService {
      */
     DatasetLabelEnum getDatasetLabelType(Long datasetId);
 
-    /**
-     * 批量获取获取数据集
-     *
-     * @param datasetIds 数据集Id列表
-     * @return List<Dataset> 数据集列表
-     */
-    List<Dataset> listDataByIds(List<Long> datasetIds);
 
     /**
      * 获取数据集标注进度接口

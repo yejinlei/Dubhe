@@ -1,5 +1,5 @@
 /**
- * Copyright 2020 Zhejiang Lab. All Rights Reserved.
+ * Copyright 2020 Tianshu AI Platform. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -41,11 +41,11 @@ public class UserRegisterDTO implements Serializable {
 
     private static final long serialVersionUID = -7351676930575145394L;
 
-    @ApiModelProperty(value = "账号", name = "username", example = "test")
+    @ApiModelProperty(value = "账号", name = "username", example = "xx")
     @NotEmpty(message = "账号不能为空")
     private String username;
 
-    @ApiModelProperty(value = "昵称", name = "nickName", example = "xt")
+    @ApiModelProperty(value = "昵称", name = "nickName", example = "xx")
     private String nickName;
 
     @ApiModelProperty(value = "性别", name = "sex", example = "1")
@@ -58,7 +58,7 @@ public class UserRegisterDTO implements Serializable {
 
     @NotNull(message = "手机号不能为空")
     @Pattern(regexp = "^((13[0-9])|(14[5,7,9])|(15([0-3]|[5-9]))|(166)|(17[0,1,3,5,6,7,8])|(18[0-9])|(19[8|9]))\\d{8}$", message = "手机号格式有误")
-    @ApiModelProperty(value = "手机号", name = "phone", example = "13823370116")
+    @ApiModelProperty(value = "手机号", name = "phone", example = "100xxxxxxx6")
     private String phone;
 
 

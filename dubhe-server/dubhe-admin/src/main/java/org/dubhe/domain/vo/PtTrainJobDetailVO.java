@@ -1,5 +1,5 @@
 /**
- * Copyright 2020 Zhejiang Lab. All Rights Reserved.
+ * Copyright 2020 Tianshu AI Platform. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -155,21 +155,21 @@ public class PtTrainJobDetailVO implements Serializable {
     @ApiModelProperty("训练自动停止倒计时，单位：分钟")
     private Integer delayDeleteCountDown;
 
-    @ApiModelProperty("模型路径")
-    private String modelLoadPathDir;
-
-    @ApiModelProperty(value = "是否打开模型选择")
-    private Integer modelType;
-
-    @ApiModelProperty(value = "模型类型(0我的模型1预置模型)")
+    @ApiModelProperty(value = "模型类型(0我的模型1预置模型2炼知模型)")
     private Integer modelResource;
 
-    @ApiModelProperty(value = "模型名称")
-    private String modelName;
+    @ApiModelProperty(value = "非炼知模型id")
+    private Long modelId;
 
-    @ApiModelProperty(value = "模型id")
-    private Integer modelId;
+    @ApiModelProperty(value = "我的模型版本对应的id")
+    private Long modelBranchId;
 
     @ApiModelProperty(value = "训练信息(失败信息)")
     private String trainMsg;
+
+    @ApiModelProperty(value = "炼知教师模型ids,多个id之前用','隔开")
+    private String teacherModelIds;
+
+    @ApiModelProperty(value = "炼知学生模型ids,多个id之前用','隔开")
+    private String studentModelIds;
 }

@@ -1,5 +1,5 @@
 /**
- * Copyright 2020 Zhejiang Lab. All Rights Reserved.
+ * Copyright 2020 Tianshu AI Platform. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,20 +33,23 @@ import org.dubhe.async.TransactionAsyncManager;
 import org.dubhe.base.MagicNumConstant;
 import org.dubhe.base.ResponseCode;
 import org.dubhe.config.NfsConfig;
-import org.dubhe.config.TrainHarborConfig;
-import org.dubhe.constant.AlgorithmSourceEnum;
 import org.dubhe.config.RecycleConfig;
-import org.dubhe.constant.SymbolConstant;
+import org.dubhe.config.TrainHarborConfig;
 import org.dubhe.config.TrainJobConfig;
+import org.dubhe.constant.AlgorithmSourceEnum;
+import org.dubhe.constant.SymbolConstant;
 import org.dubhe.dao.DictDetailMapper;
-import org.dubhe.dao.ModelQueryMapper;
 import org.dubhe.dao.PtJobParamMapper;
+import org.dubhe.dao.PtModelBranchMapper;
+import org.dubhe.dao.PtModelInfoMapper;
 import org.dubhe.dao.PtTrainAlgorithmMapper;
 import org.dubhe.dao.PtTrainJobMapper;
 import org.dubhe.dao.PtTrainJobSpecsMapper;
 import org.dubhe.dao.PtTrainMapper;
 import org.dubhe.dao.PtTrainParamMapper;
 import org.dubhe.data.constant.Constant;
+import org.dubhe.domain.PtModelBranch;
+import org.dubhe.domain.PtModelInfo;
 import org.dubhe.domain.dto.BaseTrainJobDTO;
 import org.dubhe.domain.dto.PtTrainDataSourceStatusQueryDTO;
 import org.dubhe.domain.dto.PtTrainJobCreateDTO;
@@ -56,30 +59,32 @@ import org.dubhe.domain.dto.PtTrainJobResumeDTO;
 import org.dubhe.domain.dto.PtTrainJobStopDTO;
 import org.dubhe.domain.dto.PtTrainJobUpdateDTO;
 import org.dubhe.domain.dto.PtTrainJobVersionQueryDTO;
+import org.dubhe.domain.dto.PtTrainModelDTO;
 import org.dubhe.domain.dto.PtTrainQueryDTO;
 import org.dubhe.domain.dto.RecycleTaskCreateDTO;
 import org.dubhe.domain.dto.UserDTO;
 import org.dubhe.domain.entity.DictDetail;
-import org.dubhe.domain.entity.ModelQuery;
-import org.dubhe.domain.entity.ModelQueryBrance;
 import org.dubhe.domain.entity.PtJobParam;
 import org.dubhe.domain.entity.PtTrain;
 import org.dubhe.domain.entity.PtTrainAlgorithm;
 import org.dubhe.domain.entity.PtTrainJob;
 import org.dubhe.domain.entity.PtTrainJobSpecs;
 import org.dubhe.domain.entity.PtTrainParam;
+import org.dubhe.domain.vo.ModelVO;
 import org.dubhe.domain.vo.PtImageAndAlgorithmVO;
 import org.dubhe.domain.vo.PtJobMetricsGrafanaVO;
 import org.dubhe.domain.vo.PtTrainDataSourceStatusQueryVO;
 import org.dubhe.domain.vo.PtTrainJobDeleteVO;
 import org.dubhe.domain.vo.PtTrainJobDetailQueryVO;
 import org.dubhe.domain.vo.PtTrainJobDetailVO;
+import org.dubhe.domain.vo.PtTrainJobModelVO;
 import org.dubhe.domain.vo.PtTrainJobStatisticsMineVO;
 import org.dubhe.domain.vo.PtTrainJobStopVO;
 import org.dubhe.domain.vo.PtTrainVO;
 import org.dubhe.enums.AlgorithmStatusEnum;
 import org.dubhe.enums.DatasetTypeEnum;
 import org.dubhe.enums.LogEnum;
+import org.dubhe.enums.ModelResourceEnum;
 import org.dubhe.enums.RecycleModuleEnum;
 import org.dubhe.enums.RecycleTypeEnum;
 import org.dubhe.enums.TrainJobStatusEnum;
@@ -115,9 +120,11 @@ import org.springframework.transaction.annotation.Transactional;
 import java.io.File;
 import java.sql.Timestamp;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -181,10 +188,6 @@ public class PtTrainJobServiceImpl implements PtTrainJobService {
     @Autowired
     private DictDetailMapper dictDetailMapper;
 
-
-    @Autowired
-    private ModelQueryMapper modelQueryMapper;
-
     @Autowired
     private NfsConfig nfsConfig;
 
@@ -199,6 +202,12 @@ public class PtTrainJobServiceImpl implements PtTrainJobService {
 
     @Value("${k8s.pod.metrics.grafanaUrl}")
     private String k8sPodMetricsGrafanaUrl;
+
+    @Autowired
+    private PtModelInfoMapper ptModelInfoMapper;
+
+    @Autowired
+    private PtModelBranchMapper ptModelBranchMapper;
 
     public final static List<String> FIELD_NAMES;
 
@@ -426,7 +435,7 @@ public class PtTrainJobServiceImpl implements PtTrainJobService {
         baseTrainJobDTO.setPtTrainJobSpecs(ptTrainJobSpecs);
 
         //结果集处理
-        PtTrainJob ptTrainJob = saveTrainJobTableData(ptTrainJobCreateDTO, currentUser, images, trainKey, jobName);
+        PtTrainJob ptTrainJob = saveTrainJobTableData(ptTrainJobCreateDTO, currentUser, images, trainKey, baseTrainJobDTO);
         LogUtil.info(LogEnum.BIZ_TRAIN, "User {} creates training job, returns result {}", currentUser.getUsername(), ptTrainJob.getTrainId());
 
         // 提交job
@@ -441,10 +450,11 @@ public class PtTrainJobServiceImpl implements PtTrainJobService {
      * @param currentUser         用户
      * @param imageName           镜像名称
      * @param trainKey            训练key
-     * @param jobName             训练名称
+     * @param baseTrainJobDTO     基础训练参数
      * @return PtTrain            训练
      */
-    private PtTrainJob saveTrainJobTableData(PtTrainJobCreateDTO ptTrainJobCreateDTO, UserDTO currentUser, String imageName, String trainKey, String jobName) {
+    private PtTrainJob saveTrainJobTableData(PtTrainJobCreateDTO ptTrainJobCreateDTO, UserDTO currentUser,
+                                             String imageName, String trainKey, BaseTrainJobDTO baseTrainJobDTO) {
         // 添加train表
         PtTrain ptTrain = new PtTrain();
         ptTrain.setTrainName(ptTrainJobCreateDTO.getTrainName())
@@ -455,25 +465,16 @@ public class PtTrainJobServiceImpl implements PtTrainJobService {
             LogUtil.error(LogEnum.BIZ_TRAIN, "User {} creates training job, pt Train table insert data failed", currentUser.getUsername());
             throw new BusinessException("内部错误");
         }
+
+        //检查模型是否合法,合法则保存其路径地址
+        checkModelAndSavePath(currentUser, baseTrainJobDTO);
+
         // 添加train_job表
         PtTrainJob ptTrainJob = new PtTrainJob();
-        //查询modelName值
-        ModelQuery modelNameById = modelQueryMapper.findModelNameById(ptTrainJobCreateDTO.getModelId());
-        ModelQueryBrance modelVersionByUrl = modelQueryMapper.findModelVersionByUrl(ptTrainJobCreateDTO.getModelLoadPathDir());
-        if (modelNameById != null) {
-            String name = modelNameById.getName();
-            if (modelVersionByUrl != null) {
-                ptTrainJobCreateDTO.setModelName(name + SymbolConstant.COLON + modelVersionByUrl.getVersion());
-            } else {
-                //设置预置模型的url路径
-                ptTrainJobCreateDTO.setModelLoadPathDir(modelNameById.getUrl());
-                ptTrainJobCreateDTO.setModelName(name);
-            }
-        }
         BeanUtil.copyProperties(ptTrainJobCreateDTO, ptTrainJob);
         ptTrainJob.setTrainId(ptTrain.getId())
-                .setTrainVersion(trainJobConfig.getVersionLabel().toUpperCase() + String.format(TrainUtil.FOUR_DECIMAL, 1))
-                .setJobName(jobName)
+                .setTrainVersion(trainJobConfig.getVersionLabel().toUpperCase() + String.format(TrainUtil.FOUR_DECIMAL, TrainUtil.NUMBER_ONE))
+                .setJobName(baseTrainJobDTO.getJobName())
                 .setCreateUserId(currentUser.getId());
         int jobResult = ptTrainJobMapper.insert(ptTrainJob);
         if (jobResult < 1) {
@@ -507,6 +508,123 @@ public class PtTrainJobServiceImpl implements PtTrainJobService {
             throw new BusinessException("内部错误");
         }
         return ptTrainJob;
+    }
+
+    /**
+     * 检查模型是否合法,合法则保存其路径地址
+     *
+     * @param currentUser         用户
+     * @param baseTrainJobDTO     基础训练参数
+     */
+    private void checkModelAndSavePath(UserDTO currentUser, BaseTrainJobDTO baseTrainJobDTO) {
+
+        Integer modelResource = baseTrainJobDTO.getModelResource();
+        if(null == modelResource ) {
+            if(null == baseTrainJobDTO.getModelId() &&
+                    StringUtils.isBlank(baseTrainJobDTO.getStudentModelIds()) &&
+                    StringUtils.isBlank(baseTrainJobDTO.getStudentModelIds())) {
+                return;
+            } else {
+                logErrorInfoOnModel(currentUser.getUsername());
+            }
+        }
+        switch (ModelResourceEnum.getType(modelResource)) {
+            case MINE:
+                if(null == baseTrainJobDTO.getModelBranchId() || null == baseTrainJobDTO.getModelId() ||
+                        StringUtils.isNotBlank(baseTrainJobDTO.getTeacherModelIds()) ||
+                        StringUtils.isNotBlank(baseTrainJobDTO.getStudentModelIds())) {
+                    logErrorInfoOnModel(currentUser.getUsername());
+                }
+                PtModelBranch ptModelBranch = ptModelBranchMapper.selectById(baseTrainJobDTO.getModelBranchId());
+                if(null == ptModelBranch || ptModelBranch.getParentId().compareTo(baseTrainJobDTO.getModelId()) != 0 ||
+                        StringUtils.isBlank(ptModelBranch.getModelAddress())) {
+                    logErrorInfoOnModel(currentUser.getUsername());
+                }
+                PtModelInfo ptModelInfo = ptModelInfoMapper.selectById(ptModelBranch.getParentId());
+                if(null == ptModelInfo || ptModelInfo.getModelResource().compareTo(baseTrainJobDTO.getModelResource()) != 0){
+                    logErrorInfoOnModel(currentUser.getUsername());
+                }
+                baseTrainJobDTO.setModelPath(adjustmentUrl(ptModelBranch.getModelAddress()));
+                break;
+            case PRESET:
+                if(null == baseTrainJobDTO.getModelId() || StringUtils.isNotBlank(baseTrainJobDTO.getTeacherModelIds()) ||
+                        StringUtils.isNotBlank(baseTrainJobDTO.getStudentModelIds())) {
+                    logErrorInfoOnModel(currentUser.getUsername());
+                }
+                PtModelInfo ptModelInfoPreset = ptModelInfoMapper.selectById(baseTrainJobDTO.getModelId());
+                if(null == ptModelInfoPreset || StringUtils.isBlank(ptModelInfoPreset.getUrl()) ||
+                        ptModelInfoPreset.getModelResource().compareTo(baseTrainJobDTO.getModelResource()) != 0) {
+                    logErrorInfoOnModel(currentUser.getUsername());
+                }
+                baseTrainJobDTO.setModelPath(adjustmentUrl(ptModelInfoPreset.getUrl()));
+                break;
+            case ATLAS:
+                if(StringUtils.isBlank(baseTrainJobDTO.getTeacherModelIds()) || null != baseTrainJobDTO.getModelId() ){
+                    logErrorInfoOnModel(currentUser.getUsername());
+                }
+                Set<Long> ids = new HashSet<>();
+                Set<Long> teacherModelList = new HashSet<>();
+                Arrays.stream(baseTrainJobDTO.getTeacherModelIds().trim().split(SymbolConstant.COMMA))
+                        .forEach(id -> teacherModelList.add(Long.parseLong(id)));
+                ids.addAll(teacherModelList);
+
+                Set<Long> studentModelList = new HashSet<>();
+                if(StringUtils.isNotBlank(baseTrainJobDTO.getStudentModelIds())) {
+                    Arrays.stream(baseTrainJobDTO.getStudentModelIds().trim().split(SymbolConstant.COMMA))
+                            .forEach(id -> studentModelList.add(Long.parseLong(id)));
+                    ids.addAll(studentModelList);
+                }
+                if(ids.isEmpty()) {
+                    logErrorInfoOnModel(currentUser.getUsername());
+                }
+                LambdaQueryWrapper<PtModelInfo> query = new LambdaQueryWrapper<>();
+                query.eq(PtModelInfo::getModelResource, baseTrainJobDTO.getModelResource())
+                        .in(PtModelInfo::getId, ids).isNotNull(PtModelInfo::getUrl).ne(PtModelInfo::getUrl, SymbolConstant.BLANK);
+                List<PtModelInfo> modelInfoList = ptModelInfoMapper.selectList(query);
+                if(null == modelInfoList || modelInfoList.size() < ids.size()) {
+                    logErrorInfoOnModel(currentUser.getUsername());
+                }
+
+                //保存炼知教师模型路径地址
+                baseTrainJobDTO.setTeacherModelPathList(new ArrayList<>());
+                modelInfoList.stream()
+                        .filter(modelInfo -> teacherModelList.contains(modelInfo.getId()))
+                        .forEach(modelInfo -> baseTrainJobDTO.getTeacherModelPathList().add(adjustmentUrl(modelInfo.getUrl())));
+
+                //保存炼知学生模型路径地址
+                if(!studentModelList.isEmpty()) {
+                    baseTrainJobDTO.setStudentModelPathList(new ArrayList<>());
+                    modelInfoList.stream()
+                            .filter(modelInfo -> studentModelList.contains(modelInfo.getId()))
+                            .forEach(modelInfo -> baseTrainJobDTO.getStudentModelPathList().add(adjustmentUrl(modelInfo.getUrl())));
+                }
+                break;
+        }
+    }
+
+
+
+    /**
+     * 调整模型地址
+     *
+     * @param modelUrl  模型地址
+     * @return
+     */
+    private String adjustmentUrl(String modelUrl) {
+        if(modelUrl.endsWith(SymbolConstant.SLASH)) {
+            modelUrl = modelUrl.substring(TrainUtil.NUMBER_ZERO, modelUrl.length() - TrainUtil.NUMBER_ONE);
+        }
+        return modelUrl;
+    }
+
+    /**
+     * 打印训练任务中模型相关的错误日志
+     *
+     * @param username
+     */
+    private void logErrorInfoOnModel(String username){
+        LogUtil.error(LogEnum.BIZ_TRAIN, "User {} operating training job, error on model......", username);
+        throw new BusinessException("模型参数参数不合法");
     }
 
     /**
@@ -666,7 +784,7 @@ public class PtTrainJobServiceImpl implements PtTrainJobService {
         baseTrainJobDTO.setJobName(jobName);
         baseTrainJobDTO.setPtTrainJobSpecs(ptTrainJobSpecs);
         //结果集处理
-        PtTrainJob ptTrainJob = updateTrainJobTableData(ptTrainJobUpdateDTO, currentUser, existPtTrainJob, images, ptTrain, jobName);
+        PtTrainJob ptTrainJob = updateTrainJobTableData(ptTrainJobUpdateDTO, currentUser, existPtTrainJob, images, ptTrain, baseTrainJobDTO);
         //提交job
         asyncManager.execute(baseTrainJobDTO, currentUser, ptImageAndAlgorithmVO, ptTrainJob);
 
@@ -681,30 +799,20 @@ public class PtTrainJobServiceImpl implements PtTrainJobService {
      * @param existPtTrainJob     存在的训练任务
      * @param imageName           镜像名称
      * @param ptTrain             训练
-     * @param jobName             任务名称
+     * @param baseTrainJobDTO     基本训练信息
      * @return PtTrainJob         训练任务
      */
     private PtTrainJob updateTrainJobTableData(PtTrainJobUpdateDTO ptTrainJobUpdateDTO, UserDTO
-            currentUser, PtTrainJob existPtTrainJob, String imageName, PtTrain ptTrain, String jobName) {
+            currentUser, PtTrainJob existPtTrainJob, String imageName, PtTrain ptTrain, BaseTrainJobDTO baseTrainJobDTO) {
+
+        //检查模型是否合法,合法则保存其路径地址
+        checkModelAndSavePath(currentUser, baseTrainJobDTO);
+
         //添加train_job表
         PtTrainJob ptTrainJob = new PtTrainJob();
-        //根据id查询model的name值
-        ModelQuery modelName = modelQueryMapper.findModelNameById(ptTrainJobUpdateDTO.getModelId());
-        //根据Url查询版本的路径值
-        ModelQueryBrance modelVersion = modelQueryMapper.findModelVersionByUrl(ptTrainJobUpdateDTO.getModelLoadPathDir());
-        if (modelName != null) {
-            String name = modelName.getName();
-            if (modelVersion != null) {
-                ptTrainJobUpdateDTO.setModelName(name + SymbolConstant.COLON + modelVersion.getVersion());
-            } else {
-                //设置预置模型的url
-                ptTrainJobUpdateDTO.setModelLoadPathDir(modelName.getUrl());
-                ptTrainJobUpdateDTO.setModelName(name);
-            }
-        }
         BeanUtil.copyProperties(ptTrainJobUpdateDTO, ptTrainJob);
         ptTrainJob.setTrainId(ptTrain.getId()).setTrainVersion(trainJobConfig.getVersionLabel().toUpperCase() + String.format(TrainUtil.FOUR_DECIMAL, ptTrain.getTotalNum() + 1))
-                .setJobName(jobName).setParentTrainVersion(existPtTrainJob.getTrainVersion())
+                .setJobName(baseTrainJobDTO.getJobName()).setParentTrainVersion(existPtTrainJob.getTrainVersion())
                 .setCreateUserId(currentUser.getId());
         int jobResult = ptTrainJobMapper.insert(ptTrainJob);
         if (jobResult < 1) {
@@ -1270,6 +1378,106 @@ public class PtTrainJobServiceImpl implements PtTrainJobService {
         LogUtil.info(LogEnum.BIZ_TRAIN, "User {} completes getting grafanaUrl on job, receives {} parameter [jobId], returns {} result",
                 currentUser.getUsername(), jobId, JSONObject.toJSONString(list));
         return list;
+    }
+
+    /**
+     * 获取训练使用的模型信息
+     *
+     * @param  ptTrainModelDTO
+     * @return PtTrainJobModelVO
+     */
+    @Override
+    @DataPermissionMethod(dataType = DatasetTypeEnum.PUBLIC)
+    public PtTrainJobModelVO getTrainJobModel(PtTrainModelDTO ptTrainModelDTO) {
+
+        PtTrainJobModelVO<ModelVO> ptTrainJobModelVO = new PtTrainJobModelVO();
+        UserDTO currentUser = JwtUtils.getCurrentUserDto();
+        Integer modelResource = ptTrainModelDTO.getModelResource();
+        switch (ModelResourceEnum.getType(modelResource)) {
+            case MINE:
+                if(null == ptTrainModelDTO.getModelBranchId() || null == ptTrainModelDTO.getModelId()) {
+                    logErrorInfoOnModel(currentUser.getUsername());
+                }
+                PtModelBranch ptModelBranch = ptModelBranchMapper.selectById(ptTrainModelDTO.getModelBranchId());
+                if(null == ptModelBranch) {
+                    break;
+                }
+                if(ptModelBranch.getParentId().compareTo(ptTrainModelDTO.getModelId()) != 0 ||
+                        StringUtils.isBlank(ptModelBranch.getModelAddress())) {
+                    logErrorInfoOnModel(currentUser.getUsername());
+                }
+                PtModelInfo ptModelInfo = ptModelInfoMapper.selectById(ptModelBranch.getParentId());
+                if(null == ptModelInfo || ptModelInfo.getModelResource().compareTo(ptTrainModelDTO.getModelResource()) != 0){
+                    logErrorInfoOnModel(currentUser.getUsername());
+                }
+                ptTrainJobModelVO.setModelList(new ArrayList<>());
+                ptTrainJobModelVO.getModelList()
+                        .add(new ModelVO(ptModelInfo.getName(), ptModelBranch.getVersionNum(), adjustmentUrl(ptModelBranch.getModelAddress())));
+                break;
+            case PRESET:
+                if(null == ptTrainModelDTO.getModelId()) {
+                    logErrorInfoOnModel(currentUser.getUsername());
+                }
+                PtModelInfo ptModelInfoPreset = ptModelInfoMapper.selectById(ptTrainModelDTO.getModelId());
+                if(null == ptModelInfoPreset) {
+                    break;
+                }
+                if(StringUtils.isBlank(ptModelInfoPreset.getUrl()) ||
+                        ptModelInfoPreset.getModelResource().compareTo(ptTrainModelDTO.getModelResource()) != 0) {
+                    logErrorInfoOnModel(currentUser.getUsername());
+                }
+                ptTrainJobModelVO.setModelList(new ArrayList<>());
+                ptTrainJobModelVO.getModelList()
+                        .add(new ModelVO(ptModelInfoPreset.getName(), ptModelInfoPreset.getVersionNum(), adjustmentUrl(ptModelInfoPreset.getUrl())));
+                break;
+            case ATLAS:
+                if(StringUtils.isBlank(ptTrainModelDTO.getTeacherModelIds())){
+                    logErrorInfoOnModel(currentUser.getUsername());
+                }
+                Set<Long> ids = new HashSet<>();
+                Set<Long> teacherModelList = new HashSet<>();
+                Arrays.stream(ptTrainModelDTO.getTeacherModelIds().trim().split(SymbolConstant.COMMA))
+                        .forEach(id -> teacherModelList.add(Long.parseLong(id)));
+                ids.addAll(teacherModelList);
+
+                Set<Long> studentModelList = new HashSet<>();
+                if(StringUtils.isNotBlank(ptTrainModelDTO.getStudentModelIds())) {
+                    Arrays.stream(ptTrainModelDTO.getStudentModelIds().trim().split(SymbolConstant.COMMA))
+                            .forEach(id -> studentModelList.add(Long.parseLong(id)));
+                    ids.addAll(studentModelList);
+                }
+                if(ids.isEmpty()) {
+                    logErrorInfoOnModel(currentUser.getUsername());
+                }
+                LambdaQueryWrapper<PtModelInfo> query = new LambdaQueryWrapper<>();
+                query.eq(PtModelInfo::getModelResource, ptTrainModelDTO.getModelResource())
+                        .in(PtModelInfo::getId, ids).isNotNull(PtModelInfo::getUrl).ne(PtModelInfo::getUrl, SymbolConstant.BLANK);
+                List<PtModelInfo> modelInfoList = ptModelInfoMapper.selectList(query);
+                if(null == modelInfoList || modelInfoList.isEmpty()) {
+                    break;
+                }
+
+                //保存炼知教师模型信息
+                ptTrainJobModelVO.setTeacherModelList(new ArrayList<>());
+                List<ModelVO> teacherModelVOS = ptTrainJobModelVO.getTeacherModelList();
+                modelInfoList.stream()
+                        .filter(modelInfo -> teacherModelList.contains(modelInfo.getId()))
+                        .forEach(modelInfo -> teacherModelVOS
+                                .add(new ModelVO(modelInfo.getName(), modelInfo.getVersionNum(), adjustmentUrl(modelInfo.getUrl()))));
+
+                //保存炼知学生模型信息
+                if(!studentModelList.isEmpty()) {
+                    ptTrainJobModelVO.setStudentModelList(new ArrayList<>());
+                    List<ModelVO> studentModelVOS = ptTrainJobModelVO.getStudentModelList();
+                    modelInfoList.stream()
+                            .filter(modelInfo -> studentModelList.contains(modelInfo.getId()))
+                            .forEach(modelInfo -> studentModelVOS
+                                    .add(new ModelVO(modelInfo.getName(), modelInfo.getVersionNum(), adjustmentUrl(modelInfo.getUrl()))));
+                }
+                break;
+        }
+
+        return ptTrainJobModelVO;
     }
 
     public void recycleTaskWithTrain(String recyclePath) {

@@ -1,5 +1,5 @@
 /**
- * Copyright 2020 Zhejiang Lab. All Rights Reserved.
+ * Copyright 2020 Tianshu AI Platform. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,15 +17,15 @@
 
 package org.dubhe.rest;
 
+import io.swagger.annotations.Api;
+import io.swagger.annotations.ApiOperation;
 import org.dubhe.base.DataResponseBody;
 import org.dubhe.domain.dto.*;
 import org.dubhe.domain.vo.PtModelInfoCreateVO;
-import org.dubhe.service.PtModelBranchService;
 import org.dubhe.service.PtModelInfoService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
-import io.swagger.annotations.*;
 
 /**
  * @description 模型管理
@@ -39,17 +39,16 @@ public class PtModelInfoController {
     @Autowired
     private PtModelInfoService ptModelInfoService;
 
-    @Autowired
-    private PtModelBranchService ptModelBranchService;
-
     @GetMapping
     @ApiOperation("查询模型")
     public DataResponseBody getPtModelInfos(PtModelInfoQueryDTO ptModelInfoQueryDTO) {
-        if(ptModelInfoQueryDTO.getFilter()!=null && ptModelInfoQueryDTO.getFilter()){
-            return new DataResponseBody(ptModelInfoService.findModelByResource(ptModelInfoQueryDTO));
-        }else {
-            return new DataResponseBody(ptModelInfoService.queryAll(ptModelInfoQueryDTO));
-        }
+        return new DataResponseBody(ptModelInfoService.queryAll(ptModelInfoQueryDTO));
+    }
+
+    @GetMapping("/byResource")
+    @ApiOperation("根据类型来获取模型")
+    public DataResponseBody getPtModelInfosByResource(PtModelInfoByResourceDTO ptModelInfoByResourceDTO) {
+        return new DataResponseBody(ptModelInfoService.getModelByResource(ptModelInfoByResourceDTO));
     }
 
     @PostMapping
@@ -69,6 +68,12 @@ public class PtModelInfoController {
     @DeleteMapping
     public DataResponseBody deleteAll(@Validated @RequestBody PtModelInfoDeleteDTO ptModelInfoDeleteDTO) {
         return new DataResponseBody(ptModelInfoService.deleteAll(ptModelInfoDeleteDTO));
+    }
+
+    @PostMapping("/uploadModel")
+    @ApiOperation("模型优化上传模型")
+    public DataResponseBody modelOptimizationUploadModel(@Validated @RequestBody PtModelOptimizationCreateDTO ptModelOptimizationCreateDTO) {
+        return new DataResponseBody(ptModelInfoService.modelOptimizationUploadModel(ptModelOptimizationCreateDTO));
     }
 
 }

@@ -1,5 +1,5 @@
 /**
- * Copyright 2020 Zhejiang Lab. All Rights Reserved.
+ * Copyright 2020 Tianshu AI Platform. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,6 +24,7 @@ import org.dubhe.utils.TrainUtil;
 import org.hibernate.validator.constraints.Length;
 
 import javax.validation.constraints.NotBlank;
+import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Pattern;
 import java.io.Serializable;
 
@@ -38,6 +39,9 @@ public class PtImageUploadDTO implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
+    @ApiModelProperty(value = "镜像项目类型", required = true)
+    @NotNull(message = "镜像项目类型不能为空")
+    private Integer projectType;
 
     @ApiModelProperty(value = "镜像文件路径", required = true)
     @NotBlank(message = "镜像文件路径不能为空")

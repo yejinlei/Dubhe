@@ -1,5 +1,5 @@
 /**
- * Copyright 2020 Zhejiang Lab. All Rights Reserved.
+ * Copyright 2020 Tianshu AI Platform. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,8 @@
 package org.dubhe.data.dao;
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
-import org.dubhe.annotation.DataPermission;
+import io.lettuce.core.dynamic.annotation.Param;
+import org.apache.ibatis.annotations.Delete;
 import org.dubhe.data.domain.entity.DatasetGroupLabel;
 
 /**
@@ -26,4 +27,14 @@ import org.dubhe.data.domain.entity.DatasetGroupLabel;
  * @date 2020-09-22
  */
 public interface DatasetGroupLabelMapper extends BaseMapper<DatasetGroupLabel> {
+
+
+    /**
+     * 根据标签组ID删除标签和标签组的关联关系
+     *
+     * @param groupId 标签组ID
+     */
+    @Delete("delete from data_group_label where label_group_id = #{groupId} ")
+    void deleteByGroupId(@Param("groupId") Long groupId);
+
 }

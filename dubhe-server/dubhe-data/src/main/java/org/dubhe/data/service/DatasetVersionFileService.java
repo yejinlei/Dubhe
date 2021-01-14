@@ -1,5 +1,5 @@
 /**
- * Copyright 2020 Zhejiang Lab. All Rights Reserved.
+ * Copyright 2020 Tianshu AI Platform. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,18 +17,15 @@
 
 package org.dubhe.data.service;
 
-import com.baomidou.mybatisplus.core.conditions.Wrapper;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
-import com.baomidou.mybatisplus.core.toolkit.support.SFunction;
+import org.dubhe.data.domain.dto.DatasetVersionFileDTO;
 import org.dubhe.data.domain.entity.Dataset;
+import org.dubhe.data.domain.entity.DatasetVersion;
 import org.dubhe.data.domain.entity.DatasetVersionFile;
 import org.dubhe.data.domain.entity.File;
 
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 /**
  * @description 数据集版本文件 服务类
@@ -70,12 +67,7 @@ public interface DatasetVersionFileService {
      */
     void deleteShip(Long datasetId, String versionName, List<Long> fileIds);
 
-    /**
-     * 删除数据集下所有版本文件关系
-     *
-     * @param datasetId 数据集id
-     */
-    void datasetDelete(Long datasetId);
+
 
     /**
      * 数据集版本文件标注状态修改
@@ -98,14 +90,6 @@ public interface DatasetVersionFileService {
      */
     List<DatasetVersionFile> getFilesByDatasetIdAndVersionName(Long datasetId, String versionName);
 
-    /**
-     * 获取数据集指定状态下的的文件列表
-     *
-     * @param datasetId   数据集id
-     * @param notInStatus 非指定状态
-     * @return List<DatasetVersionFile> 版本文件列表
-     */
-    List<DatasetVersionFile> getFilesByDatasetIdAndStatus(Long datasetId, Collection<Integer> notInStatus);
 
     /**
      * 数据集标注状态
@@ -115,9 +99,11 @@ public interface DatasetVersionFileService {
      * @param versionName 版本名称
      * @param offset      偏移量
      * @param limit       页容量
+     * @param order       排序方式
      * @return List<DatasetVersionFile> 版本文件列表
      */
-    List<DatasetVersionFile> getListByDatasetIdAndAnnotationStatus(Long datasetId, String versionName, Integer status, Long offset, Integer limit);
+    LinkedList<DatasetVersionFileDTO> getListByDatasetIdAndAnnotationStatus(Long datasetId, String versionName, Integer status, Long offset,
+                                                                     Integer limit, String orderByName, String order, Long labelId);
 
     /**
      * 获取数据集指定版本第一张图片
@@ -149,10 +135,9 @@ public interface DatasetVersionFileService {
     /**
      * 版本回退
      *
-     * @param dataset 数据集
-     * @return boolean 数据集是否回退
+     * @param dataset 数据集对象
      */
-    boolean rollbackDataset(Dataset dataset);
+    void rollbackDataset(Dataset dataset);
 
     /**
      * 获取可以增强的文件列表
@@ -190,30 +175,6 @@ public interface DatasetVersionFileService {
      */
     Integer getImageCountsByDatasetIdAndVersionName(Long datasetId, String versionName);
 
-    /**
-     * 根据条件查询数据集版本文件
-     *
-     * @param fileQueryWrapper 查询条件
-     * @return
-     */
-    List<DatasetVersionFile> queryList(QueryWrapper<DatasetVersionFile> fileQueryWrapper);
-
-    /**
-     * 根据条件更新数据集版本文件数据
-     *
-     * @param datasetVersionFile 数据集文件关系对象
-     * @param updateWrapper      更新条件
-     * @return
-     */
-    boolean updateEntity(DatasetVersionFile datasetVersionFile, Wrapper<DatasetVersionFile> updateWrapper);
-
-    /**
-     * 获取文件对应增强文件列表
-     *
-     * @param process 命令执行过程
-     * @return boolean 返回结果是否为空
-     */
-    boolean getCopyResult(Process process);
 
     /**
      * 获取当前数据集版本的原始文件
@@ -258,6 +219,14 @@ public interface DatasetVersionFileService {
     Map<Integer, Integer> getDatasetVersionFileCount(Long datasetId, String versionName);
 
     /**
+     * 获取数据集文件数量统计数据
+     *
+     * @param datasetVersion 数据集版本
+     * @return 数据集文件统计
+     */
+    Integer selectDatasetVersionFileCount(DatasetVersion datasetVersion);
+
+    /**
      * 获取offset
      *
      * @param datasetId 数据集id
@@ -284,4 +253,54 @@ public interface DatasetVersionFileService {
      * @return DatasetVersionFile Dataset版本文件关系表
      */
     List<DatasetVersionFile> findStatusByDatasetIdAndVersionName(Long id, String currentVersionName);
+
+    /**
+     * 判断当前数据集是否需要回滚
+     *
+     * @param dataset 需要回滚的数据集
+     * @return boolean 数据集是否需要回退
+     */
+    boolean isNeedToRollback(Dataset dataset);
+
+    /**
+     * 获取数据版本文件信息
+     *
+     * @param datasetId    数据集ID
+     * @param versionName  当前版本
+     * @param fileId       文件Id
+     * @return  获取数据版本文件实体
+     */
+    DatasetVersionFile getDatasetVersionFile(Long datasetId,String versionName,Long fileId);
+
+    /**
+     * 根据当前数据集和当前版本号修改数据集是否改变
+     *
+     * @param id           数据集id
+     * @param versionName  版本号
+     */
+    void updateChanged(Long id, String versionName);
+
+    /**
+     * 清除标注操作
+     *
+     * @param datasetId  数据集ID
+     */
+    void deleteAnnotating(Long datasetId);
+
+    /**
+     * 获取数据集版本文件ID
+     *
+     * @param id                    数据集ID
+     * @param currentVersionName    版本名称
+     * @param fileIds               文件id
+     * @return 获取数据集版本文件
+     */
+    List<DatasetVersionFile> getVersionFileByDatasetAndFile(Long id, String currentVersionName, Set<Long> fileIds);
+
+    /**
+     * 修改文件状态
+     *
+     * @param datasetVersionFile 数据集版本文件实体
+     */
+    void updateStatusById(DatasetVersionFile datasetVersionFile);
 }

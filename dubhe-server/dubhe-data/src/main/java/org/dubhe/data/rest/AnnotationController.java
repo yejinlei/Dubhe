@@ -1,5 +1,5 @@
 /**
- * Copyright 2020 Zhejiang Lab. All Rights Reserved.
+ * Copyright 2020 Tianshu AI Platform. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,7 +22,10 @@ import io.swagger.annotations.ApiOperation;
 import org.apache.shiro.authz.annotation.RequiresPermissions;
 import org.dubhe.base.DataResponseBody;
 import org.dubhe.data.constant.Constant;
-import org.dubhe.data.domain.dto.*;
+import org.dubhe.data.domain.dto.AnnotationDeleteDTO;
+import org.dubhe.data.domain.dto.AnnotationInfoCreateDTO;
+import org.dubhe.data.domain.dto.AutoAnnotationCreateDTO;
+import org.dubhe.data.domain.dto.BatchAnnotationInfoCreateDTO;
 import org.dubhe.data.service.AnnotationService;
 import org.dubhe.data.service.TaskService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -109,7 +112,7 @@ public class AnnotationController {
 
 
 
-    @ApiOperation(value = "重新目标跟踪")
+    @ApiOperation(value = "目标跟踪")
     @GetMapping(value = "/annotations/auto/track/{datasetId}")
     @RequiresPermissions(DATA)
     public DataResponseBody track(@PathVariable(value = "datasetId") Long datasetId) {

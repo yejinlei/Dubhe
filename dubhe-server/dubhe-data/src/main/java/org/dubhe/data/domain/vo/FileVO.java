@@ -1,5 +1,5 @@
 /**
- * Copyright 2020 Zhejiang Lab. All Rights Reserved.
+ * Copyright 2020 Tianshu AI Platform. All Rights Reserved.
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -43,7 +43,7 @@ public class FileVO implements Serializable {
 
     private String name;
 
-    @ApiModelProperty(value = "状态:0-未标注，1-标注中，2-自动标注完成，3-已标注完成")
+    @ApiModelProperty(value = "状态: 101-未标注, 102-手动标注中, 103-自动标注完成, 104-标注完成, 105-标注未识别, 201-目标跟踪完成")
     private Integer status;
 
     @ApiModelProperty(value = "数据集id")
@@ -62,5 +62,17 @@ public class FileVO implements Serializable {
 
     @ApiModelProperty(value = "增强类型")
     private Integer enhanceType;
+
+    @ApiModelProperty("预测值")
+    private Double prediction;
+
+    @ApiModelProperty("标注ID")
+    private Long labelId;
+
+    @ApiModelProperty("摘要名称")
+    private String abstractName;
+
+    @ApiModelProperty("摘要Url")
+    private String abstractUrl;
 
 }

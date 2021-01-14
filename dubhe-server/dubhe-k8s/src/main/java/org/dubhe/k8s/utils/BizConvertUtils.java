@@ -1,5 +1,5 @@
 /**
- * Copyright 2020 Zhejiang Lab. All Rights Reserved.
+ * Copyright 2020 Tianshu AI Platform. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,6 +21,7 @@ import cn.hutool.core.collection.CollectionUtil;
 import io.fabric8.kubernetes.api.model.*;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.batch.Job;
+import io.fabric8.kubernetes.api.model.extensions.Ingress;
 import org.dubhe.k8s.domain.cr.DistributeTrain;
 import org.dubhe.k8s.domain.resource.*;
 
@@ -148,11 +149,57 @@ public class BizConvertUtils {
     public static BizLimitRange toBizLimitRange(LimitRange limitRange) {
         return MappingUtils.mappingTo(limitRange, BizLimitRange.class);
     }
+
+    /**
+     * 将DistributeTrain 转为 BizDistributeTrain
+     *
+     * @param distributeTrain 对象
+     * @return
+     */
     public static BizDistributeTrain toBizDistributeTrain(DistributeTrain distributeTrain){
         return MappingUtils.mappingTo(distributeTrain,BizDistributeTrain.class);
     }
+
+    /**
+     * 将List<DistributeTrain> 转为 List<BizDistributeTrain>
+     *
+     * @param distributeTrainList 对象
+     * @return
+     */
     public static List<BizDistributeTrain> toBizDistributeTrainList(List<DistributeTrain> distributeTrainList){
         List<BizDistributeTrain> distributeTrains = distributeTrainList.parallelStream().map(obj -> toBizDistributeTrain(obj)).collect(Collectors.toList());
        return distributeTrains;
+    }
+
+    /**
+     * 将Service 转为 BizService
+     *
+     * @param service 对象
+     * @return
+     */
+    public static BizService toBizService(Service service) {
+        return MappingUtils.mappingTo(service, BizService.class);
+    }
+
+    /**
+     * 将Secret 转为 BizSecret
+     *
+     * @param secret 对象
+     * @return
+     */
+    public static BizSecret toBizSecret(Secret secret) {
+        return MappingUtils.mappingTo(secret, BizSecret.class);
+    }
+
+    /**
+     * 将Ingress 转为 BizIngress
+     *
+     * @param ingress 对象
+     * @return
+     */
+    public static BizIngress toBizIngress(Ingress ingress) {
+        BizIngress bizIngress = MappingUtils.mappingTo(ingress, BizIngress.class);
+        bizIngress.getRules().forEach(BizIngressRule::takeServicePort);
+        return bizIngress;
     }
 }

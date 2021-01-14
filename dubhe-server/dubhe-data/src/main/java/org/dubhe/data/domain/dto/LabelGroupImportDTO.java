@@ -1,5 +1,5 @@
 /**
- * Copyright 2020 Zhejiang Lab. All Rights Reserved.
+ * Copyright 2020 Tianshu AI Platform. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -42,9 +42,16 @@ public class LabelGroupImportDTO implements Serializable {
      * 标签组name
      */
     @ApiModelProperty(value = "标签组name")
-    @NotNull(message = "类型不能为空")
+    @NotNull(message = "名称不能为空")
     @Size(min = 1, max = 50, message = "name长度范围1~50")
     private String name;
+
+    /**
+     * 标签组类型
+     */
+    @ApiModelProperty(value = "标签组类型:0:视觉,1:文本")
+    @NotNull(message = "标签组类型不能为空")
+    private Integer labelGroupType;
 
     /**
      * 备注信息

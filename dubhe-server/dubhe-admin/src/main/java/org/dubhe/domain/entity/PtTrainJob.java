@@ -1,5 +1,5 @@
 /**
- * Copyright 2020 Zhejiang Lab. All Rights Reserved.
+ * Copyright 2020 Tianshu AI Platform. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -173,35 +173,33 @@ public class PtTrainJob extends BaseEntity {
     private Long originUserId;
 
     /**
-     * 是否打开模型原则
-     */
-    @TableField(value = "model_type")
-    private Integer modelType;
-    /**
      * 模型来源
      */
     @TableField(value = "model_resource")
     private Integer modelResource;
-    /**
-     * 模型加载路径
-     */
-    @TableField(value = "model_load_dir")
-    private String modelLoadPathDir;
-    /**
-     * 模型名称
-     */
-    @TableField(value = "model_name")
-    private String modelName;
+
     /**
      * 模型id
      */
     @TableField(value = "model_id")
-    private Integer modelId;
+    private Long modelId;
+
+    /**
+     * 模型对应版本id
+     */
+    @TableField(value = "model_branch_id")
+    private Long modelBranchId;
 
     /**
      * 训练信息(失败信息)
      */
     @TableField(value = "train_msg")
     private String trainMsg;
+
+    @TableField(value = "teacher_model_ids")
+    private String teacherModelIds;
+
+    @TableField(value = "student_model_ids")
+    private String studentModelIds;
 
 }

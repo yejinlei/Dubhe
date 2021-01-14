@@ -1,5 +1,5 @@
 /**
- * Copyright 2020 Zhejiang Lab. All Rights Reserved.
+ * Copyright 2020 Tianshu AI Platform. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,10 +30,8 @@ import org.dubhe.data.machine.constant.DataStateCodeConstant;
 import org.dubhe.domain.entity.Team;
 import org.dubhe.domain.entity.User;
 import org.dubhe.enums.DatasetTypeEnum;
-import org.dubhe.utils.JwtUtils;
 
 import java.sql.Timestamp;
-import java.util.Objects;
 
 /**
  * @description 数据集
@@ -67,10 +65,10 @@ public class Dataset {
     @ApiModelProperty(value = "类型 0: private 私有数据,  1:team  团队数据  2:public 公开数据")
     private Integer type;
 
-    @ApiModelProperty(value = "数据类型:0图片,1视频")
+    @ApiModelProperty(value = "数据类型:0图片,1视频, 2文本")
     private Integer dataType;
 
-    @ApiModelProperty(value = "标注类型：2分类,1目标检测,5目标跟踪")
+    @ApiModelProperty(value = "标注类型：2分类,1目标检测,5目标跟踪，6本文分类")
     private Integer annotateType;
 
     private Long teamId;
@@ -163,8 +161,8 @@ public class Dataset {
         this.name = datasetCustomCreateDTO.getName();
         this.remark = datasetCustomCreateDTO.getDesc();
         this.type = DatasetTypeEnum.PRIVATE.getValue();
-        this.dataType = DatatypeEnum.IMAGE.getValue();
-        this.annotateType = AnnotateTypeEnum.OBJECT_DETECTION.getValue();
+        this.dataType = datasetCustomCreateDTO.getDatasetType();
+        this.annotateType = datasetCustomCreateDTO.getAnnotateType();
         this.status = DataStateCodeConstant.ANNOTATION_COMPLETE_STATE;
         this.archiveUrl = datasetCustomCreateDTO.getArchiveUrl();
         this.isImport = true;

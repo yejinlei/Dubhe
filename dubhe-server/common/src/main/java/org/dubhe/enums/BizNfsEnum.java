@@ -1,5 +1,5 @@
 /**
- * Copyright 2020 Zhejiang Lab. All Rights Reserved.
+ * Copyright 2020 Tianshu AI Platform. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -37,6 +37,10 @@ public enum BizNfsEnum {
      * 模型管理 NFS 路径命名
      */
     MODEL(BizEnum.MODEL, "model"),
+    /**
+     * 模型优化 NFS 路径命名
+     */
+    MODEL_OPT(BizEnum.MODEL_OPT, "model-opt"),
     ;
 
     BizNfsEnum(BizEnum bizEnum, String bizNfsPath) {

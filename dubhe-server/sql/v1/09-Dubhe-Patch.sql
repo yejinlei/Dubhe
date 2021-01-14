@@ -161,7 +161,6 @@ start transaction; -- 整个存储过程指定为一个事务
 
 
 
-
     -- 修改表字段和属性
     alter table pt_train_job
         change train_job_specs_id train_job_specs_name varchar(32) null comment '训练规格名称';
@@ -1587,8 +1586,9 @@ start transaction; -- 整个存储过程指定为一个事务
     INSERT INTO `dict_detail`(`dict_id`, `label`, `value`, `sort`)
     VALUES (35, '1Core2GB', '{"cpuNum": 1000, "gpuNum": 0, "memNum": 2000, "workspaceRequest": "100Mi"}', 1);
     INSERT INTO `dict_detail`(`dict_id`, `label`, `value`, `sort`)
-    VALUES (35, '2Core4GB', '{"cpuNum": 4000, "{"cpuNum": 2000, "gpuNum": 0, "memNum": 4000, "workspaceRequest": "100Mi"}',
-            2);
+    VALUES (35, '2Core4GB', '{"cpuNum": 4000, "{"cpuNum": 2000, "gpuNum": 0, "memNum": 4000, "workspaceRequest": "100Mi"}', 2);
+
+
 
     -- 系统版本变更为第二版本
     INSERT INTO `system_version` (`id`, `version`) VALUES (2, 2);
@@ -1597,4 +1597,514 @@ commit; -- 提交
 END;
 CALL secondEditionProc(); //
 DROP PROCEDURE IF EXISTS secondEditionProc; //
+
+-- **************************  第二版本补丁于20201117更新至开源分支，之后的更新置于下方  **************************
+
+-- 第三版本补丁（执行以下存储过程）
+CREATE PROCEDURE thridEditionProc()
+BEGIN
+    DECLARE jobInfo VARCHAR(255) character set utf8mb4;
+    DECLARE jobId BIGINT;
+    DECLARE modelId BIGINT;
+    DECLARE modelVersion VARCHAR(255) character set utf8mb4;
+    DECLARE modelBranchId BIGINT;
+    DECLARE jobCount BIGINT;
+    DECLARE i INT DEFAULT 1;
+    DECLARE j INT DEFAULT 0;
+    start transaction; -- 整个存储过程指定为一个事务
+	SELECT Max(version) into @h FROM system_version;
+    IF @h=2 THEN
+    -- -----------------------------------------------------------------------------------------------------------------
+    -- DDL
+
+    -- 度量管理表
+    create table pt_measure
+    (
+        id             bigint auto_increment
+            primary key,
+        name           varchar(32)                          not null comment '度量名称',
+        url            varchar(200)                         not null comment '度量文件路径',
+        origin_user_id bigint                               null comment '资源拥有人ID',
+        create_user_id bigint                               null comment '创建人',
+        update_user_id bigint                               null comment '更新人',
+        create_time    datetime   default CURRENT_TIMESTAMP not null comment '创建时间',
+        update_time    datetime   default CURRENT_TIMESTAMP not null on update CURRENT_TIMESTAMP comment '更新时间',
+        description    varchar(512)                         null comment '度量描述',
+        deleted        tinyint(1) default 0                 not null comment '删除(0正常，1已删除)',
+        constraint measure_unidex
+            unique (name, deleted)
+    )
+        comment '度量管理表' charset = utf8mb4;
+
+    -- 调整pt_train_job和pt_train_param表结构,同时更新老数据
+    ALTER TABLE `pt_train_job` ADD `model_branch_id` bigint(20) DEFAULT NULL COMMENT '模型对应版本id';
+    SET jobCount = (SELECT COUNT(1) FROM pt_train_job WHERE model_resource = 0 AND model_id > 0 AND model_name IS NOT NULL AND model_name != "" AND model_type IS NOT NULL);
+    WHILE i <= jobCount DO
+            SET jobInfo = (SELECT CONCAT_WS(',', id, model_id, model_name) FROM pt_train_job WHERE model_resource = 0 AND model_id > 0 AND model_name IS NOT NULL AND model_name != "" AND model_type IS NOT NULL ORDER BY id limit j, 1);
+            SET jobId = SUBSTRING_INDEX(jobInfo, ',', 1);
+            SET modelId = SUBSTRING_INDEX(SUBSTRING_INDEX(jobInfo, ',', 2), ',', -1);
+            SET modelVersion = SUBSTRING_INDEX(SUBSTRING_INDEX(jobInfo, ',', -1), ':', -1);
+            SET modelBranchId = (SELECT id FROM pt_model_branch WHERE parent_id = modelId and version = modelVersion);
+            UPDATE pt_train_job SET model_branch_id = modelBranchId WHERE id = jobId;
+            SET i = i + 1;
+            SET j = j + 1;
+        END WHILE;
+
+    ALTER TABLE `pt_train_param` ADD `model_branch_id` bigint(20) DEFAULT NULL COMMENT '模型对应版本id';
+    SET i = 1;
+    SET j = 0;
+    SET jobCount = (SELECT COUNT(1) FROM pt_train_param WHERE model_resource = 0 AND model_id > 0 AND model_name IS NOT NULL AND model_name != "" AND model_type IS NOT NULL);
+    WHILE i <= jobCount DO
+            SET jobInfo = (SELECT CONCAT_WS(',', id, model_id, model_name) FROM pt_train_param WHERE model_resource = 0 AND model_id > 0 AND model_name IS NOT NULL AND model_name != "" AND model_type IS NOT NULL ORDER BY id limit j, 1);
+            SET jobId = SUBSTRING_INDEX(jobInfo, ',', 1);
+            SET modelId = SUBSTRING_INDEX(SUBSTRING_INDEX(jobInfo, ',', 2), ',', -1);
+            SET modelVersion = SUBSTRING_INDEX(SUBSTRING_INDEX(jobInfo, ',', -1), ':', -1);
+            SET modelBranchId = (SELECT id FROM pt_model_branch WHERE parent_id = modelId and version = modelVersion);
+            UPDATE pt_train_param SET model_branch_id = modelBranchId WHERE id = jobId;
+            SET i = i + 1;
+            SET j = j + 1;
+        END WHILE;
+
+    UPDATE pt_train_job SET model_resource = NULL,model_id = NULL WHERE model_type IS NULL AND model_resource = 0;
+    ALTER TABLE `pt_train_job` MODIFY `model_resource` tinyint(1) DEFAULT NULL COMMENT '模型类型(0我的模型1预置模型2炼知模型)';
+    ALTER TABLE `pt_train_job` ADD `teacher_model_ids` varchar(255) DEFAULT NULL COMMENT '教师模型ids', ADD `student_model_ids` varchar(255) DEFAULT NULL COMMENT '学生模型ids';
+    ALTER TABLE `pt_train_job` DROP `model_name`, DROP `model_type`, DROP `model_load_dir`;
+
+    UPDATE pt_train_param SET model_resource = NULL,model_id = NULL WHERE model_type IS NULL AND model_resource = 0;
+    ALTER TABLE `pt_train_param` MODIFY `model_resource` tinyint(1) DEFAULT NULL COMMENT '模型类型(0我的模型1预置模型2炼知模型)';
+    ALTER TABLE `pt_train_param` ADD `teacher_model_ids` varchar(255) DEFAULT NULL COMMENT '教师模型ids', ADD `student_model_ids` varchar(255) DEFAULT NULL COMMENT '学生模型ids';
+    ALTER TABLE `pt_train_param` DROP `model_name`, DROP `model_type`, DROP `model_load_dir`;
+
+
+    -- 增加验证数据来源名称字段
+    alter table pt_train_param
+        add column val_data_source_name varchar(127)  comment '验证数据来源名称';
+
+    -- 增加验证数据来源路径字段
+    alter table pt_train_param
+        add column val_data_source_path varchar(255)  comment '验证数据来源路径';
+
+    -- 增加是否验证数据集字段
+    alter table pt_train_param
+        add column val_type tinyint(1) default 0 comment '是否验证数据集';
+
+
+    -- ------------------------------------------------------ 云端Serving模块 ----------------------------------------------------------
+    -- 批量服务表
+    CREATE TABLE IF NOT EXISTS serving_batch (
+                                                 id BIGINT(20) NOT NULL AUTO_INCREMENT COMMENT '主键',
+                                                 name VARCHAR(255) NULL DEFAULT NULL COMMENT '服务名称',
+                                                 resource_info VARCHAR(16) NULL DEFAULT NULL COMMENT '资源信息',
+                                                 model_resource TINYINT(8) NULL DEFAULT NULL COMMENT '模型来源（1-预置模型，0-我的模型）',
+                                                 model_id BIGINT(20) NULL DEFAULT NULL COMMENT '模型id',
+                                                 model_address VARCHAR(255) NULL DEFAULT NULL COMMENT '模型地址',
+                                                 input_path VARCHAR(255) NULL DEFAULT NULL COMMENT '输入数据目录',
+                                                 output_path VARCHAR(255) NULL DEFAULT NULL COMMENT '输出数据目录',
+                                                 status VARCHAR(8) NULL DEFAULT NULL COMMENT '服务状态：0为失败，1为部署中，2为运行中，3为停止，4为完成，5为未知)',
+                                                 progress VARCHAR(255) NULL DEFAULT NULL COMMENT '进度',
+                                                 start_time DATETIME NULL DEFAULT NULL COMMENT '任务开始时间',
+                                                 end_time DATETIME NULL DEFAULT NULL COMMENT '任务结束时间',
+                                                 resources_pool_node VARCHAR(255) NULL DEFAULT NULL COMMENT '节点个数',
+                                                 resources_pool_type TINYINT(4) NULL DEFAULT NULL COMMENT '节点类型(0为CPU，1为GPU)',
+                                                 resources_pool_specs VARCHAR(255) NULL DEFAULT NULL COMMENT '节点规格',
+                                                 reasoning_script_path VARCHAR(255) NULL DEFAULT NULL COMMENT '推理脚本路径',
+                                                 model_config_path VARCHAR(255) NULL DEFAULT NULL COMMENT '模型配置文件路径',
+                                                 pool_specs_info VARCHAR(255) NULL DEFAULT NULL COMMENT '规格信息',
+                                                 deploy_params JSON NULL DEFAULT NULL COMMENT '部署参数',
+                                                 frame_type TINYINT(4) NULL DEFAULT NULL COMMENT '框架类型',
+                                                 description VARCHAR(255) NULL DEFAULT NULL COMMENT '描述',
+                                                 create_time TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
+                                                 create_user_id BIGINT(20) NULL DEFAULT NULL,
+                                                 update_time TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                                                 update_user_id BIGINT(20) NULL DEFAULT NULL,
+                                                 deleted BIT(1) NULL DEFAULT b'0',
+                                                 PRIMARY KEY (id) USING BTREE,
+                                                 INDEX model_id (model_id),
+                                                 INDEX status (status),
+                                                 INDEX deleted (deleted)
+    )
+        COMMENT='云端Serving批量服务业务表'
+        COLLATE='utf8_general_ci'
+        ENGINE=InnoDB
+        ROW_FORMAT=DYNAMIC
+    ;
+
+    -- 在线服务表
+    CREATE TABLE IF NOT EXISTS serving_info (
+                                                id BIGINT(20) NOT NULL AUTO_INCREMENT COMMENT '主键',
+                                                name VARCHAR(255) NULL DEFAULT NULL COMMENT '服务名称',
+                                                uuid VARCHAR(255) NULL DEFAULT NULL COMMENT '服务请求接口uuid',
+                                                status VARCHAR(8) NULL DEFAULT NULL COMMENT '服务状态：0-异常，1-部署中，2-运行中，3-已停止',
+                                                type TINYINT(4) NULL DEFAULT NULL COMMENT '服务类型：0-Restful，1-gRPC',
+                                                model_resource TINYINT(1) NULL DEFAULT NULL COMMENT '模型来源（1-预置模型，0-我的模型）',
+                                                running_node TINYINT(3) UNSIGNED NULL DEFAULT '0' COMMENT '运行节点数',
+                                                total_node TINYINT(3) UNSIGNED NULL DEFAULT '0' COMMENT '服务总节点数',
+                                                description VARCHAR(255) NULL DEFAULT NULL COMMENT '描述',
+                                                create_time TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
+                                                create_user_id BIGINT(20) NULL DEFAULT NULL,
+                                                update_time TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                                                update_user_id BIGINT(20) NULL DEFAULT NULL,
+                                                deleted BIT(1) NULL DEFAULT b'0',
+                                                PRIMARY KEY (id) USING BTREE,
+                                                INDEX uuid (uuid),
+                                                INDEX status (status),
+                                                INDEX type (type),
+                                                INDEX model_resource (model_resource),
+                                                INDEX deleted (deleted)
+    )
+        COMMENT='云端Serving在线服务业务表'
+        COLLATE='utf8_general_ci'
+        ENGINE=InnoDB
+        ROW_FORMAT=DYNAMIC
+    ;
+
+    -- 在线服务模型部署信息表
+    CREATE TABLE IF NOT EXISTS serving_model_config (
+                                                        id BIGINT(20) NOT NULL AUTO_INCREMENT COMMENT '主键',
+                                                        serving_id BIGINT(20) NOT NULL COMMENT 'Serving信息id',
+                                                        model_id BIGINT(20) NULL DEFAULT NULL COMMENT '模型id',
+                                                        model_address VARCHAR(255) NULL DEFAULT NULL COMMENT '模型路径',
+                                                        release_rate VARCHAR(255) NULL DEFAULT NULL COMMENT '灰度发布分流（%）',
+                                                        resources_pool_type TINYINT(4) NULL DEFAULT NULL COMMENT '节点类型(0为CPU，1为GPU)',
+                                                        resources_pool_specs VARCHAR(255) NULL DEFAULT NULL COMMENT '节点规格',
+                                                        resources_pool_node VARCHAR(255) NULL DEFAULT NULL COMMENT '节点个数',
+                                                        url VARCHAR(255) NULL DEFAULT NULL COMMENT '模型部署url',
+                                                        frame_type TINYINT(4) NULL DEFAULT NULL COMMENT '框架类型',
+                                                        model_resource TINYINT(4) NULL DEFAULT NULL COMMENT '模型来源(0-我的模型，1-预置模型)',
+                                                        resource_info VARCHAR(16) NULL DEFAULT NULL COMMENT '资源信息',
+                                                        pool_specs_info VARCHAR(255) NULL DEFAULT NULL COMMENT '规格信息',
+                                                        deploy_params VARCHAR(255) NULL DEFAULT NULL COMMENT '部署参数',
+                                                        deploy_id VARCHAR(32) NULL DEFAULT NULL COMMENT '部署id(用于回滚)',
+                                                        model_version VARCHAR(8) NULL DEFAULT NULL COMMENT '模型版本',
+                                                        model_name VARCHAR(255) NULL DEFAULT NULL COMMENT '模型名称',
+                                                        ready_replicas TINYINT(4) NULL DEFAULT NULL COMMENT 'deployment已 Running的pod数',
+                                                        create_user_id BIGINT(20) NULL DEFAULT NULL,
+                                                        create_time TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
+                                                        update_user_id BIGINT(20) NULL DEFAULT NULL,
+                                                        update_time TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                                                        deleted BIT(1) NULL DEFAULT b'0',
+                                                        PRIMARY KEY (id) USING BTREE,
+                                                        INDEX serving_id (serving_id) USING BTREE,
+                                                        INDEX model_id (model_id),
+                                                        INDEX deleted (deleted)
+    )
+        COMMENT='云端Serving在线服务模型部署业务表'
+        COLLATE='utf8_general_ci'
+        ENGINE=InnoDB
+        ROW_FORMAT=DYNAMIC
+    ;
+
+    -- -----------------------------------------------------------------------------------------------------------------
+    -- DML
+    -- 增加pth文件对应模型格式Pytorch PTH
+    INSERT INTO `dict_detail` ( `label`, `sort`, `value`, `dict_id`) VALUES ( 'Pytorch PTH', '8', '8', 11);
+
+
+    -- 新增 在线服务运行状态
+    INSERT INTO `dict`(`id`, `name`, `remark`) VALUES (27, 'serving_status', '服务状态');
+    INSERT INTO `dict_detail`(`dict_id`, `label`, `value`, `sort`) VALUES (27, '部署中', '1', 1);
+    INSERT INTO `dict_detail`(`dict_id`, `label`, `value`, `sort`) VALUES (27, '运行中', '2', 2);
+    INSERT INTO `dict_detail`(`dict_id`, `label`, `value`, `sort`) VALUES (27, '已停止', '3', 3);
+    INSERT INTO `dict_detail`(`dict_id`, `label`, `value`, `sort`) VALUES (27, '运行失败', '0', 4);
+
+    -- 新增 在线服务各框架部署参数
+    INSERT INTO `dict`(`id`, `name`, `remark`) VALUES (30, 'deploy_params', '部署参数');
+    INSERT INTO `dict_detail`(`dict_id`, `label`, `value`, `sort`) VALUES (30, 'signature_name', 'Tensorflow模型接口定义名称（serving_default）', 1);
+    INSERT INTO `dict_detail`(`dict_id`, `label`, `value`, `sort`) VALUES (30, 'reshape_size', '图片预处理形状 [H, W]', 2);
+    INSERT INTO `dict_detail`(`dict_id`, `label`, `value`, `sort`) VALUES (30, 'prepare_mode', 'keras/Tensoflow模型预处理模式(tfhub、caffe、tf、torch)', 3);
+    INSERT INTO `dict_detail`(`dict_id`, `label`, `value`, `sort`) VALUES (30, 'model_structure', 'pytorch模型保存网络名称（model）', 4);
+    INSERT INTO `dict_detail`(`dict_id`, `label`, `value`, `sort`) VALUES (30, 'job_name', 'oneflow模型推理job名称（inference）', 5);
+
+    -- 新增 表menu 云端Serving默认菜单
+    INSERT INTO menu (id, cache, component, component_name, hidden,  icon, name, path, permission, pid, sort, type, layout, create_time, update_time, create_user_id, update_user_id, deleted) VALUES (1042, false, NULL, NULL, false, 'shujumoxing', '云端Serving', 'cloudserving', NULL, 0, 60, 0, NULL, current_timestamp, current_timestamp, 1, 1, false);
+    INSERT INTO menu (id, cache, component, component_name, hidden,  icon, name, path, permission, pid, sort, type, layout, create_time, update_time, create_user_id, update_user_id, deleted) VALUES (1043, false, 'cloudServing', 'CloudServing', false,  'shujumoxing', '在线服务', 'onlineserving', 'serving:deployment', 1042, 61, 1, 'BaseLayout', current_timestamp, current_timestamp, 1, 1, false);
+    INSERT INTO menu (id, cache, component, component_name, hidden,  icon, name, path, permission, pid, sort, type, layout, create_time, update_time, create_user_id, update_user_id, deleted) VALUES (1044, false, 'cloudServing/batch', 'BatchServing', false, 'shujumoxing', '批量服务', 'batchserving', NULL, 1042, 62, 1, 'BaseLayout', current_timestamp, current_timestamp, 1, 1, false);
+    INSERT INTO menu (id, cache, component, component_name, hidden,  icon, name, path, permission, pid, sort, type, layout, create_time, update_time, create_user_id, update_user_id, deleted) VALUES (1045, false, 'cloudServing/detail', 'CloudServingDetail', true, NULL, '部署详情', 'onlineserving/detail', 'serving:deployment', 1042, 63, 1, 'SubpageLayout', current_timestamp, current_timestamp, 1, 1, false);
+    INSERT INTO menu (id, cache, component, component_name, hidden,  icon, name, path, permission, pid, sort, type, layout, create_time, update_time, create_user_id, update_user_id, deleted) VALUES (1046, false, 'cloudServing/batchDetail', 'BatchServingDetail', true, NULL, '部署详情', 'batchserving/detail', NULL, 1042, 64, 1, 'SubpageLayout', current_timestamp, current_timestamp, 1, 1, false);
+    INSERT INTO menu (id, cache, component, component_name, hidden,  icon, name, path, permission, pid, sort, type, layout, create_time, update_time, create_user_id, update_user_id, deleted) VALUES (1047, false, 'cloudServing/formPage', 'CloudServingForm', true, NULL, '部署在线服务', 'onlineserving/form', 'serving:deployment', 1042, 65, 1, 'SubpageLayout', current_timestamp, current_timestamp, 1, 1, false);
+
+    -- 新增 表roles_menus 管理员角色与云端Serving菜单权限关系
+    INSERT INTO roles_menus (role_id, menu_id) VALUES (1, 1042);
+    INSERT INTO roles_menus (role_id, menu_id) VALUES (1, 1043);
+    INSERT INTO roles_menus (role_id, menu_id) VALUES (1, 1044);
+    INSERT INTO roles_menus (role_id, menu_id) VALUES (1, 1045);
+    INSERT INTO roles_menus (role_id, menu_id) VALUES (1, 1046);
+    INSERT INTO roles_menus (role_id, menu_id) VALUES (1, 1047);
+
+    -- 新增 表roles_menus 注册用户角色与云端Serving菜单权限关系
+    INSERT INTO roles_menus (role_id, menu_id) VALUES (2, 1042);
+    INSERT INTO roles_menus (role_id, menu_id) VALUES (2, 1043);
+    INSERT INTO roles_menus (role_id, menu_id) VALUES (2, 1044);
+    INSERT INTO roles_menus (role_id, menu_id) VALUES (2, 1045);
+    INSERT INTO roles_menus (role_id, menu_id) VALUES (2, 1046);
+    INSERT INTO roles_menus (role_id, menu_id) VALUES (2, 1047);
+
+    -- 新增 表data_medicine  医学数据集表
+    CREATE TABLE `data_medicine`  (
+       `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT COMMENT 'ID',
+       `name` varchar(255) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL COMMENT '数据集名称',
+       `create_user_id` bigint(20) NULL DEFAULT NULL COMMENT '创建用户ID',
+       `create_time` datetime(0) NOT NULL DEFAULT CURRENT_TIMESTAMP(0) COMMENT '创建时间',
+       `update_user_id` bigint(20) NULL DEFAULT NULL COMMENT '更新用户ID',
+       `update_time` datetime(0) NOT NULL DEFAULT CURRENT_TIMESTAMP(0) ON UPDATE CURRENT_TIMESTAMP(0) COMMENT '更新时间',
+       `deleted` bit(1) NOT NULL DEFAULT b'0' COMMENT '0-正常 1-已删除',
+       `status` smallint(4) NULL DEFAULT NULL COMMENT '状态 101-未标注 103-自动标注中 104-自动标注完成 105-完成',
+       `patient_id` varchar(50) CHARACTER SET utf8 COLLATE utf8_general_ci NULL DEFAULT NULL COMMENT '检查号(CT号或CR、DR号)',
+       `study_instance_uid` varchar(64) CHARACTER SET utf8 COLLATE utf8_general_ci NULL DEFAULT NULL COMMENT '研究实例UID',
+       `series_instance_uid` varchar(64) CHARACTER SET utf8 COLLATE utf8_general_ci NULL DEFAULT NULL COMMENT '序列实例UID',
+       `modality` varchar(50) CHARACTER SET utf8 COLLATE utf8_general_ci NULL DEFAULT NULL COMMENT '模式',
+       `body_part_examined` varchar(50) CHARACTER SET utf8 COLLATE utf8_general_ci NULL DEFAULT NULL COMMENT '部位',
+       `merge_annotation` text CHARACTER SET utf8 COLLATE utf8_general_ci NULL COMMENT '自动标注内容合并后结果',
+       `remark` varchar(255) CHARACTER SET utf8 COLLATE utf8_general_ci NULL DEFAULT NULL,
+       `origin_user_id` bigint(20) NOT NULL COMMENT '资源拥有人',
+       `type` tinyint(4) NOT NULL DEFAULT 0 COMMENT '类型 0: private 私有数据,  1:team  团队数据  2:public 公开数据',
+       `annotate_type` smallint(5) NOT NULL DEFAULT 0 COMMENT '标注类型: 1.器官分割 2.病灶检测之肺结节检测',
+       PRIMARY KEY (`id`) USING BTREE
+    ) ENGINE = InnoDB AUTO_INCREMENT = 173 CHARACTER SET = utf8 COLLATE = utf8_general_ci COMMENT = '医学数据集' ROW_FORMAT = Dynamic;
+
+     -- 新增 表data_medicine_file  医学数据集文件中间表
+    CREATE TABLE `data_medicine_file`  (
+       `id` bigint(20) UNSIGNED ZEROFILL NOT NULL AUTO_INCREMENT COMMENT 'ID',
+       `create_user_id` bigint(20) NULL DEFAULT NULL COMMENT '创建用户ID',
+       `create_time` datetime(0) NOT NULL DEFAULT CURRENT_TIMESTAMP(0) COMMENT '创建时间',
+       `update_user_id` bigint(20) NULL DEFAULT NULL COMMENT '更新用户ID',
+       `update_time` datetime(0) NOT NULL DEFAULT CURRENT_TIMESTAMP(0) ON UPDATE CURRENT_TIMESTAMP(0) COMMENT '更新时间',
+       `deleted` bit(1) NOT NULL DEFAULT b'0' COMMENT '0-正常 1-已删除',
+       `medicine_id` bigint(20) NULL DEFAULT NULL COMMENT '数据集ID',
+       `name` varchar(225) CHARACTER SET utf8 COLLATE utf8_general_ci NULL DEFAULT NULL COMMENT '文件名称',
+       `url` varchar(255) CHARACTER SET utf8 COLLATE utf8_general_ci NULL DEFAULT NULL COMMENT '文件地址',
+       `instance_number` smallint(5) NULL DEFAULT NULL COMMENT '实例序号',
+       `sop_instance_uid` varchar(64) CHARACTER SET utf8 COLLATE utf8_general_ci NULL DEFAULT NULL COMMENT 'SOP实例UID',
+       `origin_user_id` bigint(20) NULL DEFAULT NULL COMMENT '资源拥有人',
+       `status` tinyint(4) NULL DEFAULT NULL COMMENT '状态 101-未标注 103-自动标注完成 104-完成',
+       `image_position_patient` double(11, 1) NULL DEFAULT NULL,
+       PRIMARY KEY (`id`) USING BTREE
+    ) ENGINE = InnoDB AUTO_INCREMENT = 14485 CHARACTER SET = utf8 COLLATE = utf8_general_ci COMMENT = '医学数据集文件中间表' ROW_FORMAT = Dynamic;
+
+    -- 新增 表data_file_annotation  数据集文件标注表
+    CREATE TABLE `data_file_annotation`  (
+       `id` bigint(20) NOT NULL AUTO_INCREMENT,
+       `dataset_id` bigint(20) NOT NULL COMMENT '数据集ID',
+       `label_id` bigint(20) NOT NULL COMMENT '标签ID',
+       `version_file_id` bigint(20) NOT NULL COMMENT '版本文件ID',
+       `prediction` double NULL DEFAULT 0 COMMENT '预测值',
+       `create_user_id` bigint(20) NULL DEFAULT NULL,
+       `create_time` datetime(0) NOT NULL DEFAULT CURRENT_TIMESTAMP(0),
+       `update_user_id` bigint(20) NULL DEFAULT NULL,
+       `update_time` datetime(0) NOT NULL DEFAULT CURRENT_TIMESTAMP(0) ON UPDATE CURRENT_TIMESTAMP(0),
+       `deleted` bit(1) NOT NULL DEFAULT b'0',
+       PRIMARY KEY (`id`) USING BTREE,
+       INDEX `version_file_index`(`version_file_id`) USING BTREE
+    ) ENGINE = InnoDB AUTO_INCREMENT = 25109 CHARACTER SET = utf8 COLLATE = utf8_general_ci COMMENT = '数据集文件标注表' ROW_FORMAT = Dynamic;
+
+     -- 新增 表data_lesion_slice  病灶检测表
+    CREATE TABLE `data_lesion_slice`  (
+       `id` bigint(20) NOT NULL AUTO_INCREMENT,
+       `create_user_id` bigint(20) NULL DEFAULT NULL,
+       `create_time` datetime(0) NOT NULL DEFAULT CURRENT_TIMESTAMP(0),
+       `update_user_id` bigint(20) NULL DEFAULT NULL,
+       `update_time` datetime(0) NOT NULL DEFAULT CURRENT_TIMESTAMP(0) ON UPDATE CURRENT_TIMESTAMP(0),
+       `lesion_order` int(11) NOT NULL COMMENT '序号',
+       `slice_desc` varchar(255) CHARACTER SET utf8 COLLATE utf8_general_ci NULL DEFAULT NULL COMMENT '病灶层面',
+       `medicine_id` bigint(20) NULL DEFAULT NULL COMMENT '数据集ID',
+       `deleted` bit(1) NOT NULL DEFAULT b'0' COMMENT '0正常，1已删除',
+       `draw_info` text CHARACTER SET utf8 COLLATE utf8_general_ci NULL,
+       `origin_user_id` bigint(19) NULL DEFAULT NULL COMMENT '资源拥有者ID',
+       PRIMARY KEY (`id`) USING BTREE
+    ) ENGINE = InnoDB AUTO_INCREMENT = 355 CHARACTER SET = utf8 COLLATE = utf8_general_ci COMMENT = '病灶检测表' ROW_FORMAT = Dynamic;
+
+    -- data_label_group增加标签组数据类型字段
+    alter table data_label_group
+        add label_group_type tinyint(1) default 0 not null comment '标签组数据类型 0：视觉, 1：文本';
+
+    -- data_dataset_version_file增加文件名称字段
+    alter table data_dataset_version_file
+        add file_name varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT '' COMMENT '文件名称';
+    -- 模型优化内置算法、模型、数据集关系表
+    CREATE TABLE IF NOT EXISTS model_opt_build_in (
+        id INT(10) UNSIGNED NOT NULL AUTO_INCREMENT COMMENT '主键',
+        type TINYINT(4) NOT NULL COMMENT '算法类型（0-剪枝，1-蒸馏，2-量化）',
+        algorithm VARCHAR(255) NULL DEFAULT NULL COMMENT '算法名称',
+        algorithm_path VARCHAR(255) NULL DEFAULT NULL COMMENT '算法路径',
+        dataset VARCHAR(255) NULL DEFAULT NULL COMMENT '数据集名称',
+        dataset_path VARCHAR(255) NULL DEFAULT NULL COMMENT '数据集路径',
+        model VARCHAR(255) NULL DEFAULT NULL COMMENT '模型名称',
+        model_path VARCHAR(255) NULL DEFAULT NULL COMMENT '模型路径',
+        create_user_id BIGINT(20) NULL DEFAULT NULL COMMENT '创建用户ID',
+        create_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+        update_user_id BIGINT(20) NULL DEFAULT NULL COMMENT '更新用户ID',
+        update_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+        deleted BIT(1) NULL DEFAULT b'0' COMMENT '0正常，1已删除',
+        PRIMARY KEY (id) USING BTREE
+    )
+    COMMENT='模型优化内置算法、模型、数据集关系表'
+    COLLATE='utf8_general_ci'
+    ENGINE=InnoDB
+    ROW_FORMAT=DYNAMIC
+    ;
+
+    -- 模型优化用户数据集表
+    CREATE TABLE IF NOT EXISTS model_opt_dataset (
+        id BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT COMMENT '主键',
+        name VARCHAR(255) NOT NULL COMMENT '名称',
+        path VARCHAR(255) NOT NULL COMMENT '路径',
+        create_user_id BIGINT(20) NULL DEFAULT NULL COMMENT '创建人',
+        create_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+        update_user_id BIGINT(20) NULL DEFAULT NULL COMMENT '修改人',
+        update_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '修改时间',
+        deleted BIT(1) NOT NULL DEFAULT b'0' COMMENT '0正常，1已删除',
+        PRIMARY KEY (id)
+    )
+    COMMENT='模型优化用户数据集表'
+    COLLATE='utf8_general_ci'
+    ENGINE=InnoDB
+    ;
+
+    -- 数据版本文件中间表增加索引
+    ALTER TABLE `data_dataset_version_file` ADD INDEX `select_status`(`dataset_id`, `version_name`) USING BTREE;
+    ALTER TABLE `data_dataset_version_file` ADD INDEX `file_state_annotation_finished`(`dataset_id`, `file_id`, `version_name`) USING BTREE;
+    ALTER TABLE `data_dataset_version_file` ADD INDEX `dataset_id_annotation_status`(`dataset_id`, `annotation_status`, `version_name`) USING BTREE;
+    -- 模型优化任务表
+    CREATE TABLE IF NOT EXISTS model_opt_task (
+        id BIGINT(20) NOT NULL AUTO_INCREMENT COMMENT '任务ID主键',
+        name VARCHAR(100) NOT NULL COMMENT '任务名称',
+        description VARCHAR(1024) NULL DEFAULT NULL COMMENT '任务描述',
+        is_built_in BIT(1) NOT NULL COMMENT '是否内置',
+        model_id BIGINT(20) NULL DEFAULT NULL COMMENT '模型id',
+        model_name VARCHAR(255) NULL DEFAULT NULL COMMENT '模型名称',
+        model_address VARCHAR(255) NULL DEFAULT NULL COMMENT '模型路径',
+        algorithm_id BIGINT(20) NULL DEFAULT NULL COMMENT '优化算法id',
+        algorithm_type TINYINT(4) NULL DEFAULT NULL COMMENT '优化算法类型',
+        algorithm_name VARCHAR(255) NULL DEFAULT NULL COMMENT '优化算法',
+        algorithm_path VARCHAR(255) NULL DEFAULT NULL COMMENT '算法路径',
+        dataset_id BIGINT(20) NULL DEFAULT NULL COMMENT '数据集id',
+        dataset_name VARCHAR(255) NULL DEFAULT NULL COMMENT '数据集名称',
+        dataset_path VARCHAR(255) NULL DEFAULT NULL COMMENT '数据集路径',
+        command TEXT NULL COMMENT '运行命令',
+        params JSON NULL DEFAULT NULL COMMENT '运行参数',
+        create_time TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+        create_user_id BIGINT(20) NULL DEFAULT NULL COMMENT '创建人',
+        update_time TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+        update_user_id BIGINT(20) NULL DEFAULT NULL COMMENT '修改人',
+        deleted BIT(1) NOT NULL DEFAULT b'0' COMMENT '删除标志',
+        PRIMARY KEY (id) USING BTREE,
+        INDEX name (name) USING BTREE,
+        INDEX algorithm_type (algorithm_type) USING BTREE,
+        INDEX create_time (create_time) USING BTREE
+    )
+    COMMENT='模型优化任务表'
+    COLLATE='utf8_general_ci'
+    ENGINE=InnoDB
+    ROW_FORMAT=DYNAMIC
+    ;
+
+    -- 标签组历史数据数据类型修改
+    UPDATE `data_label_group` SET label_group_type = 0 where label_group_type is null;
+
+    -- data_task增加type类型字段
+    ALTER TABLE `data_task`
+    MODIFY COLUMN `type` smallint(3) NULL DEFAULT NULL COMMENT '任务类型 0.自动标注 1.ofrecord 2.imageNet 3.数据增强 4.目标跟踪 5.视频采样 6.医学标注 7.文本分类 8.重新自动标注 ';
+
+    -- 初始化文本数据集预制标签数据
+    INSERT INTO data_label_group (name, create_user_id,  update_user_id, deleted, remark, type, origin_user_id, operate_type, label_group_type) VALUES ('文本自动标注标签', 1,  1,  false, 'IMDB', 1, 0, 1, 1);
+
+    INSERT INTO data_label (name, color, create_user_id,  update_user_id, deleted, type) VALUES ( 'positive', '#ffbb96', 1, 1,  false, 0);
+    INSERT INTO data_label (name, color, create_user_id,  update_user_id, deleted, type) VALUES ('negtive', '#fcffe6', 1,  1,  false, 0);
+
+    INSERT INTO data_group_label ( label_id, label_group_id, create_user_id, update_user_id, deleted) VALUES ( (select id from data_label where name ='positive' limit 1), (select id from data_label_group where name = '文本自动标注标签'), 1,  1,  false);
+    INSERT INTO data_group_label ( label_id, label_group_id, create_user_id, update_user_id, deleted) VALUES ( (select id from data_label where name ='negtive' limit 1), (select id from data_label_group where name = '文本自动标注标签'), 1,  1,  false);
+
+    -- 新增 表menu 医学影像数据集和文本数据集默认菜单
+    INSERT INTO `menu`(`id`, `cache`, `component`, `component_name`, `hidden`, `icon`, `name`, `path`, `permission`, `pid`, `sort`, `type`, `layout`, `create_time`, `update_time`, `create_user_id`, `update_user_id`, `deleted`) VALUES (1055, b'0', 'dataset/medical/list', 'DatasetMedical', b'1', NULL, '医疗影像数据集', 'datasets/medical', NULL, 10, 25, 1, 'BaseLayout', '2020-12-09 15:36:04', '2020-12-09 15:36:04', 1, 1, b'0');
+    INSERT INTO `menu`(`id`, `cache`, `component`, `component_name`, `hidden`, `icon`, `name`, `path`, `permission`, `pid`, `sort`, `type`, `layout`, `create_time`, `update_time`, `create_user_id`, `update_user_id`, `deleted`) VALUES (1056, b'0', 'dataset/entrance', 'Entrance', b'1',  NULL, '数据集场景选择', 'datasets/entrance', NULL, 10, 20, 1, 'BaseLayout', '2020-12-09 15:36:49', '2020-12-09 15:36:49', 1, 1, b'0');
+    INSERT INTO `menu`(`id`, `cache`, `component`, `component_name`, `hidden`, `icon`, `name`, `path`, `permission`, `pid`, `sort`, `type`, `layout`, `create_time`, `update_time`, `create_user_id`, `update_user_id`, `deleted`) VALUES (1057, b'0', 'dataset/fork', 'DatasetFork', b'0', 'shujuguanli', '数据集管理', 'datasets', NULL, 10, 19, 1, 'BaseLayout', '2020-12-09 15:44:19', '2020-12-09 15:44:19', 1, 1, b'0');
+    INSERT INTO `menu`(`id`, `cache`, `component`, `component_name`, `hidden`, `icon`, `name`, `path`, `permission`, `pid`, `sort`, `type`, `layout`, `create_time`, `update_time`, `create_user_id`, `update_user_id`, `deleted`) VALUES (1064, b'0', 'dataset/textclassify', 'TextClassify', b'1', NULL, '文本分类', 'datasets/textclassify/:datasetId', 'Tdataset', 10, 999, 1, 'DetailLayout', '2020-12-21 14:56:34', '2020-12-21 14:56:34', 1, 1, b'0');
+    INSERT INTO `menu`(`id`, `cache`, `component`, `component_name`, `hidden`, `icon`, `name`, `path`, `permission`, `pid`, `sort`, `type`, `layout`, `create_time`, `update_time`, `create_user_id`, `update_user_id`, `deleted`) VALUES (1065, b'0', 'dataset/medical/viewer', 'DatasetMedicalViewer', b'1', 'beauty', '医学影像阅读', 'datasets/medical/viewer/:medicalId', NULL, 10, 999, 1, 'FullpageLayout', '2020-11-03 15:26:31', '2020-11-03 15:26:31', 1, 1, b'0');
+    INSERT INTO `menu`(`id`, `cache`, `component`, `component_name`, `hidden`, `icon`, `name`, `path`, `permission`, `pid`, `sort`, `type`, `layout`, `create_time`, `update_time`, `create_user_id`, `update_user_id`, `deleted`) VALUES (1066, b'0', 'dataset/annotate', 'SegmentationDatasetFile', b'1', NULL, '图像分割', 'datasets/segmentation/:datasetId/file/:fileId', NULL, 10, 18, 1, 'DatasetLayout', '2020-09-24 16:33:33', '2020-09-24 16:33:33', 1, 1, b'0');
+    INSERT INTO `menu`(`id`, `cache`, `component`, `component_name`, `hidden`, `icon`, `name`, `path`, `permission`, `pid`, `sort`, `type`, `layout`, `create_time`, `update_time`, `create_user_id`, `update_user_id`, `deleted`) VALUES (1067, b'0', 'dataset/annotate', 'SegmentationDataset', b'1', NULL, '图像分割', 'datasets/segmentation/:datasetId', NULL, 10, 19, 1, 'DatasetLayout', '2020-09-24 16:32:35', '2020-09-24 16:32:35', 1, 1, b'0');
+    UPDATE `menu` SET `cache` = b'0', `component` = 'dataset/list', `component_name` = 'Datasets', `hidden` = b'1', `icon` = 'shujuguanli', `name` = '视觉/文本数据集', `path` = 'datasets/list', `permission` = 'data:dataset', `pid` = 10, `sort` = 11, `type` = 1, `layout` = 'BaseLayout', `create_time` = '2020-06-30 19:32:39', `update_time` = '2021-01-11 17:25:46', `create_user_id` = NULL, `update_user_id` = 1, `deleted` = b'0' WHERE `id` = 11;
+
+    -- 新增 表roles_menus 管理员角色与医学影像数据集和文本数据集菜单权限关系
+    INSERT INTO roles_menus (role_id, menu_id) VALUES (1, 1055);
+    INSERT INTO roles_menus (role_id, menu_id) VALUES (1, 1056);
+    INSERT INTO roles_menus (role_id, menu_id) VALUES (1, 1057);
+
+    -- 新增 表roles_menus 注册用户角色与医学影像数据集和文本数据集菜单权限关系
+    INSERT INTO roles_menus (role_id, menu_id) VALUES (2, 1055);
+    INSERT INTO roles_menus (role_id, menu_id) VALUES (2, 1056);
+    INSERT INTO roles_menus (role_id, menu_id) VALUES (2, 1057);
+    -- 模型优化任务实例记录表
+    CREATE TABLE IF NOT EXISTS model_opt_task_instance (
+        id BIGINT(20) NOT NULL AUTO_INCREMENT COMMENT '主键',
+        task_id BIGINT(20) NOT NULL COMMENT '任务Id',
+        task_name VARCHAR(127) NULL DEFAULT NULL COMMENT '任务名称',
+        is_built_in BIT(1) NULL DEFAULT NULL COMMENT '是否内置',
+        model_id BIGINT(20) NULL DEFAULT NULL COMMENT '模型id',
+        model_name VARCHAR(255) NULL DEFAULT NULL COMMENT '模型名称',
+        model_address VARCHAR(255) NULL DEFAULT NULL COMMENT '模型路径',
+        algorithm_id BIGINT(20) NULL DEFAULT NULL COMMENT '优化算法id',
+        algorithm_type TINYINT(4) NULL DEFAULT NULL COMMENT '优化算法类型',
+        algorithm_name VARCHAR(255) NULL DEFAULT NULL COMMENT '算法路径',
+        algorithm_path VARCHAR(255) NULL DEFAULT NULL COMMENT '使用类型 0-内置 1-我的',
+        dataset_id BIGINT(20) NULL DEFAULT NULL COMMENT '数据集id',
+        dataset_name VARCHAR(255) NULL DEFAULT NULL COMMENT '数据集名称',
+        dataset_path VARCHAR(255) NULL DEFAULT NULL COMMENT '数据集路径',
+        start_time DATETIME NULL DEFAULT NULL COMMENT '任务实例开始时间',
+        end_time DATETIME NULL DEFAULT NULL COMMENT '任务实例结束时间',
+        output_model_dir VARCHAR(255) NULL DEFAULT '0' COMMENT '输出模型路径',
+        log_path VARCHAR(255) NULL DEFAULT NULL COMMENT '日志地址',
+        status VARCHAR(8) NOT NULL DEFAULT '-1' COMMENT '-1-等待中,0-进行中,1-已完成,2-已取消,3-执行失败',
+        command TEXT NULL COMMENT '运行命令',
+        params JSON NULL DEFAULT NULL COMMENT '运行参数',
+        opt_result_before MEDIUMTEXT NULL COMMENT '模型优化前性能参数',
+        opt_result_json_path_before VARCHAR(255) NULL DEFAULT NULL COMMENT '模型优化前性能参数json文件路径',
+        opt_result_after MEDIUMTEXT NULL COMMENT '模型优化后性能参数',
+        opt_result_json_path_after VARCHAR(255) NULL DEFAULT NULL COMMENT '模型优化后性能参数json文件路径',
+        create_time TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+        create_user_id BIGINT(20) NULL DEFAULT NULL COMMENT '创建人',
+        update_time TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+        update_user_id BIGINT(20) NULL DEFAULT NULL COMMENT '修改人',
+        deleted BIT(1) NOT NULL DEFAULT b'0' COMMENT '删除标识：0-未删除，1-删除',
+        PRIMARY KEY (id) USING BTREE,
+        INDEX task_id (task_id) USING BTREE,
+        INDEX status (status) USING BTREE,
+        INDEX name (task_name) USING BTREE,
+        INDEX model_type (model_name) USING BTREE,
+        INDEX algorithm_type (algorithm_type) USING BTREE,
+        INDEX start_time (start_time) USING BTREE,
+        INDEX end_time (end_time) USING BTREE
+    )
+    COMMENT='模型优化任务实例记录表'
+    COLLATE='utf8_general_ci'
+    ENGINE=InnoDB
+    ROW_FORMAT=DYNAMIC
+    ;
+
+    -- 新增 表dict_detail 模型分类添加模型优化
+    INSERT INTO `dict_detail` ( `dict_id`, `label`, `value`, `sort`) VALUES (8, '模型优化', '6', '6');
+    INSERT INTO `dict`(`id`, `name`, `remark`) VALUES (29, 'opt_result', '模型优化-结果');
+    INSERT INTO `dict_detail` ( `dict_id`, `label`, `value`, `sort`) VALUES (29, 'accuracy', '%', '1');
+    INSERT INTO `dict_detail` ( `dict_id`, `label`, `value`, `sort`) VALUES (29, 'reasoningTime', '(images/sec)', '2');
+    INSERT INTO `dict_detail` ( `dict_id`, `label`, `value`, `sort`) VALUES (29, 'modelSize', 'M', '3');
+
+    -- 新增 表menu 模型优化默认菜单
+    INSERT INTO menu (id, cache, component, component_name, hidden,  icon, name, path, permission, pid, sort, type, layout, create_time, update_time, create_user_id, update_user_id, deleted) VALUES (52, false, 'model/version', 'ModelVersion', false, 'caidanguanli', '模型优化', 'optimize', 'model:optimize', 50, 52, 1, 'BaseLayout', current_timestamp, current_timestamp, 1, 1, false);
+    INSERT INTO menu (id, cache, component, component_name, hidden,  icon, name, path, permission, pid, sort, type, layout, create_time, update_time, create_user_id, update_user_id, deleted) VALUES (54, false, 'modelOptimize/record', 'ModelOptRecord', false,  null, '模型优化执行记录', 'optimize/record', null, 50, 54, 1, 'SubpageLayout', current_timestamp, current_timestamp, 1, 1, false);
+
+    -- 新增 表roles_menus 管理员角色与模型优化菜单权限关系
+    INSERT INTO roles_menus (role_id, menu_id) VALUES (1, 52);
+    INSERT INTO roles_menus (role_id, menu_id) VALUES (1, 54);
+
+    -- 新增 表roles_menus 注册用户角色与模型优化菜单权限关系
+    INSERT INTO roles_menus (role_id, menu_id) VALUES (2, 52);
+    INSERT INTO roles_menus (role_id, menu_id) VALUES (2, 54);
+
+        -- 系统版本变更为第三版本
+    INSERT INTO `system_version` (`id`, `version`) VALUES (3, 3);
+    END IF;
+commit; -- 提交
+END;
+CALL thridEditionProc(); //
+DROP PROCEDURE IF EXISTS thridEditionProc; //
+
 delimiter ;

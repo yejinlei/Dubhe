@@ -1,5 +1,5 @@
 /**
- * Copyright 2020 Zhejiang Lab. All Rights Reserved.
+ * Copyright 2020 Tianshu AI Platform. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,29 +20,33 @@ package org.dubhe.data.service.impl;
 import com.alibaba.fastjson.JSONObject;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
+import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import org.dubhe.base.MagicNumConstant;
 import org.dubhe.data.constant.Constant;
+import org.dubhe.data.constant.DatasetLabelEnum;
 import org.dubhe.data.constant.ErrorEnum;
+import org.dubhe.data.constant.LabelGroupTypeEnum;
+import org.dubhe.data.dao.LabelGroupMapper;
 import org.dubhe.data.dao.LabelMapper;
+import org.dubhe.data.domain.dto.DataFileAnnotationLabelDeleteDTO;
 import org.dubhe.data.domain.dto.LabelCreateDTO;
 import org.dubhe.data.domain.dto.LabelDTO;
-import org.dubhe.data.domain.entity.DatasetGroupLabel;
-import org.dubhe.data.domain.entity.DatasetLabel;
-import org.dubhe.data.domain.entity.Label;
-import org.dubhe.data.service.DatasetGroupLabelService;
-import org.dubhe.data.service.DatasetLabelService;
-import org.dubhe.data.service.LabelService;
+import org.dubhe.data.domain.entity.*;
+import org.dubhe.data.service.*;
 import org.dubhe.enums.LogEnum;
 import org.dubhe.exception.BusinessException;
 import org.dubhe.utils.LogUtil;
 import org.dubhe.utils.RedisUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
 
+import javax.annotation.Resource;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -55,27 +59,58 @@ import static org.dubhe.data.constant.Constant.*;
 @Service
 public class LabelServiceImpl extends ServiceImpl<LabelMapper, Label> implements LabelService {
 
+    /**
+     * 数据集标签信息服务
+     */
     @Autowired
     private DatasetLabelService datasetLabelService;
 
+    /**
+     * 标签组标签中间表服务
+     */
     @Autowired
     private DatasetGroupLabelService datasetGroupLabelService;
 
+    /**
+     * 数据文件标注服务
+     */
+    @Autowired
+    private DataFileAnnotationService dataFileAnnotationService;
+
+    /**
+     * 标签组管理 Mapper 接口
+     */
+    @Autowired
+    private LabelGroupMapper labelGroupMapper;
+
+    /**
+     * 数据集信息服务
+     */
+    @Resource
+    @Lazy
+    private DatasetService datasetService;
+
+    /**
+     * 数据集版本文件 服务类
+     */
+    @Autowired
+    private DatasetVersionFileService datasetVersionFileService;
+
+    /**
+     * redis工具类
+     */
     @Autowired
     private RedisUtils redisUtils;
 
-    private final int START_LABEL_ID = 80;
-
-    private final int END_LABEL_ID = 160;
-
     /**
-     * 支持自动标注标签
+     * 根据类型获取预置标签集合
      *
-     * @return List<Label> 自动标注标签
+     * @param labelGroupType 标签组类型
+     * @return List<Label> 预置标签集合
      */
     @Override
-    public List<Label> listSupportAuto() {
-        return getPubLabels();
+    public List<Label> listSupportAutoByType(Integer labelGroupType) {
+        return getPubLabels(labelGroupType);
     }
 
     /**
@@ -88,13 +123,15 @@ public class LabelServiceImpl extends ServiceImpl<LabelMapper, Label> implements
     public List<LabelDTO> list(Long datasetId) {
         //查询数据集下标签
         List<Label> labels =  getBaseMapper().listLabelByDatasetId(datasetId);
-        List<Long> pubLabelIds = getPubLabelIds();
-        if(!CollectionUtils.isEmpty(labels)){
+        LabelGroup labelGroup = labelGroupMapper.getLabelGroupByDataId(datasetId);
+
+        if(!CollectionUtils.isEmpty(labels) && !Objects.isNull(labelGroup)){
+            List<Long> pubLabelIds = getPubLabelIds(labelGroup.getLabelGroupType());
             //根据数据集ID查询标签组ID
             List<LabelDTO> labelDTOS = baseMapper.listByDatesetId(datasetId);
             Map<Long, Long> labelMap = labelDTOS.stream().collect(Collectors.toMap(LabelDTO::getId, LabelDTO::getLabelGroupId));
             //查询数据集所属标签组下标签
-                return labels.stream().map(a -> {
+            return labels.stream().map(a -> {
                     LabelDTO dto = new LabelDTO();
                     dto.setName(a.getName());
                     dto.setColor(a.getColor());
@@ -122,27 +159,9 @@ public class LabelServiceImpl extends ServiceImpl<LabelMapper, Label> implements
      */
     @Override
     public int delDataset(Long id) {
-        List<DatasetLabel> datasetLabels = datasetLabelService.list(id);
-        Set<Long> labels = datasetLabels.stream().map(DatasetLabel::getLabelId).collect(Collectors.toSet());
-        datasetLabelService.del(id);
-        return del(labels);
+       return datasetLabelService.del(id);
     }
 
-    /**
-     * 删除数据集标签
-     *
-     * @param labelIds 标签id
-     */
-    public int del(Collection<Long> labelIds) {
-        if (CollectionUtils.isEmpty(labelIds)) {
-            return MagicNumConstant.ZERO;
-        }
-        Set<Long> filtered = labelIds.stream().filter(i -> i > Constant.RESERVED_LABEL_ID).collect(Collectors.toSet());
-        if (CollectionUtils.isEmpty(filtered)) {
-            return MagicNumConstant.ZERO;
-        }
-        return getBaseMapper().deleteBatchIds(filtered);
-    }
 
     /**
      * 保存标签
@@ -318,7 +337,12 @@ public class LabelServiceImpl extends ServiceImpl<LabelMapper, Label> implements
         //校验该标签是否可修改
         List<DatasetGroupLabel> datasetGroupLabels =  datasetGroupLabelService.listByLabelId(labelId);
         if(!CollectionUtils.isEmpty(datasetGroupLabels)){
-            throw new BusinessException(ErrorEnum.LABELGROUP_LABEL_GROUP_EDIT_ERROR);
+            throw new BusinessException(ErrorEnum.LABEL_NAME_REPEAT);
+        }
+
+        //名称重复性校验
+        if(this.checkoutLabelIsRepeat(labelCreateDto.getDatasetId(),labelCreateDto.getName())){
+            throw new BusinessException(ErrorEnum.LABEL_NAME_REPEAT);
         }
 
         //查询标签信息
@@ -369,11 +393,12 @@ public class LabelServiceImpl extends ServiceImpl<LabelMapper, Label> implements
     /**
      * 获取预置标签组下的标签id
      *
+     * @param labelGroupType 标签组数据类型
      * @return 预置标签ids
      */
     @Override
-    public List<Long> getPubLabelIds() {
-        List<Label> pubLabels = getPubLabels();
+    public List<Long> getPubLabelIds(Integer labelGroupType) {
+        List<Label> pubLabels = getPubLabels(labelGroupType);
         return !CollectionUtils.isEmpty(pubLabels)
                 ? pubLabels.stream().map(a->a.getId()).collect(Collectors.toList()) : new ArrayList<>();
     }
@@ -381,20 +406,20 @@ public class LabelServiceImpl extends ServiceImpl<LabelMapper, Label> implements
     /**
      * 获取预置标签组下的标签
      *
+     * @param labelGroupType 标签组数据类型
      * @return 预置标签集合
      */
     @Override
-    public List<Label> getPubLabels() {
-        //查询redis是否存在预置标签
-        Object obj = redisUtils.hget(DATASET_LABEL_PUB_KEY, DATASET_DIRECTORY);
-        if(Objects.isNull(obj)){
-            List<Label> pubLabels = baseMapper.getPubLabels(START_LABEL_ID, END_LABEL_ID);
-            redisUtils.hset(DATASET_LABEL_PUB_KEY, DATASET_DIRECTORY, JSONObject.toJSONString(pubLabels));
-            return pubLabels;
-        }
-
-        return JSONObject.parseArray((String) obj,Label.class);
+    public List<Label> getPubLabels(Integer labelGroupType) {
+        LambdaQueryWrapper<Label> labelLambdaQueryWrapper = new LambdaQueryWrapper<>();
+        labelLambdaQueryWrapper.eq(Label::getDeleted,MagicNumConstant.ZERO)
+                .eq(Label::getType,LabelGroupTypeEnum.VISUAL.getValue().equals(labelGroupType) ?
+                        DatasetLabelEnum.MS_COCO.getType(): DatasetLabelEnum.TXT.getType());
+        List<Label> labels = baseMapper.selectList(labelLambdaQueryWrapper);
+        redisUtils.hset(DATASET_LABEL_PUB_KEY +":"+ labelGroupType, DATASET_DIRECTORY, JSONObject.toJSONString(labels));
+        return labels;
     }
+
 
     /**
      * 获取标签数量
@@ -408,6 +433,63 @@ public class LabelServiceImpl extends ServiceImpl<LabelMapper, Label> implements
     }
 
     /**
+     * 根据标签组类型获取标签列表
+     *
+     * @param labelGroupType 标签组类型
+     * @return List<Label> 标签组列表
+     */
+    @Override
+    public List<Label> findByLabelGroupType(Integer labelGroupType) {
+        if(LabelGroupTypeEnum.TXT.getValue().equals(labelGroupType)){
+            return listByType(DatasetLabelEnum.MS_COCO.getType());
+        }
+        return listByType(DatasetLabelEnum.AUTO.getType());
+    }
+
+
+    /**
+     * 校验数据集下标签名称是否重复
+     *
+     * @param datasetId 数据集ID
+     * @param labelName 标签名称
+     * @return 是否重复
+     */
+    @Override
+    public boolean checkoutLabelIsRepeat(Long datasetId,String labelName) {
+        List<Label> labelDTOS = baseMapper.batchListByIds(datasetId);
+        if(!CollectionUtils.isEmpty(labelDTOS)){
+            for (Label labelDTO : labelDTOS) {
+                if(labelName.equals(labelDTO.getName())){
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    /**
+     * 删除已标注的文本标签
+     *
+     * @param dataFileAnnotationLabelDeleteDTO 数据文件注释标签删除DTO
+     */
+    @Override
+    public void deleteFileAnnotationLabel(DataFileAnnotationLabelDeleteDTO dataFileAnnotationLabelDeleteDTO) {
+        Dataset dataset = datasetService.getOneById(dataFileAnnotationLabelDeleteDTO.getDatasetId());
+        datasetVersionFileService.getVersionFileByDatasetAndFile(
+                dataset.getId(),
+                dataset.getCurrentVersionName(),
+                new HashSet<Long>(){{
+                    add(dataFileAnnotationLabelDeleteDTO.getFileId());
+        }}
+        ).forEach(datasetVersionFile -> {
+            dataFileAnnotationService.deleteFileAnnotationLabel(new LambdaUpdateWrapper<DataFileAnnotation>()
+                    .eq(DataFileAnnotation::getDatasetId,dataFileAnnotationLabelDeleteDTO.getDatasetId())
+                    .eq(DataFileAnnotation::getVersionFileId,datasetVersionFile.getId())
+                    .eq(DataFileAnnotation::getLabelId,dataFileAnnotationLabelDeleteDTO.getLabelId()));
+        });
+    }
+
+    /**
      * 根据标签组ID查询标签
      *
      * @param labelGroupId 标签组ID
@@ -418,18 +500,6 @@ public class LabelServiceImpl extends ServiceImpl<LabelMapper, Label> implements
         return baseMapper.listByGroupId(labelGroupId);
     }
 
-    /**
-     * 保存标签
-     *
-     * @param label 标签
-     */
-    @Override
-    public void saveLabel(Label label) {
-        if (label == null) {
-            return;
-        }
-        save(label);
-    }
 
     /**
      * 批量删除标签
@@ -441,16 +511,6 @@ public class LabelServiceImpl extends ServiceImpl<LabelMapper, Label> implements
         getBaseMapper().deleteBatchIds(ids);
     }
 
-    /**
-     * 校验标签名字唯一
-     *
-     * @param name 标签名字
-     * @return boolean 校验结果
-     */
-    private boolean checkoutLabelName (String name){
-        Label label = baseMapper.selectOne(new LambdaQueryWrapper<Label>()
-                .eq(Label::getName, name));
-        return !Objects.isNull(label);
-    }
+
 
 }

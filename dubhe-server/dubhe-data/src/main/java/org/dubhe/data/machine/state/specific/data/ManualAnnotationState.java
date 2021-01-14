@@ -1,5 +1,5 @@
 /**
- * Copyright 2020 Zhejiang Lab. All Rights Reserved.
+ * Copyright 2020 Tianshu AI Platform. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,19 +17,19 @@
 package org.dubhe.data.machine.state.specific.data;
 
 import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
+import org.dubhe.constant.ErrorMessageConstant;
 import org.dubhe.data.constant.Constant;
 import org.dubhe.data.dao.DatasetMapper;
 import org.dubhe.data.dao.DatasetVersionFileMapper;
 import org.dubhe.data.domain.entity.Dataset;
 import org.dubhe.data.domain.entity.DatasetVersionFile;
-import org.dubhe.data.exception.StateMachineException;
-import org.dubhe.data.machine.constant.ErrorMessageConstant;
 import org.dubhe.data.machine.constant.FileStateCodeConstant;
 import org.dubhe.data.machine.enums.DataStateEnum;
 import org.dubhe.data.machine.state.AbstractDataState;
 import org.dubhe.data.machine.statemachine.DataStateMachine;
 import org.dubhe.data.machine.utils.identify.service.StateIdentify;
 import org.dubhe.enums.LogEnum;
+import org.dubhe.exception.StateMachineException;
 import org.dubhe.utils.LogUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
@@ -167,6 +167,12 @@ public class ManualAnnotationState extends AbstractDataState {
                 //目标跟踪完成
                 datasetMapper.updateStatus(dataset.getId(), DataStateEnum.TARGET_COMPLETE_STATE.getCode());
                 dataStateMachine.setMemoryDataState(dataStateMachine.getTargetCompleteState());
+                LogUtil.debug(LogEnum.STATE_MACHINE, " 【手动标注中】 执行事件后内存状态机的切换： {}", dataStateMachine.getMemoryDataState());
+                return;
+            case NOT_ANNOTATION_STATE:
+                //未标注
+                datasetMapper.updateStatus(dataset.getId(), DataStateEnum.NOT_ANNOTATION_STATE.getCode());
+                dataStateMachine.setMemoryDataState(dataStateMachine.getNotAnnotationState());
                 LogUtil.debug(LogEnum.STATE_MACHINE, " 【手动标注中】 执行事件后内存状态机的切换： {}", dataStateMachine.getMemoryDataState());
                 return;
             default:

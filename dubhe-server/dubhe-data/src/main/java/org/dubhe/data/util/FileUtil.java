@@ -1,5 +1,5 @@
 /**
- * Copyright 2020 Zhejiang Lab. All Rights Reserved.
+ * Copyright 2020 Tianshu AI Platform. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,10 +25,10 @@ import org.dubhe.data.service.DatasetService;
 import org.dubhe.enums.LogEnum;
 import org.dubhe.exception.BusinessException;
 import org.dubhe.utils.LogUtil;
+import org.dubhe.utils.StringUtils;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
-import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
 
 import javax.annotation.Resource;
@@ -49,6 +49,12 @@ public class FileUtil {
     @Lazy
     private DatasetService datasetService;
 
+    @Value("${k8s.nfs-root-path}")
+    private String nfs;
+
+    @Value("${minio.bucketName}")
+    private String bucketName;
+
     /**
      * 允许上传的文件格式
      */
@@ -65,13 +71,55 @@ public class FileUtil {
     }
 
     /**
-     * 获取数据集标注文件地址
+     * 获取读标注文件路径 changed=1则到annotation读取否则去versionFile下读取
      *
-     * @param datasetId 数据集id
-     * @return String   数据集标注文件地址
+     * @param datasetId   数据集ID
+     * @param fileName    文件名称
+     * @param versionName 版本名称
+     * @param change      是否发生改变（true发生改变，false未改变）
+     * @return 读取文件的路径
      */
-    public String getAnnotationDirAbsPath(Long datasetId) {
-        return getDatasetAbsPath(datasetId) + File.separator + Constant.DATASET_ANNOTATION_PATH;
+    public String getReadAnnotationAbsPath(Long datasetId, String fileName, String versionName, boolean change) {
+        return StringUtils.isBlank(versionName) ?
+                getDatasetAbsPath(datasetId) + File.separator + Constant.DATASET_ANNOTATION_PATH + fileName :
+                change ?
+                        getDatasetAbsPath(datasetId) + Constant.VERSION_PATH_NAME + versionName + File.separator + Constant.DATASET_ANNOTATION_PATH + fileName :
+                        getDatasetAbsPath(datasetId) + File.separator + Constant.DATASET_ANNOTATION_PATH + fileName;
+
+    }
+
+    /**
+     * 获取写标注文件路径
+     *
+     * @param datasetId 数据集ID
+     * @param fileName  文件名称
+     * @return 写文件的路径
+     */
+    public String getWriteAnnotationAbsPath(Long datasetId, String fileName){
+        return getDatasetAbsPath(datasetId)+File.separator + Constant.DATASET_ANNOTATION_PATH+fileName;
+    }
+
+
+    /**
+     * 获取源文件绝对路径或源文件的文件夹绝对路径
+     *
+     * @param datasetId       数据集ID
+     * @param fileName        文件名称
+     * @param needFileName    是否需要文件名
+     * @return 源文件绝对路径或源文件的文件夹绝对路径
+     */
+    public String getOriginFileAbsPath(Long datasetId, String fileName,boolean needFileName){
+        return nfs+bucketName+File.separator + getDatasetAbsPath(datasetId)+File.separator + (needFileName?Constant.DATASET_ORIGIN_PATH+fileName:Constant.DATASET_ORIGIN_NAME);
+    }
+
+    /**
+     * 获取源文件绝对路径或源文件的文件夹绝对路径
+     *
+     * @param url    相对路径
+     * @return 源文件绝对路径或源文件绝对路径
+     */
+    public String getOriginFileAbsPath(String url){
+        return nfs + url;
     }
 
     /**
@@ -84,11 +132,41 @@ public class FileUtil {
     public String getAnnotationAbsPath(Long datasetId, String fileName) {
         Dataset dataset = datasetService.getOneById(datasetId);
         return getAnnotationDirAbsPath(datasetId) +
-                (StringUtils.isEmpty(dataset.getCurrentVersionName()) ? "" : dataset.getCurrentVersionName() + File.separator)
+                (org.springframework.util.StringUtils.isEmpty(dataset.getCurrentVersionName()) ? "" : dataset.getCurrentVersionName() + File.separator)
                 + fileName;
     }
 
+    /**
+     * 获取数据集标注文件地址
+     *
+     * @param datasetId 数据集id
+     * @return String   数据集标注文件地址
+     */
+    public String getAnnotationDirAbsPath(Long datasetId) {
+        return getDatasetAbsPath(datasetId) + File.separator + Constant.DATASET_ANNOTATION_PATH;
+    }
 
+
+    /**
+     * 获取标注文件绝对路径（带nfs）
+     *
+     * @param datasetId       数据集ID
+     * @param fileName        文件名称
+     * @return 源文件绝对路径
+     */
+    public String getNfsReadAnnotationAbsPath(Long datasetId, String fileName,String versionName,boolean change){
+        return nfs+bucketName+File.separator +getReadAnnotationAbsPath(datasetId,fileName,versionName,change);
+    }
+
+    /**
+     * 写标注文件的文件夹绝对路径
+     *
+     * @param datasetId       数据集ID
+     * @return  当前数据集写标注文件的文件夹绝对路劲
+     */
+    public String getNfsWriteAnnotationAbsPath(Long datasetId){
+        return nfs+bucketName+File.separator +getDatasetAbsPath(datasetId)+File.separator + Constant.DATASET_ANNOTATION_NAME;
+    }
 
 
     /**

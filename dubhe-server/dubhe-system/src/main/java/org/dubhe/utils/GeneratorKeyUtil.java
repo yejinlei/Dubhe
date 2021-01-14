@@ -1,5 +1,5 @@
 /**
- * Copyright 2020 Zhejiang Lab. All Rights Reserved.
+ * Copyright 2020 Tianshu AI Platform. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,15 +18,15 @@
 package org.dubhe.utils;
 
 import cn.hutool.core.util.ObjectUtil;
-import org.apache.commons.lang3.StringUtils;
+import org.dubhe.base.MagicNumConstant;
 import org.dubhe.domain.entity.DataSequence;
-import org.dubhe.enums.LogEnum;
 import org.dubhe.exception.DataSequenceException;
 import org.dubhe.service.DataSequenceService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
-import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
 
+import java.util.Queue;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -43,77 +43,43 @@ public class GeneratorKeyUtil {
 
     /**
      * 根据业务编码，数量获取序列号
-     * @param businessCode
-     * @param number
-     * @return List<Long>
+     *
+     * @param businessCode 业务编码
+     * @param number       数量
+     * @return Long 起始位置
      */
-    @Transactional(rollbackFor = Exception.class)
-    public synchronized Long getSequenceByBusinessCode(String businessCode, int number){
-        LogUtil.info(LogEnum.DATA_SEQUENCE,"获取 {} 序列号 ，获取 {} 个 序列号 ", businessCode, number);
-        if(StringUtils.isEmpty(businessCode)){
+    public synchronized Queue<Long> getSequenceByBusinessCode(String businessCode, int number) {
+        if (StringUtils.isEmpty(businessCode)) {
             throw new DataSequenceException("业务编码不可为空");
         }
-        if(number == 0){
+        if (number == MagicNumConstant.ZERO) {
             throw new DataSequenceException("需要获取的序列号长度不可为0或者空");
         }
         IdAlloc idAlloc = idAllocConcurrentHashMap.get(businessCode);
-        if(ObjectUtil.isNull(idAlloc)) {
+        if (ObjectUtil.isNull(idAlloc)) {
             idAlloc = new IdAlloc();
             idAllocConcurrentHashMap.put(businessCode, idAlloc);
         }
 
-        if(idAlloc.getUsedNumber() == 0){
-            DataSequence dataSequence = getDataSequence(businessCode);
-            updateDataSequence(businessCode);
-            idAlloc.setStartNumber(dataSequence.getStart());
-            idAlloc.setEndNumber(dataSequence.getStart() + dataSequence.getStep() - 1);
-            idAlloc.setUsedNumber(idAlloc.getEndNumber() - idAlloc.getStartNumber() + 1 );
+        if (idAlloc.getUnUsed() < number) {
+            //执行扩容操作
+            expansionUsedNumber(businessCode, number);
         }
-        if(idAlloc.getUsedNumber() <= number){
-            expansionUsedNumber(businessCode,number);
-        }
-        long returnStartNumber = idAlloc.getStartNumber();
-        idAlloc.setStartNumber(idAlloc.getStartNumber() + number);
-        idAlloc.setUsedNumber(idAlloc.getUsedNumber() - number);
-        return returnStartNumber;
+        //获取ids
+        return idAlloc.poll(number);
     }
 
     /**
-     * 根据业务编码获取配置信息
-     * @param businessCode
-     * @return DataSequence
+     * 扩容
+     * @param businessCode 业务编码
+     * @param number 数量
      */
-    private DataSequence getDataSequence(String businessCode){
-        DataSequence dataSequence = dataSequenceService.getSequence(businessCode);
-        if(dataSequence == null || dataSequence.getStart() == null || dataSequence.getStep() == null ){
-            throw new DataSequenceException("配置出错，请检查data_sequence表配置");
-        }
-        return dataSequence;
-    }
-
-
-    /**
-     * 根据业务编码更新起始值
-     * @param businessCode
-     * @return DataSequence
-     */
-    private void updateDataSequence(String businessCode){
-        dataSequenceService.updateSequenceStart(businessCode);
-    }
-
-    /**
-     * 多次扩容
-     * @param businessCode
-     * @param number
-     */
-    private void expansionUsedNumber(String businessCode, int number){
+    protected void expansionUsedNumber(String businessCode, int number) {
         IdAlloc idAlloc = idAllocConcurrentHashMap.get(businessCode);
-        updateDataSequence(businessCode);
-        DataSequence dataSequenceNew = getDataSequence(businessCode);
-        idAlloc.setEndNumber(idAlloc.getEndNumber() + dataSequenceNew.getStep());
-        idAlloc.setUsedNumber(idAlloc.getEndNumber() - idAlloc.getStartNumber()  + 1);
-        if(idAlloc.getUsedNumber() <= number){
-            expansionUsedNumber(businessCode,number);
+        DataSequence dataSequenceNew = dataSequenceService.expansionUsedNumber(businessCode);
+        idAlloc.add(dataSequenceNew);
+        if(idAlloc.getUnUsed() < number) {
+            expansionUsedNumber(businessCode, number);
         }
     }
 

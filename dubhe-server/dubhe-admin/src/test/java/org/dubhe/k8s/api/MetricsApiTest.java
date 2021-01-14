@@ -1,5 +1,5 @@
 /**
- * Copyright 2020 Zhejiang Lab. All Rights Reserved.
+ * Copyright 2020 Tianshu AI Platform. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -43,4 +43,10 @@ public class MetricsApiTest {
     public void getContainerMetrics(){
         System.out.println(JSON.toJSONString(metricsApi.getContainerMetrics("namespace-1")));
     }
+
+    @Test
+    public void getPodMetricsRealTime(){
+        System.out.println(JSON.toJSONString(metricsApi.getPodMetricsRealTime("namespace-1","serving-rn-212")));
+    }
+
 }

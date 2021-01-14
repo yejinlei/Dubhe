@@ -1,5 +1,5 @@
 /**
- * Copyright 2020 Zhejiang Lab. All Rights Reserved.
+ * Copyright 2020 Tianshu AI Platform. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,6 +21,7 @@ import com.google.common.collect.Maps;
 import lombok.Data;
 import lombok.experimental.Accessors;
 import org.dubhe.k8s.annotation.K8sField;
+import org.dubhe.k8s.constant.K8sLabelConstants;
 import org.dubhe.k8s.domain.PtBaseResult;
 
 import java.util.List;
@@ -56,4 +57,24 @@ public class BizDeployment extends PtBaseResult<BizDeployment> {
 
     @K8sField("status:conditions")
     private List<BizDeploymentCondition> conditions;
+
+    @K8sField("status:replicas")
+    private Integer replicas;
+
+    @K8sField("status:readyReplicas")
+    private Integer readyReplicas;
+
+    public String getBusinessLabel() {
+        return labels.get(K8sLabelConstants.BASE_TAG_BUSINESS);
+    }
+
+    /**
+     * 根据键获取label
+     *
+     * @param labelKey
+     * @return
+     */
+    public String getLabel(String labelKey) {
+        return labels.get(labelKey);
+    }
 }

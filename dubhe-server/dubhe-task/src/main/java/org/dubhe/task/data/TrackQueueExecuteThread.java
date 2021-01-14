@@ -1,5 +1,5 @@
 /**
- * Copyright 2020 Zhejiang Lab. All Rights Reserved.
+ * Copyright 2020 Tianshu AI Platform. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,6 +24,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.dubhe.base.MagicNumConstant;
 import org.dubhe.data.domain.dto.AutoTrackCreateDTO;
 import org.dubhe.data.domain.entity.Task;
+import org.dubhe.data.machine.constant.DataStateMachineConstant;
+import org.dubhe.dto.StateChangeDTO;
+import org.dubhe.data.machine.utils.StateMachineUtil;
 import org.dubhe.data.service.AnnotationService;
 import org.dubhe.data.service.TaskService;
 import org.dubhe.data.util.TaskUtils;
@@ -68,6 +71,11 @@ public class TrackQueueExecuteThread implements Runnable {
     private static final String TRACK_FINISHED_QUEUE = "track_finished_queue";
 
     /**
+     * 跟踪算法失败任务队列
+     */
+    private static final String TRACK_FAILED_QUQUE = "track_failed_queue";
+
+    /**
      * 启动标注任务处理线程
      */
     @PostConstruct
@@ -98,6 +106,26 @@ public class TrackQueueExecuteThread implements Runnable {
                         annotationService.finishAutoTrack(task.getDatasetId(), autoTrackCreateDTO);
                     }
                     redisUtils.del(taskId);
+                    TimeUnit.MILLISECONDS.sleep(MagicNumConstant.TEN);
+                } else {
+                    TimeUnit.MILLISECONDS.sleep(MagicNumConstant.THREE_THOUSAND);
+                }
+                Object failedTask = redisUtils.lpop(TRACK_FAILED_QUQUE);
+                if (ObjectUtil.isNotNull(failedTask)) {
+                    String failedId = failedTask.toString();
+                    JSONObject jsonObject = JSONObject.parseObject(JSON.toJSONString(redisUtils.get(failedId)));
+                    Long id = jsonObject.getLong("id");
+                    Task task = taskService.detail(id);
+                    Boolean flag = taskService.finishTask(id, MagicNumConstant.ONE);
+                    if (flag) {
+                        //嵌入状态机（目标跟踪中—>目标跟踪失败）
+                        StateMachineUtil.stateChange(new StateChangeDTO() {{
+                            setObjectParam(new Object[]{task.getDatasetId()});
+                            setEventMethodName(DataStateMachineConstant.DATA_AUTO_TRACK_FAIL_EVENT);
+                            setStateMachineType(DataStateMachineConstant.DATA_STATE_MACHINE);
+                        }});
+                        redisUtils.del(failedId);
+                    }
                     TimeUnit.MILLISECONDS.sleep(MagicNumConstant.TEN);
                 } else {
                     TimeUnit.MILLISECONDS.sleep(MagicNumConstant.THREE_THOUSAND);

@@ -1,5 +1,5 @@
 /**
- * Copyright 2020 Zhejiang Lab. All Rights Reserved.
+ * Copyright 2020 Tianshu AI Platform. All Rights Reserved.
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -48,6 +48,14 @@ public interface MetricsApi {
      * @return List<PtPodsVO> Pod资源用量结果类集合
      */
     List<PtPodsVO> getPodMetricsRealTime();
+
+    /**
+     * 获取k8s resourceName 下pod当前cpu、内存用量的实时使用情况
+     * @param namespace
+     * @param resourceName
+     * @return
+     */
+    List<PtPodsVO> getPodMetricsRealTime(String namespace,String resourceName);
 
     /**
      * 查询命名空间下所有Pod的cpu和内存使用

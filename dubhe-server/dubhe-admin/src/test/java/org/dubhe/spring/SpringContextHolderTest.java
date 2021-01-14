@@ -1,5 +1,5 @@
 /**
- * Copyright 2020 Zhejiang Lab. All Rights Reserved.
+ * Copyright 2020 Tianshu AI Platform. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,13 +18,10 @@
 package org.dubhe.spring;
 
 
-import org.dubhe.enums.BizNfsEnum;
-import org.dubhe.utils.K8sNameTool;
 import org.dubhe.utils.SpringContextHolder;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.junit4.SpringRunner;
@@ -33,14 +30,14 @@ import org.springframework.test.context.junit4.SpringRunner;
 /**
  * @date 2020.05.26
  */
-@ActiveProfiles(value = "notebook")
+@ActiveProfiles(value = "dev")
 @RunWith(SpringRunner.class)
 @SpringBootTest
 public class SpringContextHolderTest {
 
     @Test
     public void getActiveProfile(){
-        Assert.assertEquals( "notebook", SpringContextHolder.getActiveProfile());
+        Assert.assertEquals( "dev", SpringContextHolder.getActiveProfile());
     }
 
 

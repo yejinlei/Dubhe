@@ -1,5 +1,5 @@
 /**
- * Copyright 2020 Zhejiang Lab. All Rights Reserved.
+ * Copyright 2020 Tianshu AI Platform. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,21 +17,21 @@
 
 package org.dubhe.service.impl;
 
+import cn.hutool.core.bean.BeanUtil;
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import org.dubhe.annotation.DataPermissionMethod;
 import org.dubhe.config.NfsConfig;
 import org.dubhe.config.RecycleConfig;
+import org.dubhe.constant.SymbolConstant;
 import org.dubhe.dao.PtModelBranchMapper;
 import org.dubhe.dao.PtModelInfoMapper;
 import org.dubhe.domain.PtModelBranch;
 import org.dubhe.domain.PtModelInfo;
 import org.dubhe.domain.dto.*;
-import org.dubhe.domain.vo.PtModelInfoCreateVO;
-import org.dubhe.domain.vo.PtModelInfoDeleteVO;
-import org.dubhe.domain.vo.PtModelInfoQueryVO;
-import org.dubhe.domain.vo.PtModelInfoUpdateVO;
+import org.dubhe.domain.vo.*;
 import org.dubhe.enums.DatasetTypeEnum;
 import org.dubhe.enums.LogEnum;
 import org.dubhe.enums.RecycleModuleEnum;
@@ -99,7 +99,7 @@ public class PtModelInfoServiceImpl implements PtModelInfoService {
         UserDTO user = JwtUtils.getCurrentUserDto();
         Page page = new Page(null == ptModelInfoQueryDTO.getCurrent() ? 1 : ptModelInfoQueryDTO.getCurrent()
                 , null == ptModelInfoQueryDTO.getSize() ? 10 : ptModelInfoQueryDTO.getSize());
-        LogUtil.info(LogEnum.BIZ_MODEL, "用户{}查询模型管理列表展示开始, 接收的参数为{}，Page{}", user.getUsername(), ptModelInfoQueryDTO, page);
+        LogUtil.info(LogEnum.BIZ_MODEL, "The user {} queries the model management list, and the received parameter is {},Page{}", user.getUsername(), ptModelInfoQueryDTO, page);
         QueryWrapper<PtModelInfo> wrapper = new QueryWrapper<>();
 
         if (!StringUtils.isEmpty(ptModelInfoQueryDTO.getName())) {
@@ -131,7 +131,7 @@ public class PtModelInfoServiceImpl implements PtModelInfoService {
             }
             ptModelInfos = ptModelInfoMapper.selectPage(page, wrapper);
         } catch (Exception e) {
-            LogUtil.error(LogEnum.BIZ_MODEL, "查询模型列表展示异常:{}, 请求信息:{}", e, ptModelInfoQueryDTO);
+            LogUtil.error(LogEnum.BIZ_MODEL, "Query model list display exception: {}, request information: {}", e, ptModelInfoQueryDTO);
             throw new BusinessException("查询模型列表展示异常");
         }
 
@@ -141,7 +141,7 @@ public class PtModelInfoServiceImpl implements PtModelInfoService {
             return ptModelInfoQueryVO;
         }).collect(Collectors.toList());
 
-        LogUtil.info(LogEnum.BIZ_MODEL, "用户{}查询模型管理列表展示结束, 结果为{}", user.getUsername(), ptModelInfoQueryVOs);
+        LogUtil.info(LogEnum.BIZ_MODEL, "The user {} query model management list is displayed, and the result is {}", user.getUsername(), ptModelInfoQueryVOs);
         return PageUtil.toPage(page, ptModelInfoQueryVOs);
     }
 
@@ -156,15 +156,22 @@ public class PtModelInfoServiceImpl implements PtModelInfoService {
     public PtModelInfoCreateVO create(PtModelInfoCreateDTO ptModelInfoCreateDTO) {
         //从会话中获取用户信息
         UserDTO user = JwtUtils.getCurrentUserDto();
-        LogUtil.info(LogEnum.BIZ_MODEL, "用户{}保存模型开始, 接收的参数为{}", user.getUsername(), ptModelInfoCreateDTO);
+        LogUtil.info(LogEnum.BIZ_MODEL, "The user {} starts to save the model, and the received parameter is {}", user.getUsername(), ptModelInfoCreateDTO);
 
+        //模型名称校验
+        QueryWrapper<PtModelInfo> queryWrapper = new QueryWrapper<>();
+        queryWrapper.eq("name", ptModelInfoCreateDTO.getName());
+        Integer countResult = ptModelInfoMapper.selectCount(queryWrapper);
+        if (countResult > 0) {
+            throw new BusinessException("模型名称已存在");
+        }
         //保存任务参数
         PtModelInfo ptModelInfo = new PtModelInfo();
         BeanUtils.copyProperties(ptModelInfoCreateDTO, ptModelInfo);
 
         if (ptModelInfoMapper.insert(ptModelInfo) < 1) {
             //模型管理未保存成功，抛出异常，并返回失败信息
-            LogUtil.error(LogEnum.BIZ_MODEL, "用户{}保存模型未成功，进行模型管理表插入操作失败", user.getUsername());
+            LogUtil.error(LogEnum.BIZ_MODEL, "The user {} failed to save the model and failed to insert the model management table", user.getUsername());
             throw new BusinessException("模型创建失败");
         }
 
@@ -191,13 +198,20 @@ public class PtModelInfoServiceImpl implements PtModelInfoService {
     public PtModelInfoUpdateVO update(PtModelInfoUpdateDTO ptModelInfoUpdateDTO) {
         //从会话中获取用户信息
         UserDTO user = JwtUtils.getCurrentUserDto();
-        LogUtil.info(LogEnum.BIZ_MODEL, "用户{}更新模型开始, 接收的参数为{}", user.getUsername(), ptModelInfoUpdateDTO);
+        LogUtil.info(LogEnum.BIZ_MODEL, "The user {} starts to update the model, and the received parameter is {}", user.getUsername(), ptModelInfoUpdateDTO);
 
+        //模型名称校验
+        QueryWrapper<PtModelInfo> queryWrapper = new QueryWrapper<>();
+        queryWrapper.eq("name", ptModelInfoUpdateDTO.getName()).ne("id", ptModelInfoUpdateDTO.getId());
+        Integer countResult = ptModelInfoMapper.selectCount(queryWrapper);
+        if (countResult > 0) {
+            throw new BusinessException("模型名称已存在");
+        }
         //权限校验
         QueryWrapper wrapper = new QueryWrapper<>();
         wrapper.eq("id", ptModelInfoUpdateDTO.getId());
         if (ptModelInfoMapper.selectCount(wrapper) < 1) {
-            LogUtil.error(LogEnum.BIZ_MODEL, "用户{}修改模型未成功,没有权限在模型表中修改对应数据", user.getUsername());
+            LogUtil.error(LogEnum.BIZ_MODEL, "The user {} failed to modify the model and has no permission to modify the corresponding data in the model table", user.getUsername());
             throw new BusinessException("您修改的ID不存在请重新输入");
         }
 
@@ -206,12 +220,12 @@ public class PtModelInfoServiceImpl implements PtModelInfoService {
         BeanUtils.copyProperties(ptModelInfoUpdateDTO, ptModelInfo);
         if (ptModelInfoMapper.updateById(ptModelInfo) < 1) {
             //任务参数未修改成功，抛出异常，并返回失败信息
-            LogUtil.error(LogEnum.BIZ_MODEL, "用户{}修改模型未成功,进行模型表修改操作失败", user.getUsername());
+            LogUtil.error(LogEnum.BIZ_MODEL, "User {} failed to modify the model, failed to modify the model table", user.getUsername());
             throw new BusinessException("模型更新失败");
         }
         PtModelInfoUpdateVO ptModelInfoUpdateVO = new PtModelInfoUpdateVO();
         ptModelInfoUpdateVO.setId(ptModelInfo.getId());
-        LogUtil.info(LogEnum.BIZ_MODEL, "用户{}保存模型结束, 返回修改任务参数id={}", user.getUsername(), ptModelInfo.getId());
+        LogUtil.info(LogEnum.BIZ_MODEL, "When the user {} finishes saving the model, it returns to modify task parameter id = {}", user.getUsername(), ptModelInfo.getId());
         return ptModelInfoUpdateVO;
     }
 
@@ -226,7 +240,7 @@ public class PtModelInfoServiceImpl implements PtModelInfoService {
     public PtModelInfoDeleteVO deleteAll(PtModelInfoDeleteDTO ptModelInfoDeleteDTO) {
         //从会话中获取用户信息
         UserDTO user = JwtUtils.getCurrentUserDto();
-        LogUtil.info(LogEnum.BIZ_MODEL, "用户{}删除模型列表, 接收的参数为{}", user.getUsername(), ptModelInfoDeleteDTO);
+        LogUtil.info(LogEnum.BIZ_MODEL, "The user {} deletes the model list, and the received parameter is {}", user.getUsername(), ptModelInfoDeleteDTO);
 
         //数组ids去重
         List<Long> ids = Arrays.stream(ptModelInfoDeleteDTO.getIds()).distinct().collect(Collectors.toList());
@@ -235,14 +249,14 @@ public class PtModelInfoServiceImpl implements PtModelInfoService {
         QueryWrapper query = new QueryWrapper<>();
         query.in("id", ids);
         if (ptModelInfoMapper.selectCount(query) < ids.size()) {
-            LogUtil.error(LogEnum.BIZ_MODEL, "用户{}删除模型列表未成功,没有权限在模型管理表中删除对应数据", user.getUsername());
+            LogUtil.error(LogEnum.BIZ_MODEL, "The user {} failed to delete the model list, and has no permission to delete the corresponding data in the model management table", user.getUsername());
             throw new BusinessException("您没有此权限");
         }
 
         //删除任务参数
         if (ptModelInfoMapper.deleteBatchIds(ids) < ids.size()) {
             //模型列表未删除成功,抛出异常，并返回失败信息
-            LogUtil.error(LogEnum.BIZ_MODEL, "用户{}删除模型列表未成功,根据id数组{}进行模型管理表删除操作失败", user.getUsername(), ids);
+            LogUtil.error(LogEnum.BIZ_MODEL, "The user {} failed to delete the model list. The model management table deletion operation based on ID array {} failed", user.getUsername(), ids);
             throw new BusinessException("模型删除失败");
         }
 
@@ -255,7 +269,7 @@ public class PtModelInfoServiceImpl implements PtModelInfoService {
         }).collect(Collectors.toList());
         if (branchlists.size() > 0) {
             if (ptModelBranchMapper.deleteBatchIds(branchlists) < branchlists.size()) {
-                LogUtil.error(LogEnum.BIZ_MODEL, "用户{}删除模型版本未成功,根据id数组{}进行模型版本表删除操作失败", user.getUsername(), ids);
+                LogUtil.error(LogEnum.BIZ_MODEL, "User {} failed to delete model version. Deleting model version table according to ID array {} failed", user.getUsername(), ids);
                 throw new BusinessException("模型删除失败");
             }
             //定时任务删除相应的模型文件
@@ -273,31 +287,52 @@ public class PtModelInfoServiceImpl implements PtModelInfoService {
         //返回删除的模型管理参数id数组
         PtModelInfoDeleteVO ptModelInfoDeleteVO = new PtModelInfoDeleteVO();
         ptModelInfoDeleteVO.setIds(ptModelInfoDeleteDTO.getIds());
-        LogUtil.info(LogEnum.BIZ_MODEL, "用户{}删除模型列表结束, 返回删除模型列表数组ids={}", user.getUsername(), ids);
+        LogUtil.info(LogEnum.BIZ_MODEL, "When the user {} finishes deleting the model list, the deleted model list array IDS = {} is returned", user.getUsername(), ids);
         return ptModelInfoDeleteVO;
     }
 
     /**
      * 根据模型来源查询模型信息
      *
-     * @param ptModelInfoQueryDTO 模型查询对象
-     * @return  PtModelInfoQueryVO 模型管理返回查询VO
+     * @param ptModelInfoByResourceDTO   模型查询对象
+     * @return PtModelInfoByResourceVO  模型返回查询VO
      */
     @Override
     @DataPermissionMethod(dataType = DatasetTypeEnum.PUBLIC)
-    public List<PtModelInfoQueryVO> findModelByResource(PtModelInfoQueryDTO ptModelInfoQueryDTO) {
-        UserDTO userDto = JwtUtils.getCurrentUserDto();
-        List<PtModelInfo> modelInfos = ptModelInfoMapper.findModelByResource(ptModelInfoQueryDTO.getModelResource(),userDto.getId());
-        ArrayList<PtModelInfoQueryVO> ptModelInfoQueryVOS=new ArrayList<>();
-        if(modelInfos!=null && modelInfos.size()!=0){
-            modelInfos.stream().forEach(ptModelInfo -> {
-                PtModelInfoQueryVO ptModelInfoQueryVO=new PtModelInfoQueryVO();
-                ptModelInfoQueryVO.setName(ptModelInfo.getName());
-                ptModelInfoQueryVO.setId(ptModelInfo.getId());
-                ptModelInfoQueryVOS.add(ptModelInfoQueryVO);
-            });
-        }
-        return ptModelInfoQueryVOS;
+    public List<PtModelInfoByResourceVO> getModelByResource(PtModelInfoByResourceDTO ptModelInfoByResourceDTO) {
+
+        LambdaQueryWrapper<PtModelInfo> query = new LambdaQueryWrapper<>();
+        query.eq(PtModelInfo::getModelResource, ptModelInfoByResourceDTO.getModelResource())
+                .isNotNull(PtModelInfo::getUrl).ne(PtModelInfo::getUrl, SymbolConstant.BLANK)
+                .orderByDesc(PtModelInfo::getUpdateTime);
+
+        List<PtModelInfo> ptModelInfos = ptModelInfoMapper.selectList(query);
+        ArrayList<PtModelInfoByResourceVO> ptModelInfoByResourceVOS = new ArrayList<>();
+
+        ptModelInfos.forEach(ptModelInfo -> {
+            PtModelInfoByResourceVO ptModelInfoByResourceVO = new PtModelInfoByResourceVO();
+            BeanUtil.copyProperties(ptModelInfo, ptModelInfoByResourceVO);
+            ptModelInfoByResourceVOS.add(ptModelInfoByResourceVO);
+        });
+
+        return ptModelInfoByResourceVOS;
+    }
+
+    /**
+     * 模型优化上传模型
+     *
+     * @param ptModelOptimizationCreateDTO 模型优化上传模型入参
+     * @return PtModelInfoByResourceVO 模型优化上传模型返回值
+     */
+    @Override
+    public PtModelInfoByResourceVO modelOptimizationUploadModel(PtModelOptimizationCreateDTO ptModelOptimizationCreateDTO) {
+        PtModelInfoCreateDTO ptModelInfoCreateDTO = new PtModelInfoCreateDTO();
+        ptModelInfoCreateDTO.setName(ptModelOptimizationCreateDTO.getName()).setModelAddress(ptModelOptimizationCreateDTO.getPath()).setModelSource(PtModelUtil.NUMBER_ZERO).setFrameType(PtModelUtil.NUMBER_ONE).setModelType(PtModelUtil.NUMBER_ONE).setModelClassName("模型优化").setModelDescription("模型优化上传模型");
+        PtModelInfoCreateVO ptModelInfoCreateVO = create(ptModelInfoCreateDTO);
+        PtModelInfo ptModelInfo = ptModelInfoMapper.selectById(ptModelInfoCreateVO.getId());
+        PtModelInfoByResourceVO ptModelInfoByResourceVO = new PtModelInfoByResourceVO();
+        BeanUtil.copyProperties(ptModelInfo, ptModelInfoByResourceVO);
+        return ptModelInfoByResourceVO;
     }
 
 }

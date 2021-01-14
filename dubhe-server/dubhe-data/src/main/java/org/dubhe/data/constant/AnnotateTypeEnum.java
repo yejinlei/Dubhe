@@ -1,5 +1,5 @@
 /**
- * Copyright 2020 Zhejiang Lab. All Rights Reserved.
+ * Copyright 2020 Tianshu AI Platform. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -37,7 +37,13 @@ public enum AnnotateTypeEnum {
     /**
      * 目标跟踪
      */
-    OBJECT_TRACK(5, "目标跟踪");
+    OBJECT_TRACK(5, "目标跟踪"),
+
+    /**
+     * 文本分类
+     */
+    TEXT_CLASSIFICATION(6, "文本分类");
+
 
     AnnotateTypeEnum(Integer value, String msg) {
         this.value = value;

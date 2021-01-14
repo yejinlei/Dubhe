@@ -1,5 +1,5 @@
 /**
- * Copyright 2020 Zhejiang Lab. All Rights Reserved.
+ * Copyright 2020 Tianshu AI Platform. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ package org.dubhe.data.domain.dto;
 
 import io.swagger.annotations.ApiModelProperty;
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
@@ -33,6 +34,7 @@ import java.io.Serializable;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
+@Builder
 public class AnnotationInfoCreateDTO implements Serializable {
 
     private static final long serialVersionUID = 1L;
@@ -47,5 +49,11 @@ public class AnnotationInfoCreateDTO implements Serializable {
 
     @ApiModelProperty(value = "数据集ID")
     private Long datasetId;
+
+    @ApiModelProperty(value = "当前版本")
+    private String currentVersionName;
+
+    @ApiModelProperty(value = "数据集类型")
+    private Integer dataType;
 
 }

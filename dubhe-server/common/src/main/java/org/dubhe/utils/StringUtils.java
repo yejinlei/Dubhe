@@ -1,5 +1,5 @@
 /**
- * Copyright 2020 Zhejiang Lab. All Rights Reserved.
+ * Copyright 2020 Tianshu AI Platform. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,19 +19,23 @@ package org.dubhe.utils;
 
 import eu.bitwalker.useragentutils.Browser;
 import eu.bitwalker.useragentutils.UserAgent;
+import org.apache.commons.lang.RandomStringUtils;
 import org.dubhe.base.MagicNumConstant;
+import org.dubhe.constant.NumberConstant;
 import org.dubhe.constant.SymbolConstant;
 
 import javax.servlet.http.HttpServletRequest;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.UUID;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * @description  字符串工具类, 继承org.apache.commons.lang3.StringUtils类
+ * @description 字符串工具类, 继承org.apache.commons.lang3.StringUtils类
  * @date 2020-03-25
  */
 public class StringUtils extends org.apache.commons.lang3.StringUtils {
@@ -277,10 +281,11 @@ public class StringUtils extends org.apache.commons.lang3.StringUtils {
 
     /**
      * 字符串截取前
+     *
      * @param str
      * @return
      */
-    public static String substringBefore(String str, String separator){
+    public static String substringBefore(String str, String separator) {
 
         if (!isEmpty(str) && separator != null) {
             if (separator.isEmpty()) {
@@ -296,10 +301,11 @@ public class StringUtils extends org.apache.commons.lang3.StringUtils {
 
     /**
      * 字符串截取后
+     *
      * @param str
      * @return
      */
-    public static String substringAfter(String str, String separator){
+    public static String substringAfter(String str, String separator) {
 
         if (isEmpty(str)) {
             return str;
@@ -309,5 +315,34 @@ public class StringUtils extends org.apache.commons.lang3.StringUtils {
             int pos = str.indexOf(separator);
             return pos == -1 ? "" : str.substring(pos + separator.length());
         }
+    }
+
+    /**
+     * 获取UUID字符串
+     *
+     * @return
+     */
+    public static String getUUID() {
+        return UUID.randomUUID().toString().replace(SymbolConstant.HYPHEN, SymbolConstant.BLANK);
+    }
+
+    /**
+     * 生成4位随机[a-z]字符串
+     *
+     * @return
+     */
+    public static String getRandomString() {
+        return RandomStringUtils.randomAlphabetic(NumberConstant.NUMBER_4).toLowerCase();
+    }
+
+    /**
+     * 生成时间戳 + 4位随机数
+     *
+     * @return
+     */
+    public static String getTimestamp() {
+        SimpleDateFormat df = new SimpleDateFormat("yyyyMMddHHmmss");
+        String dateStr = df.format(System.currentTimeMillis());
+        return dateStr + getRandomString();
     }
 }

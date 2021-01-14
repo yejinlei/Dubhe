@@ -1,5 +1,5 @@
 /**
- * Copyright 2020 Zhejiang Lab. All Rights Reserved.
+ * Copyright 2020 Tianshu AI Platform. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -61,4 +61,11 @@ public class FileQueryCriteriaVO {
     @Query(type = Query.Type.EQ, propName = "file_type")
     private Integer fileType;
 
+    @Query(type = Query.Type.EQ, propName = "label_id")
+    private Long labelId;
+
+    /**
+     * 排序 desc | asc
+     */
+    private String sort;
 }

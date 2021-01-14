@@ -1,5 +1,5 @@
 /**
- * Copyright 2020 Zhejiang Lab. All Rights Reserved.
+ * Copyright 2020 Tianshu AI Platform. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,18 +18,14 @@
 package org.dubhe.data.service;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
-import org.dubhe.data.domain.dto.LabelGroupCopyDTO;
-import org.dubhe.data.domain.dto.LabelGroupCreateDTO;
+import org.dubhe.data.domain.dto.*;
 import org.dubhe.data.domain.entity.LabelGroup;
 import org.dubhe.data.domain.vo.LabelGroupQueryVO;
 import org.dubhe.data.domain.vo.LabelGroupVO;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 import java.util.Map;
-
-import org.dubhe.data.domain.dto.LabelGroupDeleteDTO;
-import org.dubhe.data.domain.dto.LabelGroupImportDTO;
-import org.springframework.web.multipart.MultipartFile;
 
 /**
  * @description 标签组服务
@@ -87,10 +83,10 @@ public interface LabelGroupService {
     /**
      * 标签组列表
      *
-     * @param type 标签组类型
+     * @param labelGroupQueryDTO 查询条件
      * @return List<LabelGroup> 查询出对应的标签组
      */
-    List<LabelGroup> getList(Integer type);
+    List<LabelGroup> getList(LabelGroupQueryDTO labelGroupQueryDTO);
 
     /**
      * 导入标签组
@@ -106,4 +102,12 @@ public interface LabelGroupService {
      * @param labelGroupCopyDTO 标签组复制DTO
      */
     void copy(LabelGroupCopyDTO labelGroupCopyDTO);
+
+    /**
+     * 根据标签组ID 校验是否能自动标注
+     *
+     * @param labelGroupId  标签组
+     * @return      true: 能  false: 否
+     */
+    boolean isAnnotationByGroupId(Long labelGroupId);
 }

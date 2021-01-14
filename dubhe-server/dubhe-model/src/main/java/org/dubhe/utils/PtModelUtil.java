@@ -1,5 +1,5 @@
 /**
- * Copyright 2020 Zhejiang Lab. All Rights Reserved.
+ * Copyright 2020 Tianshu AI Platform. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,6 +33,8 @@ public class PtModelUtil {
     public static final int NUMBER_TWO_HUNDRED_FIFTY_FIVE = 255;
 
     public static final String ZIP = ".zip";
+
+    public static final String PTH = ".pth";
 
     public static final String SORT_ASC = "asc";
 

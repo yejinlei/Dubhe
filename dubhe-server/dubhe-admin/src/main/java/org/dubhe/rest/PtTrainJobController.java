@@ -1,5 +1,5 @@
 /**
- * Copyright 2020 Zhejiang Lab. All Rights Reserved.
+ * Copyright 2020 Tianshu AI Platform. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -138,5 +138,12 @@ public class PtTrainJobController {
     @RequiresPermissions(Permissions.TRAINING_JOB)
     public DataResponseBody getGrafanaUrl( @PathVariable Long jobId) {
         return new DataResponseBody(ptTrainJobService.getGrafanaUrl(jobId));
+    }
+
+    @GetMapping("/model")
+    @ApiOperation("获取job使用的模型")
+    @RequiresPermissions(Permissions.TRAINING_JOB)
+    public DataResponseBody getTrainJobModel(@Validated PtTrainModelDTO ptTrainModelDTO) {
+        return new DataResponseBody(ptTrainJobService.getTrainJobModel(ptTrainModelDTO));
     }
 }

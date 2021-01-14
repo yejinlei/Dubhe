@@ -1,5 +1,5 @@
 /**
- * Copyright 2020 Zhejiang Lab. All Rights Reserved.
+ * Copyright 2020 Tianshu AI Platform. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,8 +29,8 @@ import org.dubhe.async.TrainAlgorithmUploadAsync;
 import org.dubhe.base.MagicNumConstant;
 import org.dubhe.base.ResponseCode;
 import org.dubhe.config.NfsConfig;
-import org.dubhe.constant.AlgorithmSourceEnum;
 import org.dubhe.config.RecycleConfig;
+import org.dubhe.constant.AlgorithmSourceEnum;
 import org.dubhe.constant.TrainAlgorithmConstant;
 import org.dubhe.dao.NoteBookMapper;
 import org.dubhe.dao.PtImageMapper;
@@ -52,7 +52,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -176,7 +175,7 @@ public class PtTrainAlgorithmServiceImpl implements PtTrainAlgorithmService {
      */
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public List<Long> create(PtTrainAlgorithmCreateDTO ptTrainAlgorithmCreateDTO) {
+    public Long create(PtTrainAlgorithmCreateDTO ptTrainAlgorithmCreateDTO) {
         //从会话中获取用户信息
         UserDTO user = JwtUtils.getCurrentUserDto();
         LogUtil.info(LogEnum.BIZ_TRAIN, "Save the new algorithm and receive the parameter {}", ptTrainAlgorithmCreateDTO);
@@ -228,7 +227,7 @@ public class PtTrainAlgorithmServiceImpl implements PtTrainAlgorithmService {
         }
 
         LogUtil.info(LogEnum.BIZ_TRAIN, "User {} saves the new algorithm and returns the new algorithm id as {}.", user.getUsername(), ptTrainAlgorithm.getId());
-        return Collections.singletonList(ptTrainAlgorithm.getId());
+        return ptTrainAlgorithm.getId();
     }
 
     /**
@@ -239,7 +238,7 @@ public class PtTrainAlgorithmServiceImpl implements PtTrainAlgorithmService {
      */
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public List<Long> update(PtTrainAlgorithmUpdateDTO ptTrainAlgorithmUpdateDTO) {
+    public Long update(PtTrainAlgorithmUpdateDTO ptTrainAlgorithmUpdateDTO) {
         UserDTO currentUser = JwtUtils.getCurrentUserDto();
         LogUtil.info(LogEnum.BIZ_TRAIN, "User {} modifies the algorithm and receives {} as the parameter", currentUser.getUsername(), ptTrainAlgorithmUpdateDTO);
         //权限校验
@@ -287,7 +286,7 @@ public class PtTrainAlgorithmServiceImpl implements PtTrainAlgorithmService {
             throw new BusinessException("修改失败");
         }
         LogUtil.info(LogEnum.BIZ_TRAIN, "End of user {} modification algorithm, return modification algorithm ID={}", currentUser.getUsername(), ptTrainAlgorithm.getId());
-        return Collections.singletonList(ptTrainAlgorithm.getId());
+        return ptTrainAlgorithm.getId();
     }
 
     /**
@@ -438,4 +437,19 @@ public class PtTrainAlgorithmServiceImpl implements PtTrainAlgorithmService {
         }
         return ptImage.getImageUrl();
     }
+
+    /**
+     *
+     * @param ptModelAlgorithmCreateDTO 模型优化上传算法入参
+     * @return PtTrainAlgorithm 新增算法信息
+     */
+    @Override
+    public PtTrainAlgorithm modelOptimizationUploadAlgorithm(PtModelAlgorithmCreateDTO ptModelAlgorithmCreateDTO) {
+        PtTrainAlgorithmCreateDTO ptTrainAlgorithmCreateDTO = new PtTrainAlgorithmCreateDTO();
+        ptTrainAlgorithmCreateDTO.setAlgorithmName(ptModelAlgorithmCreateDTO.getName()).setCodeDir(ptModelAlgorithmCreateDTO.getPath()).setAlgorithmUsage("模型优化").setIsTrainOut(false).setIsTrainLog(false).setIsVisualizedLog(false);
+        Long id = create(ptTrainAlgorithmCreateDTO);
+        PtTrainAlgorithm ptTrainAlgorithm = ptTrainAlgorithmMapper.selectById(id);
+        return ptTrainAlgorithm;
+    }
+
 }

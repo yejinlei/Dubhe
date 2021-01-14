@@ -1,5 +1,5 @@
 /**
- * Copyright 2020 Zhejiang Lab. All Rights Reserved.
+ * Copyright 2020 Tianshu AI Platform. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,12 +20,16 @@ package org.dubhe;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
 import org.dubhe.domain.dto.PtTrainAlgorithmCreateDTO;
+import org.dubhe.domain.dto.PtTrainAlgorithmDeleteDTO;
 import org.dubhe.domain.dto.PtTrainAlgorithmUpdateDTO;
 import org.junit.Assert;
 import org.junit.Test;
 import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
+
+import java.util.HashSet;
+import java.util.Set;
 
 /**
  * @description 算法管理模块算法管理单元测试
@@ -63,14 +67,6 @@ public class TrainAlgorithmTest extends BaseTest {
 
     }
 
-    /**
-     * 模型管理查询对应路径的算法
-     */
-    @Test
-    public void getTrainAlgorithmFromPathTest() throws Exception {
-        mockMvcWithNoRequestBody(mockMvc.perform(MockMvcRequestBuilders.get("/api/v1/algorithm/fromPath").param("codeDir", "/algorithm-manage/common/resnet50v1.5/"))
-                .andExpect(MockMvcResultMatchers.status().isOk()).andReturn().getResponse(), 200);
-    }
 
     /**
      * 新增算法
@@ -79,13 +75,9 @@ public class TrainAlgorithmTest extends BaseTest {
     public void ptTrainAlgorithmCreateTest() throws Exception {
         PtTrainAlgorithmCreateDTO ptTrainAlgorithmCreateDTO = new PtTrainAlgorithmCreateDTO();
         JSONObject jsonObject = new JSONObject();
-        ptTrainAlgorithmCreateDTO.setAlgorithmName("test")
-                .setDescription("test")
-                .setImageName("tensorflow/tensorflow:latest")
-                .setCodeDir("algorithm-manage/18/20200617073954700eqhl/")
-                .setRunParams(jsonObject)
-                .setAlgorithmUsage("test")
-                .setRunCommand("test");
+        ptTrainAlgorithmCreateDTO.setAlgorithmName("untilTesting")
+                .setDescription("untilTesting")
+                .setCodeDir("upload-temp/1/20201202135732212Bp8F/OneFlow算法.zip");
         mockMvcTest(MockMvcRequestBuilders.post("/api/v1/algorithm"), JSON.toJSONString(ptTrainAlgorithmCreateDTO), MockMvcResultMatchers.status().isOk(), 200);
     }
 
@@ -95,9 +87,9 @@ public class TrainAlgorithmTest extends BaseTest {
     @Test
     public void ptTrainAlgorithmUpdateTest() throws Exception {
         PtTrainAlgorithmUpdateDTO ptTrainAlgorithmUpdateDTO = new PtTrainAlgorithmUpdateDTO();
-        ptTrainAlgorithmUpdateDTO.setId(1L)
-                .setAlgorithmName("test")
-                .setDescription("test");
+        ptTrainAlgorithmUpdateDTO.setId(138L)
+                .setAlgorithmName("untilTesting"+ System.currentTimeMillis())
+                .setDescription("untilTesting");
         mockMvcTest(MockMvcRequestBuilders.put("/api/v1/algorithm"), JSON.toJSONString(ptTrainAlgorithmUpdateDTO), MockMvcResultMatchers.status().isOk(), 200);
     }
 
@@ -107,8 +99,11 @@ public class TrainAlgorithmTest extends BaseTest {
      */
     @Test
     public void ptTrainAlgorithmDeleteTest() throws Exception {
-        Long[] ids = {(long) 1, (long) 2};
-        mockMvcTest(MockMvcRequestBuilders.delete("/api/v1/algorithm"), JSON.toJSONString(ids), MockMvcResultMatchers.status().isOk(), 200);
+        Set<Long> ids = new HashSet<>();
+        ids.add(138L);
+        PtTrainAlgorithmDeleteDTO ptTrainAlgorithmDeleteDTO = new PtTrainAlgorithmDeleteDTO();
+        ptTrainAlgorithmDeleteDTO.setIds(ids);
+        mockMvcTest(MockMvcRequestBuilders.delete("/api/v1/algorithm"), JSON.toJSONString(ptTrainAlgorithmDeleteDTO), MockMvcResultMatchers.status().isOk(), 200);
     }
 
 }

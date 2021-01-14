@@ -1,5 +1,5 @@
 /**
- * Copyright 2020 Zhejiang Lab. All Rights Reserved.
+ * Copyright 2020 Tianshu AI Platform. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,11 +17,11 @@
 
 package org.dubhe.data.service;
 
-import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import org.dubhe.data.domain.dto.ConversionCreateDTO;
 import org.dubhe.data.domain.dto.DatasetVersionCreateDTO;
 import org.dubhe.data.domain.dto.DatasetVersionDeleteDTO;
 import org.dubhe.data.domain.dto.DatasetVersionQueryCriteriaDTO;
+import org.dubhe.data.domain.entity.Dataset;
 import org.dubhe.data.domain.entity.DatasetVersion;
 import org.dubhe.data.domain.vo.DatasetVersionVO;
 
@@ -46,10 +46,9 @@ public interface DatasetVersionService {
      * 数据集版本列表
      *
      * @param datasetVersionQueryCriteria 查询条件
-     * @param page                        分页查询
      * @return Map<String, Object> 版本列表
      */
-    Map<String, Object> getList(DatasetVersionQueryCriteriaDTO datasetVersionQueryCriteria, Page<DatasetVersion> page);
+    Map<String, Object> getList(DatasetVersionQueryCriteriaDTO datasetVersionQueryCriteria);
 
     /**
      * 数据集版本删除
@@ -90,11 +89,6 @@ public interface DatasetVersionService {
     List<DatasetVersionVO> versionList(Long id);
 
     /**
-     * 数据转换
-     */
-    void datasetConvert();
-
-    /**
      * 数据转换回调接口
      *
      * @param datasetVersionId    版本id
@@ -107,6 +101,11 @@ public interface DatasetVersionService {
      * 文件复制
      */
     void fileCopy();
+
+    /**
+     * 标注文件复制
+     */
+    void annotationFileCopy();
 
     /**
      * 查询当前数据集版本的原始文件数量
@@ -133,4 +132,20 @@ public interface DatasetVersionService {
      */
     void update(Long id, Integer sourceStatus, Integer targetStatus);
 
+    /**
+     * 获取数据集版本数据
+     *
+     * @param dataset 数据集实体
+     * @return  数据集版本信息
+     */
+    DatasetVersion getDatasetVersionSourceVersion(Dataset dataset);
+
+    /**
+     * 获取数据集版本
+     *
+     * @param datasetId 数据集ID
+     * @param versionName  版本名
+     * @return DatasetVersion 数据集版本
+     */
+    DatasetVersion getVersionByDatasetIdAndVersionName(Long datasetId, String versionName);
 }

@@ -18,10 +18,10 @@ package org.dubhe.factory;
 import org.dubhe.base.DataResponseBody;
 import org.dubhe.base.ResponseCode;
 
+
 /**
- * @desc DataResponseBody 工厂类
- *
- * @date 2020.05.28
+ * @description DataResponseBody 工厂类
+ * @date 2020-03-16
  */
 public class DataResponseFactory {
 

@@ -1,5 +1,5 @@
 /**
- * Copyright 2020 Zhejiang Lab. All Rights Reserved.
+ * Copyright 2020 Tianshu AI Platform. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,6 +38,8 @@ public enum LogEnum {
     BIZ_SYS,
     // 模型模块
     BIZ_MODEL,
+    // 模型优化
+    MODEL_OPT,
     // 数据集模块
     BIZ_DATASET,
     // k8s模块
@@ -50,19 +52,26 @@ public enum LogEnum {
     LOCAL_FILE_UTIL,
     //FILE UTILS
     FILE_UTIL,
+    // 云端Serving模块
+    SERVING,
     //FILE UTILS
     UPLOAD_TEMP,
     //STATE MACHINE
     STATE_MACHINE,
     //全局垃圾回收
     GARBAGE_RECYCLE,
-    //DATA_SEQUENCE
-    DATA_SEQUENCE,
     //IO UTIL
     IO_UTIL,
+    //DATA_SEQUENCE
+    DATA_SEQUENCE,
     // 日志切面
-    LOG_ASPECT
+    LOG_ASPECT,
+    //镜像
+    IMAGE,
+    //度量
+    MEASURE;
     ;
+
     /**
      * 判断日志类型不能为空
      *

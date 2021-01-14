@@ -1,5 +1,5 @@
 /**
- * Copyright 2020 Zhejiang Lab. All Rights Reserved.
+ * Copyright 2020 Tianshu AI Platform. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,6 +21,7 @@ import cn.hutool.core.io.FileUtil;
 import com.alibaba.fastjson.JSON;
 import org.dubhe.k8s.domain.PtBaseResult;
 import org.dubhe.k8s.domain.bo.DistributeTrainBO;
+import org.dubhe.k8s.domain.bo.PtMountDirBO;
 import org.dubhe.k8s.domain.resource.BizDistributeTrain;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -28,6 +29,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.junit4.SpringRunner;
 
 import javax.annotation.Resource;
+import java.util.HashMap;
 
 /**
  * @description NodeApiTest测试类
@@ -42,27 +44,30 @@ public class DistributeTrainApiTest {
     @Test
     public void testCreate(){
         DistributeTrainBO bo = new DistributeTrainBO();
-        bo.setName("yepeng11");
-        bo.setNamespace("yep");
-        bo.setSize(3);
+        bo.setName("batchserving-rn-wdma9");
+        bo.setNamespace("sunjd");
+        bo.setSize(30);
         bo.setImage("harbor.dubhe.ai/oneflow/oneflow-cuda:py36-v3");
         bo.setMasterCmd("export NODE_IPS=`cat /home/hostfile.json |jq -r '.[]|.ip'|paste -d \",\" -s` && cd /workspace/Classification/cnns && rm -rf core.* && rm -rf ./output/snapshots/* && python3 of_cnn_train_val.py --train_data_dir=$DATA_ROOT/train --train_data_part_num=$TRAIN_DATA_PART_NUM --val_data_dir=$DATA_ROOT/validation --val_data_part_num=$VAL_DATA_PART_NUM --num_nodes=$NODE_NUM --node_ips=\"$NODE_IPS\" --gpu_num_per_node=$GPU_NUM_PER_NODE --model_update=\"momentum\" --learning_rate=0.256 --loss_print_every_n_iter=1 --batch_size_per_device=1 --val_batch_size_per_device=1 --num_epoch=1 --model=\"resnet50\" --model_save_dir=/model");
         bo.setMemNum(8192);
         bo.setCpuNum(4000);
         bo.setGpuNum(2);
         bo.setSlaveCmd("export NODE_IPS=`cat /home/hostfile.json |jq -r '.[]|.ip'|paste -d \",\" -s` && cd /workspace/Classification/cnns && rm -rf core.* && rm -rf ./output/snapshots/* && python3 of_cnn_train_val.py --train_data_dir=$DATA_ROOT/train --train_data_part_num=$TRAIN_DATA_PART_NUM --val_data_dir=$DATA_ROOT/validation --val_data_part_num=$VAL_DATA_PART_NUM --num_nodes=$NODE_NUM --node_ips=\"$NODE_IPS\" --gpu_num_per_node=$GPU_NUM_PER_NODE --model_update=\"momentum\" --learning_rate=0.256 --loss_print_every_n_iter=1 --batch_size_per_device=1 --val_batch_size_per_device=1 --num_epoch=1 --model=\"resnet50\" --model_save_dir=/model");
-        bo.setDatasetStoragePath("/nfs/sunjd/dataset/of_dataset");
-        bo.setWorkspaceStoragePath("/nfs/sunjd/workspace");
-        bo.setModelStoragePath("/nfs/sunjd/model");
+        bo.setNfsMounts(new HashMap<String, PtMountDirBO>(){{
+            put("/dataset",new PtMountDirBO("/nfs/sunjd/dataset/of_dataset"));
+            put("/workspace",new PtMountDirBO("/nfs/sunjd/workspace"));
+            put("/model",new PtMountDirBO("/nfs/sunjd/model"));
+        }});
         bo.setBusinessLabel("train");
         bo.setDelayCreateTime(10);
         bo.setDelayDeleteTime(10);
 
-        distributeTrainApi.create(bo);
+        System.out.println(JSON.toJSONString(distributeTrainApi.create(bo)));
+        System.out.println("123");
     }
     @Test
     public void deleteByResourceName() {
-        PtBaseResult result = distributeTrainApi.deleteByResourceName("tianlong", "tianlong-dt");
+        PtBaseResult result = distributeTrainApi.deleteByResourceName("namespace-1", "yepeng11");
         System.out.println(JSON.toJSONString(result));
     }
 

@@ -1,5 +1,5 @@
 /**
- * Copyright 2020 Zhejiang Lab. All Rights Reserved.
+ * Copyright 2020 Tianshu AI Platform. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -49,7 +49,19 @@ public enum DataTaskTypeEnum {
     /**
      * 视频采样
      */
-    VIDEO_SAMPLE(5, "视频采样")
+    VIDEO_SAMPLE(5, "视频采样"),
+    /**
+     * 医学标注
+     */
+    MEDICINE_ANNOTATION(6,"医学标注"),
+    /**
+     * 文本分类
+     */
+    TEXT_CLASSIFICATION(7, "文本分类"),
+    /**
+     * 重新自动标注
+     */
+    AGAIN_ANNOTATION(8, "重新自动标注")
     ;
 
     DataTaskTypeEnum(Integer value, String msg) {

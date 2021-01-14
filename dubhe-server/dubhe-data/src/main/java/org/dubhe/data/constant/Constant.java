@@ -1,5 +1,5 @@
 /**
- * Copyright 2020 Zhejiang Lab. All Rights Reserved.
+ * Copyright 2020 Tianshu AI Platform. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -93,7 +93,7 @@ public class Constant {
 
     public static final String DATA_TYPE_RULE = "数据类型参数不对,请使用: 0-图片 1-视频";
 
-    public static final String ANNOTATE_TYPE_RULE = "数据标注类型参数不对,请使用: 2-分类 1-目标检测 5-目标跟踪";
+    public static final String ANNOTATE_TYPE_RULE = "数据标注类型参数不对,请使用: 2-分类 1-目标检测 5-目标跟踪 6 文本分类";
 
 
     /**
@@ -145,7 +145,7 @@ public class Constant {
     /**
      * 数据集名称路径
      */
-    public static final String DATASET_PATH_NAME = File.separator + "dataset" + File.separator;
+    public static final String DATASET_PATH_NAME = "dataset" + File.separator;
 
     /**
      * 版本文件路径
@@ -229,6 +229,11 @@ public class Constant {
      */
     public static final Long IMAGENET_ID = 2L;
 
+    /**
+     *  文本数据集预置标签组ID
+     */
+    public static final Long TXT_PREPARE_ID = 748L;
+
 
     /**
      *  大数据默认删除数量
@@ -241,6 +246,21 @@ public class Constant {
      * redis 预置标签key
      */
     public final static String DATASET_LABEL_PUB_KEY = "dateset:label:pub";
+
+
+
+    /**
+     *  数据集预置标签组类型
+     */
+    public static final Integer COMMON_LABEL_GROUP_TYPE = 1;
+
+
+
+    /**
+     *  抽象名称前缀
+     */
+    public static final String ABSTRACT_NAME_PREFIX = "abstract_";
+
 
 
 }

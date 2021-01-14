@@ -1,5 +1,5 @@
 /**
- * Copyright 2020 Zhejiang Lab. All Rights Reserved.
+ * Copyright 2020 Tianshu AI Platform. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -48,6 +48,7 @@ public final class Permissions {
 	 */
 	public static final String MODEL = "model";
 	public static final String MODEL_MODEL = "model:model";
+	public static final String MODEL_OPTIMIZE = "model:optimize";
 
 	/**
 	 * 控制台
@@ -60,6 +61,13 @@ public final class Permissions {
 	public static final String SYSTEM_NODE = "system:node";
 	public static final String SYSTEM_LOG = "system:log";
 	public static final String SYSTEM_TEAM = "system:team";
+
+	/**
+	 * 云端Serving
+	 */
+	public static final String SERVING = "serving";
+	public static final String SERVING_DEPLOYMENT = "serving:deployment";
+	public static final String SERVING_BATCH = "serving:batch";
 
 	private Permissions() {
 	}

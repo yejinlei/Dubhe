@@ -1,5 +1,5 @@
 /**
- * Copyright 2020 Zhejiang Lab. All Rights Reserved.
+ * Copyright 2020 Tianshu AI Platform. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -42,6 +42,7 @@ import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.CollectionUtils;
 
 import java.util.Arrays;
 import java.util.List;
@@ -101,7 +102,7 @@ public class PtModelBranchServiceImpl implements PtModelBranchService {
         UserDTO user = JwtUtils.getCurrentUserDto();
         Page page = new Page(null == ptModelBranchQueryDTO.getCurrent() ? 1 : ptModelBranchQueryDTO.getCurrent()
                 , null == ptModelBranchQueryDTO.getSize() ? 10 : ptModelBranchQueryDTO.getSize());
-        LogUtil.info(LogEnum.BIZ_MODEL, "用户{}查询模型版本列表展示开始, 接收的参数为{}，Page{}", user.getUsername(), ptModelBranchQueryDTO, page);
+        LogUtil.info(LogEnum.BIZ_MODEL, "The user {} queries the model version list, and the received parameters are {}, page {}", user.getUsername(), ptModelBranchQueryDTO, page);
 
         QueryWrapper wrapper = WrapperHelp.getWrapper(ptModelBranchQueryDTO);
 
@@ -122,7 +123,7 @@ public class PtModelBranchServiceImpl implements PtModelBranchService {
             }
             ptModelBranchs = ptModelBranchMapper.selectPage(page, wrapper);
         } catch (Exception e) {
-            LogUtil.error(LogEnum.BIZ_MODEL, "查询模型列表展示异常:{}, 请求信息:{}", e, ptModelBranchQueryDTO);
+            LogUtil.error(LogEnum.BIZ_MODEL, "Query model list display exception: {}, request information: {}", e, ptModelBranchQueryDTO);
             throw new BusinessException("查询模型列表展示异常");
         }
 
@@ -145,14 +146,14 @@ public class PtModelBranchServiceImpl implements PtModelBranchService {
     public PtModelBranchCreateVO create(PtModelBranchCreateDTO ptModelBranchCreateDTO) {
         //从会话中获取用户信息
         UserDTO user = JwtUtils.getCurrentUserDto();
-        LogUtil.info(LogEnum.BIZ_MODEL, "用户{}创建模型版本开始, 接收的参数为{}", user.getUsername(), ptModelBranchCreateDTO);
+        LogUtil.info(LogEnum.BIZ_MODEL, "The user {} starts to create the model version, and the received parameter is {}", user.getUsername(), ptModelBranchCreateDTO);
         PtModelBranch ptModelBranch = new PtModelBranch();
         BeanUtils.copyProperties(ptModelBranchCreateDTO, ptModelBranch);
         QueryWrapper<PtModelInfo> ptModelInfoQueryWrapper = new QueryWrapper<PtModelInfo>();
         ptModelInfoQueryWrapper.eq("id", ptModelBranchCreateDTO.getParentId());
         PtModelInfo ptModelInfo = ptModelInfoMapper.selectOne(ptModelInfoQueryWrapper);
         if (ptModelInfo == null) {
-            LogUtil.error(LogEnum.BIZ_MODEL, "用户{}更新模型列表未成功", user.getUsername());
+            LogUtil.error(LogEnum.BIZ_MODEL, "User {} failed to update model list", user.getUsername());
             throw new BusinessException("模型版本创建失败");
         }
         ptModelBranch.setVersionNum(getVersion(ptModelInfo));
@@ -170,20 +171,22 @@ public class PtModelBranchServiceImpl implements PtModelBranchService {
             if (sourcePath.endsWith(PtModelUtil.ZIP)) {
                 boolean unzip = localFileUtil.unzipLocalPath(sourcePath, nfsConfig.getBucket() + targetPath);
                 if (!unzip) {
-                    LogUtil.error(LogEnum.BIZ_MODEL, "用户{}解压模型文件失败", user.getUsername());
+                    LogUtil.error(LogEnum.BIZ_MODEL, "User {} failed to decompress model file", user.getUsername());
                     throw new BusinessException("模型文件解压失败");
                 }
             } else {
-                boolean nfsCopy = nfsUtil.copyFile(sourcePath, nfsConfig.getBucket() + targetPath);
+                boolean nfsCopy = localFileUtil.copyFile(sourcePath, nfsConfig.getBucket() + targetPath);
                 if (!nfsCopy) {
-                    LogUtil.info(LogEnum.BIZ_MODEL, "模型文件拷贝失败");
+                    LogUtil.info(LogEnum.BIZ_MODEL, "Failed to copy user {} model file");
                     throw new BusinessException("模型文件拷贝失败");
                 }
             }
             //修改存储路径
             ptModelBranch.setModelAddress(targetPath);
+            //判断模型版本是否已存在
+            checkModelVersion(ptModelBranchCreateDTO, user, ptModelBranch);
             if (ptModelBranchMapper.insert(ptModelBranch) < 1) {
-                LogUtil.error(LogEnum.BIZ_MODEL, "用户{}创建新版本未成功", user.getUsername());
+                LogUtil.error(LogEnum.BIZ_MODEL, "User {} failed to create new version", user.getUsername());
                 throw new BusinessException("模型版本创建失败");
             }
         } else if (ptModelBranchCreateDTO.getModelSource() == PtModelUtil.TRAINING_IMPORT || ptModelBranchCreateDTO.getModelSource() == PtModelUtil.MODEL_OPTIMIZATION) {
@@ -191,8 +194,10 @@ public class PtModelBranchServiceImpl implements PtModelBranchService {
             String targetPath = k8sNameTool.getNfsPath(BizNfsEnum.MODEL, user.getId());
             ptModelBranch.setModelAddress(targetPath);
             ptModelBranch.setStatus(0);
+            //判断模型版本是否已存在
+            checkModelVersion(ptModelBranchCreateDTO, user, ptModelBranch);
             if (ptModelBranchMapper.insert(ptModelBranch) < 1) {
-                LogUtil.error(LogEnum.BIZ_MODEL, "用户{}创建新版本未成功", user.getUsername());
+                LogUtil.error(LogEnum.BIZ_MODEL, "User {} failed to create new version", user.getUsername());
                 throw new BusinessException("模型版本创建失败");
             }
             asyncStorage.copyFileAsync(sourcePath, nfsConfig.getBucket() + targetPath, ptModelBranchMapper, ptModelBranch);
@@ -202,14 +207,30 @@ public class PtModelBranchServiceImpl implements PtModelBranchService {
         ptModelInfo.setModelAddress(ptModelBranch.getModelAddress());
         ptModelInfo.setTotalNum(ptModelInfo.getTotalNum() + 1);
         if (ptModelInfoMapper.updateById(ptModelInfo) < 1) {
-            LogUtil.error(LogEnum.BIZ_MODEL, "用户{}修改版本未成功,进行版本表修改操作失败", user.getUsername());
+            LogUtil.error(LogEnum.BIZ_MODEL, "User {} failed to modify version, failed to modify version table", user.getUsername());
             throw new BusinessException("模型版本创建失败");
         }
 
         PtModelBranchCreateVO ptModelBranchCreateVO = new PtModelBranchCreateVO();
         ptModelBranchCreateVO.setId(ptModelBranch.getId());
-        LogUtil.info(LogEnum.BIZ_MODEL, "用户{}保存新的版本结束, 返回新增版本id为{}", user.getUsername(), ptModelBranch.getId());
+        LogUtil.info(LogEnum.BIZ_MODEL, "When the user {} finishes saving the new version, the new version ID {} will be returned", user.getUsername(), ptModelBranch.getId());
         return ptModelBranchCreateVO;
+    }
+
+    /**
+     * 判断模型版本是否已存在
+     * @param ptModelBranchCreateDTO 入参
+     * @param user                   用户
+     * @param ptModelBranch          模型
+     */
+    private void checkModelVersion(PtModelBranchCreateDTO ptModelBranchCreateDTO, UserDTO user, PtModelBranch ptModelBranch) {
+        QueryWrapper<PtModelBranch> ptModelBranchWrapper = new QueryWrapper<>();
+        ptModelBranchWrapper.eq("version", ptModelBranch.getVersionNum()).eq("parent_id", ptModelBranchCreateDTO.getParentId());
+        List<PtModelBranch> ptModelBrancheList = ptModelBranchMapper.selectList(ptModelBranchWrapper);
+        if (!CollectionUtils.isEmpty(ptModelBrancheList)) {
+            LogUtil.error(LogEnum.BIZ_TRAIN, "Version = {} of model_parent_id = {} created by user {} already exists", ptModelBranch.getVersionNum(), ptModelBranchCreateDTO.getParentId(), user.getUsername());
+            throw new BusinessException("该模型版本已存在");
+        }
     }
 
     /**
@@ -234,13 +255,13 @@ public class PtModelBranchServiceImpl implements PtModelBranchService {
     public PtModelBranchUpdateVO update(PtModelBranchUpdateDTO ptModelBranchUpdateDTO) {
         //从会话中获取用户信息
         UserDTO user = JwtUtils.getCurrentUserDto();
-        LogUtil.info(LogEnum.BIZ_MODEL, "用户{}更新模型版本开始, 接收的参数为{}", user.getUsername(), ptModelBranchUpdateDTO);
+        LogUtil.info(LogEnum.BIZ_MODEL, "The user {} starts to update the model version, and the received parameter is {}", user.getUsername(), ptModelBranchUpdateDTO);
 
         QueryWrapper wrapper = new QueryWrapper<>();
         wrapper.eq("id", ptModelBranchUpdateDTO.getId());
         Integer i = ptModelBranchMapper.selectCount(wrapper);
         if (i < 1) {
-            LogUtil.error(LogEnum.BIZ_MODEL, "用户{}修改模型版本未成功,没有权限在模型版本表中修改对应数据", user.getUsername());
+            LogUtil.error(LogEnum.BIZ_MODEL, "The user {} failed to modify the model version, and has no permission to modify the corresponding data in the model version table", user.getUsername());
             throw new BusinessException("您修改的ID不存在请重新输入");
         }
 
@@ -249,14 +270,14 @@ public class PtModelBranchServiceImpl implements PtModelBranchService {
 
         if (ptModelBranchMapper.updateById(ptModelBranch) < 1) {
             //模型版本未修改成功，抛出异常，并返回失败信息
-            LogUtil.error(LogEnum.BIZ_MODEL, "用户{}修改模型版本未成功,进行模型版本表修改操作失败", user.getUsername());
+            LogUtil.error(LogEnum.BIZ_MODEL, "The user {} failed to modify the model version, and failed to modify the model version table", user.getUsername());
             throw new BusinessException("模型版本更新失败");
         }
 
         //返回修改模型版本id
         PtModelBranchUpdateVO ptModelBranchUpdateVO = new PtModelBranchUpdateVO();
         ptModelBranchUpdateVO.setId(ptModelBranch.getId());
-        LogUtil.info(LogEnum.BIZ_MODEL, "用户{}保存模型版本结束, 返回修改模型版本id={}", user.getUsername(), ptModelBranchUpdateVO.getId());
+        LogUtil.info(LogEnum.BIZ_MODEL, "When the user {} finishes saving the model version, the modified model version id = {} is returned", user.getUsername(), ptModelBranchUpdateVO.getId());
         return ptModelBranchUpdateVO;
     }
 
@@ -271,7 +292,7 @@ public class PtModelBranchServiceImpl implements PtModelBranchService {
     public PtModelBranchDeleteVO deleteAll(PtModelBranchDeleteDTO ptModelBranchDeleteDTO) {
         //从会话中获取用户信息
         UserDTO user = JwtUtils.getCurrentUserDto();
-        LogUtil.info(LogEnum.BIZ_MODEL, "用户{}删除模型版本, 接收的参数为{}", user.getUsername(), ptModelBranchDeleteDTO);
+        LogUtil.info(LogEnum.BIZ_MODEL, "The user {} deletes the model version, and the received parameter is {}", user.getUsername(), ptModelBranchDeleteDTO);
 
         //数组ids去重
         List<Long> ids = Arrays.stream(ptModelBranchDeleteDTO.getIds()).distinct().collect(Collectors.toList());
@@ -280,7 +301,7 @@ public class PtModelBranchServiceImpl implements PtModelBranchService {
         QueryWrapper query = new QueryWrapper<>();
         query.in("id", ids);
         if (ptModelBranchMapper.selectCount(query) < ids.size()) {
-            LogUtil.error(LogEnum.BIZ_MODEL, "用户{}删除模型版本未成功,没有权限在模型版本表中删除对应数据", user.getUsername());
+            LogUtil.error(LogEnum.BIZ_MODEL, "The user {} failed to delete the model version. He does not have permission to delete the corresponding data in the model version table", user.getUsername());
             throw new BusinessException("您没有此权限");
         }
 
@@ -293,12 +314,12 @@ public class PtModelBranchServiceImpl implements PtModelBranchService {
         //删除任务参数
         if (ptModelBranchMapper.deleteBatchIds(ids) < ids.size()) {
             //模型版本未删除成功,抛出异常，并返回失败信息
-            LogUtil.error(LogEnum.BIZ_MODEL, "用户{}删除模型版本未成功,根据id数组{}进行模型版本表删除操作失败", user.getUsername(), ids);
+            LogUtil.error(LogEnum.BIZ_MODEL, "User {} failed to delete model version. Deleting model version table according to ID array {} failed", user.getUsername(), ids);
             throw new BusinessException("模型版本删除失败");
         }
 
         //更新parent的状态
-        LogUtil.info(LogEnum.BIZ_MODEL, "更新算法的parentID[]", parentIdLists);
+        LogUtil.info(LogEnum.BIZ_MODEL, "Parentid of update algorithm{}", parentIdLists);
         for (int num = 0; num < parentIdLists.size(); num++) {
             QueryWrapper<PtModelBranch> queryWrapper = new QueryWrapper<PtModelBranch>();
             queryWrapper.eq("parent_id", parentIdLists.get(num));
@@ -310,14 +331,14 @@ public class PtModelBranchServiceImpl implements PtModelBranchService {
                 ptModelInfo.setVersionNum(ptModelBranchList.get(0).getVersionNum());
                 ptModelInfo.setModelAddress(ptModelBranchList.get(0).getModelAddress());
                 if (ptModelInfoMapper.updateById(ptModelInfo) < 1) {
-                    LogUtil.error(LogEnum.BIZ_MODEL, "用户{}删除模型版本未成功,进行模型管理表修改操作失败", user.getUsername());
+                    LogUtil.error(LogEnum.BIZ_MODEL, "The user {} failed to delete the model version and failed to modify the model management table", user.getUsername());
                     throw new BusinessException("模型版本删除失败");
                 }
             } else {
                 ptModelInfo.setVersionNum("");
                 ptModelInfo.setModelAddress("");
                 if (ptModelInfoMapper.updateById(ptModelInfo) < 1) {
-                    LogUtil.error(LogEnum.BIZ_MODEL, "用户{}删除模型版本未成功,进行模型管理表修改操作失败", user.getUsername());
+                    LogUtil.error(LogEnum.BIZ_MODEL, "The user {} failed to delete the model version and failed to modify the model management table", user.getUsername());
                     throw new BusinessException("模型版本删除失败");
                 }
             }

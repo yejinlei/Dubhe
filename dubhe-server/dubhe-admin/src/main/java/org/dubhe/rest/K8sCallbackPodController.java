@@ -1,5 +1,5 @@
 /**
- * Copyright 2020 Zhejiang Lab. All Rights Reserved.
+ * Copyright 2020 Tianshu AI Platform. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,12 +22,18 @@ import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
 import org.dubhe.base.DataResponseBody;
 import org.dubhe.dto.callback.AlgorithmK8sPodCallbackCreateDTO;
+import org.dubhe.dto.callback.BatchServingK8sPodCallbackCreateDTO;
+import org.dubhe.dto.callback.ModelOptK8sPodCallbackCreateDTO;
 import org.dubhe.dto.callback.NotebookK8sPodCallbackCreateDTO;
 import org.dubhe.factory.DataResponseFactory;
 import org.dubhe.service.PodCallbackAsyncService;
 import org.dubhe.utils.K8sCallBackTool;
 import org.springframework.validation.annotation.Validated;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
 import javax.annotation.Resource;
 
@@ -35,7 +41,6 @@ import static org.dubhe.constant.StringConstant.K8S_CALLBACK_URI;
 
 /**
  * @description k8s Pod 异步回调处理类
- *
  * @date 2020-05-28
  */
 @Api(tags = "k8s回调：Pod")
@@ -47,6 +52,10 @@ public class K8sCallbackPodController {
     private PodCallbackAsyncService noteBookAsyncService;
     @Resource(name = "algorithmAsyncServiceImpl")
     private PodCallbackAsyncService algorithmAsyncServiceImpl;
+    @Resource(name = "modelOptAsyncServiceImpl")
+    private PodCallbackAsyncService modelOptAsyncService;
+    @Resource(name = "batchServingAsyncService")
+    private PodCallbackAsyncService batchServingAsyncService;
 
     /**
      * notebook异步回调
@@ -57,12 +66,11 @@ public class K8sCallbackPodController {
      */
     @PostMapping(value = "/notebook")
     @ApiOperation("模型管理 pod 回调")
-    public DataResponseBody notebookPodCallBack(@ApiParam(type = "head") @RequestHeader(name= K8sCallBackTool.K8S_CALLBACK_TOKEN) String k8sToken
-            ,@Validated @RequestBody NotebookK8sPodCallbackCreateDTO k8sPodCallbackReq) {
+    public DataResponseBody notebookPodCallBack(@ApiParam(type = "head") @RequestHeader(name = K8sCallBackTool.K8S_CALLBACK_TOKEN) String k8sToken
+            , @Validated @RequestBody NotebookK8sPodCallbackCreateDTO k8sPodCallbackReq) {
         noteBookAsyncService.podCallBack(k8sPodCallbackReq);
         return DataResponseFactory.success("notebook正在异步处理pod中。");
     }
-
 
     /**
      * algorithm异步回调
@@ -73,11 +81,39 @@ public class K8sCallbackPodController {
      */
     @PostMapping(value = "/algorithm")
     @ApiOperation("算法管理 pod 回调")
-    public DataResponseBody algorithmPodCallBack(@ApiParam(type = "head") @RequestHeader(name= K8sCallBackTool.K8S_CALLBACK_TOKEN) String k8sToken
-            ,@Validated @RequestBody AlgorithmK8sPodCallbackCreateDTO k8sPodCallbackReq) {
+    public DataResponseBody algorithmPodCallBack(@ApiParam(type = "head") @RequestHeader(name = K8sCallBackTool.K8S_CALLBACK_TOKEN) String k8sToken
+            , @Validated @RequestBody AlgorithmK8sPodCallbackCreateDTO k8sPodCallbackReq) {
         algorithmAsyncServiceImpl.podCallBack(k8sPodCallbackReq);
-        return DataResponseFactory.success("算法管理异步回调处理方法中");
+        return DataResponseFactory.success("算法管理异步回调处理中");
     }
 
+    /**
+     * modelOpt异步回调
+     *
+     * @param k8sToken
+     * @param k8sPodCallbackReq
+     * @return
+     */
+    @PostMapping(value = "/modelopt")
+    @ApiOperation("模型优化管理 pod 回调")
+    public DataResponseBody modelOptPodCallBack(@ApiParam(type = "head") @RequestHeader(name= K8sCallBackTool.K8S_CALLBACK_TOKEN) String k8sToken,
+                                                @Validated @RequestBody ModelOptK8sPodCallbackCreateDTO k8sPodCallbackReq) {
+        modelOptAsyncService.podCallBack(k8sPodCallbackReq);
+        return DataResponseFactory.success("model-opt 正在异步处理pod中。");
+    }
 
+    /**
+     * 云端serving批量服务异步回调
+     *
+     * @param k8sToken
+     * @param k8sPodCallbackReq
+     * @return
+     */
+    @PostMapping(value = "/batchserving")
+    @ApiOperation("云端serving pod 回调")
+    public DataResponseBody servingPodCallBack(@ApiParam(type = "head") @RequestHeader(name = K8sCallBackTool.K8S_CALLBACK_TOKEN) String k8sToken,
+                                               @Validated @RequestBody BatchServingK8sPodCallbackCreateDTO k8sPodCallbackReq) {
+        batchServingAsyncService.podCallBack(k8sPodCallbackReq);
+        return DataResponseFactory.success("云端serving批量服务异步回调处理中");
+    }
 }
