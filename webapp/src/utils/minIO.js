@@ -1,4 +1,4 @@
-/** Copyright 2020 Zhejiang Lab. All Rights Reserved.
+/** Copyright 2020 Tianshu AI Platform. All Rights Reserved.
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 * you may not use this file except in compliance with the License.
@@ -16,12 +16,11 @@
 
 import { getMinIOAuth } from '@/api/auth';
 import { decrypt } from '@/utils/rsaEncrypt';
-import { minIO } from '@/config';
 
 const Minio = require('minio');
 const toArray = require('stream-to-array');
 
-const env = process.env.NODE_ENV || 'development';
+const { VUE_APP_MINIO_ENDPOINT, VUE_APP_MINIO_PORT, VUE_APP_MINIO_USESSL, VUE_APP_MINIO_BUCKETNAME } = process.env;
 
 // 创建 bucket
 const makeBucket = (client, bucketName) => {
@@ -36,7 +35,15 @@ const makeBucket = (client, bucketName) => {
   });
 };
 
-const minIOConfig = minIO[env];
+// 组装 minIO 配置信息
+const minIOConfig = {
+  config: {
+    endPoint: VUE_APP_MINIO_ENDPOINT,
+    port: Number(VUE_APP_MINIO_PORT),
+    useSSL: JSON.parse(VUE_APP_MINIO_USESSL),
+  },
+  bucketName: VUE_APP_MINIO_BUCKETNAME,
+};
 
 // 导出 bucketName
 export const {bucketName} = minIOConfig;

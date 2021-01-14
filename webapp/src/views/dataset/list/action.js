@@ -1,4 +1,4 @@
-/** Copyright 2020 Zhejiang Lab. All Rights Reserved.
+/** Copyright 2020 Tianshu AI Platform. All Rights Reserved.
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 * you may not use this file except in compliance with the License.
@@ -14,7 +14,7 @@
 * =============================================================
 */
  
-import { statusCodeMap, dataTypeCodeMap } from '../util';
+import { statusCodeMap, dataTypeCodeMap, annotationCodeMap, isPublishDataset } from '../util';
 
 export default {
   name: 'DatasetAction',
@@ -42,6 +42,10 @@ export default {
           return (
             <span>
               <span>操作</span>
+              <el-tooltip effect='dark' placement='top' class="ml-10">
+                <div slot='content'>如果文本数据集关联的不是预置标签组，<br/>自动标注按钮可能无法使用</div>
+                <i class='el-icon-question'/>
+              </el-tooltip>
             </span>
           );
         },
@@ -62,8 +66,14 @@ export default {
           if (row.dataType === dataTypeCodeMap.VIDEO && statusCodeMap[row.status] === 'AUTO_ANNOTATED') {
             showCheckButton = false;
           }
-          // 查看标注按钮
-          const checkButton = (
+          // 查看标注按钮根据版本发布的状态决定是否置灰加提示
+          const checkButton = isPublishDataset(row) ? (
+            <el-tooltip content="当前版本生成中，请稍后刷新" placement="top">
+              <el-button {...btnProps}>
+                <span style="color: #666; cursor: auto">查看标注</span>
+              </el-button>
+            </el-tooltip>
+          ) : (
             <el-button {...btnProps} onClick={() => goDetail(row)}>
               查看标注
             </el-button>
@@ -71,6 +81,10 @@ export default {
 
           // 自动标注按钮只在 未标注 标注中 时显示
           let showAutoButton = ['UNANNOTATED', 'ANNOTATING'].includes(statusCodeMap[row.status]);
+          // 如果是文本分类，只有使用了预置标签组的数据集可以进行自动标注，autoAnnotation字段
+          if(row.dataType === dataTypeCodeMap.TEXT && !row.autoAnnotation) {
+            showAutoButton = false;
+          }
           // 自动标注按钮
           const autoButton = (
             <el-button {...btnProps} onClick={() => autoAnnotate(row)}>
@@ -110,7 +124,8 @@ export default {
               发布
             </el-button>
           );
-
+          
+          // 当类型为文本时,不显示发布按钮
           // 当类型为视频时,状态为标注完成、目标跟踪完成时显示发布按钮,其余状态不显示发布按钮
           // 当类型为图片时,状态为自动标注完成时显示有弹窗确认的发布按钮,为标注完成时显示发布按钮,其余状态不显示发布按钮
           if (row.dataType === dataTypeCodeMap.VIDEO) {
@@ -118,12 +133,14 @@ export default {
               showPublishButton = true;
               publishButton = publishDialogButton;
             }
-          } else if (statusCodeMap[row.status] === 'AUTO_ANNOTATED') {
-            showPublishButton = true;
-            publishButton = publishConfirmButton;
-          } else if (statusCodeMap[row.status] === 'ANNOTATED') {
-            showPublishButton = true;
-            publishButton = publishDialogButton;
+          } else if (row.dataType === dataTypeCodeMap.IMAGE) {
+            if (statusCodeMap[row.status] === 'AUTO_ANNOTATED') {
+              showPublishButton = true;
+              publishButton = publishConfirmButton;
+            } else if (statusCodeMap[row.status] === 'ANNOTATED') {
+              showPublishButton = true;
+              publishButton = publishDialogButton;
+            }
           }
 
           let showUploadButton = false;
@@ -145,6 +162,10 @@ export default {
 
           // 当标注完成、目标跟踪完成，以及非视频的自动标注完成时显示重新自动标注按钮 (若为视频此时下游会进行目标跟踪)
           let showReAutoButton = ['ANNOTATED', 'TRACK_SUCCEED'].includes(statusCodeMap[row.status]) || (statusCodeMap[row.status] === 'AUTO_ANNOTATED' && row.dataType === dataTypeCodeMap.IMAGE);
+          // 文本不能重新自动标注
+          if (row.dataType === dataTypeCodeMap.TEXT) { 
+            showReAutoButton = false; 
+          }
           // 重新自动标注按钮
           const reAutoButton = (
             <el-popconfirm
@@ -161,7 +182,7 @@ export default {
           );
           
           // 当目标跟踪标注类型的数据集状态为自动标注完成 标注完成时，显示目标跟踪按钮
-          let showTrackButton = row.annotateType === 5 && ['AUTO_ANNOTATED','ANNOTATED'].includes(statusCodeMap[row.status]);
+          let showTrackButton = row.annotateType === annotationCodeMap.TRACK && ['AUTO_ANNOTATED','ANNOTATED'].includes(statusCodeMap[row.status]);
           // 目标跟踪按钮
           const trackButton = (
             <el-button {...btnProps} onClick={() => track(row, false)}>
@@ -223,6 +244,21 @@ export default {
               <IconFont type="externallink" />
             </a>
           ) : null;
+          
+          // 数据集版本发布或者切换中 只允许置顶 修改 历史版本，查看标注置灰
+          if (isPublishDataset(row)) {
+            showPublishButton = false;
+            showUploadButton = false;
+            showCheckButton = true;
+            showAutoButton = false;
+            showReAutoButton = false;
+            showTrackButton = false;
+            showReTrackButton = false;
+            showVersionButton = true;
+            showAugmentButton = false;
+            showTopButton = true;
+            showEditButton = true;
+          };
 
           // 预置数据集只具备查看标注,历史版本功能。 
           if (row.type === 2) {

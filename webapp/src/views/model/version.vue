@@ -1,4 +1,4 @@
-/** Copyright 2020 Zhejiang Lab. All Rights Reserved.
+/** Copyright 2020 Tianshu AI Platform. All Rights Reserved.
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 * you may not use this file except in compliance with the License.
@@ -39,13 +39,37 @@
           <span>{{ parseTime(scope.row.createTime) }}</span>
         </template>
       </el-table-column>
-      <el-table-column label="操作" width="150px" fixed="right">
+      <el-table-column label="操作" fixed="right">
         <template slot-scope="scope">
           <el-button
             :id="`doDownload_`+scope.$index"
             type="text"
             @click="doDownload(scope.row.parentId, scope.row.versionNum, scope.row.modelAddress)"
           >下载</el-button>
+          <el-dropdown>
+            <el-button
+              type="text"
+              style="margin-left: 10px;"
+              @click.stop="()=>{}"
+            >部署<i class="el-icon-arrow-down el-icon--right" />
+            </el-button>
+            <el-dropdown-menu slot="dropdown">
+              <el-dropdown-item
+                @click.native="doServing(scope.row, 'onlineServing')"
+              >
+                <el-button
+                  type="text"
+                >在线服务</el-button>
+              </el-dropdown-item>
+              <el-dropdown-item
+                @click.native="doServing(scope.row, 'batchServing')"
+              >
+                <el-button
+                  type="text"
+                >批量部署</el-button>
+              </el-dropdown-item>
+            </el-dropdown-menu>
+          </el-dropdown>
           <el-button :id="`doDelete`+scope.$index" type="text" @click="doDelete(scope.row.id)">删除</el-button>
         </template>
       </el-table-column>
@@ -73,7 +97,7 @@
             v-if="refreshFlag"
             ref="upload"
             action="fakeApi"
-            accept=".zip, .pb, .h5, .ckpt, .pkl, .pth, .weight, .caffemodel, .pt"
+            accept=".zip,.pb,.h5,.ckpt,.pkl,.pth,.weight,.caffemodel,.pt"
             :acceptSize="modelConfig.uploadFileAcceptSize"
             :acceptSizeFormat="uploadSizeFomatter"
             list-type="text"
@@ -82,6 +106,7 @@
             :show-file-count="false"
             :params="uploadParams"
             :auto-upload="true"
+            :filters="uploadFilters"
             :onRemove="handleRemove"
             @uploadStart="uploadStart"
             @uploadSuccess="uploadSuccess"
@@ -109,7 +134,7 @@ import cdOperation from '@crud/CD.operation';
 import pagination from '@crud/Pagination';
 import UploadInline from '@/components/UploadForm/inline';
 import UploadProgress from '@/components/UploadProgress';
-import { getUniqueId, downloadZipFromObjectPath, uploadSizeFomatter } from '@/utils';
+import { getUniqueId, downloadZipFromObjectPath, uploadSizeFomatter, invalidFileNameChar } from '@/utils';
 import { modelConfig } from '@/config';
 
 const defaultForm = {
@@ -159,6 +184,7 @@ export default {
         {color: '#e6a23c', percentage: 80},
         {color: '#67c23a', percentage: 100},
       ],
+      uploadFilters: [invalidFileNameChar],
       modelConfig,
     };
   },
@@ -256,6 +282,18 @@ export default {
         },
         () => {},
       );
+    },
+    doServing(model, type) {
+      this.$router.push({
+        name: 'CloudServingForm',
+        query: { type },
+        params: {
+          from: 'model',
+          modelId: model.parentId,
+          modelAddress: model.modelAddress,
+          modelResource: 0,
+        },
+      });
     },
     uploadSizeFomatter,
   },

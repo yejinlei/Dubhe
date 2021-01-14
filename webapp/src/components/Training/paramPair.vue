@@ -1,4 +1,4 @@
-/** Copyright 2020 Zhejiang Lab. All Rights Reserved.
+/** Copyright 2020 Tianshu AI Platform. All Rights Reserved.
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 * you may not use this file except in compliance with the License.
@@ -22,7 +22,7 @@
     :model="item"
   >
     <el-form-item
-      :label="'运行参数' + (index + 1)"
+      :label="label + (index + 1)"
       class="param-pair-item"
       prop="key"
       :rules="keyRule"
@@ -83,6 +83,10 @@ export default {
     item: {
       type: Object,
       default: () => ({}),
+    },
+    label: {
+      type: String,
+      required: true,
     },
     labelWidth: {
       type: String,

@@ -1,4 +1,4 @@
-/** Copyright 2020 Zhejiang Lab. All Rights Reserved.
+/** Copyright 2020 Tianshu AI Platform. All Rights Reserved.
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 * you may not use this file except in compliance with the License.
@@ -43,3 +43,15 @@ export const modelOfficial = [
     'modelSelect': '暂无模型数据',
   },
 ];
+
+// 镜像管理相关参数
+export const IMAGE_TABS = {
+  TRAIN: '0',       // 训练镜像
+  PRESET: '1',      // 训练预置镜像
+  NOTEBOOK: '2',    // notebook镜像
+};
+
+export const IMAGE_PROJECT_TYPE = {
+  TRAIN: 1,    // 训练镜像和预置镜像类型
+  NOTEBOOK: 0, // notebook镜像类型
+};

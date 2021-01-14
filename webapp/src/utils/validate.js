@@ -1,4 +1,4 @@
-/** Copyright 2020 Zhejiang Lab. All Rights Reserved.
+/** Copyright 2020 Tianshu AI Platform. All Rights Reserved.
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 * you may not use this file except in compliance with the License.
@@ -21,6 +21,7 @@
 import { isPlainObject } from 'lodash';
 import { ValidationProvider, ValidationObserver, extend } from 'vee-validate';
 import { required } from 'vee-validate/dist/rules';
+import { stringIsValidPythonVariable } from './utils';
 
 // 全站名称统一为中文、英文、数字，下划线和中划线
 const isValidName = value => {
@@ -29,6 +30,22 @@ const isValidName = value => {
 
 const isValidNameWithHyphen = value => {
   return /^[\u4E00-\u9FA5A-Za-z0-9_-]+$/.test(value);
+};
+
+// 有效的病灶位置信息
+const isValidLesionSliceNumber = value => {
+  // 数字开头，后面接`,数字`结束，重复0或任意次
+  return /^[1-9][0-9]*(,[0-9]+)*$/.test(value);
+};
+
+// 有效的病灶位置信息
+const isValidLesionId = value => {
+  // 必须为数字
+  if(isNaN(value)) return false;
+  // 必须不能有小数点
+  if(String(value).indexOf('.') > -1) return false;
+  // 数字长度限制
+  return value < 1000000000 && value > 0;
 };
 
 extend('required', {
@@ -47,6 +64,18 @@ extend('validNameWithHyphen', {
   validate: isValidNameWithHyphen,
   message: (_, params) => {
     return `${params._field_}仅支持中文、英文、数字、下划线和中划线`;
+  },
+});
+extend('validateLesionSliceNumber', {
+  validate: isValidLesionSliceNumber,
+  message: () => {
+    return `层级间通过,分割`;
+  },
+});
+extend('validateLesionId', {
+  validate: isValidLesionId,
+  message: () => {
+    return `病灶 id 必须是整数`;
   },
 });
 
@@ -124,6 +153,12 @@ export function isvalidPhone(phone) {
 // 视频格式校验，目前只支持 .mp4,.avi,.mkv,.mov,.webm,.wmv
 export function isValidVideo(name) {
   const reg = /\.(mp4|avi|mkv|mov|webm|wmv)$/;
+  return reg.test(name);
+}
+
+// 文本格式校验，目前支持 .txt
+export function isValidText(name) {
+  const reg = /\.(txt)$/;
   return reg.test(name);
 }
 
@@ -270,20 +305,34 @@ export function validateRunCommand(rule, value, callback) {
   }
 }
 
+const isInputEmpty = value => {
+  return value === '' || value === null;
+};
+
+export function pythonKeyValidator(errorMsg) {
+  return (rule, value, callback) => {
+    if (!isInputEmpty(value) && !stringIsValidPythonVariable(value)) {
+      callback(new Error(errorMsg || '参数key必须是合法变量名'));
+    } else {
+      callback();
+    }
+  };
+};
+
 // 校验标签组基本方法
 export const validateLabelsUtil = (value) => {
   if(!isPlainObject(value)) {
     return '标签不能为空';
   }
   if(!value.name) {
-    return '标签名称不能为空';
-  } 
+    return '标签格式异常，请检查';
+  }
   if(!value.color) {
     return '标签颜色不能为空';
-  } 
+  }
   if(!/^#[0-9A-F]{6}$/i.test(value.color)) {
     return '标签颜色格式不对';
-  } 
+  }
     return '';
 };
 

@@ -1,4 +1,4 @@
-/** Copyright 2020 Zhejiang Lab. All Rights Reserved.
+/** Copyright 2020 Tianshu AI Platform. All Rights Reserved.
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 * you may not use this file except in compliance with the License.
@@ -89,7 +89,7 @@
             </el-option>
           </el-select>
           <div class="tc" style="margin-top: 8px;">
-            <el-button type="text" @click="handleCancel">取消</el-button>
+            <el-button @click="handleCancel">取消</el-button>
             <el-button type="primary" @click="handleOk">确定</el-button>
           </div>
           <i slot="reference" class="el-icon-edit primary cp dib" />

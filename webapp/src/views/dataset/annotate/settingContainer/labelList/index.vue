@@ -1,4 +1,4 @@
-/** Copyright 2020 Zhejiang Lab. All Rights Reserved.
+/** Copyright 2020 Tianshu AI Platform. All Rights Reserved.
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 * you may not use this file except in compliance with the License.
@@ -17,8 +17,8 @@
 <template>
   <div v-if="labels.length" class="mb-10">
     <div class="flex flex-between flex-wrap flex-vertical-align">
-      <el-form-item :label="labelsTitle" style=" max-width: 39.9%; padding: 0; margin-bottom: 0;" />
-      <SearchLabel style="padding-bottom: 10px;" @change="handleSearch" />
+      <el-form-item v-show="showLabel" :label="labelsTitle" style=" max-width: 39.9%; padding: 0; margin-bottom: 0;" />
+      <SearchLabel ref="searchRef" style="padding-bottom: 10px;" @change="handleSearch" />
     </div>
     <div style="max-height: 200px; padding: 0 2.5px; overflow: auto;">
       <el-row :gutter="5" style="clear: both;">
@@ -45,7 +45,7 @@
 </template>
 
 <script>
-import { reactive, watch, computed } from '@vue/composition-api';
+import { reactive, watch, computed, ref } from '@vue/composition-api';
 
 import { colorByLuminance, replace } from '@/utils';
 import SearchLabel from '@/views/dataset/components/searchLabel';
@@ -74,6 +74,8 @@ export default {
   },
   setup(props) {
     const { annotations: rawAnnotations ,updateState, getColorLabel, findRowIndex, editLabel } = props;
+    const searchRef = ref(null);
+
     const state = reactive({
       annotations: rawAnnotations,
       labelData: props.labels,
@@ -97,6 +99,11 @@ export default {
 
     const labelsTitle = computed(() => {
       return `全部标签(${props.labels.length})`;
+    });
+
+    const showLabel = computed(() => {
+      if (!searchRef.value) return true;
+      return !searchRef.value.state.open;
     });
 
     const handleEditAnnotation = (item, event) => {
@@ -134,10 +141,12 @@ export default {
 
     return {
       state,
+      searchRef,
       labelsTitle,
       handleEditAnnotation,
       handleEditLabel,
       getStyle,
+      showLabel,
       handleSearch,
     };
   },

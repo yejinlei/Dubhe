@@ -1,4 +1,4 @@
-/** Copyright 2020 Zhejiang Lab. All Rights Reserved.
+/** Copyright 2020 Tianshu AI Platform. All Rights Reserved.
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 * you may not use this file except in compliance with the License.
@@ -46,6 +46,7 @@
         <el-tabs v-model="active" class="eltabs-inlineblock" @tab-click="crud.toQuery">
           <el-tab-pane id="tab_0" label="我的模型" name="0" />
           <el-tab-pane id="tab_1" label="预训练模型" name="1" />
+          <el-tab-pane id="tab_2" label="炼知模型" name="2" />
         </el-tabs>
       </div>
     </div>
@@ -124,6 +125,30 @@
             type="text"
             @click="doDelete(scope.row.id)"
           >删除</el-button>
+          <el-dropdown v-if="isPreset">
+            <el-button
+              type="text"
+              style="margin-left: 10px;"
+              @click.stop="()=>{}"
+            >部署<i class="el-icon-arrow-down el-icon--right" />
+            </el-button>
+            <el-dropdown-menu slot="dropdown">
+              <el-dropdown-item
+                @click.native="doServing(scope.row, 'onlineServing')"
+              >
+                <el-button
+                  type="text"
+                >在线服务</el-button>
+              </el-dropdown-item>
+              <el-dropdown-item
+                @click.native="doServing(scope.row, 'batchServing')"
+              >
+                <el-button
+                  type="text"
+                >批量部署</el-button>
+              </el-dropdown-item>
+            </el-dropdown-menu>
+          </el-dropdown>
         </template>
       </el-table-column>
     </el-table>
@@ -218,17 +243,17 @@
 </template>
 
 <script>
-import crudModel, { del } from "@/api/model/model";
+import crudModel, { del } from '@/api/model/model';
 import {
   list as getAlgorithmUsages,
   add as addAlgorithmUsage,
-} from "@/api/algorithm/algorithmUsage";
-import CRUD, { presenter, header, form, crud } from "@crud/crud";
-import BaseModal from "@/components/BaseModal";
-import rrOperation from "@crud/RR.operation";
-import pagination from "@crud/Pagination";
-import { downloadZipFromObjectPath, validateNameWithHyphen } from "@/utils";
-import AddModelDialog from "./components/addModelDialog";
+} from '@/api/algorithm/algorithmUsage';
+import CRUD, { presenter, header, form, crud } from '@crud/crud';
+import BaseModal from '@/components/BaseModal';
+import rrOperation from '@crud/RR.operation';
+import pagination from '@crud/Pagination';
+import { downloadZipFromObjectPath, validateNameWithHyphen } from '@/utils';
+import AddModelDialog from './components/addModelDialog';
 
 const defaultForm = {
   name: null,
@@ -264,7 +289,7 @@ export default {
           { max: 20, message: '长度在 20 个字符以内', trigger: 'blur' },
           {
             validator: validateNameWithHyphen,
-            trigger: ["blur", "change"],
+            trigger: ['blur', 'change'],
           },
         ],
         frameType: [
@@ -277,7 +302,7 @@ export default {
           {
             required: true,
             message: '请输入模型类别',
-            trigger: ["blur", "change"],
+            trigger: ['blur', 'change'],
           },
         ],
         modelDescription: [
@@ -286,7 +311,7 @@ export default {
         ],
       },
       algorithmUsageList: [],
-      active: "0",
+      active: '0',
     };
   },
   computed: {
@@ -368,7 +393,7 @@ export default {
       const msg = this.isCustom
         ? `此操作将下载 ${name} 模型的 ${versionNum} 版本, 是否继续?`
         : `此操作将下载预训练模型 ${name}, 是否继续?`;
-      this.$confirm(msg, "请确认").then(
+      this.$confirm(msg, '请确认').then(
         () => {
           const url = /^\//.test(modelAddress)
             ? modelAddress
@@ -381,6 +406,18 @@ export default {
         },
         () => {},
       );
+    },
+    doServing(model, type) {
+      this.$router.push({
+        name: 'CloudServingForm',
+        query: { type },
+        params: {
+          from: 'model',
+          modelId: model.id,
+          modelResource: 1,
+          modelAddress: model.modelAddress,
+        },
+      });
     },
     [CRUD.HOOK.beforeRefresh]() {
       this.crud.query.modelResource = Number(this.active);

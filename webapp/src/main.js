@@ -1,4 +1,4 @@
-/** Copyright 2020 Zhejiang Lab. All Rights Reserved.
+/** Copyright 2020 Tianshu AI Platform. All Rights Reserved.
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 * you may not use this file except in compliance with the License.
@@ -19,6 +19,8 @@ import Element from 'element-ui';
 import VueCompositionApi from '@vue/composition-api';
 // 快捷键
 import VueHotkey from 'v-hotkey';
+import PortalVue from 'portal-vue';
+
 // global css
 import 'normalize.css/normalize.css';
 
@@ -47,6 +49,7 @@ Vue.component(IconFont.name, IconFont);
 // 表单验证
 Vue.component('ValidationProvider', ValidationProvider);
 Vue.component('ValidationObserver', ValidationObserver);
+Vue.use(PortalVue);
 
 Object.keys(directives).forEach(key => {
   Vue.directive(key, directives[key]);

@@ -1,4 +1,4 @@
-/** Copyright 2020 Zhejiang Lab. All Rights Reserved.
+/** Copyright 2020 Tianshu AI Platform. All Rights Reserved.
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 * you may not use this file except in compliance with the License.
@@ -55,11 +55,10 @@
           @click="downloadTrainLog"
         >下载{{ isDistributed ? '全部' : '' }}运行日志</el-button>
       </div>
-      <log-container
-        v-if="!isDistributed && item.trainStatus !== 7"
+      <pod-log-container
+        v-if="!isDistributed && item.trainStatus !== 7 && logPodName"
         ref="logContainer"
-        :log-getter="getTrainLog"
-        :options="logOptions"
+        :pod-name="logPodName.podName"
         class="log single-log"
       />
       <div v-else-if="podList.length" id="distributed-log-wrapper">
@@ -77,11 +76,10 @@
         </el-tabs>
         <el-button class="fr log-download-btn mb-20" @click="() => doDownloadPodLog()">下载节点运行日志</el-button>
         <keep-alive>
-          <log-container
+          <pod-log-container
             :key="activePod.podName"
             ref="podLogContainer"
-            :log-getter="getPodLog"
-            :options="podLogOption"
+            :pod-name="activePod.podName"
             class="log distributed-log"
           />
         </keep-alive>
@@ -107,14 +105,14 @@ import {
   batchDownloadPodLog,
   countPodLogs,
 } from '@/api/system/pod';
-import LogContainer from '@/components/LogContainer';
+import podLogContainer from '@/components/LogContainer/podLogContainer';
 import JobDetail from './jobDetail';
 
 const LOG_DOWNLOAD_LINES_THRESHOLD = 100000; // 暂定阈值 100K 条
 
 export default {
   name: 'JobDrawer',
-  components: { JobDetail, LogContainer },
+  components: { JobDetail, podLogContainer },
   filters: {
     minute2Time(totalMinutes) {
       let remainMinutes = totalMinutes || 0;
@@ -145,20 +143,20 @@ export default {
     isDistributed() {
       return this.item.trainType === 1;
     },
+    logPodName() {
+      return this.podList[0];
+    },
     activePod() {
       return this.podList.find(pod => pod.podName === this.activeLogTab) || {};
     },
     podLogOption() {
       return { podName: this.activePod.podName };
     },
-    logOptions() {
-      return { jobId: this.item.id };
-    },
     logErrorMsg() {
       if (this.item.trainStatus === 7) {
         return this.item.trainMsg;
       }
-      return null;
+      return '暂无节点值';
     },
   },
   methods: {
@@ -247,15 +245,15 @@ export default {
           this.activeLogTab = this.podList[0].podName;
           this.podLogLoadTags = {};
           this.$nextTick(() => {
-            this.$refs.podLogContainer.reset(true);
+            this.$refs.podLogContainer.reset();
             this.podLogLoadTags[this.activeLogTab] = true;
           });
         }
         return;
       }
-      if (this.item.trainStatus !== 7) {
+      if (this.item.trainStatus !== 7 && this.podList.length) {
         this.$nextTick(() => {
-          this.$refs.logContainer.reset(true);
+          this.$refs.logContainer.reset();
         });
       }
     },
@@ -266,7 +264,7 @@ export default {
     onLogTabClick() {
       if (!this.podLogLoadTags[this.activeLogTab]) {
         this.$nextTick(() => {
-          this.$refs.podLogContainer.reset(true);
+          this.$refs.podLogContainer.reset();
           this.podLogLoadTags[this.activeLogTab] = true;
         });
       }
@@ -304,8 +302,6 @@ export default {
   width: 90%;
   height: 500px;
   margin: 40px 5%;
-  overflow: auto;
-  border: #ccc solid 1px;
 }
 
 .log-tabs {
@@ -313,7 +309,7 @@ export default {
 }
 
 .distributed-log {
-  margin-top: 0;
+  margin-top: 60px;
 }
 
 .log-download-btn {

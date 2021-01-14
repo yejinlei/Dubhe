@@ -1,4 +1,4 @@
-/** Copyright 2020 Zhejiang Lab. All Rights Reserved.
+/** Copyright 2020 Tianshu AI Platform. All Rights Reserved.
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 * you may not use this file except in compliance with the License.
@@ -13,34 +13,6 @@
 * limitations under the License.
 * =============================================================
 */
-
-// minIO 参数配置
-export const minIO = {
-  development: {
-    config: {
-      endPoint: '', // MinIO 服务地址
-      port: 9000,
-      useSSL: false,
-    },
-    bucketName: 'dubhe-dev',
-  },
-  test: {
-    config: {
-      endPoint: '',
-      port: 9000,
-      useSSL: false,
-    },
-    bucketName: 'dubhe-test',
-  },
-  production: {
-    config: {
-      endPoint: '',
-      port: 9000,
-      useSSL: false,
-    },
-    bucketName: 'dubhe-prod',
-  },
-};
 
 // 训练管理模块参数配置
 export const trainConfig = {
@@ -62,4 +34,14 @@ export const imageConfig = {
 // 模型管理模块参数配置
 export const modelConfig = {
   uploadFileAcceptSize: 0, // 上传模型文件大小限制，单位为 MB，0 表示不限制大小
+};
+
+// 云端 Serving 模块参数配置
+export const servingConfig = {
+  onlineServingNodeSumMax: 10,
+};
+
+// 模型炼知模块参数配置
+export const atlasConfig = {
+  uploadFileAcceptSize: 5, // 上传度量图文件大小限制，单位为 MB，0 表示不限制大小
 };

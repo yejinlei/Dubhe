@@ -1,4 +1,4 @@
-/** Copyright 2020 Zhejiang Lab. All Rights Reserved.
+/** Copyright 2020 Tianshu AI Platform. All Rights Reserved.
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 * you may not use this file except in compliance with the License.
@@ -15,7 +15,7 @@
 */
 
 <template>
-  <div>
+  <div class="job-detail-container">
     <el-row class="row">
       <el-col :xl="isJob ? 12 : 24" :span="24">
         <div class="label">名称</div>
@@ -71,10 +71,28 @@
         <div class="label">镜像版本</div>
         <div class="text">{{ item.imageTag }}</div>
       </el-col>
-      <el-col :xl="12" :span="24">
+      <el-col
+        v-if="[0, 1].includes(item.modelResource)"
+        :xl="12"
+        :span="24"
+      >
         <div class="label">模型名称</div>
-        <div class="text">{{ item.modelName }}</div>
+        <div class="text">{{ trainModel.name }}</div>
       </el-col>
+      <template
+        v-if="item.modelResource === 2"
+      >
+        <el-col :xl="12" :span="24">
+          <div class="label">教师模型列表</div>
+          <div class="text">{{ teacherModelNames }}</div>
+        </el-col>
+        <el-col :xl="12" :span="24">
+          <div class="label">学生模型列表</div>
+          <div class="text">{{ studentModelNames }}</div>
+        </el-col>
+      </template>
+    </el-row>
+    <el-row class="row mt-0">
       <el-col v-if="!isParam" :span="12">
         <div class="label">日志下载</div>
         <div class="text">
@@ -154,6 +172,7 @@
 <script>
 import { convertMapToList, downloadZipFromObjectPath } from '@/utils';
 import { createNotebook, getNotebookAddress } from '@/api/development/notebook';
+import { getTrainModel } from '@/api/trainingJob/job';
 import pathSelectDialog from './pathSelectDialog';
 
 export default {
@@ -178,6 +197,9 @@ export default {
         0: '普通训练',
         1: '分布式训练',
       },
+      modelList: [],
+      teacherModelList: [],
+      studentModelList: [],
     };
   },
   computed: {
@@ -223,11 +245,31 @@ export default {
           return [];
       }
     },
+    trainModel() {
+      return this.modelList.length ? this.modelList[0] : {};
+    },
+    teacherModelNames() {
+      return this.teacherModelList.map(model => model.name).join(', ');
+    },
+    studentModelNames() {
+      return this.studentModelList.map(model => model.name).join(', ');
+    },
   },
   watch: {
     item: {
-      handler(newItem) {
-        this.runParamsList = convertMapToList(newItem.runParams);
+      async handler(item) {
+        this.runParamsList = convertMapToList(item.runParams);
+        if (item.modelResource === null || item.modelResource === undefined) { return; }
+        const { modelList, teacherModelList, studentModelList } = await getTrainModel({
+          modelResource: item.modelResource,
+          modelId: item.modelId || undefined,
+          modelBranchId: item.modelBranchId || undefined,
+          teacherModelIds: item.teacherModelIds || undefined,
+          studentModelIds: item.studentModelIds || undefined,
+        });
+        this.modelList = modelList || [];
+        this.teacherModelList = teacherModelList || [];
+        this.studentModelList = studentModelList || [];
       },
       immediate: true,
     },
@@ -250,7 +292,7 @@ export default {
       downloadZipFromObjectPath(filePath, fileName, { 
         flat: true,
         filter: afterPathList.length ? result => result.filter(item => {
-          return afterPathList.some(path => item.name.startsWith(`${filePath}/${path}/`));
+          return afterPathList.some(path => item.name.startsWith(`${filePath}/${path}/`) || item.name === `${filePath}/${path}`);
         }) : null, 
       });
       this.$message({
@@ -304,3 +346,11 @@ export default {
   },
 };
 </script>
+
+<style lang="scss" scoped>
+.job-detail-container {
+  .label {
+    width: 90px;
+  }
+}
+</style>

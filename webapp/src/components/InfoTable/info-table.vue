@@ -1,4 +1,4 @@
-/** Copyright 2020 Zhejiang Lab. All Rights Reserved.
+/** Copyright 2020 Tianshu AI Platform. All Rights Reserved.
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 * you may not use this file except in compliance with the License.
@@ -34,6 +34,7 @@
     </el-table>
 
     <el-pagination
+      v-if="showPagination"
       :style="`text-align:${align};margin-top: 8px;`"
       layout="total, prev, pager, next, sizes"
       v-bind="pageAttrs"
@@ -78,6 +79,11 @@ export default {
       type: String,
       default: 'center',
     },
+    showPagination: {
+      type: Boolean,
+      default: true,
+    },
+    dataSource: Array,
     actionRef: Function,
   },
   setup(props) {
@@ -129,7 +135,6 @@ export default {
       });
     };
 
-    // 根据数据集 id 查询版本列表
     const queryList = async(cfg = {}) => {
       if (state.loading) {
         return;
@@ -153,17 +158,29 @@ export default {
     };
 
     onMounted(() => {
-      queryList();
-      if (typeof actionRef === 'function') {
-        actionRef().value = {
-          refresh: queryList,
-        };
+      // 首先判断是否为异步请求
+      if(typeof request === 'function') {
+        queryList();
+        if (typeof actionRef === 'function') {
+          actionRef().value = {
+            refresh: queryList,
+          };
+        }
+      } else if(Array.isArray(props.dataSource)) {
+        // 检测是否为静态数据源
+        setData(props.dataSource);
       }
     });
 
     watch(() => pageInfo.pageSize, () => {
       setPageInfo({ ...pageInfo, current: 1 });
       queryList();
+    }, {
+      lazy: true,
+    });
+
+    watch(() => props.dataSource, (next) => {
+      setData(next);
     }, {
       lazy: true,
     });

@@ -1,4 +1,4 @@
-/** Copyright 2020 Zhejiang Lab. All Rights Reserved.
+/** Copyright 2020 Tianshu AI Platform. All Rights Reserved.
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 * you may not use this file except in compliance with the License.
@@ -49,6 +49,27 @@ export default {
       type: Boolean,
       default: true,
     },
+    dataType: {
+      type: String,
+      default: "visual",
+    },
+    /**
+     * filters 数组要求：
+     * 1. 成员需要有一个 judge 方法返回布尔值，来判断是否需要过滤文件
+     * 2. 成员需要有一个 message 属性，用来展示提示信息
+     */
+    filters: {
+      type: Array,
+      default: () => ([]),
+      validator: value => {
+        for(const filter of value) {
+          if (!filter.message || typeof filter.judge !== 'function') {
+            return false;
+          }
+        }
+        return true;
+      },
+    },
   },
   data() {
     return {
@@ -72,46 +93,46 @@ export default {
       this.$refs.uploader.clearFiles();
       this.lenOfFileList = 0;
     },
+    /**
+     * 标准文件过滤入口，返回布尔值
+     * @param {*} file 被过滤文件
+     * @param {*} fileList 文件列表
+     * @param {Boolean} bool 如果布尔值为 true 则过滤改文件
+     * @param {*} message Message 信息
+     * @return {Boolean} 返回传入的布尔值
+     */
+    addFileFilter(file, fileList, bool, message) {
+      if (bool) {
+        fileList.splice(fileList.indexOf(file), 1);
+        if (!msgInstance) {
+          msgInstance = Message.info({
+            message,
+            onClose: this.onMessageClose,
+          });
+        }
+      }
+      return bool;
+    },
     fileChange(file, fileList) {
       // 根据后缀名进行格式匹配
       const acceptTypes = this.accept.split(',');
       const extname = path.extname(file.raw.name);
       const mimeType = acceptTypes.includes(extname.toLowerCase());
 
-      if (!mimeType) {
-        fileList.splice(fileList.indexOf(file), 1);
-        if (!msgInstance) {
-          Message.info({
-            message: `文件格式不支持`,
-            onClose: this.onMessageClose,
-          });
-        }
-        return;
-      }
+      const addFilter = this.addFileFilter.bind(this, file, fileList);
+
+      if (addFilter(!mimeType, '文件格式不支持')) { return; };
+
       // accept 支持传入 0 代表不限制大小
       const isOverSize = this.acceptSize !== 0 && (file.size / (1024 * 1024)) > this.acceptSize;
-      if (isOverSize) {
-        fileList.splice(fileList.indexOf(file), 1);
-        if (!msgInstance) {
-          msgInstance = Message.info({
-            message: `不能添加大于${this.acceptSize}MB的文件`,
-            onClose: this.onMessageClose,
-          });
-        }
-        return;
-      }
+      if (addFilter(isOverSize, `不能添加大于${this.acceptSize}MB的文件`)) { return; }
 
       for (const item of fileList.slice(0, fileList.length - 1)) {
-        if (item.name === file.name) {
-          fileList.splice(fileList.indexOf(file), 1);
-          if (!msgInstance) {
-            msgInstance = Message.info({
-              message: `不能添加文件名相同的文件`,
-              onClose: this.onMessageClose,
-            });
-          }
-          return false;
-        }
+        if (addFilter(item.name === file.name, '不能添加文件名相同的文件')) { return; };
+      }
+
+      for (const filter of this.filters) {
+        if (addFilter(filter.judge(file, fileList), filter.message)) { return; };
       }
 
       this.lenOfFileList = fileList.length;
@@ -160,24 +181,24 @@ export default {
           class='upload-field'
           limit={this.limit}
           multiple
-          list-type={this.lenOfFileList>100? 'text' : 'picture'}
+          list-type={this.lenOfFileList > 100 || this.dataType === "text" ? 'text' : 'picture'}
           auto-upload={false}
           disabled={this.uploading}
           {...uploadProps}
         >
-          <el-button disabled={this.uploading} size='mini' icon='el-icon-upload'>上传文件</el-button>
+          <el-button disabled={this.uploading || this.$attrs.disabled} size='mini' icon='el-icon-upload'>上传文件</el-button>
           <div slot='tip' class='flex f1 flex-between' style='margin-left: 20px;'>
             <div class='upload-tip'>
               <span>文件格式: { this.acceptFormatStr }</span>
               {
                  this.acceptSize > 0 && (
-                   <span>, 文件不大于 { this.acceptSizeFormat(this.acceptSize) }</span>
+                   <span>, 单个文件不大于 { this.acceptSizeFormat(this.acceptSize) }</span>
                  )
               }
             </div>
             {
               this.showFileCount && (
-                <span class='upload-chosen-tip'>已选择{ this.lenOfFileList }张</span>
+                <span class='upload-chosen-tip'>已选择{ this.lenOfFileList }个</span>
               )
             }
           </div>

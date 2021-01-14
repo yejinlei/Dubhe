@@ -1,4 +1,4 @@
-/** Copyright 2020 Zhejiang Lab. All Rights Reserved.
+/** Copyright 2020 Tianshu AI Platform. All Rights Reserved.
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 * you may not use this file except in compliance with the License.
@@ -140,5 +140,19 @@ export const findAncestorSvg = (node, event) => {
 
 export const raise = (arr, raiseIndex) => {
   return ([...arr.slice(0, raiseIndex), ...arr.slice(raiseIndex + 1), arr[raiseIndex]]);
+};
+
+export const promisifyFileReader = (file, encoding) => {
+  const reader = new FileReader();
+  return new Promise((resolve, reject) => {
+    reader.onerror = (err) => {
+      reader.abort();
+      reject(new Error(err));
+    };
+    reader.onload = () => {
+      resolve(reader.result);
+    };
+    reader.readAsText(file, encoding);
+  });
 };
 

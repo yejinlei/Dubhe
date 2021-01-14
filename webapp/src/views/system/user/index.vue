@@ -252,7 +252,7 @@ export default {
     },
     afterErrorMethod() {
       // 恢复select
-      this.crud.form.roleId = crud.form.roles[0]?.id || '';
+      this.crud.form.roleId = this.crud.form.roles[0]?.id || '';
     },
     // 新增与编辑前做的操作
     [CRUD.HOOK.afterToCU]() {

@@ -26,8 +26,9 @@ cd dubhe-web
 
 根据需要修改如下配置文件
 ```
-config/index.js
-settings.js
+.env.mock
+.env.development
+.env.test
 .env.production
 ```
 

@@ -235,3 +235,18 @@
   margin-top: 20px;
   overflow-y: scroll;
 }
+
+pre {
+  margin: 0;
+  font-family: Helvetica Neue, Helvetica, PingFang SC, Hiragino Sans GB, Microsoft YaHei, Arial, sans-serif;
+  font-size: 1em;
+}
+
+.command-preview {
+  min-height: 80px;
+  padding: 0 10px;
+  line-height: 25px;
+  color: rgb(204, 204, 204);
+  background: rgb(30, 30, 30);
+  border-radius: 5px;
+}

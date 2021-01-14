@@ -1,4 +1,4 @@
-/** Copyright 2020 Zhejiang Lab. All Rights Reserved.
+/** Copyright 2020 Tianshu AI Platform. All Rights Reserved.
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 * you may not use this file except in compliance with the License.
@@ -188,6 +188,7 @@
             :params="uploadParams"
             :auto-upload="true"
             :hash="false"
+            :filters="uploadFilters"
             :limit="1"
             :on-remove="onFileRemove"
             @uploadStart="uploadStart"
@@ -263,7 +264,7 @@
 </template>
 
 <script>
-import { downloadZipFromObjectPath, validateNameWithHyphen, getUniqueId, uploadSizeFomatter } from '@/utils';
+import { downloadZipFromObjectPath, validateNameWithHyphen, getUniqueId, uploadSizeFomatter, invalidFileNameChar } from '@/utils';
 import CRUD, { presenter, header, form, crud } from '@crud/crud';
 import cdOperation from '@crud/CD.operation';
 import rrOperation from '@crud/RR.operation';
@@ -373,6 +374,7 @@ export default {
         {color: '#e6a23c', percentage: 80},
         {color: '#67c23a', percentage: 100},
       ],
+      uploadFilters: [invalidFileNameChar],
     };
   },
   computed: {

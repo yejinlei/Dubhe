@@ -1,4 +1,4 @@
-/** Copyright 2020 Zhejiang Lab. All Rights Reserved.
+/** Copyright 2020 Tianshu AI Platform. All Rights Reserved.
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 * you may not use this file except in compliance with the License.
@@ -99,13 +99,14 @@
             :show-file-count="false"
             :params="uploadParams"
             :auto-upload="true"
+            :filters="uploadFilters"
             :onRemove="handleRemove"
             @uploadStart="uploadStart"
             @uploadSuccess="uploadSuccess"
             @uploadError="uploadError"
           />
           <upload-progress 
-            v-if="loading" 
+            v-if="uploading" 
             :progress="progress" 
             :color="customColors" 
             :status="status" 
@@ -128,7 +129,7 @@ import { add as addModel } from '@/api/model/model';
 import { list as getAlgorithmUsages, add as addAlgorithmUsage } from '@/api/algorithm/algorithmUsage';
 import UploadInline from '@/components/UploadForm/inline';
 import UploadProgress from '@/components/UploadProgress';
-import { getUniqueId, validateNameWithHyphen, uploadSizeFomatter } from '@/utils';
+import { getUniqueId, validateNameWithHyphen, uploadSizeFomatter, invalidFileNameChar } from '@/utils';
 import { modelConfig } from '@/config';
 
 const defaultForm = {
@@ -189,7 +190,8 @@ export default {
       },
       algorithmUsageList: [],
       refreshFlag: true,
-      loading: false,
+      uploading: false,
+      submitting: false,
       size: 0,
       progress: 0,
       customColors: [
@@ -197,6 +199,7 @@ export default {
         {color: '#e6a23c', percentage: 80},
         {color: '#67c23a', percentage: 100},
       ],
+      uploadFilters: [invalidFileNameChar],
       modelConfig,
     };
   },
@@ -206,6 +209,9 @@ export default {
     },
     user() {
       return this.$store.getters.user;
+    },
+    loading() {
+      return this.uploading || this.submitting;
     },
   },
   methods: {
@@ -221,7 +227,8 @@ export default {
     },
     onDialogClose() {
       this.reset();
-      this.loading = false;
+      this.uploading = false;
+      this.submitting = false;
       this.$emit('addDone', true);
     },
     reset() {
@@ -241,13 +248,13 @@ export default {
       }
     },
     handleRemove() {
-      this.loading = false;
+      this.uploading = false;
       this.form2.modelAddress = null;
       this.$refs.modelAddress.validate('manual');
     },
     uploadStart(files) {
       this.updateImagePath();
-      [ this.loading, this.size, this.progress ] = [ true, files.size, 0 ];
+      [ this.uploading, this.size, this.progress ] = [ true, files.size, 0 ];
     },
     onSetProgress(val) {
       this.progress += val;
@@ -255,13 +262,13 @@ export default {
     uploadSuccess(res) {
       this.progress = 100;
       setTimeout(() => {
-        this.loading = false;
+        this.uploading = false;
       }, 1000);
       this.form2.modelAddress = res[0].data.objectName;
       this.$refs.modelAddress.validate('manual');
     },
     uploadError() {
-      this.loading = false;
+      this.uploading = false;
       this.$message({
         message: '上传文件失败',
         type: 'error',
@@ -285,8 +292,9 @@ export default {
     doAddVersion() {
       this.$refs.form2.validate(async valid => {
         if (valid) {
+          this.submitting = true;
           const params = { ...this.form2};
-          await addVersion(params);
+          await addVersion(params).finally(() => { this.submitting = false; });
           this.visible = false;
           this.$message({
             message: '模型版本上传成功',

@@ -1,4 +1,4 @@
-/** Copyright 2020 Zhejiang Lab. All Rights Reserved.
+/** Copyright 2020 Tianshu AI Platform. All Rights Reserved.
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@
   <div>
     <UploadForm
       action="fakeApi"
+      title="导入图片"
       :visible="uploadDialogVisible"
       :transformFile="withDimensionFile"
       :toggleVisible="handleClose"
@@ -33,13 +34,13 @@
           <!--tabs页和工具栏-->
           <div class="classify-tab">
             <el-tabs :value="lastTabName" @tab-click="handleTabClick">
-              <el-tab-pane label="未完成" name="unannotate" />
-              <el-tab-pane label="已完成" name="annotate" />
+              <el-tab-pane label="未完成" name="unfinished" />
+              <el-tab-pane label="已完成" name="finished" />
             </el-tabs>
             <div class="classify-button flex flex-between flex-vertical-align">
               <div class="row-left">
                 <el-button
-                  :disabled="lastTabName==='annotate'"
+                  :disabled="lastTabName==='finished'"
                   type="primary"
                   icon="el-icon-plus"
                   @click="openUploadDialog"
@@ -52,26 +53,34 @@
                   :loading="crud.delAllLoading"
                   :disabled="crud.selections.length === 0"
                   @click="toDelete(crud.selections)"
-                >删除
+                >
+                  删除
                 </el-button>
                 <el-button class="sorting-menu-trigger">
                   <SortingMenu :menuList="menuList" @sort="handleSort" />
                 </el-button>
               </div>
               <div class="row-right">
-                <el-checkbox v-model="checkAll" :indeterminate="isIndeterminate" :disabled="crud.data.length === 0" @change="handleCheckAllChange">{{ checkAll ? '取消全选' : '选择全部' }}</el-checkbox>
+                <el-checkbox 
+                  v-model="checkAll" 
+                  :indeterminate="isIndeterminate" 
+                  :disabled="crud.data.length === 0" 
+                  @change="handleCheckAllChange"
+                >
+                  {{ checkAll ? '取消全选' : '选择全部' }}
+                </el-checkbox>
                 <label class="classify-select-tip item__label">已选 {{ selectImgsId.length }} 张</label>
               </div>
             </div>
           </div>
           <div
-            v-if="lastTabName==='unannotate' && crud.page.total===0 && !crud.loading"
+            v-if="lastTabName==='unfinished' && crud.page.total===0 && !crud.loading"
           >
             <InfoCard :handleClick="openUploadDialog">
               <span slot="desc">点击添加图片</span>
             </InfoCard>
           </div>
-          <div v-if="lastTabName==='annotate' && crud.page.total===0 && !crud.loading">
+          <div v-if="lastTabName==='finished' && crud.page.total===0 && !crud.loading">
             <InfoCard>
               <i slot="image" class="el-icon-receiving" />
               <span slot="desc">
@@ -157,7 +166,7 @@
                 </el-col>
               </el-row>
             </div>
-            <div v-if="lastTabName==='annotate'" class="label-switch-tool">
+            <div v-if="lastTabName==='finished'" class="label-switch-tool">
               <label class="label-style">标注类型标签</label>
               <el-switch v-model="typeSwitch" :width="45" class="label-switch" @change="switchLabelTag" />
             </div>
@@ -185,7 +194,8 @@ import { colorByLuminance } from '@/utils';
 import { queryDataEnhanceList, detail } from '@/api/preparation/dataset';
 
 import { transformFile, transformFiles, getImgFromMinIO, dataEnhanceMap, withDimensionFile, fileCodeMap } from '@/views/dataset/util';
-import crudDataFile, { list, del , submit } from '@/api/preparation/datafile';
+import { labelGroupTypeCodeMap } from '@/views/labelGroup/util';
+import crudDataFile, { list, del, submit } from '@/api/preparation/datafile';
 import { getAutoLabels, getLabels, createLabel, editLabel } from '@/api/preparation/datalabel';
 import { batchFinishAnnotation } from '@/api/preparation/annotation';
 import CRUD, { presenter, header, crud } from '@crud/crud';
@@ -208,7 +218,7 @@ export default {
   cruds() {
     const id = this.parent.$route.params.datasetId;
     const crudObj = CRUD({ title: '数据分类', crudMethod: { ...crudDataFile }});
-    crudObj.params = { 'datasetId': id, 'status': fileCodeMap.UNCOMPLETED };
+    crudObj.params = { 'datasetId': id, 'status': fileCodeMap.UNFINISHED };
     crudObj.page.size = 30;
     return crudObj;
   },
@@ -224,10 +234,10 @@ export default {
       datasetId: 0,
       datasetInfo: {},
       uploadDialogVisible: false,
-      lastTabName: 'unannotate',
+      lastTabName: 'unfinished',
       crudStatusMap: {
-        'unannotate': [fileCodeMap.UNCOMPLETED],
-        'annotate': [fileCodeMap.COMPLETED],
+        'unfinished': [fileCodeMap.UNFINISHED],
+        'finished': [fileCodeMap.FINISHED],
       },
       newLabel: undefined,
       checkAll: false,
@@ -238,8 +248,8 @@ export default {
       name2CategoryId: {},
       // 选中列表
       commit: {
-        unannotate: [],
-        annotate: [],
+        unfinished: [],
+        finished: [],
       },
       systemLabels: [],
       showPicModal: false,
@@ -270,12 +280,12 @@ export default {
     this.datasetId = parseInt(this.$route.params.datasetId, 10);
     this.refreshLabel();
     Promise.all([
-      list({ 'datasetId': this.datasetId, 'status': [fileCodeMap.UNCOMPLETED] }),
-      list({ 'datasetId': this.datasetId, 'status': [fileCodeMap.COMPLETED] }),
+      list({ 'datasetId': this.datasetId, 'status': [fileCodeMap.UNFINISHED] }),
+      list({ 'datasetId': this.datasetId, 'status': [fileCodeMap.FINISHED] }),
     ])
-      .then(([unannotate, annotate]) => {
-        if (unannotate.result.length === 0 && annotate.result.length !== 0) {
-          this.lastTabName = 'annotate';
+      .then(([unfinished, finished]) => {
+        if (unfinished.result.length === 0 && finished.result.length !== 0) {
+          this.lastTabName = 'finished';
           this.crud.params.status = this.crudStatusMap[this.lastTabName];
           this.crud.toQuery();
         }
@@ -304,7 +314,7 @@ export default {
     },
     handleSort(command) {
       this.resetQuery();
-      this.crud.params.order = command === 1 ? 'name' : '';
+      this.crud.params.sort = command === 1 ? 'name' : '';
       this.crud.refresh();
     },
     // 根据文件 enhaneType 找到对应的增强标签
@@ -321,9 +331,8 @@ export default {
           tag: dataEnhanceMap[match.value],
         };
         return enhanceTag;
-      } 
-        return undefined;
-      
+      }
+      return undefined;
     },
     // 重置所有查询结果
     resetQuery() {
@@ -333,7 +342,7 @@ export default {
       this.crud.page.current = 1;
     },
     getSystemLabel() {
-      getAutoLabels().then(res => {
+      getAutoLabels(labelGroupTypeCodeMap.VISUAL).then(res => {
         const labels = res.map((item) => ({
           value: item.id,
           label: item.name,
@@ -382,7 +391,7 @@ export default {
       });
     },
     handleCheckAllChange(val) {
-      const {imgGallery} = this.$refs;
+      const { imgGallery } = this.$refs;
       if(!imgGallery) return false;
       if (val) {
         imgGallery.selectAll();
@@ -458,9 +467,9 @@ export default {
         });
       }
     },
-    uploadError() {
+    uploadError(err) {
       this.$message({
-        message: '上传文件失败',
+        message: err.message || '上传文件失败',
         type: 'error',
       });
     },

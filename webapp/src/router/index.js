@@ -19,11 +19,12 @@ import VueRouter from 'vue-router';
 import NProgress from 'nprogress'; // progress bar
 import 'nprogress/nprogress.css';// progress bar style
 import store from '@/store';
-import Config from '@/settings';
-import { userMenus } from '@/api/user';
 import { getToken } from '@/utils/auth'; // getToken from cookie
+import { updateTitle } from '@/utils';
 import MinioClient from '@/utils/minIO';
 import constantRoutes from './routes';
+import modulesRoutes from './modules';
+import systemRoute from './modules/system';
 
 const originalPush = VueRouter.prototype.push;
 VueRouter.prototype.push = function push(location, onResolve, onReject) {
@@ -46,31 +47,14 @@ const whiteList = [
   '/resetpassword',
 ];
 
-const filterAsyncRoute = (routes) => {
-  return routes.filter(route => {
-    if (route.component) {
-      if (route.component === 'Layout') {
-        route.component = () => import('@/layout/index');
-      } else {
-        const { component } = route;
-        route.component = () => import(/* webpackChunkName: "[request]" */ `@/views/${component}`);
-      }
-    }
-    if (route.children && route.children.length) {
-      route.children = filterAsyncRoute(route.children);
-    }
-    return true;
-  });
-};
 
 const loadUserMenus = (next, to) => {
-  userMenus().then(res => {
-    const asyncRoutes = filterAsyncRoute(res);
-    asyncRoutes.push({ path: '*', redirect: '/', hidden: true });
-    store.dispatch('app/addRoutes', asyncRoutes).then(() => {
-      router.addRoutes(asyncRoutes);
-      next({ ...to, replace: true });
-    });
+  const { roles } = store.getters.user;
+  const asyncRoutes = roles && roles.length && roles[0].permission === 'admin' ? modulesRoutes.concat(systemRoute) : modulesRoutes;
+  asyncRoutes.push({ path: '*', redirect: '/', hidden: true });
+  store.dispatch('app/addRoutes', asyncRoutes).then(() => {
+    router.addRoutes(asyncRoutes);
+    next({ ...to, replace: true });
   });
 };
 
@@ -78,7 +62,7 @@ const loadUserMenus = (next, to) => {
 NProgress.configure({ showSpinner: false });
 
 router.beforeEach((to, from, next) => {
-  document.title = to.meta.title ? `${to.meta.title} - ${Config.title}` : Config.title;
+  updateTitle(to.meta.title);
   to.meta.fromPath = from.path;
   NProgress.start();
   if (getToken()) {
@@ -90,7 +74,7 @@ router.beforeEach((to, from, next) => {
     if (to.path === '/login') {
       next({ path: '/' });
       NProgress.done();
-    } else if (!store.getters.user.username) { 
+    } else if (!store.getters.user.username) {
       // 登录状态刷新页面，重新拉取用户信息和菜单
       store.dispatch('GetInfo').then(() => {
         loadUserMenus(next, to);

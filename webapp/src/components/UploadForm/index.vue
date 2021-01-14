@@ -1,4 +1,4 @@
-/** Copyright 2020 Zhejiang Lab. All Rights Reserved.
+/** Copyright 2020 Tianshu AI Platform. All Rights Reserved.
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 * you may not use this file except in compliance with the License.
@@ -37,7 +37,7 @@ import { ref, reactive, watch } from '@vue/composition-api';
 
 import BaseModal from '@/components/BaseModal';
 import Form from './form';
-import { minIOUpload, hashify, getFileOutputPath } from './util';
+import { minIOUpload, renameFile, getFileOutputPath } from './util';
 
 export default {
   name: 'UploadDialog',
@@ -60,15 +60,20 @@ export default {
       type: Boolean,
       default: true,
     },
+    encode: {
+      type: Boolean,
+      default: false,
+    },
     toggleVisible: Function,
     request: Function,
     params: {
       type: Object,
       default: () => ({}),
     },
+    beforeUpload: Function,
   },
   setup(props, ctx) {
-    const { toggleVisible, request, transformFile } = props;
+    const { toggleVisible, request, transformFile, beforeUpload } = props;
     const formRef = ref(null);
     const state = reactive({
       visible: props.visible,
@@ -88,7 +93,7 @@ export default {
       // 重命名
       const renameFileList = fileList.map(file => ({
         ...file,
-        name: hashify(file.name, props.hash),
+        name: renameFile(file.name, { hash: props.hash, encode: props.encode }),
       }));
 
       if (!fileList || !fileList.length) {
@@ -97,9 +102,10 @@ export default {
 
       const uploadReqeust = request || minIOUpload;
 
-      state.uploading = true;
       // 开始调用上传接口
-      uploadReqeust && uploadReqeust({ ...props.params, fileList: renameFileList, transformFile }, handleUploadProgress)
+      const uploader = (result = {}) => {
+        state.uploading = true;
+        uploadReqeust({ ...props.params, fileList: renameFileList, transformFile, ...result }, handleUploadProgress)
         .then(res => {
           const outputPath = getFileOutputPath(renameFileList, props.params);
           state.uploading = false;
@@ -113,6 +119,20 @@ export default {
           toggleVisible();
           ctx.emit('uploadError', err);
         });
+      };
+
+      // 触发 before Hook
+      if(typeof beforeUpload === 'function') {
+        beforeUpload({ fileList: renameFileList }).then(result => {
+          // 返回数据集 ID
+          uploader(result);
+        }).catch(err => {
+          state.uploading = false;
+          ctx.emit('uploadError', err);
+        });
+      } else {
+        uploader();
+      }
     };
 
     const handleCancel = () => {

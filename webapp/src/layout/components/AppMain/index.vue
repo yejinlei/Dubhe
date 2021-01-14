@@ -32,7 +32,7 @@ export default {
   width: 100%;
 
   /* 50= navbar  50  */
-  min-height: calc(100vh - 50px);
+  min-height: calc(100vh);
   overflow: hidden;
 }
 

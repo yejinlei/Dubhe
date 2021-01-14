@@ -1,4 +1,4 @@
-/** Copyright 2020 Zhejiang Lab. All Rights Reserved.
+/** Copyright 2020 Tianshu AI Platform. All Rights Reserved.
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 * you may not use this file except in compliance with the License.
@@ -32,9 +32,39 @@
       <el-form-item label="描述" prop="description">
         <el-input id="description" v-model="form.description" type="textarea" maxlength="255" show-word-limit style="width: 600px;" />
       </el-form-item>
-      <el-form-item label="开发环境" prop="k8sImageName">
-        <el-select id="k8sImageName" v-model="form.k8sImageName" placeholder="请选择开发环境" no-data-text="请先选择项目" style="width: 600px;" @change="validateField('k8sImageName')">
-          <el-option v-for="(item, index) in imageOptions" :key="index" :label="item.label" :value="item.value" />
+      <el-form-item
+        label="开发环境"
+        prop="k8sImageName"
+      >
+        <el-select
+          id="imageName"
+          v-model="form.imageName"
+          placeholder="请选择镜像"
+          style="width: 190px;"
+          clearable
+          @change="getHarborImages"
+        >
+          <el-option
+            v-for="item in harborProjectList"
+            :key="item"
+            :label="item"
+            :value="item"
+          />
+        </el-select>
+        <el-select
+          id="k8sImageName"
+          v-model="form.k8sImageName"
+          placeholder="请选择镜像版本"
+          style="width: 305px;"
+          clearable
+          @change="validateField('k8sImageName')"
+        >
+          <el-option
+            v-for="(item, index) in harborImageList"
+            :key="index"
+            :label="item.imageTag"
+            :value="item.imageUrl"
+          />
         </el-select>
       </el-form-item>
       <el-form-item label="类型" prop="deviceType">
@@ -50,15 +80,20 @@
 </template>
 
 <script>
+import { validateNameWithHyphen } from '@/utils';
 import BaseModal from '@/components/BaseModal';
 import { getModels, add as addNotebook } from '@/api/development/notebook';
-import { harborProjects, harborImages } from '@/api/system/harbor';
+import { getImageNameList, getImageTagList } from '@/api/trainingImage/index';
+import { IMAGE_PROJECT_TYPE } from '@/views/trainingJob/utils';
 
 export default {
   name: 'CreateDialog',
   components: { BaseModal },
   filters: {
     formatModel(item) {
+      if (!item) {
+        return '没有节点配置信息';
+      }
       const gpuStr = item.gpuNum && item.spec ? ` GPU: ${item.gpuNum}*${item.spec}` : '';
       return `${item.cpuNum}Cores ${item.memNum}GB${gpuStr}`;
     },
@@ -71,6 +106,7 @@ export default {
         description: null,
         harborProject: null,
         k8sImageName: null,
+        imageName: null,
         deviceType: null,
         diskMemNum: null,
       },
@@ -78,6 +114,7 @@ export default {
         noteBookName: [
           { required: true, message: '请输入名称', trigger: 'blur' },
           { pattern: /^[^-](.*[^-])?$/, message: '首尾不能是连字符', trigger: 'blur' },
+          { validator: validateNameWithHyphen, trigger: ['blur', 'change'] },
           { max: 30, message: '长度不超过30个字符', trigger: ['blur', 'change'] },
         ],
         k8sImageName: [{ required: true, message: '请选择镜像', trigger: 'blur' }],
@@ -85,11 +122,12 @@ export default {
         deviceType: [{ required: true, message: '请选择类型', trigger: 'blur' }],
       },
       projectOptions: [],
-      imageOptions: [],
+      harborProjectList: [],
+      harborImageList: [],
       deviceOptions: [],
       modelTypeMap: {},
       defaultSpecOptions: {},
-      defaultSpec: {},
+      defaultSpec: null,
       btnDisabled: false,
     };
   },
@@ -103,7 +141,9 @@ export default {
       this.showDialog = true;
     },
     onDialogOpen() {
-      this.getHarborProjects();
+      this.getHarborProjects().then(() => {
+        this.resetProject();
+      });
       this.getModels();
     },
     onDialogClose() {
@@ -115,32 +155,44 @@ export default {
     onDeviceChange() {
       this.defaultSpec = this.defaultSpecOptions[this.form.deviceType];
     },
-    getHarborProjects() {
-      harborProjects(0)
-        .then(res => {
-          this.projectOptions = res.map(item => ({
-            value: item,
-            label: item,
-          }));
-          this.form.harborProject = this.projectOptions && this.projectOptions[0].value;
-          this.getHarborImages();
-        });
-    },
-    getHarborImages() {
-      const { harborProject } = this.form;
-      if (!harborProject) {
-        this.imageOptions = [];
+    async getHarborProjects() {
+      this.harborProjectList = await getImageNameList({ projectType: IMAGE_PROJECT_TYPE.NOTEBOOK });
+      if (this.form.imageName && !this.harborProjectList.some(project => project === this.form.imageName)) {
+        this.$message.warning('原有的镜像名称不存在，请重新选择');
+        this.form.imageName = null;
         this.form.k8sImageName = null;
         return;
       }
-      harborImages({ project: harborProject })
+      this.form.imageName && await this.getHarborImages(true);
+      if (this.form.imageTag && !this.harborImageList.some(image => image.imageTag === this.form.imageTag)) {
+        this.$message.warning('原有的镜像版本不存在，请重新选择');
+        this.form.k8sImageName = null;
+      }
+    },
+    getHarborImages(saveImageName = false) {
+      if (saveImageName !== true) {
+        this.form.k8sImageName = null;
+      }
+      if (!this.form.imageName) {
+        this.harborImageList = [];
+        return;
+      }
+      return getImageTagList({ imageName: this.form.imageName, projectType: IMAGE_PROJECT_TYPE.NOTEBOOK })
         .then(res => {
-          this.imageOptions = res.map(item => ({
-            value: item,
-            label: item.split(':').reverse()[0],
-          }));
-          this.form.k8sImageName = null;
+          this.harborImageList = res;
         });
+    },
+    // 镜像项目为空时选择默认项目
+    resetProject() {
+      if (!this.form.imageName) {
+        if (this.harborProjectList.length) {
+          Object.assign(this.form, { imageName: this.harborProjectList[0] });
+        } else {
+          this.$message.warning('镜像项目列表为空');
+          return;
+        }
+        this.getHarborImages();
+      }
     },
     getModels() {
       getModels()
@@ -174,6 +226,7 @@ export default {
             noteBookName: this.form.noteBookName,
             description: this.form.description,
             k8sImageName: this.form.k8sImageName,
+            imageName: this.form.imageName,
             dataSourceName: this.form.dataSourceName,
             dataSourcePath: this.form.dataSourcePath,
             cpuNum,
@@ -189,6 +242,7 @@ export default {
               });
                this.btnDisabled = false;
               this.showDialog = false;
+              this.form.imageName = this.form.k8sImageName = null;
             })
             .catch(err => {
               this.btnDisabled = false;

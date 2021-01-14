@@ -1,4 +1,4 @@
-/** Copyright 2020 Zhejiang Lab. All Rights Reserved.
+/** Copyright 2020 Tianshu AI Platform. All Rights Reserved.
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 * you may not use this file except in compliance with the License.
@@ -129,8 +129,24 @@
   padding-bottom: 10px;
 }
 
+.mt-0 {
+  margin-top: 0 !important;
+}
+
+.mt-50 {
+  margin-top: 50px;
+}
+
 .mt-10 {
   margin-top: 10px;
+}
+
+.mt-20 {
+  margin-top: 20px;
+}
+
+.ml-4 {
+  margin-left: 4px;
 }
 
 .ml-10 {
@@ -149,6 +165,14 @@
   margin-left: 16px;
 }
 
+.ml-40 {
+  margin-left: 40px;
+}
+
+.mb-50 {
+  margin-bottom: 50px;
+}
+
 .mb-20 {
   margin-bottom: 20px;
 }
@@ -161,8 +185,40 @@
   margin-bottom: 10px;
 }
 
+.mx-10 {
+  margin-right: 10px;
+  margin-left: 10px;
+}
+
+.my-10 {
+  margin-top: 10px;
+  margin-bottom: 10px;
+}
+
+.mx-auto {
+  margin-right: auto;
+  margin-left: auto;
+}
+
+.my-auto {
+  margin-top: auto;
+  margin-bottom: auto;
+}
+
+.w-150 {
+  width: 150px;
+}
+
+.w-200 {
+  width: 200px;
+}
+
 .lh-1 {
   line-height: 1;
+}
+
+.bold {
+  font-weight: bold;
 }
 
 img.responsive {
@@ -181,6 +237,14 @@ img.responsive {
 
 .pointer {
   cursor: pointer;
+}
+
+.pen {
+  pointer-events: none;
+}
+
+.pea {
+  pointer-events: auto;
 }
 
 .inlineBlock {
@@ -202,6 +266,10 @@ img.responsive {
   user-select: none;
 }
 
+.hidden {
+  visibility: hidden;
+}
+
 .cp {
   cursor: pointer;
 }
@@ -216,6 +284,10 @@ img.responsive {
 
 .success {
   color: $successColor;
+}
+
+.with-border {
+  border-color: $borderColor;
 }
 
 .g3 {
@@ -252,4 +324,13 @@ img.responsive {
 
 .w100 {
   min-width: 100px;
+}
+
+.fullBg {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 9;
+  width: 100vw;
+  height: 100vh;
 }

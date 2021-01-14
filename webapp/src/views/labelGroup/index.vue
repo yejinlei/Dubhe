@@ -1,4 +1,4 @@
-/** Copyright 2020 Zhejiang Lab. All Rights Reserved.
+/** Copyright 2020 Tianshu AI Platform. All Rights Reserved.
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 * you may not use this file except in compliance with the License.
@@ -40,12 +40,14 @@
         </span>
       </cdOperation>
     </div>
-    <div class="mb-10 flex">
+    <div class="mb-10 flex flex-between">
       <el-tabs :value="activePanelLabelGroup" class="eltabs-inlineblock" @tab-click="handlePanelClick">
         <el-tab-pane label="我的标签组" name="0" />
         <el-tab-pane label="预置标签组" name="1" />
       </el-tabs>
-      <el-button class="filter-item" style="margin-left: auto;" icon="el-icon-refresh" circle @click="onResetFresh"/>
+      <div>
+        <el-button class="filter-item with-border" style="padding: 8px;" icon="el-icon-refresh" @click="onResetFresh"/>
+      </div>
     </div>
     <!--表格渲染-->
     <el-table
@@ -71,6 +73,21 @@
           <el-link class="mr-10 name-col" @click="goDetail(scope.row)">{{ scope.row.name }}</el-link>
         </template>
       </el-table-column>
+      <el-table-column
+        prop="labelGroupType"
+        :formatter="parseLabelGroupType"
+        min-width="80"
+        align='left'
+      >
+        <template slot="header">
+          <dropdown-header
+            title="类型"
+            :list="labelGroupTypeList"
+            :filtered="!isNil(labelGroupType)"
+            @command="cmd => filter('labelGroupType', cmd)"
+          />
+        </template>
+      </el-table-column>  
       <el-table-column
         prop="count"
         min-width="80"
@@ -132,6 +149,12 @@
         <el-form-item label="名称" prop="name">
           <el-input v-model="forkForm.name" placeholder="标签组名称不能超过50字" maxlength="50" />
         </el-form-item>
+        <el-form-item label="类型" prop="labelGroupType" >
+          <el-input
+            v-model="labelGroupTypeMap[forkForm.labelGroupType]"
+            disabled
+          />
+        </el-form-item>
         <el-form-item label="描述" prop="remark">
           <el-input
             v-model="forkForm.remark"
@@ -169,7 +192,9 @@ import { formatDateTime } from '@/utils';
 import { validateName } from '@/utils/validate';
 import store from '@/store';
 
+import DropdownHeader from '@/components/DropdownHeader';
 import BaseModal from '@/components/BaseModal';
+import { labelGroupTypeMap } from './util';
 import LabelGroupAction from './labelGroupAction';
 import "@/views/dataset/style/list.scss";
 
@@ -188,6 +213,7 @@ export default {
     rrOperation,
     BaseModal,
     LabelGroupAction,
+    DropdownHeader,
   },
   cruds() {
     return CRUD({
@@ -203,6 +229,7 @@ export default {
   data() {
     return {
       forkVisible: false, // fork对话框
+      labelGroupType: null,
       actionModal: {
         show: false,
         row: undefined,
@@ -213,6 +240,7 @@ export default {
         id: null,
         name: null,
         labels: null,
+        labelGroupType: null,
         remark: null,
         type: 0,
       },
@@ -221,10 +249,14 @@ export default {
           { required: true, message: '请输入标签组名称', trigger: ['change', 'blur'] },
           { validator: validateName, trigger: ['change', 'blur'] },
         ],
+        labelGroupType: [
+          {required: true, message: '请选择标签组类型', trigger: ['change', 'blur'] },
+        ],
         remark: [
           { required: false, message: '请输入标签组描述信息', trigger: 'blur' },
         ],
       },
+      labelGroupTypeMap,
     };
   },
   computed: {
@@ -240,6 +272,14 @@ export default {
       return {
         type: this.activePanelLabelGroup || 0,
       };
+    },
+
+    labelGroupTypeList() {
+      const rawLabelGroupTypeList = Object.keys(labelGroupTypeMap).map(d => ({
+        label: labelGroupTypeMap[d],
+        value: Number(d),
+      }));
+      return [{ label: '全部', value: null }].concat(rawLabelGroupTypeList);
     },
 
     // 区分预置标签组和普通便签组操作权限
@@ -269,6 +309,7 @@ export default {
       this.crud.sort = null;
       this.crud.params = {};
       this.crud.page.current = 1;
+      this.labelGroupType = null;
       // 重置表格的排序和筛选条件
       this.$refs.table.clearSort();
     },
@@ -289,6 +330,16 @@ export default {
         return cellValue;
       }
       return formatDateTime(cellValue);
+    },
+
+    parseLabelGroupType(row, column, cellValue = 0) {
+      return labelGroupTypeMap[cellValue];
+    },
+    filter(column, value) {
+      this[column] = value;
+      this.crud.params[column] = value;
+      this.crud.page.current = 1;
+      this.crud.toQuery();
     },
 
     doCreate() {
@@ -323,6 +374,7 @@ export default {
           remark: res.remark,
           type: res.type,
           labels: JSON.stringify(res.labels),
+          labelGroupType: res.labelGroupType,
           id: row.id,
         });
       });

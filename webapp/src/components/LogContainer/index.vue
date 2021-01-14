@@ -1,4 +1,4 @@
-/** Copyright 2020 Zhejiang Lab. All Rights Reserved.
+/** Copyright 2020 Tianshu AI Platform. All Rights Reserved.
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 * you may not use this file except in compliance with the License.
@@ -54,6 +54,10 @@ export default {
       type: String,
       default: '',
     },
+    disabled: {
+      type: Boolean,
+      default: false,
+    },
   },
   data() {
     return {
@@ -66,7 +70,7 @@ export default {
   },
   computed: {
     getLogDisabled() {
-      return this.logLoading || this.noMoreLog;
+      return this.logLoading || this.noMoreLog || this.disabled;
     },
     logTxt() {
       return `${this.showMsg ? `${this.msg}\n` : ''}${this.logList.join('\n')}`;

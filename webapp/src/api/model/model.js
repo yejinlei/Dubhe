@@ -1,4 +1,4 @@
-/** Copyright 2020 Zhejiang Lab. All Rights Reserved.
+/** Copyright 2020 Tianshu AI Platform. All Rights Reserved.
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 * you may not use this file except in compliance with the License.
@@ -45,6 +45,14 @@ export function del(data) {
     url: 'api/ptModelInfo',
     method: 'delete',
     data,
+  });
+}
+
+export function getModelByResource(modelResource) {
+  return request({
+    url: 'api/ptModelInfo/byResource',
+    method: 'get',
+    params: { modelResource },
   });
 }
 

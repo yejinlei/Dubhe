@@ -42,22 +42,12 @@ const service = axios.create({
 // request拦截器
 service.interceptors.request.use(
   config => {
-    if (config.baseURL) {
-      // 已经指定BaseURL，不修改
-    } else if (/^(\/)?api\/data/.test(config.url)) {
-      // /api/data 开头的API
-      config.baseURL = process.env.VUE_APP_DATA_API;
-    } else if (/^(\/)?api\/file/.test(config.url)) {
-      // /api/file/开头的API
-      config.baseURL = process.env.VUE_APP_DATA_API;
-    } else {
-      config.baseURL = process.env.VUE_APP_BASE_API;
-    }
+    config.baseURL = config.baseURL || process.env.VUE_APP_BASE_API;
 
     if (getToken()) {
       config.headers.Authorization = getToken(); // 让每个请求携带自定义token 请根据实际情况自行修改
     }
-    config.headers['Content-Type'] = 'application/json';
+    config.headers['Content-Type'] = config.headers['Content-Type'] || 'application/json';
     return config;
   },
   error => {
@@ -79,9 +69,8 @@ service.interceptors.response.use(
     if (res.code !== 200) {
       if (isWhiteList(response.config.url)) {
         return Promise.reject(res.msg || '请求异常');
-      } 
+      }
       return HttpError(res.msg || '请求异常', res.code);
-      
     }
     return res.data;
   },

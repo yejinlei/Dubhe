@@ -1,4 +1,4 @@
-/** Copyright 2020 Zhejiang Lab. All Rights Reserved.
+/** Copyright 2020 Tianshu AI Platform. All Rights Reserved.
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 * you may not use this file except in compliance with the License.
@@ -33,6 +33,7 @@
         v-for="(item, index) in runParamsList"
         :key="item.id"
         ref="paramPairs"
+        label="运行参数"
         :item="runParamsList[index]"
         :index="index"
         :label-width="paramLabelWidth"
@@ -58,7 +59,7 @@
 </template>
 
 <script>
-import { stringIsValidPythonVariable } from '@/utils';
+import { pythonKeyValidator, stringIsValidPythonVariable } from '@/utils';
 import ParamPair from './paramPair';
 
 export default {
@@ -83,18 +84,6 @@ export default {
     },
   },
   data() {
-    const isInputEmpty = value => {
-      return value === '' || value === null;
-    };
-
-    const keyValidator = (rule, value, callback) => {
-      if (!isInputEmpty(value) && !stringIsValidPythonVariable(value)) {
-        callback(new Error('参数key必须是合法变量名'));
-      } else {
-        callback();
-      }
-    };
-    
     return {
       runParamsList: [],
       paramsMode: 1,
@@ -102,7 +91,7 @@ export default {
       argErrorMsg: null,
       // 整体校验规则：对 key 做 python 变量名有效性校验，对 value 不做任何校验
       keyRule: [{
-        validator: keyValidator,
+        validator: pythonKeyValidator(),
         trigger: 'blur',
       }],
       paramId: 0,
@@ -126,6 +115,7 @@ export default {
         // eslint-disable-next-line no-plusplus
         id: this.paramId++,
       });
+      this.$emit('addParams', this.runParamsList.length);
     },
     removeP(i) {
       this.runParamsList.splice(i, 1);

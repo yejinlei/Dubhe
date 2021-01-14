@@ -1,4 +1,4 @@
-/** Copyright 2020 Zhejiang Lab. All Rights Reserved.
+/** Copyright 2020 Tianshu AI Platform. All Rights Reserved.
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 * you may not use this file except in compliance with the License.
@@ -82,6 +82,7 @@ import { isNil } from 'lodash';
 
 import { getAutoLabels, editLabel } from '@/api/preparation/datalabel';
 import { labelsSymbol } from '@/views/dataset/util';
+import { labelGroupTypeCodeMap } from '@/views/labelGroup/util';
 
 import SelectLabel from './selectLabel';
 import LabelList from './labelList';
@@ -168,7 +169,7 @@ export default {
     };
 
     const getSystemLabel = () => {
-      getAutoLabels().then(res => {
+      getAutoLabels(labelGroupTypeCodeMap.VISUAL).then(res => {
         const labelsObj = res.map((item) => ({
           value: item.id,
           label: item.name,

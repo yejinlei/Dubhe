@@ -54,7 +54,6 @@ module.exports = {
         }
 
         const delay = value.$$delay || 0;
-
         delete value.$$header;
         delete value.$$delay;
 
@@ -106,7 +105,6 @@ module.exports = {
         const [verb, uri] = splitUrl(mockPath);
         app[verb](path.posix.join('/mock', uri), function(req, res) {
           const value = requireUncached(path.join(__dirname, 'mock', mockMap[mockPath]))
-
           sendValue(req, res, value)
         })
       })

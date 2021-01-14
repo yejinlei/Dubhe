@@ -1,4 +1,4 @@
-/** Copyright 2020 Zhejiang Lab. All Rights Reserved.
+/** Copyright 2020 Tianshu AI Platform. All Rights Reserved.
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 * you may not use this file except in compliance with the License.
@@ -63,7 +63,7 @@ import { Message, MessageBox } from 'element-ui';
 
 import { isEmpty, isFunction, omit, isNil } from 'lodash';
 
-import { detail, detectFileList, queryFileOffset, queryDataEnhanceList, getEnhanceFileList } from '@/api/preparation/dataset';
+import { detail, detectFileList, queryFileOffset, queryDataEnhanceList, getEnhanceFileList, queryLabels as queryLabelApi, createLabel as createLabelApi } from '@/api/preparation/dataset';
 import request from '@/utils/request';
 import { generateUuid, generateBbox, bbox2Extent, extent2Bbox, endsWith, replace, remove, AssertError } from '@/utils';
 import { parseAnnotation, labelsSymbol, enhanceSymbol, stringifyAnnotations, annotationMap, transformFiles, withExtent } from '../util';
@@ -170,13 +170,13 @@ export default {
 
     // 查询标签
     const queryLabels = async(requestParams = {}) => {
-      const labels = await request(`api/data/datasets/${params.datasetId}/labels`, { params: requestParams });
+      const labels = await queryLabelApi(params.datasetId, requestParams);
       return labels || [];
     };
 
     // 新建标签
     const createLabel = async(labelParams = {}) => {
-      const result = await request.post(`api/data/datasets/${params.datasetId}/labels`, labelParams);
+      const result = await createLabelApi(params.datasetId, labelParams);
       return result;
     };
 

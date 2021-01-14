@@ -1,4 +1,4 @@
-/** Copyright 2020 Zhejiang Lab. All Rights Reserved.
+/** Copyright 2020 Tianshu AI Platform. All Rights Reserved.
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 * you may not use this file except in compliance with the License.
@@ -15,7 +15,7 @@
 */
 
 import { format, parseISO, isDate } from 'date-fns';
-import { isEqual, isPlainObject, isNil, findIndex, findLastIndex } from 'lodash';
+import { isEqual, isPlainObject, isNil, findIndex, findLastIndex, uniqBy, merge, keyBy, values } from 'lodash';
 import { nanoid } from 'nanoid';
 
 const chroma = require('chroma-js');
@@ -87,6 +87,32 @@ export const replace = (arr, i, ...newData) => {
   ]);
 };
 
+// 合并两个具有同个属性的数组
+export const mergeArrayByKey = (arr1, arr2, key) => {
+  const merged = merge(keyBy(arr1, key), keyBy(arr2, key));
+  return values(merged);
+};
+
+// deprecated
+// 每n个取1个值,例：步长为5时,0到20取0,5,10,15,20。leading为true表示即使不足5个，仍取第一个值0
+export const everyNth = (arr, step, leading = false) => arr.filter((e, i) => {
+  if(leading === true) {
+    return i % step === 0;
+  };
+  return (i % step === step - 1);
+});
+
+export const everyStep = (arr, step) => {
+  // 先根据步长生成一个近似于等差的数组arr2，arr2的值对应arr要取的点的index值
+  const arr2 = [];
+  for(let i=0; i<arr.length; i+=step){
+     arr2.push(Math.floor(i));
+  }
+  return arr.filter((e, i) => {
+    return arr2.includes(i);
+  });
+};
+
 // add suffix style
 export const addSuffix = (prop, suffix = 'px') => `${prop}${suffix}`;
 
@@ -151,6 +177,12 @@ export const identity = d => d;
 // 数组间基于属性对比
 export const isEqualByProp = (arr1, arr2, prop) => {
   return isEqual(arr1.map(d => d[prop]), arr2.map(d => d[prop]));
+};
+
+// 判断对象数组之间某些值是否一致
+export const isEqualBy = (arr, key) => {
+  const result = uniqBy(arr, key);
+  return result.length === 1;
 };
 
 // 根据背景色深浅来设置颜色

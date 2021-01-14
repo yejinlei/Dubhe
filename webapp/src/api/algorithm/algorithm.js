@@ -1,4 +1,4 @@
-/** Copyright 2020 Zhejiang Lab. All Rights Reserved.
+/** Copyright 2020 Tianshu AI Platform. All Rights Reserved.
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 * you may not use this file except in compliance with the License.
@@ -48,14 +48,6 @@ export function del(ids) {
   });
 }
 
-export function listImage(params) {
-  return request({
-    url: 'api/v1/ptImage',
-    method: 'get',
-    params,
-  });
-}
-
 export function myAlgorithmCount() {
   return request({
     url: `api/v1/algorithm/myAlgorithmCount`,
@@ -63,4 +55,4 @@ export function myAlgorithmCount() {
   });
 }
 
-export default { list, add, del, listImage };
+export default { list, add, del };

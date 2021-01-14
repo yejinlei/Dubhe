@@ -1,4 +1,4 @@
-/** Copyright 2020 Zhejiang Lab. All Rights Reserved.
+/** Copyright 2020 Tianshu AI Platform. All Rights Reserved.
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 * you may not use this file except in compliance with the License.
@@ -55,6 +55,24 @@
       <div class="action-item" @click="confirm">
         <IconFont type="chengyuanguanli" />
         <span>完成</span>
+      </div>
+      <div class="action-item">
+        <el-tooltip effect="dark" placement="bottom-start">
+          <div slot="content">
+            <div class="label-tooltip">
+              <div class="f14 label-title">快捷键说明：</div>
+              <div class="flex tips-wrapper f12">
+                <div>上一张：Left</div>
+                <div>下一张：Right</div>
+                <div>确认提交：Enter</div>
+                <div>手动标注: N</div>
+                <div>删除标注：Backspace</div>
+              </div>
+            </div>
+          </div>
+          <IconFont type="help" />
+        </el-tooltip>
+        <span>帮助</span>
       </div>
     </div>
   </div>
@@ -172,6 +190,20 @@ export default {
         }
       }
     }
+  }
+}
+
+.label-title {
+  margin-bottom: 8px;
+}
+
+.tips-wrapper {
+  flex-wrap: wrap;
+  max-width: 272px;
+  line-height: 1.5;
+
+  div {
+    width: 50%;
   }
 }
 </style>

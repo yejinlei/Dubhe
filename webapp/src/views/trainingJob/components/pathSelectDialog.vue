@@ -1,4 +1,4 @@
-/** Copyright 2020 Zhejiang Lab. All Rights Reserved.
+/** Copyright 2020 Tianshu AI Platform. All Rights Reserved.
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 * you may not use this file except in compliance with the License.
@@ -170,6 +170,9 @@ export default {
         const beforePath = list[0].substring(0, index);
         let afterPathList = [];
         afterPathList = list.map(item => item.substring(index + 1, item.length));
+        if (afterPathList.length && afterPathList[0] === 'out/') {
+          afterPathList[0] = 'out';
+        }
         const params = {
           fileName: this.fileName,
           path: beforePath,

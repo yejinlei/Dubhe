@@ -82,7 +82,7 @@
             <el-table-column label="操作" width="170" fixed="right">
               <template slot-scope="scope">
                 <udOperation :data="scope.row" :disabled-dle="isDisabled(scope.row.id)" />
-                <el-button type="text" style="margin-left: 10px;" @click="handleCurrentChange(scope.row, scope.$index)">菜单分配</el-button>
+                <el-button v-if="false" type="text" style="margin-left: 10px;" @click="handleCurrentChange(scope.row, scope.$index)">菜单分配</el-button>
               </template>
             </el-table-column>
           </el-table>
@@ -126,8 +126,7 @@ import cdOperation from '@crud/CD.operation';
 import udOperation from '@crud/UD.operation';
 import pagination from '@crud/Pagination';
 import { validateName } from '@/utils/validate';
-import crudRoles, {editMenu, get}  from '@/api/system/role';
-import { getMenusTree } from '@/api/system/menu';
+import crudRoles, { editMenu, get, getMenusTree }  from '@/api/system/role';
 import BaseModal from '@/components/BaseModal';
 import datePickerMixin from '@/mixins/datePickerMixin';
 

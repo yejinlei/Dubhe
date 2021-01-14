@@ -1,4 +1,4 @@
-/** Copyright 2020 Zhejiang Lab. All Rights Reserved.
+/** Copyright 2020 Tianshu AI Platform. All Rights Reserved.
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 * you may not use this file except in compliance with the License.
@@ -43,6 +43,10 @@ const BaseModal = {
     },
     footer: Function,
     showCancel: {
+      type: Boolean,
+      default: true,
+    },
+    showOk: {
       type: Boolean,
       default: true,
     },
@@ -100,7 +104,10 @@ const BaseModal = {
             <el-button id="cancel" onClick={this.handleCancel}>{this.cancelText}</el-button>
           )
           }
-          <el-button id="ok" type='primary' disabled={this.disabled} onClick={this.handleOk} loading={this.loading}>{this.okText}</el-button>
+          { this.showOk && (
+            <el-button id="ok" type='primary' disabled={this.disabled} onClick={this.handleOk} loading={this.loading}>{this.okText}</el-button>
+          )
+          }
         </div>
       );
     };

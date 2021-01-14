@@ -62,6 +62,15 @@
   background-size: contain;
 }
 
+@mixin checkmark($width, $height, $borderWidth, $borderColor) {
+  display: inline-block;
+  width: $width;
+  height: $height;
+  border-right: $borderWidth solid $borderColor;
+  border-bottom: $borderWidth solid $borderColor;
+  transform: rotate(45deg);
+}
+
 @mixin triangle($width, $height, $color, $direction) {
   $width: $width/2;
   $color-border-style: $height solid $color;

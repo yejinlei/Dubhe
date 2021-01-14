@@ -61,6 +61,7 @@
       :multiple="false"
       :limit="1"
       :showFileCount="false"
+      :filters="uploadFilters"
       @uploadSuccess="uploadSuccess"
       @uploadError="uploadError"
     />
@@ -101,6 +102,7 @@ import { mapGetters } from 'vuex';
 import store from '@/store';
 import { bucketName, bucketHost } from '@/utils/minIO';
 import { validateName } from '@/utils/validate';
+import { invalidFileNameChar } from '@/utils';
 import { updateAvatar } from '@/api/user';
 import BaseModal from '@/components/BaseModal';
 import UploadForm from '@/components/UploadForm';
@@ -131,6 +133,7 @@ export default {
           { pattern: /^1\d{10}$/, message: '请输入正确的11位手机号码', trigger: ['blur', 'change'] },
         ],
       },
+      uploadFilters: [invalidFileNameChar],
     };
   },
   computed: {

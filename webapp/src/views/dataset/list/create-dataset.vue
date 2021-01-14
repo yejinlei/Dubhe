@@ -1,4 +1,4 @@
-/** Copyright 2020 Zhejiang Lab. All Rights Reserved.
+/** Copyright 2020 Tianshu AI Platform. All Rights Reserved.
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 * you may not use this file except in compliance with the License.
@@ -50,7 +50,6 @@
             v-model="form.annotateType"
             placeholder="标注类型"
             :dataSource="annotationList"
-            :disabled="form.dataType === dataTypeCodeMap.VIDEO"
             @change="handleAnnotateTypeChange"
           />
         </el-form-item>
@@ -63,12 +62,13 @@
             :props="{expandTrigger: 'hover'}"
             :show-all-levels="false"
             filterable
-            popper-class="group-cascader" 
-            style="width:100%; line-height:32px;"
+            popper-class="group-cascader"
+            style="width: 100%; line-height: 32px;"
             @change="handleGroupChange"
+            @focus="handleGroupFocus"
           >
             <div slot="empty">
-              <span>没有找到标签组？去</span> 
+              <span>没有找到标签组？去</span>
               <a
                 target="_blank"
                 type="primary"
@@ -81,21 +81,21 @@
               <span>页面创建</span>
             </div>
           </el-cascader>
-          <div style="position: relative; float: right; top: -33px; right: 30px;">
-            <el-link 
-              v-if="chosenGroupId !== null" 
-              target="_blank" 
-              type="primary" 
-              :underline="false" 
-              class="vm" 
+          <div style="position: relative; top: -33px; right: 30px; float: right;">
+            <el-link
+              v-if="chosenGroupId !== null"
+              target="_blank"
+              type="primary"
+              :underline="false"
+              class="vm"
               :href="`/data/labelgroup/detail?id=${chosenGroupId}`"
             >
               查看详情
-            </el-link>          
-          </div>      
+            </el-link>
+          </div>
         </el-form-item>
         <div v-if="chosenGroupId === null" style=" position: relative; top: -12px; left: 116px;">
-          <span>标签组需要在</span> 
+          <span>标签组需要在</span>
           <a
             target="_blank"
             type="primary"
@@ -119,22 +119,23 @@
         </el-form-item>
       </el-form>
       <div style=" margin-top: 25px; text-align: center;">
-        <el-button 
-          :loading="crud.status.cu === 2" 
-          type="primary" 
+        <el-button
+          :loading="crud.status.cu === 2"
+          type="primary"
           @click="createDataset"
         >
           下一步
         </el-button>
       </div>
     </div>
+    <!--TODO: v-if not work，why?-->
     <!--step1上传文件-->
     <div v-show="activeStep === 1">
       <upload-inline
+        :key="form.dataType"
         ref="initFileUploadForm"
         action="fakeApi"
         :params="uploadParams"
-        :transformFile="withDimensionFile"
         v-bind="optionCreateProps"
         @uploadSuccess="uploadSuccess"
         @uploadError="uploadError"
@@ -199,12 +200,14 @@ import CRUD, { presenter, header, form, crud } from '@crud/crud';
 import crudDataset, { detail } from '@/api/preparation/dataset';
 import { submit, submitVideo } from '@/api/preparation/datafile';
 import { getLabelGroupList } from '@/api/preparation/labelGroup';
-import { 
+import {
   getImgFromMinIO,
+  getTextFromMinIO,
   annotationMap,
   annotationCodeMap,
   dataTypeMap,
   dataTypeCodeMap,
+  dataTypeAnnotateTypeMap,
   withDimensionFile,
   trackUploadProps,
 } from '@/views/dataset/util';
@@ -212,6 +215,7 @@ import { validateName } from '@/utils/validate';
 import UploadInline from '@/components/UploadForm/inline';
 import InfoSelect from '@/components/InfoSelect';
 import { toFixed } from '@/utils';
+import { isNil } from 'lodash';
 
 // 默认帧间隔
 const defaultFrameInterval = 5;
@@ -287,19 +291,22 @@ export default {
         label: '自定义标签组',
         disabled: false,
         children: [],
-      }, 
+      },
       {
         value: 'system',
         label: '预置标签组',
         disabled: false,
         children: [],
-      }], 
+      }],
     };
   },
   computed: {
     // 文件上传前携带尺寸信息
     withDimensionFile() {
       return withDimensionFile;
+    },
+    isText() {
+      return this.form.dataType === dataTypeCodeMap.TEXT;
     },
     uploadParams() {
       // 是否为视频数据类类型
@@ -311,9 +318,29 @@ export default {
         objectPath: `dataset/${this.chosenDatasetId}/${dir}`, // 对象存储路径
       };
     },
-    // 新建数据集（视频）上传组件参数
+    // 新建数据集上传组件参数拼装
     optionCreateProps() {
-      const props = this.form.dataType === dataTypeCodeMap.VIDEO ? trackUploadProps : {};
+      const textProps = {
+        accept: ".txt",
+        dataType: "text",
+      };
+      const baseImageProps = {
+        transformFile: this.withDimensionFile,
+      };
+      let props = {};
+      switch( this.form.dataType){
+        case dataTypeCodeMap.VIDEO:
+          props = { ...baseImageProps, ...trackUploadProps };
+          break;
+        case dataTypeCodeMap.IMAGE:
+          props = baseImageProps;
+          break;
+        case dataTypeCodeMap.TEXT:
+          props = textProps;
+          break;
+        default:
+          props = {};
+      }
       return props;
     },
     annotationList() {
@@ -322,19 +349,18 @@ export default {
         label: annotationMap[d].name,
         value: Number(d),
       }));
-      // 如果是图片，目标跟踪不可用
-      // 如果是视频，只能用目标跟踪
-      return rawAnnotationList.map(d => {
-        let disabled = false;
+      // 图片，可用图像分类和目标检测；视频，可用目标跟踪；文本，可用文本分类
+      return rawAnnotationList.filter(d => {
         if (this.form.dataType === dataTypeCodeMap.IMAGE) {
-          disabled = d.value === annotationCodeMap.TRACK;
-        } else if (this.form.dataType === dataTypeCodeMap.VIDEO) {
-          disabled = d.value !== annotationCodeMap.TRACK;
+          return [annotationCodeMap.ANNOTATE, annotationCodeMap.CLASSIFY].includes(d.value);
         }
-        return {
-          ...d,
-          disabled,
-        };
+        if (this.form.dataType === dataTypeCodeMap.VIDEO) {
+          return d.value === annotationCodeMap.TRACK;
+        }
+        if (this.form.dataType === dataTypeCodeMap.TEXT) {
+          return d.value === annotationCodeMap.TEXTCLASSIFY;
+        }
+        return true;
       });
     },
 
@@ -348,30 +374,38 @@ export default {
       if(this.skipUpload) return true;
       return this.uploadStatus && ['success', 'exception'].includes(this.uploadStatus);
     },
-  },  
-  created() {
-    this.crud.toQuery();
-    getLabelGroupList(1).then(res => {
-      res.forEach((item) => {
-        this.labelGroupOptions[1].children.push({
-          value: item.id,
-          label: item.name,
-          disabled: false,
-        });
-      });
-    });    
-    getLabelGroupList(0).then(res => {
-      res.forEach((item) => {
-        this.labelGroupOptions[0].children.push({
-          value: item.id,
-          label: item.name,
-          disabled: false,
-        });
-      });
-    });
   },
   methods: {
-    handleGroupChange(val) {
+    handleGroupFocus() {
+      // 在未选择数据类型和标注类型之前，不对可用的标签组进行查询
+      if(!isNil(this.form.dataType) && this.form.dataType !== '' && !isNil(this.form.annotateType) && this.form.annotateType !== ''){
+        // 在数据类型和标注类型未改动的情况下 避免对可用的标签组列表进行重复查询
+        if((this.labelGroupOptions[1].children).length === 0){
+          getLabelGroupList({type: 1, dataType: this.form.dataType, annotateType: this.form.annotateType}).then(res => {
+            res.forEach((item) => {
+              this.labelGroupOptions[1].children.push({
+                value: item.id,
+                label: item.name,
+                disabled: false,
+              });
+            });
+          });
+        }
+        if((this.labelGroupOptions[0].children).length === 0){
+          getLabelGroupList({type: 0, dataType: this.form.dataType, annotateType: this.form.annotateType}).then(res => {
+            res.forEach((item) => {
+              this.labelGroupOptions[0].children.push({
+                value: item.id,
+                label: item.name,
+                disabled: false,
+              });
+            });
+          });
+        }
+      }
+    },
+
+    handleGroupChange(val){
       if(val.length === 0) {
         this.chosenGroup = null;
         this.chosenGroupId = null;
@@ -402,43 +436,21 @@ export default {
       this.uploadPercent = 0;
       this.videoUploadProgress = 0;
     },
-
+    // 清空标签组可选列表 清除选中的标签组
+    clearLabelGroupItem() {
+      this.labelGroupOptions[0].children = [];
+      this.labelGroupOptions[1].children = [];
+      this.chosenGroupId = null;
+      this.chosenGroup = null;
+    },
     // step0 改变数据类型
     handleDataTypeChange(dataType) {
-      // 数据类型选中为视频时,标注类型自动切换为目标跟踪,同时清除不符合类型的标签组
-      if (dataType === dataTypeCodeMap.VIDEO) {
-        this.form.annotateType = annotationCodeMap.TRACK;
-        this.handleAnnotateTypeChange(annotationCodeMap.TRACK);
-      } else {
-        // 数据类型选中为其他时 去除限制
-        this.form.annotateType = undefined;
-        this.labelGroupOptions[1].disabled = false;
-        this.labelGroupOptions[1].children.forEach( item => {item.disabled = false;});
-      }
+      this.clearLabelGroupItem();
+      this.form.annotateType = dataTypeAnnotateTypeMap.get(dataType);
     },
     // step0 改变标注类型
-    handleAnnotateTypeChange(annotateType) {
-      // 更改标注类型会清除不符合条件的标签组
-      // 目标检测和目标跟踪可以选中预置标签组中的Coco(id=1)
-      if ([annotationCodeMap.ANNOTATE, annotationCodeMap.TRACK].includes(annotateType)) {
-        if(this.chosenGroupId !== 1){
-          this.chosenGroup = null;
-          this.chosenGroupId = null;
-        }
-        this.labelGroupOptions[1].disabled = false;
-        this.labelGroupOptions[1].children.forEach( item => { 
-          // 此处1是预置的coco标签组固定id为1
-          if(item.value === 1){
-            item.disabled = false;
-          } else {
-            item.disabled = true;
-          }
-        });
-      } else {
-        // 其余可以使用任意标签组
-        this.labelGroupOptions[1].disabled = false;
-        this.labelGroupOptions[1].children.forEach(item => {item.disabled = false;});
-      }
+    handleAnnotateTypeChange() {
+      this.clearLabelGroupItem();
     },
     // step0 创建数据集调用
     createDataset() {
@@ -479,12 +491,15 @@ export default {
       // 文件上传
       if (dataType === dataTypeCodeMap.IMAGE) {
         return submit(datasetId, files);
-      } 
+      }
       if (dataType === dataTypeCodeMap.VIDEO) {
         return submitVideo(datasetId, {
           frameInterval: this.step1Form.frameInterval,
           url: files[0].url,
         });
+      }
+      if (dataType === dataTypeCodeMap.TEXT) {
+        return submit(datasetId, files);
       }
       return Promise.reject();
     },
@@ -497,7 +512,14 @@ export default {
       if (this.form.dataType === dataTypeCodeMap.VIDEO) {
         this.videoUploadProgress = 100;
       }
-      const files = getImgFromMinIO(res);
+
+      let files;
+      if (this.form.dataType === dataTypeCodeMap.TEXT) {
+        files = getTextFromMinIO(res);
+      } else {
+        files = getImgFromMinIO(res);
+      }
+
       // 自动标注完成时 导入 提示信息不同
       const successMessage = '上传文件成功';
       if (files.length > 0) {
@@ -511,11 +533,10 @@ export default {
         });
       }
     },
-    // step1 上传失败  
-    uploadError() {
-      this.uploadStatus = 'exception';
+    // step1 上传失败
+    uploadError(err) {
       this.$message({
-        message: '上传文件失败',
+        message: err.message || '上传文件失败',
         type: 'error',
       });
     },
@@ -527,16 +548,15 @@ export default {
     // step1 确定上传
     uploadSubmit(formName) {
       this.$refs[formName].uploadSubmit((resolved, total) => {
+         if (this.crud.status.cu > 0) {
+            this.activeStep = 2;
+          }
         // eslint-disable-next-line func-names
         this.$nextTick(function() {
           this.uploadPercent =
             this.uploadPercent > 100 ? 100 : toFixed(resolved / total);
         });
       });
-
-      if (this.crud.status.cu > 0) {
-        this.activeStep = 2;
-      }
     },
 
     // step2 进度格式化

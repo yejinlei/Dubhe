@@ -1,4 +1,4 @@
-/** Copyright 2020 Zhejiang Lab. All Rights Reserved.
+/** Copyright 2020 Tianshu AI Platform. All Rights Reserved.
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 * you may not use this file except in compliance with the License.
@@ -26,7 +26,7 @@
 import create from './iconfont';
 
 const IconFont = create({
-  scriptUrl: '//at.alicdn.com/t/font_1756495_k4j524i5vng.js',
+  scriptUrl: '//at.alicdn.com/t/font_1756495_6jl45md8krp.js',
   extraIconProps: { class: 'svg-icon' },
 });
 

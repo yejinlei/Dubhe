@@ -1,4 +1,4 @@
-/** Copyright 2020 Zhejiang Lab. All Rights Reserved.
+/** Copyright 2020 Tianshu AI Platform. All Rights Reserved.
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 * you may not use this file except in compliance with the License.
@@ -27,18 +27,17 @@
     <!--选择上传的文件-->
     <div v-show="state.uploadStep === 0">
       <upload-inline
+        :key="state.row.id"
         ref="fileUploadForm"
         action="fakeApi"
         :accept="state.accept"
-        :params="state.uploadParams"
-        :transformFile="withDimensionFile"
-        v-bind="state.optionUploadProps"
+        v-bind="optionCreateProps"
         @uploadSuccess="uploadSuccess"
         @uploadError="uploadError"
       />
       <!--上传视频时显示帧间隔设置-->
       <el-form
-        v-if="!state.isImage"
+        v-if="!(state.isImage || state.isText)"
         ref="formStep"
         :model="state.form"
         label-width="100px"
@@ -56,7 +55,7 @@
     <!--上传文件进度展示-->
     <div v-show="state.uploadStep === 1">
       <el-progress
-        v-if="state.isImage"
+        v-if="state.isImage || state.isText"
         type="circle"
         :percentage="state.percentage"
         :status="state.uploadStatus"
@@ -90,14 +89,13 @@
     </div>
   </el-dialog>
 </template>
-
 <script>
 
 import Vue from 'vue';
-import { reactive, watch } from '@vue/composition-api';
+import { reactive, watch, computed } from '@vue/composition-api';
 import { toFixed } from '@/utils';
 import UploadInline from '@/components/UploadForm/inline';
-import { getImgFromMinIO, withDimensionFile, trackUploadProps } from '@/views/dataset/util';
+import { getImgFromMinIO, withDimensionFile, trackUploadProps, dataTypeCodeMap } from '@/views/dataset/util';
 import { submit, submitVideo } from '@/api/preparation/datafile';
 import { Message } from 'element-ui';
 
@@ -131,10 +129,10 @@ export default {
       row: {},
       uploadStep: 0,
       isImage: undefined,
+      isText: undefined,
+      isVideo: undefined,
       accept: "",
       title: "",
-      uploadParams: {},
-      optionUploadProps: {},
       percentage: 0,
       uploadStatus: undefined,
       form: {
@@ -142,41 +140,10 @@ export default {
       },
     });
 
-    // 监测选中导入的列数据变化
-    watch(() => props.row, (next) => {
-      Object.assign(state, {
-        row: { ...state.row, ...next },
-      });
-      const { id } = state.row;
-      if (state.row.dataType === 0) {
-        Object.assign(state, {
-          isImage: true,
-          title: "导入图片",
-          accept: ".jpg,.png,.bmp,.jpeg",
-          uploadParams: {
-            datasetId: id,
-            objectPath: `dataset/${id}/origin`, // 图片对象存储路径
-          },
-          optionUploadProps: {},
-        });
-      } else {
-        Object.assign(state, {
-          isImage: false,
-          title: "导入视频",
-          uploadParams: {
-            datasetId: id,
-            objectPath: `dataset/${id}/video`, // 图片对象存储路径
-          },
-          accept: ".mp4,.avi,.mkv,.mov,.webm,.wmv",
-          optionUploadProps: trackUploadProps,
-        });
-      }
-    });
-
     // 上传包括图片和视频
     const uploader = async (datasetId, files) => {
       // 文件上传
-      if (state.isImage) {
+      if (state.isImage || state.isText) {
         return submit(datasetId, files);
       }
       return submitVideo(datasetId, {
@@ -193,7 +160,7 @@ export default {
     // 上传成功
     const uploadSuccess = (res) => {
       // 视频上传完毕
-      if (!state.isImage) {
+      if (state.isVideo) {
         state.percentage = 100;
       }
       const files = getImgFromMinIO(res);
@@ -213,25 +180,24 @@ export default {
     };
 
     // 上传失败
-    const uploadError = () => {
+    const uploadError = (err) => {
       state.loading = false;
-      state.uploadStatus = "exception";
-      Message.error({ message: "上传失败", duration: 1000 });
+      Message.error({ message: err || "上传失败", duration: 1000 });
     };
 
     // 确定上传
     const uploadSubmit = formName => {
       context.refs[formName].uploadSubmit((resolved, total) => {
+        Object.assign(state, {
+          loading: true,
+          uploadStep: 1,
+          title: "上传中",
+        });
         // eslint-disable-next-line func-names
         Vue.nextTick(function() {
           state.percentage =
             state.percentage > 100 ? 100 : toFixed(resolved / total);
         });
-      });
-      Object.assign(state, {
-        loading: true,
-        uploadStep: 1,
-        title: "上传中",
       });
     };
 
@@ -245,9 +211,66 @@ export default {
       });
     };
 
+    const optionCreateProps = computed(() => {
+      if(!state.row) return {};
+      const props = {
+        params: {
+          datasetId: state.row.id,
+          objectPath: `dataset/${state.row.id}/origin`, // 图片对象存储路径
+        },
+      };
+      const baseImgProps = {
+        transformFile: withDimensionFile,
+      };
+      if(state.isText) {
+        Object.assign(props, {
+          dataType: "text",
+        });
+      }
+      if(state.isImage) {
+        Object.assign(props, baseImgProps);
+      }
+      if(state.isVideo) {
+        Object.assign(props, baseImgProps, trackUploadProps);
+      }
+      return props;
+    });
+
+    // 监测选中导入的列数据变化
+    watch(() => props.row, (next) => {
+      Object.assign(state, {
+        row: { ...state.row, ...next },
+      });
+      if (state.row.dataType === dataTypeCodeMap.IMAGE) {
+        Object.assign(state, {
+          isImage: true,
+          isText: false,
+          isVideo: false,
+          title: "导入图片",
+          accept: ".jpg,.png,.bmp,.jpeg",
+        });
+      } else if(state.row.dataType === dataTypeCodeMap.TEXT){
+        Object.assign(state, {
+          isImage: false,
+          isText: true,
+          isVideo: false,
+          title: "导入文本",
+          accept: ".txt",
+        });
+      } else {
+        Object.assign(state, {
+          isImage: false,
+          isText: false,
+          isVideo: true,
+          title: "导入视频",
+        });
+      }      
+    }, { lazy: true });
+
     return {
       state,
       uploadSubmit,
+      optionCreateProps,
       format,
       handleClose,
       withDimensionFile,

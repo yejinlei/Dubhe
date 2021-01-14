@@ -1,4 +1,4 @@
-/** Copyright 2020 Zhejiang Lab. All Rights Reserved.
+/** Copyright 2020 Tianshu AI Platform. All Rights Reserved.
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 * you may not use this file except in compliance with the License.
@@ -39,7 +39,7 @@
             @clear="crud.toQuery"
             @keyup.enter.native="crud.toQuery"
           />
-          <rrOperation />
+          <rrOperation @resetQuery="onResetQuery" />
         </span>
       </cdOperation>
     </div>
@@ -102,7 +102,7 @@
 // eslint-disable-next-line import/no-extraneous-dependencies
 import { debounce } from 'throttle-debounce';
 
-import notebookApi, {detail, getStatus, start, stop, open} from '@/api/development/notebook';
+import notebookApi, { detail, getStatus, start, stop, open } from '@/api/development/notebook';
 import { add as addAlgorithm } from '@/api/algorithm/algorithm';
 import DropdownHeader from '@/components/DropdownHeader';
 import CRUD, { presenter, header, crud } from '@crud/crud';
@@ -111,6 +111,11 @@ import cdOperation from '@crud/CD.operation';
 import pagination from '@crud/Pagination';
 import CreateDialog from './components/CreateDialog';
 import NotebookDetail from './components/NotebookDetail';
+
+const defaultQuery = {
+  noteBookName: null,
+  status: null,
+};
 
 export default {
   name: 'Notebook',
@@ -141,10 +146,7 @@ export default {
       pollingCount: 0,
       keepPoll: true,
       ct: null,
-      localQuery: {
-        noteBookName: null,
-        status: null,
-      },
+      localQuery: { ...defaultQuery },
     };
   },
   computed: {
@@ -253,10 +255,13 @@ export default {
       }
     },
     [CRUD.HOOK.beforeRefresh]() {
-      this.crud.query = { ...this.localQuery};
+      this.crud.query = { ...this.localQuery };
     },
     toAdd() {
       this.$refs.create.showThis();
+    },
+    onResetQuery() {
+      this.localQuery = { ...defaultQuery };
     },
     onAdded() {
       this.crud.toQuery();

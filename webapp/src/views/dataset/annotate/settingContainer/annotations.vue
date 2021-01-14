@@ -1,4 +1,4 @@
-/** Copyright 2020 Zhejiang Lab. All Rights Reserved.
+/** Copyright 2020 Tianshu AI Platform. All Rights Reserved.
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 * you may not use this file except in compliance with the License.
@@ -21,7 +21,7 @@
       <el-table-column label="标注 Id" :min-width="100">
         <template slot-scope="{row}">
           <span>{{ row.name }}</span>
-          <Edit :row="row" title="修改标注 Id" valueBy="name" @handleOk="handleEdit" />
+          <Edit :row="row" title="修改标注 Id" valueBy="name" rules="required" label="标注 Id " @handleOk="handleEdit" />
         </template>
       </el-table-column>
       <el-table-column label="标签类型">

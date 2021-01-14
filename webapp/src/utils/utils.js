@@ -19,6 +19,10 @@
  */
 
 import { nanoid } from 'nanoid';
+import { Message } from 'element-ui';
+import Config from '@/settings';
+
+import FileFilter from '@/components/UploadForm/FileFilter';
 
 /**
  * Parse the time to string
@@ -286,6 +290,10 @@ const _toTree = (data) => {
  * @returns {list} [treeList, expandedKeys] 树形结构，和默认展开的元素
  */
 export const getTreeListFromFilepath = async (filepath) => {
+  if (!filepath) {
+    Message.warning('查找的文件路径为空');
+    return [[], []];
+  }
   // 1，获取minio的数据
   const tmp = await window.minioClient.listObjects(filepath);
   if(!tmp || !tmp.length){
@@ -351,3 +359,47 @@ export function uploadSizeFomatter(size) {
   }
   return `${size} MB`;
 }
+
+// 基于 Element-ui 返回一个新的 Message 函数，连续调用时会按照调用顺序依次展示 Message
+export function getQueueMessage() {
+  const msgQueue = [];
+  let msgInstance = null;
+
+  const callMsg = () => {
+    if (msgInstance || !msgQueue.length) { return; }
+
+    const msgOption = msgQueue.shift();
+    msgInstance = Message({
+      ...msgOption,
+      onClose(originInstance) {
+        msgInstance = null;
+        setTimeout(callMsg, 50);
+        if (typeof msgOption.onClose === 'function') {
+          msgOption.onClose(originInstance);
+        }
+      },
+    });
+  };
+  return async msgOption => {
+    msgQueue.push(msgOption);
+    callMsg();
+  };
+}
+
+export function updateTitle(title) {
+  document.title = title ? `${title} - ${Config.title}` : Config.title;
+}
+
+// 筛选部分会导致 minio 上传错误的字符
+const invalidChars = ['#', '%', '^'];
+
+const invalidFileNameCharJudge = (file) => {
+  for (const char of invalidChars) {
+    if (file.name.includes(char)) {
+      return true;
+    }
+  }
+  return false;
+};
+
+export const invalidFileNameChar = new FileFilter(invalidFileNameCharJudge, `文件名包含不合法字符: ${invalidChars.join('、')}`);

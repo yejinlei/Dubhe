@@ -1,4 +1,4 @@
-/** Copyright 2020 Zhejiang Lab. All Rights Reserved.
+/** Copyright 2020 Tianshu AI Platform. All Rights Reserved.
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 * you may not use this file except in compliance with the License.
@@ -24,7 +24,7 @@
 <script>
 import { ref, reactive } from '@vue/composition-api';
 import Form from './form';
-import { minIOUpload, hashify, getFileOutputPath } from './util';
+import { minIOUpload, renameFile, getFileOutputPath } from './util';
 
 export default {
   name: 'UploadInline',
@@ -38,10 +38,15 @@ export default {
       type: Boolean,
       default: false,
     },
+    beforeUpload: Function,
     transformFile: Function,
     hash: {
       type: Boolean,
       default: true,
+    },
+    encode: {
+      type: Boolean,
+      default: false,
     },
     params: {
       type: Object,
@@ -49,19 +54,19 @@ export default {
     },
   },
   setup(props, ctx) {
-    const { request, transformFile } = props;
+    const { request, transformFile, beforeUpload } = props;
     const formRef = ref(null);
     const state = reactive({
       uploading: false,
     });
 
     // 基于文件上传
-    const uploadByFile = (files, callback) => {
+    const uploadByFile = (files, callback, result = {}, errCallback) => {
       const fileList = Array.isArray(files) ? files : [files];
       // 重命名
       const renameFileList = fileList.map(file => ({
         ...file,
-        name: hashify(file.name, props.hash),
+        name: renameFile(file.name, { hash: props.hash, encode: props.encode }),
       }));
 
       if (!fileList || !fileList.length) {
@@ -72,7 +77,7 @@ export default {
       ctx.emit('uploadStart', files);
       const uploadReqeust = request || minIOUpload;
       // 开始调用上传接口
-      return uploadReqeust({ ...props.params, fileList: renameFileList, transformFile }, callback)
+      return uploadReqeust({ ...props.params, fileList: renameFileList, transformFile, ...result }, callback, errCallback)
         .then(res => {
           const outputPath = getFileOutputPath(renameFileList, props.params);
           state.uploading = false;
@@ -85,12 +90,23 @@ export default {
     };
 
     // 提交结果
-    const uploadSubmit = (callback) => {
+    const uploadSubmit = (callback, errCallback) => {
       const fileList = (formRef.value?.$refs.uploader || {}).uploadFiles;
-      uploadByFile(fileList, callback);
+      // 触发 before Hook
+      if(typeof beforeUpload === 'function') {
+        beforeUpload({ fileList }).then(result => {
+          uploadByFile(fileList, callback, result, errCallback);
+        }).catch(err => {
+          state.uploading = false;
+          ctx.emit('uploadError', err);
+        });
+      } else {
+        uploadByFile(fileList, callback, undefined, errCallback);
+      }
     };
 
-    const handleFileChange = (file) => {
+    const handleFileChange = (file, fileList) => {
+      ctx.emit('fileChange', file, fileList);
       // 自动触发上传命令
       if (props.autoUpload) {
         uploadByFile(file);

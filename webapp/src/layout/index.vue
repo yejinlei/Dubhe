@@ -1,4 +1,4 @@
-/** Copyright 2020 Zhejiang Lab. All Rights Reserved.
+/** Copyright 2020 Tianshu AI Platform. All Rights Reserved.
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 * you may not use this file except in compliance with the License.
@@ -25,12 +25,14 @@ import BaseLayout from './BaseLayout';
 import DetailLayout from './DetailLayout';
 import DatasetLayout from './DatasetLayout';
 import SubpageLayout from './SubpageLayout';
+import FullpageLayout from './FullpageLayout';
 
 const layoutList = [
   'BaseLayout', // 基本布局
   'SubpageLayout', // 二级页面
   'DetailLayout', // 详情页面
   'DatasetLayout', // 数据集页面
+  'FullpageLayout', // 数据集页面
 ];
 
 export default {
@@ -40,6 +42,7 @@ export default {
     DetailLayout,
     DatasetLayout,
     SubpageLayout,
+    FullpageLayout,
   },
   computed: {
     layout() {

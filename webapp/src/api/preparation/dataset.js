@@ -1,4 +1,4 @@
-/** Copyright 2020 Zhejiang Lab. All Rights Reserved.
+/** Copyright 2020 Tianshu AI Platform. All Rights Reserved.
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 * you may not use this file except in compliance with the License.
@@ -139,6 +139,24 @@ export function queryFileOffset(datasetId, fileId, query = {}) {
   });
 }
 
+// 查询数据集标签
+export function queryLabels(datasetId, params) {
+  return request({
+    url: `api/data/datasets/${datasetId}/labels`,
+    method: 'get',
+    params,
+  });
+}
+
+// 创建数据集标签
+export function createLabel (datasetId, data) {
+  return request({
+    url: `api/data/datasets/${datasetId}/labels`,
+    method: 'post',
+    data,
+  });
+}
+
 // 查询预置标签
 export function queryPresetLabels() {
   return request({
@@ -150,7 +168,7 @@ export function queryPresetLabels() {
 // 查询数据增强字典
 export function queryDataEnhanceList() {
   return request({
-    baseURL: process.env.VUE_APP_DATA_API,
+    baseURL: process.env.VUE_APP_BASE_API,
     url: `api/v1/user/dict/dataset_enhance`,
     method: 'get',
   });

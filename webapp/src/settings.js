@@ -58,7 +58,7 @@ module.exports = {
   /**
    * RSA公钥
    */
-  publicKey: '',
+  publicKey: 'MFwwDQYJKoZIhvcNAQEBBQADSwAwSAJBANL378k3RiZHWx5AfJqdH9xRNBmD9wGD2iRe41HdTNF8RUhNnHit5NpMNtGL0NPTSSpPjjI1kJfVorRvaQerUgkCAwEAAQ==',
   /**
    * 用户社区
    */

@@ -1,4 +1,4 @@
-/** Copyright 2020 Zhejiang Lab. All Rights Reserved.
+/** Copyright 2020 Tianshu AI Platform. All Rights Reserved.
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 * you may not use this file except in compliance with the License.
@@ -14,8 +14,10 @@
 * =============================================================
 */
 
-import { parseBbox, flatBbox, generateUuid } from '@/utils';
+import { parseBbox, flatBbox, generateUuid, promisifyFileReader } from '@/utils';
 import { bucketName, bucketHost } from '@/utils/minIO';
+
+const jschardet = require("jschardet");
 
 // 解析 annotation 信息
 export const parseAnnotation = (annotationStr, labels) => {
@@ -86,11 +88,22 @@ export const stringifyAnnotations = (annotations) => {
   return resultString;
 };
 
+// 根据文件信息返回结果
+export const buildUrlItem = d => ({
+  url: `${bucketName}/${d.data.objectName}`,
+  ...(d.data.meta || {}), // 附加的信息，目前只包括 width, height
+});
+
 // 解析 minIO 返回的图片
 const buildImgUrl = (list = []) => {
-  return list.map(d => ({
-    url: `${bucketName}/${d.data.objectName}`,
-    ...(d.data.meta || {}), // 附加的信息，目前只包括 width, height
+  return list.map(buildUrlItem);
+};
+
+// 解析minIO 返回的文本
+const buildTextUrl = (list = []) => {
+  return list.map(res => ({
+    url: `${bucketName}/${res.data.objectName}`,
+    ...(res.data.meta || {}),
   }));
 };
 
@@ -119,6 +132,10 @@ export const withDimensionFile = (result, file) => {
 
 export const getImgFromMinIO = (res) => {
   return buildImgUrl(res);
+};
+
+export const getTextFromMinIO = (res) => {
+  return buildTextUrl(res);
 };
 
 const defaultTransform = d => ({
@@ -191,11 +208,27 @@ export const enhanceSymbol = Symbol('enhance');
 export const dataTypeMap = {
   0: '图片',
   1: '视频',
+  2: '文本',
 };
 
 export const dataTypeCodeMap = {
   'IMAGE': 0,
   'VIDEO': 1,
+  'TEXT': 2,
+};
+
+// 存储用户选择数据集场景（视觉/文本场景：0，医学场景：1）
+export const cacheDatasetType = (type) => localStorage.setItem('datasetListType', type);
+
+export const getDatasetType = () => {
+  let datasetListType;
+  try {
+    datasetListType = JSON.parse(localStorage.getItem('datasetListType'));
+  } catch (err) {
+    console.error(err);
+    throw err;
+  }
+  return datasetListType;
 };
 
 // 文件状态
@@ -218,14 +251,15 @@ export const fileCodeMap = {
   'MANUAL_ANNOTATED': 104,
   'UNRECOGNIZED': 105,
   'TRACK_SUCCEED': 201,
-  'UNCOMPLETED': 301,
-  'COMPLETED': 302,
+  'UNFINISHED': 301,
+  'FINISHED': 302,
 };
 
 export const annotationCodeMap = {
   'ANNOTATE': 1,
   'CLASSIFY': 2,
   'TRACK': 5,
+  'TEXTCLASSIFY': 6,
 };
 
 export const annotationMap = {
@@ -234,7 +268,13 @@ export const annotationMap = {
   // 3: { name: '行为分析', urlPrefix: 'analysis' },
   // 4: { name: '异常检测', urlPrefix: 'exception' },
   5: { name: '目标跟踪', urlPrefix: 'track', component: 'TrackDataset' },
+  6: { name: '文本分类', urlPrefix: 'textclassify', component: 'TextClassify'},
 };
+
+// 数据类型和标注类型的对应关系
+export const dataTypeAnnotateTypeMap = new Map()
+  .set(dataTypeCodeMap.VIDEO, annotationCodeMap.TRACK)
+  .set(dataTypeCodeMap.TEXT, annotationCodeMap.TEXTCLASSIFY);
 
 // 数据集状态
 export const datasetStatusMap = {
@@ -268,6 +308,24 @@ export const statusCodeMap = {
   402: 'IMPORTING',
 };
 
+// 文本数据集状态
+export const textStatusMap = {
+  101: { name: '未标注', 'color': '#FFFFFF'},
+  103: { name: '自动标注完成', 'color': '#468CFF' },
+  104: { name: '手动标注完成', 'color': '#FF9943' },
+  105: { name: '未识别', 'color': '#FFFFFF'},
+};
+
+export const textFinishedMap = {
+  103: '自动标注完成',
+  104: '手动标注完成',
+};
+
+export const textUnfinishedMap = {
+  101: '未标注',
+  105: '未识别',
+};
+
 // 标注精度
 export const annotationProgressMap = {
   finished: '已完成',
@@ -284,6 +342,13 @@ export const decompressProgressMap = {
   3: '解压失败',
 };
 
+export const publishStateMap = {
+  4: 'PUBLISHING',
+};
+
+// 发布中
+export const isPublishDataset = row => publishStateMap[row.dataConversion] === 'PUBLISHING';
+
 // 数据增强类型
 export const dataEnhanceMap = {
   1: '',
@@ -293,7 +358,33 @@ export const dataEnhanceMap = {
 };
 
 // 根据value取key
-export const findKey = (value, data, compare = (a, b) => a === b) => 
-{ 
+export const findKey = (value, data, compare = (a, b) => a === b) =>
+{
   return Object.keys(data).find(k => compare(data[k], value));
+};
+
+// TODO: 覆盖更多 case? 
+const charsetMap = {
+  'gbk': ['windows-1253'],
+  'utf-8': ['ascii', 'windows-1252'],
+};
+
+// 读取文本文件，解决中文文本字符编码乱码
+export const readTxt = async (url, encoding) => {
+  const result = await fetch(url);
+  const blob = await result.blob();
+  const txt = await blob.text();
+
+  const chardet = jschardet.detect(txt);
+  let nextEncoding;
+  if(chardet.encoding) {
+    for(const [key, arr] of Object.entries(charsetMap)) {
+      if(arr.includes(chardet.encoding)) {
+        nextEncoding = key;
+        break;
+      }
+    }
+  }
+  const text = await promisifyFileReader(blob, encoding || nextEncoding || 'utf-8');
+  return text;
 };

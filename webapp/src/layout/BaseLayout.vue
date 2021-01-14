@@ -19,7 +19,7 @@
     <div v-if="device==='mobile' && sidebar.opened" class="drawer-bg" @click="handleClickOutside" />
     <sidebar v-if="showSidebar" class="sidebar-container" />
     <div class="main-container">
-      <div :class="{'fixed-header': fixedHeader}">
+      <div v-if="showNav" :class="{'fixed-header': fixedHeader}">
         <navbar :showBack="showBack" :showSidebar="showSidebar" :showTitle="showTitle" @go-back="onClickBack">
           <template v-slot:left>
             <slot name="left-options" />
@@ -64,6 +64,10 @@ export default {
       default: false,
     },
     showTitle: {
+      type: Boolean,
+      default: true,
+    },
+    showNav: {
       type: Boolean,
       default: true,
     },

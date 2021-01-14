@@ -1,4 +1,4 @@
-/** Copyright 2020 Zhejiang Lab. All Rights Reserved.
+/** Copyright 2020 Tianshu AI Platform. All Rights Reserved.
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 * you may not use this file except in compliance with the License.
@@ -25,20 +25,31 @@
       :rules="rules"
     >
       <div v-if="addAble" class="flex">
-        <InfoSelect
-          :value="list[index].id || list[index].name"
+        <!-- 视觉类型 -->
+        <div v-if="labelGroupType === 0">
+          <InfoSelect
+            :value="list[index].id || list[index].name"
+            style="width: 200px; margin-right: 10px;"
+            placeholder="选择或新建标签"
+            :dataSource="activeLabels"
+            valueKey="id"
+            labelKey='name'
+            default-first-option
+            filterable
+            allow-create
+            :disabled="!editAble && isOriginList(list[index])"
+            @change="params => handleChange(key, params)"
+          />
+          <el-input v-model="list[index].name" :disabled="!editAble && isOriginList(list[index])" class='dn'></el-input>
+        </div>
+        <!-- 非视觉标签组不需要下拉菜单 -->
+        <el-input
+          v-else
+          v-model="list[index].name"
+          placeholder="请输入标签名称"
           style="width: 200px; margin-right: 10px;"
-          placeholder="选择或新建标签"
-          :dataSource="activeLabels"
-          valueKey="id"
-          labelKey='name'
-          default-first-option
-          filterable
-          allow-create
           :disabled="!editAble && isOriginList(list[index])"
-          @change="params => handleChange(key, params)"
         />
-        <el-input v-model="list[index].name" :disabled="!editAble && isOriginList(list[index])" class='dn'></el-input>
         <el-color-picker v-model="list[index].color" :disabled="!editAble && isOriginList(list[index])" size="small" />
         <span style="width: 50px; margin-left: 10px; line-height: 32px;">
           <i 
@@ -76,8 +87,12 @@ import { validateLabel } from '@/utils/validate';
     props: {
       actionType: String,
       list: {
-        type: Array,
+        
         deafault: () => ([]),
+      },
+      labelGroupType: {
+        type: Number,
+        default: 0,
       },
       activeLabels: {
         type: Array,

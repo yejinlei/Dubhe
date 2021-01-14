@@ -1,4 +1,4 @@
-/** Copyright 2020 Zhejiang Lab. All Rights Reserved.
+/** Copyright 2020 Tianshu AI Platform. All Rights Reserved.
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 * you may not use this file except in compliance with the License.
@@ -57,8 +57,8 @@ export default {
 };
 </script>
 
-<style lang="scss">
-.progress {
+<style lang="scss" scoped>
+::v-deep.progress {
   .el-progress-bar__inner::before {
     position: absolute;
     top: 0;

@@ -1,4 +1,4 @@
-/** Copyright 2020 Zhejiang Lab. All Rights Reserved.
+/** Copyright 2020 Tianshu AI Platform. All Rights Reserved.
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 * you may not use this file except in compliance with the License.
@@ -36,7 +36,7 @@
         <p class="error-message" style="margin-top: 4px;">{{ errors[0] }}</p>
       </ValidationProvider>
       <div class="tc" style="margin-top: 8px;">
-        <el-button type="text" @click="handleCancel">取消</el-button>
+        <el-button @click="handleCancel">取消</el-button>
         <el-button type="primary" @click="handleOk">确定</el-button>
       </div>
       <i slot="reference" class="el-icon-edit primary cp dib" />
@@ -97,7 +97,10 @@ export default {
         if (!success) {
           return;
         }
-        ctx.emit('handleOk', state.value, props.row);
+        // 判断是否发生过变更
+        if(String(state.value) !== String(props.row[valueBy])) {
+          ctx.emit('handleOk', state.value, props.row);
+        }
         handleCancel();
       });
     };

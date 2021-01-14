@@ -1,4 +1,4 @@
-/** Copyright 2020 Zhejiang Lab. All Rights Reserved.
+/** Copyright 2020 Tianshu AI Platform. All Rights Reserved.
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 * you may not use this file except in compliance with the License.
@@ -20,7 +20,7 @@
       <span :class="{primary: filtered}">{{ title }}</span>
       <i class="el-icon-arrow-down el-icon--right" />
     </div>
-    <el-dropdown-menu slot="dropdown">
+    <el-dropdown-menu slot="dropdown" :style="dropdownStyle">
       <el-dropdown-item
         v-for="(item, index) in list"
         :key="index"
@@ -55,6 +55,11 @@ export default {
     filtered: {
       type: Boolean,
       default: false,
+    },
+    // 下拉框样式可配置
+    dropdownStyle: {
+      type: String,
+      default: "",
     },
   },
   setup(props, ctx) {

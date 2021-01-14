@@ -1,4 +1,4 @@
-/** Copyright 2020 Zhejiang Lab. All Rights Reserved.
+/** Copyright 2020 Tianshu AI Platform. All Rights Reserved.
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 * you may not use this file except in compliance with the License.
@@ -20,6 +20,50 @@ const Constant = {
     ascending: 'asc',
     descending: 'desc',
   },
+
+  tableSortMap2Element: {
+    asc: 'ascending',
+    desc: 'descending',
+  },
+  
+  // 表单标题映射
+  FORM_TYPE_MAP: {
+    add: '创建',
+    fork: 'Fork ',
+    edit: '编辑',
+  },
+};
+
+export const MODEL_RESOURCE = {
+  CUSTOM: {
+    label: '我的模型',
+    value: 0,
+  },
+  PRESET: {
+    label: '预训练模型',
+    value: 1,
+  },
+};
+
+export const MODEL_RESOURCE_MAP = {
+  0: '我的模型',
+  1: '预训练模型',
+};
+
+export const RESOURCES_POOL_TYPE = {
+  CPU: {
+    label: 'CPU',
+    value: 0,
+  },
+  GPU: {
+    label: 'GPU',
+    value: 1,
+  },
+};
+
+export const RESOURCES_POOL_TYPE_MAP = {
+  0: 'CPU',
+  1: 'GPU',
 };
 
 export { Constant };

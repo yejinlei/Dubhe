@@ -1,4 +1,4 @@
-/** Copyright 2020 Zhejiang Lab. All Rights Reserved.
+/** Copyright 2020 Tianshu AI Platform. All Rights Reserved.
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 * you may not use this file except in compliance with the License.
@@ -15,7 +15,7 @@
 */
 
 import { bucketHost, bucketName } from '@/utils/minIO';
-import { isValidVideo } from '@/utils/validate';
+import { isValidText, isValidVideo } from '@/utils/validate';
 import { generateUuid, performanceTiming } from '@/utils';
 
 const pMap = require('p-map');
@@ -30,6 +30,11 @@ const path = require('path');
 const isValidVideoFile = file => {
   const extname = path.extname(file.name);
   return isValidVideo(extname);
+};
+
+const isValidTextFile = file => {
+  const extname = path.extname(file.name);
+  return isValidText(extname);
 };
 
 // 给图片名称添加时间戳
@@ -47,7 +52,7 @@ export const hashName = (name) => {
 
 // minio 上传导致 chrome crash，自定义实现上传
 export const putObject = (uploadUrl, file, options = {}) => {
-  const { callback, objectName } = options;
+  const { callback, objectName, errCallback } = options;
   // 加载进度
   let loaded = 0;
   let total = 0;
@@ -68,6 +73,11 @@ export const putObject = (uploadUrl, file, options = {}) => {
         reject(e);
       }
     };
+    if (typeof errCallback === 'function') {
+      xhr.onerror = () => {
+        errCallback(file);
+      };
+    }
     // todo: 视频进度loaded 解析会回滚，暂时不清楚原因
     xhr.upload.addEventListener('progress', event => {
       if (event.lengthComputable) {
@@ -87,7 +97,7 @@ export const putObject = (uploadUrl, file, options = {}) => {
 };
 
 // 默认通过 minIO 上传
-export const minIOUpload = async({ objectPath, fileList, transformFile }, callback) => {
+export const minIOUpload = async({ objectPath, fileList, transformFile }, callback, errCallback) => {
   // add 进度条
   let resolved = 0;
 
@@ -100,6 +110,7 @@ export const minIOUpload = async({ objectPath, fileList, transformFile }, callba
     const fileRes = await putObject(`${uploadPrefix}/${objectName}`, d.raw, {
       objectName,
       callback,
+      errCallback,
     });
     // minIO 上传视频 chrome crash
     // const result = await window.minioClient.putObject(`${objectPath}/${d.name}`, blob, {
@@ -107,17 +118,20 @@ export const minIOUpload = async({ objectPath, fileList, transformFile }, callba
     // })
     resolved+=1;
     // 进度反馈
-    if (typeof callback === 'function' && fileList.length > 1) {
+    if (typeof callback === 'function' && fileList.length >= 1) {
       callback(resolved, fileList.length);
     }
 
     // 视频不做转换
     if (isValidVideoFile(d)) return fileRes;
 
+    // 文本也不做转换
+    if (isValidTextFile(d)) return fileRes;
+
     if (typeof transformFile === 'function') {
       const transformed = await transformFile(fileRes, d);
       return transformed;
-    }   
+    }
     return fileRes;
   };
 
@@ -125,8 +139,10 @@ export const minIOUpload = async({ objectPath, fileList, transformFile }, callba
   return result;
 };
 
-export const hashify = (name, hash) => {
-  return hash ? hashName(name) : name;
+export const renameFile = (name, options = {}) => {
+  name = options.hash ? hashName(name) : name;
+  name = options.encode ? encodeURIComponent(name) : name;
+  return name;
 };
 
 export const getFileOutputPath = (rawFiles, { objectPath }) => {

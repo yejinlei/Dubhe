@@ -1,4 +1,4 @@
-/** Copyright 2020 Zhejiang Lab. All Rights Reserved.
+/** Copyright 2020 Tianshu AI Platform. All Rights Reserved.
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 * you may not use this file except in compliance with the License.
@@ -33,7 +33,7 @@
       </div>
       <el-button slot="reference" type="text">详情</el-button>
     </el-popover>
-    <el-button v-if="isCurrent" type="text" @click="gotoDetail">查看标注</el-button>
+    <el-button v-if="isCurrent && !publishing" type="text" @click="gotoDetail">查看标注</el-button>
     <el-popconfirm
       v-if="!isCurrent"
       popper-class="reannotate-popconfirm"
@@ -42,7 +42,7 @@
     >
       <el-button slot="reference" type="text">删除</el-button>
     </el-popconfirm>
-    <el-button v-if="downloadDisabled" v-click-once type="text" @click="download(row)">
+    <el-button v-if="!publishing" v-click-once type="text" @click="download(row)">
       导出
     </el-button>
     <el-tooltip v-else content="文件生成中，请稍后" placement="top" :open-delay="400">
@@ -58,7 +58,7 @@ import { computed } from '@vue/composition-api';
 import { Message } from 'element-ui';
 
 import { toFixed, downloadZipFromObjectPath } from '@/utils';
-import { datasetStatusMap, annotationMap } from '@/views/dataset/util';
+import { datasetStatusMap, annotationMap, isPublishDataset } from '@/views/dataset/util';
 import { toggleVersion, deleteVersion } from '@/api/preparation/dataset';
 import { TableTooltip } from '@/hooks/tooltip';
 
@@ -77,9 +77,9 @@ export default {
   setup(props, ctx) {
     const { actions } = props;
     const { $router } = ctx.root;
-
-    // 数据发布后，后台会进行文件转换,导出数据集需要图片和标注文件,无需二进制文件,故转换状态码为1,2,3
-    const downloadDisabled = computed(() => [1, 2, 3].includes(props.row.dataConversion));
+    
+    // 发布中
+    const publishing = computed(() => isPublishDataset(props.row));
     const isCurrent = computed(() => !!props.row.isCurrent);
     const title = computed(() => `${props.row.name}(${props.row.versionName})`);
 
@@ -142,7 +142,7 @@ export default {
     const keyAccessor = (key, idx, data) => data[key].label;
 
     return {
-      downloadDisabled,
+      publishing,
       isCurrent,
       title,
       labels: Object.keys(list),

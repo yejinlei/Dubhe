@@ -1,4 +1,4 @@
-/** Copyright 2020 Zhejiang Lab. All Rights Reserved.
+/** Copyright 2020 Tianshu AI Platform. All Rights Reserved.
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 * you may not use this file except in compliance with the License.
@@ -26,10 +26,13 @@
           :disabled="state.actionType === 'detail'" 
         />
       </el-form-item>
-      <el-form-item v-if="labelGroupType" label="类型" prop="type">
-        <el-input 
-          v-model="labelGroupType"
-          :disabled="true"
+      <el-form-item label="类型" prop="labelGroupType" >
+        <InfoSelect
+          v-model="state.createForm.labelGroupType"
+          placeholder="类型"
+          :dataSource="labelGroupTypeList"
+          :disabled="['detail','edit'].includes(state.actionType)"
+          @change="handleLabelGroupTypeChange"
         />
       </el-form-item>
       <el-form-item label="描述" prop="remark">
@@ -59,6 +62,7 @@
               >
                 <DynamicField
                   :list="state.createForm.labels"
+                  :labelGroupType="state.createForm.labelGroupType"
                   :originList="state.originList"
                   :keys="state.keys"
                   :activeLabels="state.activeLabels"
@@ -141,7 +145,9 @@ import { remove, replace, duplicate } from '@/utils';
 import { validateName, validateLabelsUtil } from '@/utils/validate';
 import { getAutoLabels } from '@/api/preparation/datalabel';
 import { add, edit, getLabelGroupDetail, importLabelGroup } from "@/api/preparation/labelGroup";
+import InfoSelect from '@/components/InfoSelect';
 import DynamicField from './dynamicField';
+import { labelGroupTypeMap } from './util';
 
 import 'prismjs/themes/prism-tomorrow.css';
 
@@ -156,6 +162,7 @@ export default {
     DynamicField,
     UploadInline,
     Exception,
+    InfoSelect,
   },
   setup(props, ctx) {
     const editorRef = ref(null);
@@ -182,16 +189,14 @@ export default {
       3: 'upload',
     };
 
-    const labelGroupTypeMap = {
-      0: '自定义标签组',
-      1: '预置标签组',
-    };
-
     // 表单规则
     const rules = {
       name: [
         { required: true, message: '请输入标签组名称', trigger: ['change', 'blur'] },
         { validator: validateName, trigger: ['change', 'blur'] },
+      ],
+      labelGroupType: [
+        {required: true, message: '请选择标签组类型', trigger: ['change', 'blur'] },
       ],
     };
 
@@ -220,6 +225,7 @@ export default {
       createForm: {
         labels: initialLabels,
         name: '',
+        labelGroupType: undefined,
         remark: "",
         type: 0,
       },
@@ -269,6 +275,28 @@ export default {
           ...state.createForm,
           ...next,
         },
+      });
+    };
+
+    const labelGroupTypeList = computed(() => {
+      return Object.keys(labelGroupTypeMap).map(d => ({
+        label: labelGroupTypeMap[d],
+        value: Number(d),
+      }));
+    });
+
+    const handleLabelGroupTypeChange = () => {
+      Object.assign(state, {
+        createForm: {
+          ...state.createForm,
+          labels: initialLabels,
+        },
+      });
+      getAutoLabels(state.createForm.labelGroupType).then(res => {
+        Object.assign(state, {
+          activeLabels: res,
+          systemLabels: res,
+        });
       });
     };
 
@@ -341,13 +369,14 @@ export default {
               break;
             case 'upload': {
               const { uploadFiles } = uploadFormRef.value.formRef?.$refs.uploader || {};
-              const { name, remark } = state.createForm;
+              const { name, remark, labelGroupType } = state.createForm;
               
               const formData = new FormData();
               formData.append('name', name);
               formData.append('remark', remark);
               formData.append('file', uploadFiles[0].raw);
               formData.append('operateType', 3);
+              formData.append('labelGroupType', labelGroupType);
 
               importLabelGroup(formData).then(() => {
                 Message.success({
@@ -496,15 +525,9 @@ export default {
         });
     };
 
-    // 自定义标签组，预置标签组
     const labelGroupType = computed(() => labelGroupTypeMap[state.groupType]) || undefined;
 
-    onMounted(async () => {
-      const autoLabels = await getAutoLabels();
-      Object.assign(state, {
-        activeLabels: autoLabels,
-        systemLabels: autoLabels,
-      });
+    onMounted(() => {
       // 异常判断
       if(actionType !== 'create') {
         if(!state.id) {
@@ -513,12 +536,17 @@ export default {
         }
         setLoading(true);
         // 查询数据集详情
-        getLabelGroupDetail(state.id).then(res => {
+        getLabelGroupDetail(state.id).then(async (res) => {
           // 当编辑模式，且数据为空时需要提供默认数据
           const labels = res.labels.length === 0 && actionType === 'edit' ? initialLabels : res.labels;
           const restProps = state.actionType === 'detail' ? {
             groupType: res.type || 0,
           } : {};
+          const autoLabels = await getAutoLabels(res.labelGroupType);
+          Object.assign(state, {
+            activeLabels: autoLabels,
+            systemLabels: autoLabels,
+          });
           Object.assign(state, {
             createForm: {
               ...state.createForm,
@@ -559,6 +587,8 @@ export default {
       uploadFormRef,
       beforeLeave,
       labelGroupType,
+      labelGroupTypeList,
+      handleLabelGroupTypeChange,
     };
   },
 };

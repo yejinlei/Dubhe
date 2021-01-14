@@ -24,5 +24,7 @@ const getters = {
   user: state => state.user.user,
   permissions: state => state.user.permissions,
   dataset: state => state.dataset,
+  cloudServing: state => state.cloudServing,
+  modelOptimize: state => state.modelOptimize,
 };
 export default getters;

@@ -1,4 +1,4 @@
-/** Copyright 2020 Zhejiang Lab. All Rights Reserved.
+/** Copyright 2020 Tianshu AI Platform. All Rights Reserved.
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 * you may not use this file except in compliance with the License.
@@ -27,17 +27,15 @@
     <div v-if="importStep===0" class="placeholder">
       <div class="has-tip">
         <div class="tip">
-          请认真阅读下方说明，创建数据集完毕后，按照系统格式要求上传数据集文件，否则标注文件可能无法正确解析。
-          <a class="db" href="http://tianshu.org.cn/static/upload/file/dubhe-dataset-template.zip" target="_blank">下载示例数据集模板</a>
+          请参考下方说明文档，创建数据集完毕后，按照数据集模板格式上传数据集文件，否则标注文件可能无法正确解析。
         </div>
         <div class="requirement">
-          <p>1. 系统提供了一站式脚本服务用以快速导入本地已有数据集（<a href="http://docs.dubhe.ai/docs/module/dataset/import-dataset" target="_blank">使用文档</a>），推荐使用
-          <p>2. 本地数据集需要包括图片（origin 目录）、标注文件（annotation 目录）和标签文件三部分</p>
-          <p>3. 注意区分「图像分类」和「目标检测」类型数据集</p>
-          <p>4. 图片格式支持 jpg/png/bmp/jpeg，不大于 5M，位于 origin 目录下，不支持目录嵌套</p>
-          <p>5. 标注文件为 json 格式，位于 annotation 目录下，必须和文件同名（如果不存在标注，可不上传），不支持目录嵌套</p>
-          <p>6. 标签文件为 json 格式，命名要求为 label_{name}.json，其中 name 为标签组名称，不能与系统已有标签组重名</p>
-          <p>7. 更多参考示例数据集模板</p>
+          <p>1. 数据集脚本工具（<a href="http://docs.dubhe.ai/docs/module/dataset/import-dataset" target="_blank">文档</a>）
+          <p>2. 图片数据集（<a href="http://docs.dubhe.ai/docs/module/dataset/import-dataset/#%E5%AF%BC%E5%85%A5%E5%B7%B2%E6%9C%89%E6%95%B0%E6%8D%AE%E9%9B%86" target="_blank">文档</a>）</p>
+          <p>3. 文本数据集（<a href="http://docs.dubhe.ai/docs/module/dataset/import-dataset/#%E5%AF%BC%E5%85%A5%E6%96%87%E6%9C%AC%E6%95%B0%E6%8D%AE%E9%9B%86" target="_blank">文档</a></p>
+          <p>4. 图片数据集模板（<a href="http://tianshu.org.cn/static/upload/file/dubhe-dataset-template.zip" target="_blank">下载</a>）</p>
+          <p>5. 文本数据集模板（<a href="http://tianshu.org.cn/static/upload/file/dubhe-dataset-nlp-template.zip" target="_blank">下载</a>）</p>
+          <p>7. 更多参考（<a href="http://docs.dubhe.ai/docs/" target="_blank">官网文档</a>）</p>
         </div>
       </div>
     </div>
@@ -52,7 +50,12 @@
         <el-input v-model="form.name" placeholder="数据集名称不能超过50字" maxlength="50" />
       </el-form-item>
       <el-form-item label="数据类型" prop="dataType">
-        <el-select disabled value="图片" style="width: 200px;" />
+        <InfoSelect
+          v-model="form.dataType"
+          placeholder="数据类型"
+          :dataSource="dataTypeList"
+          width="200px"
+          @change="handleDataTypeChange" />
       </el-form-item>
       <el-form-item label="标注类型" prop="annotateType">
         <InfoSelect
@@ -82,7 +85,7 @@ import BaseModal from '@/components/BaseModal';
 
 import InfoSelect from '@/components/InfoSelect';
 import { validateName } from "@/utils/validate";
-import { annotationMap } from '@/views/dataset/util';
+import { annotationCodeMap, annotationMap, dataTypeCodeMap, dataTypeMap, dataTypeAnnotateTypeMap } from '@/views/dataset/util';
 
 import { add } from '@/api/preparation/dataset';
 
@@ -110,8 +113,8 @@ export default {
       formKey: 1,
       form: {
         name: "",
-        dataType: 0,
-        annotateType: 2,
+        dataType: "",
+        annotateType: "",
         status: 4,
         remark: "",
       },
@@ -124,7 +127,14 @@ export default {
           },
           { validator: validateName, trigger: ["change", "blur"] },
         ],
-         annotateType: [
+        dataType: [
+          {
+            required: true,
+            message: "请选择数据类型",
+            trigger: ["change", "blur"],
+          },
+        ],
+        annotateType: [
           {
             required: true,
             message: "请选择标注类型",
@@ -136,12 +146,34 @@ export default {
   },
   computed: {
     annotationList() {
-      const activeList = Object.keys(annotationMap).filter(type => ["1", "2"].includes(type)).map(d => ({
+      // 原始标注列表
+      const rawAnnotationList = Object.keys(annotationMap).map(d => ({
         label: annotationMap[d].name,
         value: Number(d),
       }));
-      return activeList;
+      // 图片，可用图像分类和目标检测；视频，可用目标跟踪；文本，可用文本分类
+      return rawAnnotationList.filter(d => {
+        if (this.form.dataType === dataTypeCodeMap.IMAGE) {
+          return [annotationCodeMap.ANNOTATE, annotationCodeMap.CLASSIFY].includes(d.value);
+        }
+        if (this.form.dataType === dataTypeCodeMap.VIDEO) {
+          return d.value === annotationCodeMap.TRACK;
+        }
+        if (this.form.dataType === dataTypeCodeMap.TEXT) {
+          return d.value === annotationCodeMap.TEXTCLASSIFY;
+        }
+        return true;
+      });
     },
+
+    dataTypeList: () =>
+      Object.keys(dataTypeMap)
+        .filter(type => [dataTypeCodeMap.IMAGE, dataTypeCodeMap.TEXT].includes(Number(type)))
+        .map(d => ({
+          label: dataTypeMap[d],
+          value: Number(d),
+        }),
+      ),
   },
   methods: {
     nextImportStep() {
@@ -159,7 +191,7 @@ export default {
           return;
         }
         const customForm = {
-          name: this.form.name, 
+          name: this.form.name,
           remark: this.form.remark,
           annotateType: this.form.annotateType,
           dataType: this.form.dataType,
@@ -182,13 +214,16 @@ export default {
     resetFormFields() {
       this.formKey += 1;
       this.importStep = 0;
-      this.form = {        
+      this.form = {
         name: "",
-        dataType: 0,
-        annotateType: 2,
+        dataType: "",
+        annotateType: "",
         status: 4,
         remark: "",
       };
+    },
+    handleDataTypeChange(dataType) {
+      this.form.annotateType = dataTypeAnnotateTypeMap.get(dataType);
     },
   },
 };

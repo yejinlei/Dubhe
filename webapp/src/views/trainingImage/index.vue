@@ -1,4 +1,4 @@
-/** Copyright 2020 Zhejiang Lab. All Rights Reserved.
+/** Copyright 2020 Tianshu AI Platform. All Rights Reserved.
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 * you may not use this file except in compliance with the License.
@@ -34,8 +34,9 @@
       </cdOperation>
     </div>
     <el-tabs v-model="active" class="eltabs-inlineblock" @tab-click="handleClick">
-      <el-tab-pane id="tab_0" label="我的镜像" name="0" />
-      <el-tab-pane id="tab_1" label="预置镜像" name="1" />
+      <el-tab-pane id="tab_0" label="我的镜像" :name="IMAGE_TABS.TRAIN" />
+      <el-tab-pane id="tab_1" label="预置镜像" :name="IMAGE_TABS.PRESET" />
+      <el-tab-pane id="tab_1" label="NoteBook镜像" :name="IMAGE_TABS.NOTEBOOK" />
     </el-tabs>
     <!--表格渲染-->
     <el-table
@@ -47,7 +48,7 @@
       @selection-change="crud.selectionChangeHandler"
       @sort-change="crud.sortChange"
     >
-      <el-table-column v-if="isShow" prop="id" label="ID" sortable="custom" width="80px" />
+      <el-table-column v-if="!judgeTabs.preset" prop="id" label="ID" sortable="custom" width="80px" />
       <el-table-column prop="imageName" label="镜像名称" sortable="custom" />
       <el-table-column prop="imageTag" label="镜像版本号" sortable="custom" />
       <el-table-column prop="imageStatus" label="状态" width="160px">
@@ -71,12 +72,32 @@
           <span>{{ parseTime(scope.row.createTime) }}</span>
         </template>
       </el-table-column>
-      <el-table-column v-if="isShow" label="操作" width="200px" fixed="right">
+      <el-table-column v-if="judgeTabs.notebook" prop="imageResource" label="是否为默认" align="center">
         <template slot-scope="scope">
-          <el-button :id="`doEdit_`+scope.$index" type="text" @click.stop="doEdit(scope.row)">
-            修改
+          <i :class="resourceObj(scope.row.imageResource).icon" :style="{color: resourceObj(scope.row.imageResource).color, fontSize: '20px'}"></i>
+        </template>
+      </el-table-column>
+      <el-table-column  v-if="!operationProps.disabled" label="操作" width="200px" fixed="right">
+        <template slot-scope="scope">
+          <el-tooltip
+            v-if="rolePermissions && judgeTabs.notebook"
+            effect="dark"
+            content="设为在线编辑算法时创建nootbook的默认镜像"
+            placement="top"
+          >
+            <el-button 
+              :id="`doPrecast_`+scope.$index" 
+              :disabled="Boolean(scope.row.imageResource)"
+              type="text" 
+              @click.stop="doPrecast(scope.row.id)"
+            >
+              {{ resourceObj(scope.row.imageResource).butText }}
+            </el-button>
+          </el-tooltip>
+          <el-button v-if="judgeTabs.train" :id="`doEdit_`+scope.$index" type="text" @click.stop="doEdit(scope.row)">
+            编辑
           </el-button>
-          <el-button :id="`doDelete_`+scope.$index" type="text" @click.stop="doDelete(scope.row.id)">
+          <el-button v-if="!judgeTabs.preset" :id="`doDelete_`+scope.$index" type="text" @click.stop="doDelete(scope.row.id)">
             删除
           </el-button>
         </template>
@@ -92,6 +113,7 @@
       :loading="crud.status.cu === 2"
       :disabled="loading"
       width="600px"
+      @open="onDialogOpen"
       @close="onDialogClose"
       @cancel="crud.cancelCU"
       @ok="crud.submitCU"
@@ -102,6 +124,12 @@
         :rules="rules"
         label-width="120px"
       >
+        <el-form-item v-if="isEdit && rolePermissions" label="镜像类型" prop="imageType">
+          <el-radio-group v-model="form.projectType" @change="onImageTypeChange">
+            <el-radio :label="IMAGE_PROJECT_TYPE.TRAIN" border class="mr-0">训练镜像</el-radio>
+            <el-radio :label="IMAGE_PROJECT_TYPE.NOTEBOOK" border>notebook镜像</el-radio>
+          </el-radio-group>
+        </el-form-item>
         <el-form-item v-if="isEdit" label="镜像名称" prop="imageName">
           <el-select
             id="imageName"
@@ -112,7 +140,6 @@
             filterable
             allow-create
             default-first-option
-            @focus="getHarborProjects"
           >
             <el-option
               v-for="item in harborProjectList"
@@ -135,6 +162,7 @@
             :show-file-count="false"
             :auto-upload="true"
             :hash="false"
+            :filters="uploadFilters"
             :limit="1"
             :on-remove="onFileRemove"
             @uploadStart="uploadStart"
@@ -175,6 +203,8 @@
 </template>
 
 <script>
+
+import { mapGetters } from 'vuex';
 // eslint-disable-next-line import/no-extraneous-dependencies
 import { debounce } from 'throttle-debounce';
 
@@ -182,19 +212,21 @@ import cdOperation from '@crud/CD.operation';
 import rrOperation from '@crud/RR.operation';
 import pagination from '@crud/Pagination';
 import CRUD, { presenter, header, form, crud } from '@crud/crud';
-import trainingImageApi, { imageNameList, del } from '@/api/trainingImage/index';
-import { getUniqueId, uploadSizeFomatter } from '@/utils';
+import trainingImageApi, { getImageNameList, del, setPrecast } from '@/api/trainingImage/index';
+import { getUniqueId, uploadSizeFomatter, invalidFileNameChar } from '@/utils';
 import BaseModal from '@/components/BaseModal';
 import UploadInline from '@/components/UploadForm/inline';
 import DropdownHeader from '@/components/DropdownHeader';
 import UploadProgress from '@/components/UploadProgress';
 import { imageConfig } from '@/config';
+import { IMAGE_TABS, IMAGE_PROJECT_TYPE } from '../trainingJob/utils';
 
 const defaultForm = {
   imageName: null,
   imagePath: null,
   imageTag: null,
   remark: null,
+  projectType: IMAGE_PROJECT_TYPE.TRAIN,
 };
 export default {
   name: 'TrainingImage',
@@ -250,7 +282,7 @@ export default {
       }
     };
     return {
-      active: '0',
+      active: IMAGE_TABS.TRAIN,
       localQuery: {
         imageStatus: null,
         imageNameOrId: null,
@@ -294,16 +326,31 @@ export default {
       loading: false,
       isEdit: false,
       prefabricate: true,
+      // 以下为配置参数及常量参数
       imageConfig,
+      IMAGE_TABS,
+      IMAGE_PROJECT_TYPE,
+      uploadFilters: [invalidFileNameChar],
     };
   },
   computed: {
-    isShow() {
-      return this.active === '0';
+    ...mapGetters([
+      'user',
+    ]),
+    rolePermissions() {
+      const { roles } = this.user;
+      return roles && roles.length && roles[0].permission === 'admin';
+    },
+    judgeTabs() {
+      return {
+        train: this.active === IMAGE_TABS.TRAIN,
+        preset: this.active === IMAGE_TABS.PRESET,
+        notebook: this.active === IMAGE_TABS.NOTEBOOK,
+      };
     },
     operationProps() {
       return {
-        disabled: Number(this.active) === 1,
+        disabled: !this.judgeTabs.train && !(this.rolePermissions && this.judgeTabs.notebook),
       };
     },
     imageStatusList() {
@@ -313,15 +360,12 @@ export default {
       }
       return arr;
     },
-    user() {
-      return this.$store.getters.user;
-    },
     status() {
       return this.progress === 100 ? 'success' : null;
     },
   },
   mounted() {
-    this.crud.query.imageResource = Number(this.active);
+    this.crudQuery();
     this.crud.refresh();
     this.refetch = debounce(3000, this.crud.refresh);
     this.updateImagePath();
@@ -329,7 +373,7 @@ export default {
   methods: {
     // handle
     handleClick() {
-      this.crud.query.imageResource = Number(this.active);
+      this.crudQuery();
       this.crud.refresh();
       // 切换tab键时让表格重渲
       this.prefabricate = false;
@@ -374,13 +418,14 @@ export default {
     },
     [CRUD.HOOK.beforeRefresh]() {
       this.crud.query = { ...this.localQuery};
-      this.crud.query.imageResource = Number(this.active);
+      this.crudQuery();
     },
     [CRUD.HOOK.beforeToEdit]() {
       this.isEdit = false;
     },
-    async getHarborProjects() {
-      this.harborProjectList = await imageNameList();
+    async onImageTypeChange() {
+      this.form.imageName = null;
+      this.harborProjectList = await getImageNameList({ projectType: this.form.projectType });
     },
     onDialogClose() {
       if (this.isEdit) {
@@ -388,10 +433,25 @@ export default {
       }
       this.loading = false;
     },
+    async onDialogOpen() {
+      if (this.rolePermissions) {
+        this.onImageTypeChange();
+      } else {
+        this.form.projectType = IMAGE_PROJECT_TYPE.TRAIN;
+        this.harborProjectList = await getImageNameList({ projectType: this.form.projectType });
+      }
+    },
     checkStatus() {
       if (this.crud.data.some(item => [0].includes(item.imageStatus))) {
         this.refetch();
       }
+    },
+    crudQuery() {
+      const isTrain = [IMAGE_TABS.TRAIN, IMAGE_TABS.PRESET].includes(this.active);
+      this.crud.query.projectType = isTrain ? IMAGE_PROJECT_TYPE.TRAIN : IMAGE_PROJECT_TYPE.NOTEBOOK;
+      if (isTrain) {
+        this.crud.query.imageResource = Number(this.active);
+      };
     },
     filterStatus(status) {
       this.localQuery.imageStatus = status;
@@ -425,7 +485,28 @@ export default {
         },
       );
     },
+    doPrecast(i) {
+      setPrecast({ id: i }).then(() => {
+        this.$message({
+          message: '设置成功',
+          type: 'success',
+        });
+        this.crud.refresh();
+      });
+    },
+    resourceObj(resource) {
+      return resource ? { icon: 'el-icon-circle-check', color: '#67C23A', butText: '当前为默认' }
+      : { icon: 'el-icon-circle-close', color: '#F56C6C', butText: '设为默认' };
+    },
     uploadSizeFomatter,
   },
 };
 </script>
+<style lang="scss" scoped>
+.el-radio.is-bordered {
+  width: 130px;
+  height: 35px;
+  padding: 10px 0;
+  text-align: center;
+}
+</style>

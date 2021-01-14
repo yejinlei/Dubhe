@@ -1,4 +1,4 @@
-/** Copyright 2020 Zhejiang Lab. All Rights Reserved.
+/** Copyright 2020 Tianshu AI Platform. All Rights Reserved.
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 * you may not use this file except in compliance with the License.
@@ -53,7 +53,7 @@
             filterable
             :clearable="deletable"
             popper-class="group-cascader" 
-            style="width:100%; line-height:32px;"
+            style="width: 100%; line-height: 32px;"
             @change="handleGroupChange"
           >
             <div slot="empty">
@@ -70,7 +70,7 @@
               <span>页面创建</span>
             </div>
           </el-cascader>
-          <div style="position: relative; float: right; top: -33px; right: 30px;">
+          <div style="position: relative; top: -33px; right: 30px; float: right;">
             <el-link 
               v-if="state.chosenGroupId !== null" 
               target="_blank"
@@ -127,7 +127,7 @@
 
 <script>
 import {isNil} from 'lodash'; 
-import { watch, reactive, computed, onMounted } from '@vue/composition-api';
+import { watch, reactive, computed } from '@vue/composition-api';
 
 import BaseModal from '@/components/BaseModal';
 import InfoSelect from '@/components/InfoSelect';
@@ -215,14 +215,15 @@ export default {
         label: annotationMap[d].name,
         value: Number(d),
       }));
-      // 如果是图片，目标跟踪不可用
-      // 如果是视频，只能用目标跟踪
+      // 图片，可用图像分类和目标检测；视频，可用目标跟踪；文本，可用文本分类
       return rawAnnotationList.map(d => {
         let disabled = false;
         if (state.model.dataType === dataTypeCodeMap.IMAGE) {
-          disabled = d.value === annotationCodeMap.TRACK;
+          disabled = ![annotationCodeMap.ANNOTATE, annotationCodeMap.CLASSIFY].includes(d.value);
         } else if (state.model.dataType === dataTypeCodeMap.VIDEO) {
           disabled = d.value !== annotationCodeMap.TRACK;
+        } else {
+          disabled = d.value !== annotationCodeMap.TEXTCLASSIFY;
         }
         return {
           ...d,
@@ -257,49 +258,30 @@ export default {
       }
     };
 
-    onMounted(() => {
-      getLabelGroupList(1).then(res => {
-        res.forEach((item) => {
-          state.labelGroupOptions[1].children.push({
-            value: item.id,
-            label: item.name,
-            disabled: false,
-          });
-        });
-      });
-      getLabelGroupList(0).then(res => {
-        res.forEach((item) => {
-          state.labelGroupOptions[0].children.push({
-            value: item.id,
-            label: item.name,
-            disabled: false,
-          });
-        });
-      });
-    });
-
     watch(() => props.row, (next) => {
       Object.assign(state, {
         model: { ...state.model, ...next },
       });
-      // 图像分类可任意选择
-      if(next?.annotateType === annotationCodeMap.CLASSIFY) {
-        state.labelGroupOptions[1].disabled = false;
-        state.labelGroupOptions[1].children.forEach( item => {item.disabled = false;});
+      if(!isNil(state.model.dataType)){
+        getLabelGroupList({type: 1, dataType: state.model.dataType, annotateType: state.model.annotateType}).then(res => {
+          res.forEach((item) => {
+            state.labelGroupOptions[1].children.push({
+              value: item.id,
+              label: item.name,
+              disabled: false,
+            });
+          });
+        });   
       }
-      // 目标检测和目标跟踪 在预置标签组中只可选择coco
-      if([annotationCodeMap.ANNOTATE, annotationCodeMap.TRACK].includes(next?.annotateType)) {
-        if(state.chosenGroupId !== 1) {
-          state.chosenGroup = null;
-          state.chosenGroupId = null;
-        }
-        state.labelGroupOptions[1].disabled = false;
-        state.labelGroupOptions[1].children.forEach( item => { 
-          if(item.value === 1){
-            item.disabled = false;
-          } else {
-            item.disabled = true;
-          }
+      if(!isNil(state.model.dataType)){
+        getLabelGroupList({type: 0, dataType: state.model.dataType, annotateType: state.model.annotateType}).then(res => {
+          res.forEach((item) => {
+            state.labelGroupOptions[0].children.push({
+              value: item.id,
+              label: item.name,
+              disabled: false,
+            });
+          });
         });
       }
       // 读取数据集已有标签组
