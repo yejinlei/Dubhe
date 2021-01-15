@@ -72,7 +72,7 @@ def get_parser(parser=None):
     parser.add_argument("--level", type=str, default="debug", help="level for logging")
     parser.add_argument("--host", type=str, default="0.0.0.0", help="The host of the server(eg. 0.0.0.0)")
     parser.add_argument("--port", default=int(5000), help="The port of the server(eg. 5000)", type=int)
-    parser.add_argument("--enable_tls", type=ast.literal_eval, default=True, help="If enable use grpc tls")
+    parser.add_argument("--enable_tls", type=ast.literal_eval, default=False, help="If enable use grpc tls")
     parser.add_argument("--secret_crt", type=str, default=PROJECT_ROOT + '/tls_crt/server.crt', help="TLS crt file")
     parser.add_argument("--secret_key", type=str, default=PROJECT_ROOT + '/tls_crt/server.key', help="TLS key file")
     parser.add_argument("--model_config_file", type=str, default="", help="The file of the model config(eg. '')")
