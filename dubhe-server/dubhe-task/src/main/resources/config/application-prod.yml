@@ -1,5 +1,5 @@
 server:
-  port: 9527
+  port: 8000
   # rest API 版本号
   rest-version: v1
 
@@ -83,7 +83,7 @@ spring:
           show: true
 
 k8s:
-  # k8s集群配置文件,将k8s集群master下$HOME/.kube/config文件 复制到dubhe-task/src/main/resources/下 重命名为 kubeconfig
+  # k8s集群配置文件
   kubeconfig: kubeconfig
   # nfs服务暴露的IP地址 如需测试需修改为合适的地址
   nfs: 127.0.0.1
@@ -96,6 +96,16 @@ k8s:
   host: notebook.test.com
   # k8s ingress-controller 对外port，获取方式：部署 ingress-controller 后，在k8s master节点执行 kubectl get svc -A | grep 'ingress-nginx-controller' 获取80对应的外部端口
   port: 33334
+  # k8s ingress-controller 对外grpc port
+  https-port: 31365
+  # k8s 模型部署配置
+  serving:
+    # k8s 模型部署域名 如需测试需修改为合适的域名
+    host: serving.test.com
+    # tls 证书 crt
+    tls-crt:
+    # tls 证书 key
+    tls-key:
   # elasticsearch暴露的服务地址，获取方式 部署 管理集群日志 后，在k8s msater节点执行 kubectl get svc -A | grep 'elasticsearch' 获取9200对应的外部端口
   elasticsearch:
     hostlist: ${eshostlist:127.0.0.1:33333}
@@ -117,6 +127,9 @@ k8s:
   pod:
     metrics:
       grafanaUrl: http://127.0.0.1:30006/d/job/monitor?orgId=1&refresh=5s&kiosk&var-pod=
+  prometheus:
+    query-url: http://127.0.0.1:30003/api/v1/query
+    gpu-query-param: sum(container_accelerator_duty_cycle{pod="{}"})by(pod,acc_id)
   nfs-storage-class-name: zjlab-nfs-storage
 #配置harbor
 harbor:
@@ -128,32 +141,14 @@ harbor:
 # data模块配置
 data:
   annotation:
-    # 自动标注服务url,最后一位需加'/'
-    endpoint: http://127.0.0.1/annotation-dev/
     task:
       # 自动标注任务分割的文件split size
       splitSize: 16
-      # 单位ms
-      retryInterval: 5000
-      # 任务不更新置为失败的时间单位秒
-      failTime: 43200
-  track:
-    # 自动追踪服务url
-    endpoint: http://127.0.0.1:7091/
   server:
     # 文件存储服务器用户名
     userName: root
-  enhance:
-    # 数据增强
-    endpoint: http://127.0.0.1:8070/
-  imageNet:
-    # imageNet
-    endpoint: http://127.0.0.1:8092/
-  ofrecord:
-    # 二进制转换
-    endpoint: http://127.0.0.1:8093/
-  #数据集训练配置
-  ptversion: http://127.0.0.1:8000/
+  # 数据集训练配置
+  ptversion: localhost:${server.port}/
 
 # minio配置
 minio:
@@ -166,6 +161,40 @@ minio:
   presignedUrlExpiryTime: 300
   annotation: /annotation/
 
+# 数据处理医学影像数据集dcm服务器配置，查看影像功能需要使用该服务
+dcm:
+  host: 10.5.29.100
+  port: 11112
+
+#镜像脚本路径
+image:
+  shell-path: /data/prod/dubhe-prod/
 #logback
 logging.config:
   classpath:logback-spring-dev.xml
+#是否开启 swagger-ui
+swagger:
+  enabled: false
+
+docker:
+  host: 127.0.0.1
+  port: 2375
+
+# 配置转发
+dubhe-proxy:
+  visual:
+    keyword: visual
+    server: localhost
+    port: 9898
+  refine:
+    keyword: refine
+    server: localhost
+    port: 9797
+
+# serving模块配置
+serving:
+  sourcePath: "/serving/TS_Serving"
+  gateway-uri-postfix: .api.dubhe.ai
+  rootPath: "/serving/deployment/"
+  batchRootPath: "/serving/batch/"
+  group: serving_prod_group
