@@ -6,7 +6,7 @@ idna==2.10
 image==1.5.33
 joblib==1.0.0
 numpy==1.19.5
-oneflow @ file:///root/oneflow-0.3b3-cp36-cp36m-linux_x86_64.whl
+https://oneflow-static.oss-cn-beijing.aliyuncs.com/pip/oneflow-0.3b3-cp36-cp36m-linux_x86_64.whl
 onnx==1.8.0
 pandas==1.1.5
 Pillow==8.1.0

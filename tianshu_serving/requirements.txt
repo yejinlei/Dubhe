@@ -54,8 +54,8 @@ tensorflow-estimator==2.2.0
 tensorflow-gpu==2.2.0
 termcolor==1.1.0
 toml==0.10.2
-torch @ file:///root/torch-1.6.0-cp36-cp36m-linux_x86_64.whl
-torchvision @ file:///root/torchvision-0.7.0-cp36-cp36m-manylinux1_x86_64.whl
+torch==1.6.0
+torchvision==0.7.0
 tqdm==4.53.0
 typed-ast==1.4.1
 typing-extensions==3.7.4.3
@@ -64,3 +64,4 @@ uvicorn==0.12.3
 Werkzeug==1.0.1
 wrapt==1.12.1
 zipp==3.4.0
+https://oneflow-static.oss-cn-beijing.aliyuncs.com/staging/dev_serving/2020.11.26-00.21.27-8d4c5e8/oneflow_cu102-0.2b2-cp36-cp36m-manylinux2014_x86_64.whl
