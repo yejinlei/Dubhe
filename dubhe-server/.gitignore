@@ -35,6 +35,7 @@ Thumbs.db
 target/
 output/
 *.jar
+!/dubhe-dcm/lib/dcm4che-core-5.19.1.jar
 !.mvn/wrapper/*
 *.war
 *.zip
