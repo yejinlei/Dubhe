@@ -47,6 +47,8 @@ spring:
       web-stat-filter:
         url-pattern: /*
         exclusions: "*.js,*.gif,*.jpg,*.bmp,*.png,*.css,*.ico,/druid/*"
+
+
   # 配置允许后面的Bean覆盖前面名称重复的Bean
   main:
     allow-bean-definition-overriding: true
@@ -113,7 +115,7 @@ k8s:
     log:
       type: _doc
       # 过滤源字段
-      source_field: log,@timestamp,kubernetes.pod_name
+      source_field: message,@timestamp,kubernetes.pod_name
   # 异步回调
   callback:
     # boot 单机部署即回调本机实例
@@ -138,6 +140,7 @@ harbor:
   username: admin
   password: Harbor12345
   model-name: train
+
 # data模块配置
 data:
   annotation:
@@ -169,6 +172,7 @@ dcm:
 #镜像脚本路径
 image:
   shell-path: /data/prod/dubhe-prod/
+
 #logback
 logging.config:
   classpath:logback-spring-dev.xml
