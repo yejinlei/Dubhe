@@ -21,6 +21,3 @@ service_utils/redis_test.py
 
 # redis
 Redis-x64-3.2.100/
-
-# config
-config.ini

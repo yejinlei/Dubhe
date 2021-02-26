@@ -1,6 +1,6 @@
 #!/bin/bash
 
-conda activate dubhe_visual
+source activate dubhe_visual
 echo '进入conda虚拟环境，正在启动服务...'
 DIRNAME=$(pwd)
 

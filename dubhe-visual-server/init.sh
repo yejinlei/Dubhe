@@ -15,7 +15,7 @@ conda env create --file dubhe_visual.yaml
 
 echo 'conda dubhe_visual虚拟环境初始化成功，进入环境并执行数据初始化操作...'
 
-conda activate dubhe_visual
+source activate dubhe_visual
 
 cd backend/
 python manage.py migrate
