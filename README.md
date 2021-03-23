@@ -1,6 +1,6 @@
 <p align="center">
   <a href="http://tianshu.org.cn">
-    <img width="200" src="http://tianshu.org.cn/template/default/assets/img/logo4.png">
+    <img width="200" src="./imgs/logo4.png">
   </a>
 </p>
 
@@ -21,7 +21,7 @@
 * **性能优越**：集成自主研发的分布式训练平台，提供高性能的分布式计算体验，节省训练成本和训练时间。
 
 ## 页面预览
-![概览](http://cdn.qjycloud.com/dubhe_web_dashboard.png "概览")
+![概览](imgs/dubhe_web_dashboard.png "概览")
 
 
 ## 目录结构
@@ -35,14 +35,14 @@
 ```
 
 ## 技术架构
-![技术架构](http://cdn.qjycloud.com/tech-arc.jpg "技术架构")
+![技术架构](imgs/tech-arc.jpg "技术架构")
 
 ## 反馈问题
 
 - [在线社区](http://www.aiiaos.cn/index.php?s=/forum/index/forum/id/45.html)
 - 钉钉交流群
 
-<img src="http://cdn.qjycloud.com/dingtalk.jpg" width="320" />
+<img src="./imgs/dingtalk.jpg" width="320" />
 
 
 ## 许可证书
