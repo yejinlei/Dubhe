@@ -1,0 +1,146 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>org.dubhe</groupId>
+        <artifactId>server</artifactId>
+        <version>0.0.1-SNAPSHOT</version>
+    </parent>
+    <groupId>org.dubhe</groupId>
+    <artifactId>dubhe-data-task</artifactId>
+    <version>0.0.1-SNAPSHOT</version>
+    <packaging>jar</packaging>
+    <name>Task 数据集定时任务</name>
+    <description>数据集定时任务模块</description>
+
+    <dependencies>
+        <!-- Biz 通用配置 -->
+        <dependency>
+            <groupId>org.dubhe.biz</groupId>
+            <artifactId>base</artifactId>
+            <version>${org.dubhe.biz.base.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.dubhe.biz</groupId>
+            <artifactId>file</artifactId>
+            <version>${org.dubhe.biz.file.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.dubhe.biz</groupId>
+            <artifactId>data-permission</artifactId>
+            <version>${org.dubhe.biz.data-permission.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.dubhe.biz</groupId>
+            <artifactId>redis</artifactId>
+            <version>${org.dubhe.biz.redis.version}</version>
+        </dependency>
+        <!-- 注册中心 -->
+        <dependency>
+            <groupId>org.dubhe.cloud</groupId>
+            <artifactId>registration</artifactId>
+            <version>${org.dubhe.cloud.registration.version}</version>
+        </dependency>
+        <!-- 配置中心 -->
+        <dependency>
+            <groupId>org.dubhe.cloud</groupId>
+            <artifactId>configuration</artifactId>
+            <version>${org.dubhe.cloud.configuration.version}</version>
+        </dependency>
+        <!-- 远程调用 -->
+        <dependency>
+            <groupId>org.dubhe.cloud</groupId>
+            <artifactId>remote-call</artifactId>
+            <version>${org.dubhe.cloud.remote-call.version}</version>
+        </dependency>
+        <!-- log依赖-->
+        <dependency>
+            <groupId>org.dubhe.biz</groupId>
+            <artifactId>log</artifactId>
+            <version>${org.dubhe.biz.log.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-web</artifactId>
+        </dependency>
+
+        <!--springboot mail-->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-mail</artifactId>
+        </dependency>
+
+        <!--mapStruct依赖-->
+        <dependency>
+            <groupId>org.mapstruct</groupId>
+            <artifactId>mapstruct-jdk8</artifactId>
+            <version>${mapstruct.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.mapstruct</groupId>
+            <artifactId>mapstruct-processor</artifactId>
+            <version>${mapstruct.version}</version>
+            <scope>provided</scope>
+        </dependency>
+        <!-- javacv -->
+        <dependency>
+            <groupId>org.bytedeco</groupId>
+            <artifactId>javacv</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.bytedeco.javacpp-presets</groupId>
+            <artifactId>ffmpeg-platform</artifactId>
+        </dependency>
+        <!-- for spring boot -->
+        <dependency>
+            <groupId>org.apache.shardingsphere</groupId>
+            <artifactId>sharding-jdbc-spring-boot-starter</artifactId>
+            <version>${sharding-jdbc}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.dubhe</groupId>
+            <artifactId>dubhe-data</artifactId>
+            <version>${org.dubhe.dubhe-data.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.dubhe</groupId>
+            <artifactId>dubhe-data-dcm</artifactId>
+            <version>${org.dubhe.dubhe-data-dcm.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.alibaba</groupId>
+            <artifactId>easyexcel</artifactId>
+            <version>${easyexcel}</version>
+        </dependency>
+        <dependency>
+            <groupId>net.sourceforge.javacsv</groupId>
+            <artifactId>javacsv</artifactId>
+            <version>${javacsv}</version>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-maven-plugin</artifactId>
+                <configuration>
+                    <skip>false</skip>
+                    <fork>true</fork>
+                    <classifier>exec</classifier>
+                    <includeSystemScope>true</includeSystemScope>
+                </configuration>
+            </plugin>
+            <!-- 跳过单元测试 -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <configuration>
+                    <skipTests>true</skipTests>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+
+</project>

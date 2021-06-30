@@ -1,0 +1,18 @@
+train-algorithm:
+  #是否输出训练结果
+  is-train-out: true
+  #是否输出训练日志
+  is-train-log: true
+  #是否输出可视化日志
+  is-visualized-log: false
+  #设置默认算法来源(1为我的算法，2为预置算法)
+  algorithm-source: 1
+  #设置fork默认值（fork:创建算法来源）
+  fork: false
+  #设置inference默认值(inference:上传算法是否支持推理)
+  inference: false
+
+#关闭熔断机制
+feign:
+  hystrix:
+    enabled: false

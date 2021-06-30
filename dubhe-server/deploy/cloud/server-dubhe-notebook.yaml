@@ -1,0 +1,81 @@
+##################################################################################################
+# dubhe-notebook
+##################################################################################################
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: dubhe-notebook
+  labels:
+    app: dubhe-notebook
+    service: dubhe-notebook
+spec:
+  type: NodePort
+  ports:
+  - port: 8801
+    name: http
+  - port: 5005
+    name: debug
+  selector:
+    app: dubhe-notebook
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: dubhe-notebook
+  labels:
+    account: dubhe-notebook
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: dubhe-notebook-v1
+  labels:
+    app: dubhe-notebook
+    version: v1
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: dubhe-notebook
+      version: v1
+  template:
+    metadata:
+      labels:
+        app: dubhe-notebook
+        version: v1
+    spec:
+      serviceAccountName: dubhe-notebook
+      containers:
+      - name: dubhe-notebook
+        image: harbor.test.com/dubhe/dubhe-spring-cloud-k8s:env-value
+        imagePullPolicy: Always
+        env:
+        - name: JAR_BALL
+          value: "dubhe-notebook-0.0.1-SNAPSHOT-exec.jar  --spring.profiles.active=env-value"
+        - name: JVM_PARAM
+          value: "-Xms1024m -Xmx1024m -XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=containerLogPath/dubhe-notebook-dump.hprof"
+        ports:
+        - containerPort: 8801
+        - containerPort: 5005
+        volumeMounts:
+          - mountPath: "fsPath"
+            name: "fs-volume"
+            readOnly: false
+          - mountPath: "containerLogPath"
+            name: "log-volume"
+            readOnly: false
+          - name: "dockersock"
+            mountPath: "/var/run/docker.sock"
+      volumes:
+        - name: "fs-volume"
+          hostPath:
+            path: "fsPath"
+            type: "Directory"
+        - name: "log-volume"
+          hostPath:
+            path: "hostLogPath"
+            type: "DirectoryOrCreate"
+        - name: "dockersock"
+          hostPath:
+            path: "/var/run/docker.sock"

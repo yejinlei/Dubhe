@@ -1,0 +1,42 @@
+#训练常量
+train-job:
+  namespace: "namespace-"
+  separator: "-"
+  version-label: "v"
+  pod-name: "platform/resource-name"
+  python-format: " --"
+  manage: "train-manage"
+  model-path: "model-out"
+  out-path: "out"
+  load-path: "load"
+  load-key: "model_load_dir"
+  load-val-dataset-key: "val_data_url"
+  visualized-log-path: "visualizedlog"
+  docker-dataset-path: "/dataset"
+  docker-train-path: "/workspace"
+  docker-model-path: "/modeldir"
+  docker-val-dataset-path: "/valdataset"
+  docker-train-model-path: "train_model_out=${train-job.docker-train-path}/${train-job.model-path}"
+  docker-train-out-path: "train_out=${train-job.docker-train-path}/${train-job.out-path}"
+  docker-visualized-log-path: "train_visualized_log=${train-job.docker-train-path}/${train-job.visualized-log-path}"
+  docker-dataset: "data_url=${train-job.docker-dataset-path}"
+  docker-teacher-model-key: "teacher_path_list"
+  docker-teacher-model-path: "/model/teacher"
+  docker-student-model-key: "student_path_list"
+  docker-student-model-path: "/model/student"
+  atlas-anaconda: "cd /root/anaconda3/bin && source activate pytorch_1_3"
+  atlas-pythonioencoding: "PYTHONIOENCODING=utf-8 "
+  eight: "8"
+  plus-eight: "+8"
+  node-ips: "node_ips"
+  node-num: "num_nodes"
+  gpu-num-per-node: "gpu_num_per_node"
+#关闭熔断机制
+feign:
+  hystrix:
+    enabled: false
+
+# 可匿名访问路径
+security:
+  permitAll:
+    matchers: /api/k8s/callback/pod/algorithm

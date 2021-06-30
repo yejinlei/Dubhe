@@ -1,0 +1,7 @@
+spring:
+  cloud:
+    nacos:
+      config:
+        namespace: dubhe-server-cloud-test-data
+      discovery:
+        namespace: dubhe-server-cloud-test-data

@@ -1,0 +1,78 @@
+##################################################################################################
+# dubhe-measure
+##################################################################################################
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: dubhe-measure
+  labels:
+    app: dubhe-measure
+    service: dubhe-measure
+spec:
+  type: NodePort
+  ports:
+  - port: 8821
+    name: http
+  selector:
+    app: dubhe-measure
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: dubhe-measure
+  labels:
+    account: dubhe-measure
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: dubhe-measure-v1
+  labels:
+    app: dubhe-measure
+    version: v1
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: dubhe-measure
+      version: v1
+  template:
+    metadata:
+      labels:
+        app: dubhe-measure
+        version: v1
+    spec:
+      serviceAccountName: dubhe-measure
+      containers:
+      - name: dubhe-measure
+        image: harbor.test.com/dubhe/dubhe-spring-cloud-k8s:env-value
+        imagePullPolicy: Always
+        env:
+        - name: JAR_BALL
+          value: "dubhe-measure-0.0.1-SNAPSHOT-exec.jar  --spring.profiles.active=env-value"
+        - name: JVM_PARAM
+          value: "-Xms1024m -Xmx1024m -XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=containerLogPath/dubhe-measure-dump.hprof"
+        ports:
+        - containerPort: 8821
+        volumeMounts:
+          - mountPath: "fsPath"
+            name: "fs-volume"
+            readOnly: false
+          - mountPath: "containerLogPath"
+            name: "log-volume"
+            readOnly: false
+          - name: "dockersock"
+            mountPath: "/var/run/docker.sock"
+      volumes:
+        - name: "fs-volume"
+          hostPath:
+            path: "fsPath"
+            type: "Directory"
+        - name: "log-volume"
+          hostPath:
+            path: "hostLogPath"
+            type: "DirectoryOrCreate"
+        - name: "dockersock"
+          hostPath:
+            path: "/var/run/docker.sock"

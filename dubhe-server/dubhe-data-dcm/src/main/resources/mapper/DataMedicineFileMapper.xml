@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+
+<mapper namespace="org.dubhe.dcm.dao.DataMedicineFileMapper">
+
+    <select id="getFileStatusCount" resultType="map">
+        select medicine_id 'medicineId',status ,count(status) 'count' from data_medicine_file where   deleted = 0 and medicine_id in
+        <foreach collection="medicalIds" item="medicineId" open="(" close=")" separator=",">
+            #{medicineId}
+        </foreach>
+        group by medicine_id,status
+    </select>
+
+    <insert id="saveBatch" useGeneratedKeys="true"
+            keyProperty="id">
+        INSERT INTO data_medicine_file
+        (
+        create_user_id,
+        update_user_id,
+        name,
+        status,
+        medicine_id,
+        url,
+        origin_user_id,
+        sop_instance_uid
+        )
+        VALUES
+        <foreach item="item" collection="dataMedicineFiles" separator=",">
+            (#{item.createUserId}, #{item.updateUserId},
+            #{item.name}, #{item.status}, #{item.medicineId},
+            #{item.url}, #{item.originUserId}, #{item.sopInstanceUid})
+        </foreach >
+    </insert>
+
+</mapper>

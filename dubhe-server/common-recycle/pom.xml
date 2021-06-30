@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <parent>
+        <artifactId>server</artifactId>
+        <groupId>org.dubhe</groupId>
+        <version>0.0.1-SNAPSHOT</version>
+    </parent>
+    <modelVersion>4.0.0</modelVersion>
+    <artifactId>common-recycle</artifactId>
+    <version>0.0.1-SNAPSHOT</version>
+    <name>垃圾回收 recycle 通用模块</name>
+    <description>Dubhe recycle Common</description>
+    <dependencies>
+        <!-- Biz 通用配置 -->
+        <dependency>
+            <groupId>org.dubhe.biz</groupId>
+            <artifactId>base</artifactId>
+            <version>${org.dubhe.biz.base.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.dubhe.biz</groupId>
+            <artifactId>file</artifactId>
+            <version>${org.dubhe.biz.file.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.dubhe.biz</groupId>
+            <artifactId>data-permission</artifactId>
+            <version>${org.dubhe.biz.data-permission.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.dubhe.biz</groupId>
+            <artifactId>redis</artifactId>
+            <version>${org.dubhe.biz.redis.version}</version>
+        </dependency>
+        <!-- 统一Rest返回工具结构 -->
+        <dependency>
+            <groupId>org.dubhe.biz</groupId>
+            <artifactId>data-response</artifactId>
+            <version>${org.dubhe.biz.data-response.version}</version>
+        </dependency>
+    </dependencies>
+    <build>
+        <plugins>
+
+        </plugins>
+    </build>
+</project>

@@ -1,0 +1,200 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="org.dubhe.k8s.dao.K8sTaskMapper">
+
+    <sql id="Base_Column_List">
+        id,namespace,resource_name,task_yaml,business,apply_unix_time,apply_display_time,apply_status,
+        stop_unix_time,stop_display_time,stop_status,create_time,create_user_id,update_time,update_user_id,deleted
+    </sql>
+
+    <!--保存任务-->
+    <insert id="insertOrUpdate" parameterType="org.dubhe.k8s.domain.entity.K8sTask">
+        insert into k8s_task
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="namespace != null">
+                namespace,
+            </if>
+            <if test="resourceName != null">
+                resource_name,
+            </if>
+            <if test="taskYaml != null">
+                task_yaml,
+            </if>
+            <if test="business != null">
+                business,
+            </if>
+            <if test="applyUnixTime != null">
+                apply_unix_time,
+            </if>
+            <if test="applyDisplayTime != null">
+                apply_display_time,
+            </if>
+            <if test="applyStatus != null">
+                apply_status,
+            </if>
+            <if test="stopUnixTime != null">
+                stop_unix_time,
+            </if>
+            <if test="stopDisplayTime != null">
+                stop_display_time,
+            </if>
+            <if test="stopStatus != null">
+                stop_status,
+            </if>
+            <if test="createTime != null">
+                create_time,
+            </if>
+            <if test="createUserId != null">
+                create_user_id,
+            </if>
+            <if test="updateTime != null">
+                update_time,
+            </if>
+            <if test="updateUserId != null">
+                update_user_id,
+            </if>
+            <if test="deleted != null">
+                deleted,
+            </if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="namespace != null">
+                #{namespace},
+            </if>
+            <if test="resourceName != null">
+                #{resourceName},
+            </if>
+            <if test="taskYaml != null">
+                #{taskYaml},
+            </if>
+            <if test="business != null">
+                #{business},
+            </if>
+            <if test="applyUnixTime != null">
+                #{applyUnixTime},
+            </if>
+            <if test="applyDisplayTime != null">
+                #{applyDisplayTime},
+            </if>
+            <if test="applyStatus != null">
+                #{applyStatus},
+            </if>
+            <if test="stopUnixTime != null">
+                #{stopUnixTime},
+            </if>
+            <if test="stopDisplayTime != null">
+                #{stopDisplayTime},
+            </if>
+            <if test="stopStatus != null">
+                #{stopStatus},
+            </if>
+            <if test="createTime != null">
+                #{createTime},
+            </if>
+            <if test="createUserId != null">
+                #{createUserId},
+            </if>
+            <if test="updateTime != null">
+                #{updateTime},
+            </if>
+            <if test="updateUserId != null">
+                #{updateUserId},
+            </if>
+            <if test="deleted != null">
+                #{deleted},
+            </if>
+        </trim>
+        ON DUPLICATE KEY UPDATE
+        <trim suffixOverrides=",">
+            <if test="taskYaml != null">
+                task_yaml = #{taskYaml},
+            </if>
+            <if test="business != null">
+                business = #{business},
+            </if>
+            <if test="applyUnixTime != null">
+                apply_unix_time = #{applyUnixTime},
+            </if>
+            <if test="applyDisplayTime != null">
+                apply_display_time = #{applyDisplayTime},
+            </if>
+            <if test="applyStatus != null">
+                apply_status = #{applyStatus},
+            </if>
+            <if test="stopUnixTime != null">
+                stop_unix_time = #{stopUnixTime},
+            </if>
+            <if test="stopDisplayTime != null">
+                stop_display_time = #{stopDisplayTime},
+            </if>
+            <if test="stopStatus != null">
+                stop_status = #{stopStatus},
+            </if>
+            <if test="createTime != null">
+                create_time = #{createTime},
+            </if>
+            <if test="createUserId != null">
+                create_user_id = #{createUserId},
+            </if>
+            <if test="updateTime != null">
+                update_time = #{updateTime},
+            </if>
+            <if test="updateUserId != null">
+                update_user_id = #{updateUserId},
+            </if>
+            <if test="deleted != null">
+                deleted = #{deleted},
+            </if>
+        </trim>
+    </insert>
+
+    <select id="selectUnexecutedTask" resultType="org.dubhe.k8s.domain.entity.K8sTask" parameterType="org.dubhe.k8s.domain.bo.K8sTaskBO">
+        select <include refid="Base_Column_List"/> from k8s_task where deleted = 0
+        <if test="id != null">
+            and id = #{id}
+        </if>
+        <if test="namespace != null">
+            and namespace = #{namespace}
+        </if>
+        <if test="resourceName != null">
+            and resource_name = #{resourceName}
+        </if>
+        <if test="business != null">
+            and business = #{business}
+        </if>
+        <if test="applyUnixTime != null">
+            and apply_unix_time = #{applyUnixTime}
+        </if>
+        <if test="applyDisplayTime != null">
+            and apply_display_time = #{applyDisplayTime}
+        </if>
+        <if test="stopUnixTime != null">
+            and stop_unix_time = #{stopUnixTime}
+        </if>
+        <if test="stopDisplayTime != null">
+            and stop_display_time = #{stopDisplayTime}
+        </if>
+        <if test="createTime != null">
+            and create_time = #{createTime}
+        </if>
+        <if test="createUserId != null">
+            and create_user_id = #{createUserId}
+        </if>
+        <if test="updateTime != null">
+            and update_time = #{updateTime}
+        </if>
+        <if test="updateUserId != null">
+            and update_user_id = #{updateUserId}
+        </if>
+        <if test="(maxApplyUnixTime != null and applyStatus != null) or (maxStopUnixTime != null and stopStatus != null)">
+            and ( 1 = 2
+            <if test="maxApplyUnixTime != null and applyStatus != null">
+                or ( apply_unix_time &lt;= #{maxApplyUnixTime} and apply_status = #{applyStatus} )
+            </if>
+            <if test="maxStopUnixTime != null and stopStatus != null">
+                or ( stop_unix_time &lt;= #{maxStopUnixTime} and stop_status = #{stopStatus} )
+            </if>
+            )
+        </if>
+    </select>
+</mapper>

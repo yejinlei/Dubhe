@@ -1,0 +1,66 @@
+# serving预测上传文件大小限制
+spring:
+  servlet:
+    multipart:
+      # 设置单个文件的大小
+      max-file-size: 10MB
+      # 设置单次请求的文件的总大小
+      max-request-size: 100MB
+
+k8s:
+  # nfs服务暴露的IP地址 如需测试需修改为合适的地址
+  nfs: 127.0.0.1
+  #nfs服务端 共享目录
+  nfs-root-path: /nfs/
+  nfs-root-windows-path: "Z:"
+  file-store: 127.0.0.1
+  #文件存储服务端 共享目录
+  file-store-root-path: /nfs/
+  file-store-root-windows-path: "Z:"
+
+# data模块配置
+data:
+  annotation:
+    task:
+      # 自动标注任务分割的文件split size
+      splitSize: 16
+      # 单位ms
+      retryInterval: 5000
+      # 任务不更新置为失败的时间单位秒
+      failTime: 43200
+  server:
+    # 文件存储服务器用户名
+    userName: root
+  #数据集训练配置
+  ptversion: http://127.0.0.1:8000/
+
+minioweb:
+  GetToken:
+    url: minio/webrpc
+    param:
+      id: 2
+      jsonrpc: 2.0
+      method: Web.Login
+  zip:
+    url: minio/zip?token=  
+
+#logback
+logging.config:
+  classpath:logback-spring-dev.xml
+
+# 资源回收
+recycle:
+  # 超时时间
+  over-second:
+    # 数据集文件 5小时
+    file: 18000
+    # 数据集版本文件 5小时
+    version-file: 18000
+    
+# ES服务地址及端口
+es:
+  host: 127.0.0.1
+  serverPort: 9200
+  transportPort: 9300
+  clusterName: docker-cluster
+  index: dataset_text_test

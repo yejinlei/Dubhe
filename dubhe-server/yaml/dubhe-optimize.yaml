@@ -1,0 +1,13 @@
+# 模型优化容器镜像配置
+optimize:
+  image: harbor.dubhe.ai/optimize/oneflow-gpu:base
+
+#关闭熔断机制
+feign:
+  hystrix:
+    enabled: false
+
+# 可匿名访问路径
+security:
+  permitAll:
+    matchers: /api/k8s/callback/pod/modelopt

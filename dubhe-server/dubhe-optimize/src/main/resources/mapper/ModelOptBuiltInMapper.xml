@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+
+<mapper namespace="org.dubhe.optimize.dao.ModelOptBuiltInMapper">
+
+    <select id="getDataset" resultType="org.dubhe.optimize.domain.vo.ModelOptDatasetQueryVO">
+        select dataset, any_value(dataset_path) dataset_path from model_opt_build_in where 1 = 1
+        <if test="(type != null and type != '') or type == 0">
+            and type = #{type}
+        </if>
+        <if test="model != null and model != ''">
+            and model = #{model}
+        </if>
+        <if test="algorithm != null and algorithm != ''">
+            and algorithm = #{algorithm}
+        </if>
+        group by dataset
+    </select>
+
+    <select id="getModel" resultType="org.dubhe.optimize.domain.vo.ModelOptModelQueryVO">
+        SELECT model, any_value(GROUP_CONCAT(DISTINCT model_path)) model_path from model_opt_build_in where 1 = 1
+        <if test="(type != null and type != '') or type == 0">
+            and type = #{type}
+        </if>
+        <if test="algorithm != null and algorithm != ''">
+            and algorithm = #{algorithm}
+        </if>
+        <if test="dataset != null and dataset != ''">
+            and dataset = #{dataset}
+        </if>
+        group by model
+    </select>
+
+    <select id="getAlgorithm" resultType="org.dubhe.optimize.domain.vo.ModelOptAlgorithmQueryVO">
+        select any_value(type) type, algorithm, any_value(algorithm_path) algorithm_path from model_opt_build_in where 1 = 1
+        <if test="(type != null and type != '') or type == 0">
+            and type = #{type}
+        </if>
+        <if test="dataset != null and dataset != ''">
+            and dataset = #{dataset}
+        </if>
+        <if test="model != null and model != ''">
+            and model = #{model}
+        </if>
+        group by algorithm
+    </select>
+
+</mapper>

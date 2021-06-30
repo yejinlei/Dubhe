@@ -1,0 +1,142 @@
+#配置数据源
+spring:
+    # 邮箱配置
+  mail:
+    host: smtp.163.com
+    # 邮件的发送者 163邮箱(开发测试时使用 发送延时 20秒，每天发送量限制 50)
+    username: dubhe_ai@163.com
+    # SMTP授权密码
+    password: password
+    protocol: smtp
+    properties.mail.smtp.auth: true
+    properties.mail.smtp.port: 465 #465或者994
+    properties.mail.smtp.starttls.enable: true
+    properties.mail.smtp.starttls.required: true
+    properties.mail.smtp.ssl.enable: true
+    default-encoding: utf-8
+  redis:
+    #数据库索引
+    database: 4
+    host: 127.0.0.1
+    port: 6379
+    password:
+    #连接超时时间
+    timeout: 5000
+  datasource:
+    druid:
+      db-type: com.alibaba.druid.pool.DruidDataSource
+      driverClassName: net.sf.log4jdbc.sql.jdbcapi.DriverSpy
+      url: jdbc:log4jdbc:mysql://127.0.0.1:3306/dubhe-cloud-test?serverTimezone=Asia/Shanghai&characterEncoding=utf8&useSSL=false&allowMultiQueries=true&useInformationSchema=true
+      username: test
+      password: test
+
+      # 初始化配置
+      initial-size: 3
+      # 最小连接数
+      min-idle: 3
+      # 最大连接数
+      max-active: 15
+      # 获取连接超时时间
+      max-wait: 5000
+      # 连接有效性检测时间
+      time-between-eviction-runs-millis: 90000
+      # 最大空闲时间
+      min-evictable-idle-time-millis: 1800000
+      test-while-idle: true
+      test-on-borrow: false
+      test-on-return: false
+
+      validation-query: select 1
+      # 配置监控统计拦截的filters
+      filters: stat
+      stat-view-servlet:
+        url-pattern: /druid/*
+        reset-enable: false
+
+      web-stat-filter:
+        url-pattern: /*
+        exclusions: "*.js,*.gif,*.jpg,*.bmp,*.png,*.css,*.ico,/druid/*"
+  # 配置允许后面的Bean覆盖前面名称重复的Bean
+  main:
+    allow-bean-definition-overriding: true
+
+#logback
+logging.config:
+  classpath:logback.xml
+
+# 文件存储服务配置
+storage:
+  # 文件存储服务暴露的IP地址 如需测试需修改为合适的地址
+  file-store: 127.0.0.1
+  # 文件存储服务端 共享目录
+  file-store-root-path: /nfs/
+  file-store-root-windows-path: "Z:"
+
+# minio配置
+minio:
+  url: http://127.0.0.1:9000/
+  accessKey: admin
+  secretKey: 123@abc.com
+  bucketName: dubhe-cloud-test
+  presignedUrlExpiryTime: 300
+  annotation: /annotation/
+
+minioweb:
+  GetToken:
+    url: minio/webrpc
+    param:
+      id: 2
+      jsonrpc: 2.0
+      method: Web.Login
+  zip:
+    url: minio/zip?token=
+    
+#是否开启 swagger-ui
+swagger:
+  enabled: true
+  
+# 配置slq打印日志
+logging:
+  level:
+    com:
+      lawt:
+        repository:
+          mapper: debug
+
+#jwt
+jwt:
+  # 在线用户key
+  online-key: online-token
+
+# data模块配置
+data:
+  server:
+    # 文件存储服务器用户名
+    userName: root
+
+feign: 
+# 开启httpclient
+  httpclient:
+    enabled: true
+  okhttp:
+    enabled: false
+
+#配置harbor
+harbor:
+  address: harbor.dubhe.ai
+  username: admin
+  password: Harbor12345
+  model-name: train
+
+#配置dev环境单元测试用户名与密码
+unittest:
+  username: admin
+  password: admin
+
+model:
+  measuring:
+    url:
+      package: http://127.0.0.1:32760/model_measure/package
+      json: http://127.0.0.1:32760/model_measure/measure
+  converter:
+    url: http://127.0.0.1:32230/model_convert

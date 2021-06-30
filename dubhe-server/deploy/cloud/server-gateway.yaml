@@ -1,0 +1,79 @@
+##################################################################################################
+# gateway
+##################################################################################################
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: gateway
+  labels:
+    app: gateway
+    service: gateway
+spec:
+  type: NodePort
+  ports:
+  - port: 8800
+    name: http
+    nodePort: gatewayNodePort
+  selector:
+    app: gateway
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: gateway
+  labels:
+    account: gateway
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: gateway-v1
+  labels:
+    app: gateway
+    version: v1
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: gateway
+      version: v1
+  template:
+    metadata:
+      labels:
+        app: gateway
+        version: v1
+    spec:
+      serviceAccountName: gateway
+      containers:
+      - name: gateway
+        image: harbor.test.com/dubhe/dubhe-spring-cloud-k8s:env-value
+        imagePullPolicy: Always
+        env:
+        - name: JAR_BALL
+          value: "gateway-0.0.1-SNAPSHOT-exec.jar  --spring.profiles.active=env-value"
+        - name: JVM_PARAM
+          value: "-Xms1024m -Xmx1024m -XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=containerLogPath/gateway-dump.hprof"
+        ports:
+        - containerPort: 8800
+        volumeMounts:
+          - mountPath: "fsPath"
+            name: "fs-volume"
+            readOnly: false
+          - mountPath: "containerLogPath"
+            name: "log-volume"
+            readOnly: false
+          - name: "dockersock"
+            mountPath: "/var/run/docker.sock"
+      volumes:
+        - name: "fs-volume"
+          hostPath:
+            path: "fsPath"
+            type: "Directory"
+        - name: "log-volume"
+          hostPath:
+            path: "hostLogPath"
+            type: "DirectoryOrCreate"
+        - name: "dockersock"
+          hostPath:
+            path: "/var/run/docker.sock"

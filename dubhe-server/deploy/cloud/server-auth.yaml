@@ -1,0 +1,78 @@
+##################################################################################################
+# auth
+##################################################################################################
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: auth
+  labels:
+    app: auth
+    service: auth
+spec:
+  type: NodePort
+  ports:
+  - port: 8866
+    name: http
+  selector:
+    app: auth
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: auth
+  labels:
+    account: auth
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: auth-v1
+  labels:
+    app: auth
+    version: v1
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: auth
+      version: v1
+  template:
+    metadata:
+      labels:
+        app: auth
+        version: v1
+    spec:
+      serviceAccountName: auth
+      containers:
+      - name: auth
+        image: harbor.test.com/dubhe/dubhe-spring-cloud-k8s:env-value
+        imagePullPolicy: Always
+        env:
+        - name: JAR_BALL
+          value: "auth-0.0.1-SNAPSHOT-exec.jar --spring.profiles.active=env-value"
+        - name: JVM_PARAM
+          value: "-Xms1024m -Xmx1024m -XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=containerLogPath/auth-dump.hprof"
+        ports:
+        - containerPort: 8866
+        volumeMounts:
+          - mountPath: "fsPath"
+            name: "fs-volume"
+            readOnly: false
+          - mountPath: "containerLogPath"
+            name: "log-volume"
+            readOnly: false
+          - name: "dockersock"
+            mountPath: "/var/run/docker.sock"
+      volumes:
+        - name: "fs-volume"
+          hostPath:
+            path: "fsPath"
+            type: "Directory"
+        - name: "log-volume"
+          hostPath:
+            path: "hostLogPath"
+            type: "DirectoryOrCreate"
+        - name: "dockersock"
+          hostPath:
+            path: "/var/run/docker.sock"

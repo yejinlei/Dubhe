@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <parent>
+        <groupId>org.dubhe.cloud</groupId>
+        <artifactId>common-cloud</artifactId>
+        <version>0.0.1-SNAPSHOT</version>
+    </parent>
+    <modelVersion>4.0.0</modelVersion>
+
+    <artifactId>unit-test</artifactId>
+    <version>0.0.1-SNAPSHOT</version>
+    <name>unit-test 单元测试</name>
+    <description>unit-test for Spring Cloud</description>
+    <dependencies>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-test</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-web</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.cloud</groupId>
+            <artifactId>spring-cloud-context</artifactId>
+        </dependency>
+        <!-- Biz 通用配置 -->
+        <dependency>
+            <groupId>org.dubhe.biz</groupId>
+            <artifactId>base</artifactId>
+            <version>${org.dubhe.biz.base.version}</version>
+        </dependency>
+        <!-- 统一Rest返回工具结构 -->
+        <dependency>
+            <groupId>org.dubhe.biz</groupId>
+            <artifactId>data-response</artifactId>
+            <version>${org.dubhe.biz.data-response.version}</version>
+        </dependency>
+        <!-- 统一权限配置 -->
+        <dependency>
+            <groupId>org.dubhe.cloud</groupId>
+            <artifactId>auth-config</artifactId>
+            <version>${org.dubhe.cloud.auth-config.version}</version>
+        </dependency>
+        <!-- 远程调用 -->
+        <dependency>
+            <groupId>org.dubhe.cloud</groupId>
+            <artifactId>remote-call</artifactId>
+            <version>${org.dubhe.cloud.remote-call.version}</version>
+        </dependency>
+    </dependencies>
+    <build>
+        <plugins>
+
+        </plugins>
+    </build>
+</project>

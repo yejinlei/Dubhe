@@ -1,0 +1,34 @@
+server:
+  # rest API 版本号
+  rest-version: v1
+
+# data模块配置
+data:
+  annotation:
+    task:
+      # 自动标注任务分割的文件split size
+      splitSize: 16
+      # 单位ms
+      retryInterval: 5000
+      # 任务不更新置为失败的时间单位秒
+      failTime: 43200
+  server:
+    # 文件存储服务器用户名
+    userName: root
+  #数据集训练配置
+  ptversion: http://127.0.0.1:8000/
+
+
+# 数据处理医学影像数据集dcm服务器配置，查看影像功能需要使用该服务
+dcm:
+  host: 127.0.0.1
+  port: 11112
+  
+# 资源回收
+recycle:
+  # 超时时间
+  over-second:
+    # 数据集文件 5小时
+    file: 18000
+    # 数据集版本文件 5小时
+    version-file: 18000

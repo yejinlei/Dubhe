@@ -1,0 +1,44 @@
+server:
+  port: ${random.int[10000,19999]}
+
+spring:
+  application:
+    name: dubhe-data-task
+  profiles:
+    active: dev
+  cloud:
+    nacos:
+      config:
+        enabled: true
+        namespace: dubhe-server-cloud-prod
+        server-addr: 127.0.0.1:8848
+        shared-configs[0]:
+          data-id: common-biz.yaml
+          group: dubhe
+          refresh: true  # 是否动态刷新，默认为false
+        shared-configs[1]:
+          data-id: common-shardingjdbc.yaml
+          group: dubhe
+          refresh: true  # 是否动态刷新，默认为false
+        shared-configs[2]:
+          data-id: common-recycle.yaml
+          group: dubhe
+          refresh: true
+        shared-configs[3]:
+          # 配置1
+          data-id: dubhe-data-task.yaml
+          group: dubhe
+          refresh: true
+        shared-configs[4]:
+          # 配置1
+          data-id: common-k8s.yaml
+          group: dubhe
+          refresh: true
+      discovery:
+        enabled: true
+        namespace: dubhe-server-cloud-prod
+        group: dubhe
+        server-addr: 127.0.0.1:8848
+  # 配置允许后面的Bean覆盖前面名称重复的Bean
+  main:
+    allow-bean-definition-overriding: true

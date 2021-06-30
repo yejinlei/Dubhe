@@ -1,0 +1,82 @@
+##################################################################################################
+# dubhe-serving-gateway
+##################################################################################################
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: dubhe-serving-gateway
+  labels:
+    app: dubhe-serving-gateway
+    service: dubhe-serving-gateway
+spec:
+  type: NodePort
+  ports:
+    - port: 8081
+      name: http
+      nodePort: 30848
+    - port: 5005
+      name: debug
+  selector:
+    app: dubhe-serving-gateway
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: dubhe-serving-gateway
+  labels:
+    account: dubhe-serving-gateway
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: dubhe-serving-gateway-v1
+  labels:
+    app: dubhe-serving-gateway
+    version: v1
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: dubhe-serving-gateway
+      version: v1
+  template:
+    metadata:
+      labels:
+        app: dubhe-serving-gateway
+        version: v1
+    spec:
+      serviceAccountName: dubhe-serving-gateway
+      containers:
+        - name: dubhe-serving-gateway
+          image: harbor.test.com/dubhe/dubhe-spring-cloud-k8s:env-value
+          imagePullPolicy: Always
+          env:
+            - name: JAR_BALL
+              value: "dubhe-serving-gateway-0.0.1-SNAPSHOT-exec.jar  --spring.profiles.active=env-value"
+            - name: JVM_PARAM
+              value: "-Xms512m -Xmx512m -XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=containerLogPath/dubhe-serving-gateway-dump.hprof"
+          ports:
+            - containerPort: 8081
+            - containerPort: 5505
+          volumeMounts:
+            - mountPath: "fsPath"
+              name: "fs-volume"
+              readOnly: false
+            - mountPath: "containerLogPath"
+              name: "log-volume"
+              readOnly: false
+            - name: "dockersock"
+              mountPath: "/var/run/docker.sock"
+      volumes:
+        - name: "fs-volume"
+          hostPath:
+            path: "fsPath"
+            type: "Directory"
+        - name: "log-volume"
+          hostPath:
+            path: "hostLogPath"
+            type: "DirectoryOrCreate"
+        - name: "dockersock"
+          hostPath:
+            path: "/var/run/docker.sock"

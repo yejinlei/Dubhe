@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+
+<mapper namespace="org.dubhe.admin.dao.AuthCodeMapper">
+    <insert id="tiedRoleAuth">
+     insert into roles_auth(role_id,auth_id)values
+        <foreach collection="list" item="item" separator=",">
+            (#{item.roleId},#{item.authId})
+        </foreach>
+    </insert>
+
+    <insert id="tiedWithPermission">
+     insert into auth_permission(auth_id,permission_id)values
+        <foreach collection="list" item="item" separator=",">
+            (#{item.authId},#{item.permissionId})
+        </foreach>
+    </insert>
+</mapper>

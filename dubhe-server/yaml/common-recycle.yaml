@@ -1,0 +1,36 @@
+#垃圾回收默认配置
+recycle:
+  #过期时间设置
+  timeout:
+    #用户上传文件至临时路径下后文件最大有效时长，以小时为单位
+    file-valid: 24
+    #用户删除数据后，默认其文件最大有效时长，以天为单位
+    date: 7
+    #用户删除某一算法后，其算法文件最大有效时长，以天为单位
+    algorithm-valid: 3
+    #用户删除某一模型后，其模型文件最大有效时长，以天为单位
+    model-valid: 3
+    #用户删除训练任务后，其训练管理文件最大有效时长，以天为单位
+    train-valid: 3
+    #用户删除度量文件后，其度量文件最大有效时长，以天为单位
+    measure-valid: 3
+    #用户删除镜像后，其镜像最大有效时长，以天为单位
+    image-valid: 3
+    #回收serving相关文件后，回收文件最大有效时长，以天为单位
+    serving-valid: 3
+  # 任务配置
+  task:
+   # 资源回收单次执行任务数量限制（默认10000）
+    execute-limits: 1000
+  # 远程掉用配置
+  call:
+    token:
+      # 秘钥
+      secret-key: recycle
+      # 过期时间（秒）
+      expire-seconds: 300
+
+data:
+  server:
+    # 文件存储服务器用户名
+    userName: root

@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="org.dubhe.serving.dao.ServingModelConfigMapper">
+    <resultMap id="resultInfo" type="org.dubhe.serving.domain.entity.ServingModelConfig">
+        <result column="deploy_params" property="deployParams"
+                typeHandler="com.baomidou.mybatisplus.extension.handlers.FastjsonTypeHandler"/>
+    </resultMap>
+
+    <select id="getRollbackList" parameterType="long" resultMap="resultInfo">
+    select * from serving_model_config where serving_id = #{servingId} and deleted = 1
+    order by create_time desc
+    </select>
+</mapper>

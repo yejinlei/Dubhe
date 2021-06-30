@@ -1,0 +1,29 @@
+server:
+  port: 8866
+
+
+spring:
+  application:
+    name: auth
+  profiles:
+    active: dev
+  cloud:
+    nacos:
+      config:
+        enabled: true
+        server-addr: 127.0.0.1:8848
+        namespace: dubhe-server-cloud-prod
+        shared-configs[0]:
+          data-id: common-biz.yaml
+          group: dubhe
+          refresh: true  # 是否动态刷新，默认为false
+        shared-configs[1]:
+          data-id: auth.yaml
+          group: dubhe
+          refresh: true
+      discovery:
+        enabled: true
+        namespace: dubhe-server-cloud-prod
+        group: dubhe
+        server-addr: 127.0.0.1:8848
+

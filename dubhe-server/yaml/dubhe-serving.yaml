@@ -1,0 +1,24 @@
+#关闭熔断机制
+feign:
+  hystrix:
+    enabled: false
+
+# serving模块配置
+serving:
+  # 容器镜像配置
+  gpu-image: harbor.dubhe.ai/serving/serving-gpu:base
+  cpu-image: harbor.dubhe.ai/serving/serving-cpu:base
+  sourcePath: "/serving/dubhe_serving"
+  gateway-uri-postfix: .apitest.dubhe.ai
+  onlineRootPath: "/serving/deployment/"
+  batchRootPath: "/serving/batch/"
+  group: serving_test_group
+  #tls证书路径
+  crtPath: "/server_test.crt"
+  pod-http-port: 5000
+  pod-grpc-port: 5000
+  
+# 可匿名访问路径
+security:
+  permitAll:
+    matchers: /api/k8s/callback/pod/batchserving,/api/k8s/callback/deployment/serving,/api/k8s/callback/pod/serving

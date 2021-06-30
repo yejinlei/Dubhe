@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>org.dubhe.biz</groupId>
+        <artifactId>common-biz</artifactId>
+        <version>0.0.1-SNAPSHOT</version>
+    </parent>
+    <artifactId>state-machine</artifactId>
+    <version>0.0.1-SNAPSHOT</version>
+    <name>状态机</name>
+    <description>state machine for Dubhe Server</description>
+
+
+    <dependencies>
+        <!--https://gitee.com/lionsoul/ip2region/tree/v1.4-release/-->
+        <dependency>
+            <groupId>org.apache.poi</groupId>
+            <artifactId>poi</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.poi</groupId>
+            <artifactId>poi-ooxml</artifactId>
+        </dependency>
+        <!-- Biz 通用配置 -->
+        <dependency>
+            <groupId>org.dubhe.biz</groupId>
+            <artifactId>base</artifactId>
+            <version>${org.dubhe.biz.base.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.dubhe.biz</groupId>
+            <artifactId>log</artifactId>
+            <version>${org.dubhe.biz.log.version}</version>
+            <scope>compile</scope>
+        </dependency>
+    </dependencies>
+
+
+    <build>
+        <plugins>
+
+        </plugins>
+    </build>
+
+</project>

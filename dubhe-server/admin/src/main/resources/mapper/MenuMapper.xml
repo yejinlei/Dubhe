@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+
+<mapper namespace="org.dubhe.admin.dao.MenuMapper">
+    <select id="selectPermissionByRoleIds" parameterType="java.util.List" resultType="org.dubhe.biz.base.dto.SysPermissionDTO">
+        select rm.role_id,m.permission,m.name from menu m left join roles_menus rm on m.id = rm.menu_id where  rm.role_id in
+        <foreach item="item" collection="list" separator="," open="(" close=")" index="">
+          #{item}
+        </foreach>
+    </select>
+</mapper>

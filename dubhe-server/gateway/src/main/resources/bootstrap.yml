@@ -1,0 +1,24 @@
+server:
+  port: 8800
+
+spring:
+  application:
+    name: gateway
+  profiles:
+    active: dev
+  cloud:
+    nacos:
+      config:
+        enabled: true
+        namespace: dubhe-server-cloud-prod
+        server-addr: 127.0.0.1:8848
+        shared-configs[0]:
+          data-id: gateway.yaml
+          group: dubhe
+          refresh: true
+      discovery:
+        enabled: true
+        namespace: dubhe-server-cloud-prod
+        group: dubhe
+        server-addr: 127.0.0.1:8848
+

@@ -1,0 +1,112 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <parent>
+        <artifactId>server</artifactId>
+        <groupId>org.dubhe</groupId>
+        <version>0.0.1-SNAPSHOT</version>
+    </parent>
+    <modelVersion>4.0.0</modelVersion>
+
+    <artifactId>dubhe-data-dcm</artifactId>
+    <name>医学影像</name>
+    <properties>
+        <java.version>1.8</java.version>
+        <dcm4che.version>5.19.1</dcm4che.version>
+    </properties>
+
+    <dependencies>
+        <!-- Biz 通用配置 -->
+        <dependency>
+            <groupId>org.dubhe.biz</groupId>
+            <artifactId>base</artifactId>
+            <version>${org.dubhe.biz.base.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.dubhe.biz</groupId>
+            <artifactId>file</artifactId>
+            <version>${org.dubhe.biz.file.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.dubhe.biz</groupId>
+            <artifactId>data-permission</artifactId>
+            <version>${org.dubhe.biz.data-permission.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.dubhe.biz</groupId>
+            <artifactId>redis</artifactId>
+            <version>${org.dubhe.biz.redis.version}</version>
+        </dependency>
+        <!-- 注册中心 -->
+        <dependency>
+            <groupId>org.dubhe.cloud</groupId>
+            <artifactId>registration</artifactId>
+            <version>${org.dubhe.cloud.registration.version}</version>
+        </dependency>
+        <!-- 配置中心 -->
+        <dependency>
+            <groupId>org.dubhe.cloud</groupId>
+            <artifactId>configuration</artifactId>
+            <version>${org.dubhe.cloud.configuration.version}</version>
+        </dependency>
+        <!-- Cloud swagger -->
+        <dependency>
+            <groupId>org.dubhe.cloud</groupId>
+            <artifactId>swagger</artifactId>
+            <version>${org.dubhe.cloud.swagger.version}</version>
+        </dependency>
+        <!-- log依赖-->
+        <dependency>
+            <groupId>org.dubhe.biz</groupId>
+            <artifactId>log</artifactId>
+            <version>${org.dubhe.biz.log.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-web</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.dubhe</groupId>
+            <artifactId>dubhe-data</artifactId>
+            <version>${org.dubhe.dubhe-data.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.dcm4che</groupId>
+            <artifactId>dcm4che-core</artifactId>
+            <version>${dcm4che.version}</version>
+            <scope>system</scope>
+            <systemPath>${project.basedir}/lib/dcm4che-core-5.19.1.jar</systemPath>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-maven-plugin</artifactId>
+                <configuration>
+                    <skip>false</skip>
+                    <fork>true</fork>
+                    <classifier>exec</classifier>
+                    <includeSystemScope>true</includeSystemScope>
+                </configuration>
+            </plugin>
+            <!-- 跳过单元测试 -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <configuration>
+                    <skipTests>true</skipTests>
+                </configuration>
+            </plugin>
+        </plugins>
+        <resources>
+            <resource>
+                <filtering>true</filtering>
+                <directory>src/main/resources</directory>
+            </resource>
+        </resources>
+    </build>
+
+</project>

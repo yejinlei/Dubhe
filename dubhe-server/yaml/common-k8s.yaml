@@ -1,0 +1,81 @@
+train-job:
+  docker-dataset-path: "/dataset"
+
+k8s:
+  # k8s集群配置文件
+  kubeconfig: kubeconfig_test
+  # nfs服务暴露的IP地址 如需测试需修改为合适的地址
+  nfs: 127.0.0.1
+  #nfs服务端 共享目录
+  nfs-root-path: /nfs/
+  nfs-root-windows-path: "Z:"
+   # 文件存储服务暴露的IP地址 如需测试需修改为合适的地址
+  file-store: 127.0.0.1
+  #文件存储服务端 共享目录
+  file-store-root-path: /nfs/
+  file-store-root-windows-path: "Z:"
+  # 命名空间关键字
+  namespace: namespace
+  # k8s ingress域名 如需测试需修改为合适的域名,注意：需要为此域名配置泛域名解析到 k8s集群master节点的ip
+  host: notebooktest.dubhe.club
+  # k8s ingress-controller 对外port
+  port: 30865
+  # k8s ingress-controller 对外grpc port
+  https-port: 31287
+  # k8s 模型部署配置
+  serving:
+    # k8s 模型部署域名 如需测试需修改为合适的域名
+    host: servingtest.dubhe.club
+    # tls 证书 crt
+    tls-crt:
+    # tls 证书 key
+    tls-key:
+  # elasticsearch暴露的服务地址
+  elasticsearch:
+    hostlist: ${eshostlist:127.0.0.1:30498}
+    # 日志采集配置信息
+    log:
+      type: _doc
+      # 过滤源字段
+      source_field: log,@timestamp,kubernetes.pod_name
+  # 异步回调
+  callback:
+    # boot 单机部署即回调本机实例
+    url: localhost:${server.port}
+    token:
+      # 秘钥
+      secret-key: 1qaz2wsx
+      # 过期时间（秒）
+      expire-seconds: 300
+  # 展示Pod的CPU使用率,Memory使用量,GPU使用率的grafana地址
+  pod:
+    metrics:
+      grafanaUrl: http://127.0.0.1:30006/d/job/monitor?orgId=1&refresh=5s&kiosk&var-pod=
+  prometheus:
+    url: http://127.0.0.1:30003/
+    query: api/v1/query
+    query-range: api/v1/query_range
+    gpu-query-param: sum(container_accelerator_duty_cycle{pod="pod-name-placeholder"})by(pod,acc_id)
+    cpu-range-query-param: sum(rate(container_cpu_usage_seconds_total{image!="",pod="pod-name-placeholder"}[1m])) by (pod) / (sum(container_spec_cpu_quota{image!=""}/100000) by (pod)) * 100
+    mem-range-query-param: sum(container_memory_rss{image!="",pod="pod-name-placeholder"})
+    gpu-range-query-param: sum(container_accelerator_duty_cycle{pod="pod-name-placeholder"}) by (pod,acc_id)
+  nfs-storage-class-name: zjlab-nfs-storage
+  namespace-limits:
+    cpu: 10
+    memory: 32
+    gpu: 2
+#配置harbor
+harbor:
+  address: harbor.dubhe.ai
+  username: admin
+  password: Harbor12345
+  model-name: train
+
+# minio配置
+minio:
+  url: http://127.0.0.1:9000/
+  accessKey: admin
+  secretKey: 123@abc.com
+  bucketName: dubhe-cloud-test
+  presignedUrlExpiryTime: 300
+  annotation: /annotation/

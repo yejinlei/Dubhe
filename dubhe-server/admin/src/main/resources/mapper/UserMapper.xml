@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+
+<mapper namespace="org.dubhe.admin.dao.UserMapper">
+        <select id="queryPermissionByUserId" parameterType="Long" resultType="java.lang.String">
+    select m.permission from menu m, users_roles ur, roles_menus rm
+         where ur.user_id = #{userId} and ur.role_id = rm.role_id and rm.menu_id = m.id and m.permission <![CDATA[ <> ]]> '' and m.deleted = 0
+    union
+    select p.permission
+    from permission p
+             left join auth_permission ap on p.id = ap.permission_id
+             left join roles_auth ra on ap.auth_id = ra.auth_id
+             left join users_roles ur on ra.role_id = ur.role_id
+    where ur.user_id = #{userId} and p.deleted=0;
+    </select>
+</mapper>

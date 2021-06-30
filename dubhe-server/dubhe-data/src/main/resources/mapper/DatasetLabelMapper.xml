@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+
+<mapper namespace="org.dubhe.data.dao.DatasetLabelMapper">
+
+    <insert id="insertBatch">
+        insert into data_dataset_label
+        (dataset_id, label_id, create_user_id, create_time, update_user_id, update_time, deleted) VALUES
+        <foreach collection="list" item="item" separator=",">
+            (#{item.datasetId},#{item.labelId},#{item.createUserId},#{item.createTime}
+            ,#{item.updateUserId},#{item.updateTime},#{item.deleted})
+        </foreach>
+    </insert>
+
+</mapper>

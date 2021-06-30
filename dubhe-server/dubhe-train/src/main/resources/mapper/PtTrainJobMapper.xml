@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+
+<mapper namespace="org.dubhe.train.dao.PtTrainJobMapper">
+
+    <select id="getPageTrain" resultType="org.dubhe.train.domain.vo.PtTrainVO">
+        SELECT
+        t1.id as jobId,
+        t1.train_id,
+        t2.train_name,
+        t1.job_name,
+        t2.version_num,
+        t1.runtime,
+        t1.train_status,
+        t1.data_source_name,
+        t1.data_source_path,
+        t2.create_user_id,
+        t2.create_time,
+        t2.update_user_id,
+        t2.update_time,
+        t2.origin_user_id
+        FROM
+        pt_train_job t1
+        INNER JOIN pt_train t2 ON t1.train_id = t2.id
+        WHERE
+        t1.id IN ( SELECT max(id) FROM pt_train_job WHERE deleted = 0
+        <if test="trainStatus != null">
+            AND train_status = #{trainStatus}
+        </if>
+        <if test="createUserId != null">
+            AND create_user_id = #{createUserId}
+        </if>
+        GROUP BY train_id) AND t2.deleted = 0
+        <if test="trainName != null and trainName != ''">
+            AND (t2.train_name like concat('%', #{trainName}, '%') or t2.id = #{trainName})
+        </if>
+        <choose>
+            <when test="sort == 'id'">
+                order by <![CDATA[t1.]]>${sort} ${order}
+            </when>
+            <otherwise>
+                order by ${sort} ${order}
+            </otherwise>
+        </choose>
+    </select>
+</mapper>

@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+
+<mapper namespace="org.dubhe.admin.dao.PermissionMapper">
+    <select id="selectPermissinByRoleIds" parameterType="java.util.List" resultType="org.dubhe.biz.base.dto.SysPermissionDTO">
+        select ra.role_id, p.permission, p.name
+        from permission p
+                 left join auth_permission ap on p.id = ap.permission_id
+                 left join roles_auth ra on ap.auth_id = ra.auth_id
+        where ra.role_id in
+        <foreach item="item" collection="list" separator="," open="(" close=")">
+          #{item}
+        </foreach>
+    </select>
+</mapper>

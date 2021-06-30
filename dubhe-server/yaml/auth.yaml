@@ -1,0 +1,4 @@
+#jwt
+jwt:
+  # 在线用户key
+  online-key: online-token

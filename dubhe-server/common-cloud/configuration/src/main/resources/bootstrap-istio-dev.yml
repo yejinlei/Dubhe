@@ -1,0 +1,7 @@
+spring:
+  cloud:
+    nacos:
+      config:
+        namespace: dubhe-server-istio-dev
+      discovery:
+        namespace: dubhe-server-istio-dev
