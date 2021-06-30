@@ -16,11 +16,13 @@
  */
 package org.dubhe.datasetutil.service.impl;
 
+import org.dubhe.datasetutil.common.exception.DataSequenceException;
 import org.dubhe.datasetutil.dao.DataSequenceMapper;
 import org.dubhe.datasetutil.domain.entity.DataSequence;
 import org.dubhe.datasetutil.service.DataSequenceService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 
 /**
@@ -35,7 +37,7 @@ public class DataSequenceServiceImpl implements DataSequenceService {
 
     @Override
     public DataSequence getSequence(String businessCode) {
-        return dataSequenceMapper.selectByBusiness(businessCode);
+        return dataSequenceMapper.selectDataSequenceById(dataSequenceMapper.selectByBusiness(businessCode).getId());
     }
 
     /**
@@ -45,6 +47,7 @@ public class DataSequenceServiceImpl implements DataSequenceService {
      * @return int 数量
      */
     @Override
+    @Transactional(rollbackFor = Exception.class)
     public int updateSequenceStart(String businessCode) {
         return dataSequenceMapper.updateStartByBusinessCode(businessCode);
     }
@@ -75,4 +78,23 @@ public class DataSequenceServiceImpl implements DataSequenceService {
         String oldTableName = tableName.substring(0,tableName.lastIndexOf("_"));
         dataSequenceMapper.createNewTable(tableName,oldTableName);
     }
+
+
+    /**
+     * 扩容可用数量
+     *
+     * @param businessCode 业务编码
+     * @return DataSequence 数据ID序列
+     */
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public DataSequence expansionUsedNumber(String businessCode) {
+        DataSequence dataSequenceNew = getSequence(businessCode);
+        if (dataSequenceNew == null || dataSequenceNew.getStart() == null || dataSequenceNew.getStep() == null) {
+            throw new DataSequenceException("配置出错，请检查data_sequence表配置");
+        }
+        updateSequenceStart(businessCode);
+        return dataSequenceNew;
+    }
+
 }

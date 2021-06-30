@@ -23,6 +23,10 @@ import org.dubhe.datasetutil.domain.entity.Dataset;
 import org.dubhe.datasetutil.service.DatasetService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.util.CollectionUtils;
+
+import java.util.List;
+import java.util.Objects;
 
 /**
  * @description 数据集 服务实现类
@@ -54,6 +58,11 @@ public class DatasetServiceImpl extends ServiceImpl<DatasetMapper, Dataset> impl
     @Override
     public Dataset findDatasetById(Long datasetId) {
         return datasetMapper.findDatasetById(datasetId);
+    }
+
+    @Override
+    public Dataset queryDatasetById(Long datasetId) {
+        return baseMapper.selectById(datasetId);
     }
 
     /**
@@ -89,4 +98,65 @@ public class DatasetServiceImpl extends ServiceImpl<DatasetMapper, Dataset> impl
     public int findDataFileById(Long datasetId) {
         return datasetMapper.findDataFileById(datasetId);
     }
+
+    /**
+     * 根据ID 查询数据集
+     *
+     * @param datasetId 数据集ID
+     * @return Dataset 数据集
+     */
+    @Override
+    public Dataset findDatasetByIdNormal(Long datasetId) {
+        return datasetMapper.findDatasetByIdNormal(datasetId);
+    }
+
+    /**
+     * 新增数据集
+     *
+     * @param insertSql sql语句
+     */
+    @Override
+    public void saveBatch(List<String> insertSql) {
+        if(!CollectionUtils.isEmpty(insertSql)){
+            insertSql.forEach(sql->{
+                if(!Objects.isNull(sql)){
+                    baseMapper.saveBatch(sql);
+                }
+            });
+        }
+
+    }
+
+    /**
+     * 删除数据集通过数据集ID
+     *
+     * @param datasetId 数据集ID
+     */
+    @Override
+    public void deleteDatasetById(long datasetId) {
+        baseMapper.deleteDatasetById(datasetId);
+    }
+
+    /**
+     * 更新数据集状态
+     *
+     * @param dataset 数据集
+     */
+    @Override
+    public void updateDatasetStatusIsImport(Dataset dataset) {
+        dataset.setStatus(DataStateCodeConstant.IN_THE_IMPORT_STATE);
+        datasetMapper.updateById(dataset);
+    }
+
+    /**
+     * 更新数据集
+     *
+     * @param dataset 数据集信息
+     * @return int 数量
+     */
+    @Override
+    public int updateDataset(Dataset dataset) {
+        return datasetMapper.updateById(dataset);
+    }
+
 }

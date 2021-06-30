@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+
+<mapper namespace="org.dubhe.datasetutil.dao.DataFileAnnotationMapper">
+    <insert id="saveDataFileAnnotation" parameterType="java.util.List">
+        insert into data_file_annotation (id,dataset_id,label_id,version_file_id,prediction,create_user_id,file_name)
+        values
+        <foreach collection="dataFileAnnotations" item="file" separator=",">
+            (#{file.id},#{file.datasetId},#{file.labelId},#{file.versionFileId},
+            #{file.prediction},#{file.createUserId}, #{file.fileName})
+        </foreach>
+    </insert>
+</mapper>

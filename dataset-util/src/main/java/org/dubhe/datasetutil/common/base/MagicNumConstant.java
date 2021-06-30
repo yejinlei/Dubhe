@@ -47,6 +47,7 @@ public final class MagicNumConstant {
     public static final int ONE_HUNDRED = 100;
     public static final int ONE_HUNDRED_TWENTY_EIGHT = 128;
     public static final int TWO_HUNDRED = 200;
+    public static final int FOUR_HUNDRED = 400;
     public static final int FIVE_HUNDRED = 500;
     public static final int FIVE_HUNDRED_AND_SIXTEEN = 516;
     public static final int ONE_THOUSAND = 1000;
@@ -89,6 +90,7 @@ public final class MagicNumConstant {
     public static final long TWELVE_LONG = 12L;
     public static final long SIXTY_LONG = 60L;
     public static final long FIFTY_LONG = 50L;
+    public static final long HUNDRED_LONG = 100L;
     public static final long THOUSAND_LONG = 1000L;
     public static final long TEN_THOUSAND_LONG = 10000L;
     public static final long ONE_ZERO_ONE_ZERO_ONE_ZERO_LONG = 101010L;

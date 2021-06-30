@@ -67,4 +67,9 @@ public class DataLabelGroup extends BaseEntity implements Serializable {
     @TableField(value = "origin_user_id")
     private Long originUserId;
 
+    /**
+     * 标签组数据类型(0:视觉,1:文本)
+     */
+    private Integer labelGroupType;
+
 }

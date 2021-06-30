@@ -32,4 +32,17 @@ public interface DataFileService {
      */
     void saveBatchDataFile(List<DataFile> dataFiles);
 
+    /**
+     * 创建新表
+     *
+     * @param tableName 表名称
+     */
+    void createNewTable(String tableName);
+
+    /**
+     * 删除数据集文件通过数据集ID
+     *
+     * @param datasetId 数据集ID
+     */
+    void deleteFileByDatasetId(long datasetId);
 }

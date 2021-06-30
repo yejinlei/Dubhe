@@ -17,8 +17,8 @@
 
 package org.dubhe.datasetutil.domain.entity;
 
+import cn.hutool.core.date.DateUtil;
 import com.alibaba.fastjson.annotation.JSONField;
-import com.xiaoleilu.hutool.date.DateUtil;
 import lombok.Data;
 import lombok.experimental.Accessors;
 

@@ -17,15 +17,19 @@
 package org.dubhe.datasetutil;
 
 import lombok.extern.slf4j.Slf4j;
+import org.dubhe.datasetutil.common.util.PrintUtils;
 import org.dubhe.datasetutil.common.util.SpringContextHolder;
+import org.dubhe.datasetutil.handle.CustomDatasetImportHandle;
 import org.dubhe.datasetutil.handle.DatasetImageUploadHandle;
 import org.dubhe.datasetutil.handle.DatasetImportHandle;
-import org.dubhe.datasetutil.common.util.PrintUtils;
+import org.dubhe.datasetutil.handle.PresetDatasetImportHandle;
 import org.mybatis.spring.annotation.MapperScan;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.ApplicationContext;
 
+import java.time.Duration;
+import java.time.LocalDateTime;
 import java.util.Scanner;
 
 /**
@@ -43,7 +47,7 @@ public class DatasetUtilApplication {
      * @param args 入参
      */
     public static void main(String[] args) {
-        ApplicationContext applicationContext = SpringApplication.run(DatasetUtilApplication.class, args);
+        ApplicationContext applicationContext = SpringApplication.run(org.dubhe.datasetutil.DatasetUtilApplication.class, args);
         SpringContextHolder springContextHolder = new SpringContextHolder();
         springContextHolder.setApplicationContext(applicationContext);
         execute(applicationContext);
@@ -57,18 +61,19 @@ public class DatasetUtilApplication {
     public static void execute(ApplicationContext applicationContext) {
         while (true) {
             Scanner scanner = new Scanner(System.in);
-            log.warn("###################请输入需要执行的任务#############");
-            log.warn("#  输入1.执行上传图片          ");
-            log.warn("#  输入2.执行导入数据集        ");
-            log.warn("#  输入命令 ：exit 退出        ");
-            log.warn("################################################");
+            System.out.println(" ");
+            System.out.println("###请输入需要执行的任务###");
+            System.out.println("#  输入1：上传文件          ");
+            System.out.println("#  输入2：导入数据集        ");
+            System.out.println("#  输入exit：退出        ");
+            System.out.println("##########################");
             String a = scanner.nextLine();
             switch (a) {
                 case "1":
                     uploadDatasetImage(scanner, applicationContext);
                     break;
                 case "2":
-                    importDataset(scanner, applicationContext);
+                    executeImportDataset(applicationContext);
                     break;
                 case "exit":
                 default:
@@ -78,6 +83,47 @@ public class DatasetUtilApplication {
         }
     }
 
+    public static void executeImportDataset(ApplicationContext applicationContext) {
+        Boolean importFlag = true;
+        while (importFlag) {
+            Scanner scanner = new Scanner(System.in);
+            System.out.println(" ");
+            System.out.println("###请输入导入数据集类型###");
+            System.out.println("#  输入1: 导入普通数据集          ");
+            System.out.println("#  输入2: 导入预置数据集        ");
+            System.out.println("#  输入3: 导入自定义数据集        ");
+            System.out.println("#  输入命令：exit 返回        ");
+            System.out.println("##########################");
+
+            switch (scanner.nextLine()) {
+                case "1":
+                    importDataset(scanner, applicationContext);
+                    break;
+                case "2":
+                    importPresetDataset(scanner, applicationContext);
+                    break;
+                case "3":
+                    importCustomDataset(scanner, applicationContext);
+                    break;
+                case "exit":
+                default:
+                    importFlag = false;
+                    break;
+            }
+        }
+    }
+
+    /**
+     * 导入预置数据集
+     *
+     * @param scanner               输入控制台
+     * @param applicationContext    请求上下文
+     */
+    private static void importPresetDataset(Scanner scanner, ApplicationContext applicationContext) {
+        PresetDatasetImportHandle datasetImportHandle = (PresetDatasetImportHandle) applicationContext.getBean("presetDatasetImportHandle");
+        datasetImportHandle.importPresetDataset(scanner);
+    }
+
     /**
      * 导入图片
      *
@@ -85,17 +131,13 @@ public class DatasetUtilApplication {
      * @param applicationContext 请求上下文
      */
     public static void uploadDatasetImage(Scanner scanner, ApplicationContext applicationContext) {
-        log.warn("# 请输入数据集ID #");
-        String datasetIdStr = scanner.nextLine();
-        Long datasetId = Long.parseLong(datasetIdStr);
-        log.warn("# 请输入要上传的图片地址 #");
-        String filePath = scanner.nextLine();
         DatasetImageUploadHandle datasetImageUploadHandle = (DatasetImageUploadHandle) applicationContext.getBean("datasetImageUploadHandle");
         try {
-            datasetImageUploadHandle.execute(filePath, datasetId);
+            datasetImageUploadHandle.importPicture(scanner);
         } catch (Exception e) {
-            log.error("", e);
-            log.error("# 数据集上传失败，请重新尝试.....");
+            log.error("");
+            PrintUtils.printLine("  Error：" + e.getMessage(), PrintUtils.RED);
+            log.error("");
         }
     }
 
@@ -109,6 +151,30 @@ public class DatasetUtilApplication {
         DatasetImportHandle datasetImportHandle = (DatasetImportHandle) applicationContext.getBean("datasetImportHandle");
         try{
             datasetImportHandle.importDataset(scanner);
+        } catch (Exception e) {
+            log.error("");
+            PrintUtils.printLine("  Error：" + e.getMessage(), PrintUtils.RED);
+            log.error("");
+        }
+    }
+
+    /**
+     * 导入之定义数据集
+     *
+     * @param scanner             输入控制台
+     * @param applicationContext  请求上下文
+     */
+    public static void importCustomDataset(Scanner scanner, ApplicationContext applicationContext) {
+        System.out.println(" ");
+        System.out.println("# 请输入数据集ID #");
+        String datasetIdStr = scanner.nextLine();
+        Long datasetId = Long.parseLong(datasetIdStr);
+        System.out.println(" ");
+        System.out.println("# 请输入待上传本地文件的绝对路径 #");
+        String filePath = scanner.nextLine();
+        CustomDatasetImportHandle customDatasetImportHandle = (CustomDatasetImportHandle) applicationContext.getBean("customDatasetImportHandle");
+        try {
+            customDatasetImportHandle.execute(new Object[]{datasetId, filePath});
         } catch (Exception e) {
             log.error("");
             PrintUtils.printLine("  Error：" + e.getMessage(), PrintUtils.RED);

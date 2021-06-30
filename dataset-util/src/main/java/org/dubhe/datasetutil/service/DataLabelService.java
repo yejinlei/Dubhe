@@ -19,6 +19,7 @@ package org.dubhe.datasetutil.service;
 import org.dubhe.datasetutil.domain.entity.DataLabel;
 
 import java.util.List;
+import java.util.Map;
 
 /**
  * @description 数据集标签服务接口
@@ -31,4 +32,21 @@ public interface DataLabelService {
      * @param listDataLabel 数据集标签集合
      */
     void saveBatchDataLabel(List<DataLabel> listDataLabel);
+
+
+    /**
+     * 根据预置标签组获取预置标签
+     *
+     * @param groupIds 预置标签组IDS
+     * @return  预置标签map key: 预置标签名称 value:预置标签ID
+     */
+    Map<String, Long> getPresetLabelList(List<Long> groupIds);
+
+
+    /**
+     * 删除标签
+     *
+     * @param datasetId 数据集ID
+     */
+    void deleteLabelByDatasetId(long datasetId);
 }

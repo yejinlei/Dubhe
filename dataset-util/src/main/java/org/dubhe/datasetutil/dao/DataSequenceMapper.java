@@ -34,7 +34,16 @@ public interface DataSequenceMapper extends BaseMapper<DataSequence> {
      * @return DataSequence 根据业务编码得到的序列
      */
     @Select("select id, business_code ,start, step from data_sequence where business_code = #{businessCode}")
-    DataSequence selectByBusiness(String businessCode);
+    DataSequence selectByBusiness(@Param("businessCode") String businessCode);
+
+    /**
+     * 根据ID查询
+     *
+     * @param id 序列ID
+     * @return DataSequence 根据业务编码得到的序列
+     */
+    @Select("select id, business_code ,start, step from data_sequence where id = #{id} for update")
+    DataSequence selectDataSequenceById(@Param("id") Long id);
 
     /**
      * 根据业务编码更新序列起始值
@@ -43,7 +52,7 @@ public interface DataSequenceMapper extends BaseMapper<DataSequence> {
      * @return DataSequence 根据业务编码更新序列起始值
      */
     @Update("update data_sequence set start = start + step where business_code = #{businessCode} ")
-    int updateStartByBusinessCode(String businessCode);
+    int updateStartByBusinessCode(@Param("businessCode") String businessCode);
 
     /**
      * 查询存在表的记录数
@@ -60,7 +69,7 @@ public interface DataSequenceMapper extends BaseMapper<DataSequence> {
      * @param tableName    类型名称
      * @param oldTableName 旧类型名称
      */
-    @Update({"CREATE TABLE ${tableName} AS select * from  ${oldTableName} "})
+    @Update({"CREATE TABLE ${tableName} like ${oldTableName}"})
     void createNewTable(@Param("tableName") String tableName, @Param("oldTableName") String oldTableName);
 
 }

@@ -19,9 +19,12 @@ package org.dubhe.datasetutil.common.util;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.LineIterator;
 import org.dubhe.datasetutil.common.constant.BusinessConstant;
+import org.springframework.util.ObjectUtils;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * @description 文件工具类
@@ -42,6 +45,27 @@ public class HandleFileUtil {
             stringBuffer.append(fileContext.nextLine());
         }
         return stringBuffer.toString();
+    }
+
+
+    /**
+     * 读取文件内容
+     *
+     * @param file 文件对象
+     * @return Map<String,List<String>> 文件内容
+     */
+    public static List<String>  readFileInfo(File file) throws IOException{
+
+       List<String> datasetList = new ArrayList<>();
+        LineIterator fileContext =  FileUtils.lineIterator(file,"UTF-8");
+        while (fileContext.hasNext()) {
+            String line = fileContext.nextLine();
+            if(!ObjectUtils.isEmpty(line)){
+                datasetList.add(line);
+            }
+
+        }
+        return datasetList;
     }
 
 

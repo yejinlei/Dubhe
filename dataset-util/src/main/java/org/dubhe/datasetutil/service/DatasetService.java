@@ -18,6 +18,8 @@ package org.dubhe.datasetutil.service;
 
 import org.dubhe.datasetutil.domain.entity.Dataset;
 
+import java.util.List;
+
 /**
  * @description 数据集服务
  * @date 2020-9-17
@@ -38,6 +40,14 @@ public interface DatasetService {
      * @return Dataset 数据集
      */
     Dataset findDatasetById(Long datasetId);
+
+    /**
+     * 根据ID查询数据集
+     *
+     * @param datasetId 数据集Id
+     * @return Dataset 数据集
+     */
+    Dataset queryDatasetById(Long datasetId);
 
     /**
      * 更新数据集状态
@@ -62,4 +72,43 @@ public interface DatasetService {
      * @return int 数量
      */
     int findDataFileById(Long datasetId);
+
+    /**
+     * 根据Id查询数据集
+     *
+     * @param datasetId 数据集ID
+     * @return Dataset 数据集
+     */
+    Dataset findDatasetByIdNormal(Long datasetId);
+
+
+    /**
+     * 新增数据集
+     *
+     * @param insertSql sql语句
+     */
+    void saveBatch(List<String> insertSql);
+
+    /**
+     * 删除数据集通过数据集ID
+     *
+     * @param datasetId 数据集ID
+     */
+    void deleteDatasetById(long datasetId);
+
+    /**
+     * 更新数据集状态
+     *
+     * @param dataset 数据集
+     */
+    void updateDatasetStatusIsImport(Dataset dataset);
+
+    /**
+     * 更新数据集
+     *
+     * @param dataset 数据集信息
+     * @return int 数量
+     */
+    int updateDataset(Dataset dataset);
+
 }

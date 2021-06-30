@@ -31,4 +31,11 @@ public interface DatasetDataLabelService {
      * @param listDatasetDataLabel 数据集标签集合
      */
     void saveBatchDatasetDataLabel(List<DatasetDataLabel> listDatasetDataLabel);
+
+    /**
+     * 删除数据集标签关系通过数据集ID
+     *
+     * @param datasetId 数据集ID
+     */
+    void deleteDatasetLabelByDatasetId(long datasetId);
 }

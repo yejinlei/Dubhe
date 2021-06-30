@@ -23,15 +23,18 @@ import org.dubhe.datasetutil.domain.entity.DataLabel;
 import org.dubhe.datasetutil.service.DataLabelService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.util.CollectionUtils;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * @description 数据集标签服务接口实现
  * @date 2020-10-14
  */
 @Service
-public class DataLabelServiceImpl implements DataLabelService {
+public class DataLabelServiceImpl  implements DataLabelService {
 
     @Autowired
     private DataLabelMapper dataLabelMapper;
@@ -53,4 +56,36 @@ public class DataLabelServiceImpl implements DataLabelService {
             dataLabelMapper.saveBatchDataLabel(listDataLabel);
         }
     }
+
+
+
+    /**
+     * 根据预置标签组获取预置标签
+     *
+     * @param groupIds 预置标签组IDS
+     * @return  预置标签 key: 预置标签名称 value:预置标签ID
+     */
+    @Override
+    public Map<String, Long> getPresetLabelList(List<Long> groupIds) {
+        List<DataLabel> labels = dataLabelMapper.getPresetLabelList(groupIds);
+        Map<String, Long> map = new HashMap<>(labels.size());
+        if(!CollectionUtils.isEmpty(labels)){
+            labels.forEach(a->{
+                map.put(a.getName(),a.getId());
+            });
+        }
+        return map;
+    }
+
+    /**
+     * 删除标签关系通过数据集ID
+     *
+     * @param datasetId 数据集ID
+     */
+    @Override
+    public void deleteLabelByDatasetId(long datasetId) {
+        dataLabelMapper.deleteLabelByDatasetId(datasetId);
+    }
+
+
 }

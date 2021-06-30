@@ -1,0 +1,41 @@
+#应用名称
+spring:
+  #配置Sharding-JDBC数据源
+  shardingsphere:
+    datasource:
+      master:
+        #数据源URL
+        url: jdbc:log4jdbc:mysql://127.0.0.1:3306/dubhe-cloud-prod?serverTimezone=Asia/Shanghai&characterEncoding=utf8&useSSL=false&allowMultiQueries=true&useInformationSchema=true
+        #数据源用户名
+        username: root
+        #数据源密码
+        password: 123456
+
+minio:
+  #minio地址
+  endpoint: 127.0.0.1
+  #minio端口号
+  port: 9000
+  #minio accessKey
+  accessKey: admin
+  #minio secretKey
+  secretKey: 123@abc.com
+  #minio bucketName
+  bucketName: dubhe-prod
+  #minio nfsRootPath
+  nfsRootPath: /nfs/
+  # 文件存储服务器用户名
+  serverUserName: root
+  # 数据集文档说明地址
+  dosAddress: http://docs.dubhe.ai/docs/module/dataset/preset-dataset/
+#图片后缀名
+suffix:
+  imageFormat: .jpg,.png,.bmp,.jpeg
+  txtFormat: .txt
+# ES服务地址及端口
+es:
+  host: 127.0.0.1
+  serverPort: 9200
+  transportPort: 9300
+  clusterName: kubernetes-logging
+  index: dataset_text

@@ -17,7 +17,10 @@
 package org.dubhe.datasetutil.domain.dto;
 
 import lombok.Data;
-import org.dubhe.datasetutil.common.base.MagicNumConstant;
+import org.dubhe.datasetutil.domain.entity.DataSequence;
+
+import java.util.LinkedList;
+import java.util.Queue;
 
 /**
  * @description ID策略实体
@@ -26,25 +29,34 @@ import org.dubhe.datasetutil.common.base.MagicNumConstant;
 @Data
 public class IdAlloc {
 
-    /**
-     * 起始位置
-     */
-    private long startNumber;
+    private Queue<Long> ids;
 
-    /**
-     * 结束位置
-     */
-    private long endNumber;
-
-    /**
-     * 可用数量
-     */
-    private long usedNumber;
+    private Long unUsed;
 
     public IdAlloc() {
-        this.startNumber = MagicNumConstant.ZERO;
-        this.endNumber = MagicNumConstant.ZERO;
-        this.usedNumber = MagicNumConstant.ZERO;
+        ids = new LinkedList<>();
+        unUsed = 0L;
+    }
+
+    /**
+     * 补充ID
+     *
+     * @param dataSequence
+     */
+    public void add(DataSequence dataSequence) {
+        for (Long i = dataSequence.getStart(); i < dataSequence.getStart() + dataSequence.getStep(); i++) {
+            ids.add(i);
+            unUsed++;
+        }
+    }
+
+    public Queue<Long> poll(int number) {
+        Queue<Long> result = new LinkedList<>();
+        for (int i = 0; i < number; i++) {
+            result.add(ids.poll());
+            unUsed--;
+        }
+        return result;
     }
 
 }

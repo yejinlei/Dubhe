@@ -18,6 +18,9 @@ package org.dubhe.datasetutil.common.util;
 
 
 import lombok.extern.slf4j.Slf4j;
+import org.dubhe.datasetutil.common.base.MagicNumConstant;
+import org.dubhe.datasetutil.common.config.MinioConfig;
+import org.springframework.util.CollectionUtils;
 
 import java.util.List;
 import java.util.concurrent.*;
@@ -29,7 +32,8 @@ import java.util.concurrent.*;
 @Slf4j
 public class ThreadUtils {
 
-    private ThreadUtils(){}
+    private ThreadUtils() {
+    }
 
     /**
      * 根据需要处理的数量创建线程数
@@ -38,7 +42,7 @@ public class ThreadUtils {
      * @return int 数量
      */
     public static int createThread(int listSize) {
-        return listSize / getNeedThreadNumber() == 0 ? 1 : listSize / getNeedThreadNumber();
+        return listSize / getNeedThreadNumber() == MagicNumConstant.ZERO ? MagicNumConstant.ONE : listSize / getNeedThreadNumber();
     }
 
 
@@ -49,24 +53,26 @@ public class ThreadUtils {
      */
     public static int getNeedThreadNumber() {
         final int numOfCores = Runtime.getRuntime().availableProcessors();
-        final double blockingCoefficient = 0.8;
-        return (int) (numOfCores / (1 - blockingCoefficient));
+        MinioConfig minioConfig = (MinioConfig) SpringContextHolder.getBean("minioConfig");
+        final double blockingCoefficient = minioConfig.getBlockingCoefficient();
+        return (int) (numOfCores / (MagicNumConstant.ONE - blockingCoefficient));
     }
 
     /**
      * 按要求分多线程执行
      *
-     * @param partitions 分线程集合
+     * @param partitions  分线程集合
      * @throws Exception 线程执行异常
      */
     public static void runMultiThread(List<Callable<Integer>> partitions) throws Exception {
         final ExecutorService executorService = Executors.newFixedThreadPool(ThreadUtils.getNeedThreadNumber());
         final List<Future<Integer>> valueOfStocks = executorService.invokeAll(partitions);
-        Integer endCount = 0;
+        Integer endCount = MagicNumConstant.ZERO;
         for (final Future<Integer> value : valueOfStocks) {
             endCount += value.get();
         }
-        log.warn("#-------------处理结束,成功处理文件 【" + endCount + "】个-------------#");
+        executorService.shutdown();
+        Thread.sleep(1000);
     }
 
 }

@@ -22,15 +22,12 @@ import com.alibaba.fastjson.JSON;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
-import org.dubhe.datasetutil.common.aspect.LogAspect;
 import org.dubhe.datasetutil.common.enums.LogEnum;
 import org.dubhe.datasetutil.domain.entity.LogInfo;
 import org.slf4j.MDC;
 import org.slf4j.MarkerFactory;
 import org.slf4j.helpers.MessageFormatter;
-
 import java.util.Arrays;
-import java.util.UUID;
 
 /**
  * @description 日志工具类
@@ -179,14 +176,9 @@ public class LogUtil {
             logType = LogEnum.SYS_ERR;
         }
 
-        // 获取trace_id
-        if (StringUtils.isEmpty(MDC.get(LogAspect.TRACE_ID))) {
-            MDC.put(LogAspect.TRACE_ID, UUID.randomUUID().toString());
-        }
         // 设置logInfo的level,type,traceId属性
         logInfo.setLevel(level.levelStr)
-                .setType(logType.toString())
-                .setTraceId(MDC.get(LogAspect.TRACE_ID));
+                .setType(logType.toString());
 
 
         //自定义日志级别

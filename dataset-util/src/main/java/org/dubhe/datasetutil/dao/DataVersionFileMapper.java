@@ -17,8 +17,8 @@
 package org.dubhe.datasetutil.dao;
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
-import org.apache.ibatis.annotations.Param;
-import org.dubhe.datasetutil.domain.dto.DataVersionFile;
+import org.apache.ibatis.annotations.*;
+import org.dubhe.datasetutil.domain.entity.DataVersionFile;
 
 import java.util.List;
 
@@ -34,4 +34,44 @@ public interface DataVersionFileMapper extends BaseMapper<DataVersionFile> {
      * @param listDataVersionFile 数据集文件中间表数据集合
      */
     void saveBatchDataFileVersion(@Param("listDataVersionFile") List<DataVersionFile> listDataVersionFile);
+
+
+    /**
+     * 创建新表 data_dataset_version_file_1
+     */
+    @Update("create table data_dataset_version_file_1 like data_dataset_version_file")
+    void createNewTableOne();
+
+
+    /**
+     * 创建新表 data_dataset_version_file_2
+     */
+    @Update("create table data_dataset_version_file_2 like data_dataset_version_file")
+    void createNewTableTwo();
+
+
+    /**
+     * 根据表名获取表数量
+     *
+     * @param tableName 表名称
+     * @return  表数量
+     */
+    @Select("select count(*) from information_schema.TABLES where table_name = #{tableName}")
+    int selectCountByTableName(@Param("tableName") String tableName);
+
+    /**
+     * 删除数据集版本文件通过数据集ID
+     *
+     * @param datasetId 数据集ID
+     */
+    @Delete("delete  from data_dataset_version_file where dataset_id = #{datasetId}")
+    void deleteVersionFileByDatasetId(@Param("datasetId") long datasetId);
+
+    /**
+     * 删除数据集版本通过数据集ID
+     *
+     * @param datasetId 数据集ID
+     */
+    @Delete("delete  from data_dataset_version where dataset_id = #{datasetId}")
+    void deleteVersionByDatasetId(@Param("datasetId") long datasetId);
 }

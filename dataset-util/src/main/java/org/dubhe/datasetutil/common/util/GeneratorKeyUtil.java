@@ -18,16 +18,14 @@ package org.dubhe.datasetutil.common.util;
 
 import cn.hutool.core.util.ObjectUtil;
 import org.dubhe.datasetutil.common.base.MagicNumConstant;
-import org.dubhe.datasetutil.common.enums.LogEnum;
 import org.dubhe.datasetutil.common.exception.DataSequenceException;
 import org.dubhe.datasetutil.domain.dto.IdAlloc;
 import org.dubhe.datasetutil.domain.entity.DataSequence;
 import org.dubhe.datasetutil.service.DataSequenceService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
-
+import java.util.Queue;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -49,8 +47,7 @@ public class GeneratorKeyUtil {
      * @param number       数量
      * @return Long 起始位置
      */
-    @Transactional(rollbackFor = Exception.class)
-    public synchronized Long getSequenceByBusinessCode(String businessCode, int number) {
+    public synchronized Queue<Long> getSequenceByBusinessCode(String businessCode, int number) {
         if (StringUtils.isEmpty(businessCode)) {
             throw new DataSequenceException("业务编码不可为空");
         }
@@ -63,56 +60,26 @@ public class GeneratorKeyUtil {
             idAllocConcurrentHashMap.put(businessCode, idAlloc);
         }
 
-        if (idAlloc.getUsedNumber() == MagicNumConstant.ZERO) {
-            DataSequence dataSequence = getDataSequence(businessCode);
-            updateDataSequence(businessCode);
-            idAlloc.setStartNumber(dataSequence.getStart());
-            idAlloc.setEndNumber(dataSequence.getStart() + dataSequence.getStep() - MagicNumConstant.ONE);
-            idAlloc.setUsedNumber(idAlloc.getEndNumber() - idAlloc.getStartNumber() + MagicNumConstant.ONE);
-        }
-        if (idAlloc.getUsedNumber() <= number) {
+        if (idAlloc.getUnUsed() < number) {
+            //执行扩容操作
             expansionUsedNumber(businessCode, number);
         }
-        long returnStartNumber = idAlloc.getStartNumber();
-        idAlloc.setStartNumber(idAlloc.getStartNumber() + number);
-        idAlloc.setUsedNumber(idAlloc.getUsedNumber() - number);
-        return returnStartNumber;
+        //获取ids
+        return idAlloc.poll(number);
     }
 
     /**
-     * 根据业务编码获取配置信息
-     * @param businessCode 业务编码
-     * @return DataSequence 数据索引
-     */
-    private DataSequence getDataSequence(String businessCode) {
-        DataSequence dataSequence = dataSequenceService.getSequence(businessCode);
-        if (dataSequence == null || dataSequence.getStart() == null || dataSequence.getStep() == null) {
-            throw new DataSequenceException("配置出错，请检查data_sequence表配置");
-        }
-        return dataSequence;
-    }
-
-    /**
-     * 根据业务编码更新起始值
-     * @param businessCode 业务编码
-     */
-    private void updateDataSequence(String businessCode) {
-        dataSequenceService.updateSequenceStart(businessCode);
-    }
-
-    /**
-     * 多次扩容
+     * 扩容
      * @param businessCode 业务编码
      * @param number 数量
      */
-    private void expansionUsedNumber(String businessCode, int number) {
+    protected void expansionUsedNumber(String businessCode, int number) {
         IdAlloc idAlloc = idAllocConcurrentHashMap.get(businessCode);
-        updateDataSequence(businessCode);
-        DataSequence dataSequenceNew = getDataSequence(businessCode);
-        idAlloc.setEndNumber(idAlloc.getEndNumber() + dataSequenceNew.getStep());
-        idAlloc.setUsedNumber(idAlloc.getEndNumber() - idAlloc.getStartNumber() + MagicNumConstant.ONE);
-        if (idAlloc.getUsedNumber() <= number) {
+        DataSequence dataSequenceNew = dataSequenceService.expansionUsedNumber(businessCode);
+        idAlloc.add(dataSequenceNew);
+        if(idAlloc.getUnUsed() < number) {
             expansionUsedNumber(businessCode, number);
         }
     }
+
 }

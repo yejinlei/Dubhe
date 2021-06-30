@@ -17,8 +17,6 @@
 package org.dubhe.datasetutil.common.config;
 
 import io.minio.MinioClient;
-import io.minio.errors.InvalidEndpointException;
-import io.minio.errors.InvalidPortException;
 import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Bean;
@@ -45,14 +43,20 @@ public class MinioConfig {
 
     private String bucketName;
 
+    private String nfsRootPath;
+
+    private String serverUserName;
+
+    private double blockingCoefficient;
+
     /**
      * 获取Minio客户端信息
      *
      * @return Minio客户端信息
      */       
     @Bean
-    public MinioClient getMinioClient() throws InvalidEndpointException, InvalidPortException {
-        return new MinioClient(endpoint, port, accessKey, secretKey,secure);
+    public MinioClient getMinioClient() {
+        return MinioClient.builder().endpoint("http://" + endpoint + ":" + port).credentials(accessKey, secretKey).build();
     }
 
 }

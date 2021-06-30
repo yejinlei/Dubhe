@@ -16,7 +16,7 @@
  */
 package org.dubhe.datasetutil.service;
 
-import org.dubhe.datasetutil.domain.dto.DataVersionFile;
+import org.dubhe.datasetutil.domain.entity.DataVersionFile;
 
 import java.util.List;
 
@@ -31,4 +31,19 @@ public interface DataVersionFileService {
      * @param dataVersionFiles 数据集文件数据集合
      */
     void saveBatchDataFileVersion(List<DataVersionFile> dataVersionFiles);
+
+
+    /**
+     * 创建新表
+     *
+     * @param tableName 表名称
+     */
+    void createNewTable(String tableName);
+
+    /**
+     * 删除数据集版本通过数据集ID
+     *
+     * @param datasetId 数据集ID
+     */
+    void deleteVersionByDatasetId(long datasetId);
 }

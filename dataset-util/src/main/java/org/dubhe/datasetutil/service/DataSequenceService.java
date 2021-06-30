@@ -53,4 +53,13 @@ public interface DataSequenceService {
      * @param tableId 表ID
      */
     void createTable(String tableId);
+
+    /**
+     * 扩容可用数量
+     *
+     * @param businessCode 业务编码
+     * @return DataSequence 数据ID序列
+     */
+    DataSequence expansionUsedNumber(String businessCode);
+
 }

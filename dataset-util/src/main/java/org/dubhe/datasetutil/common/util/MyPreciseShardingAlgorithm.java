@@ -16,6 +16,7 @@
  */
 package org.dubhe.datasetutil.common.util;
 
+import lombok.extern.slf4j.Slf4j;
 import org.apache.shardingsphere.api.sharding.standard.PreciseShardingAlgorithm;
 import org.apache.shardingsphere.api.sharding.standard.PreciseShardingValue;
 import org.dubhe.datasetutil.common.base.MagicNumConstant;
@@ -24,15 +25,20 @@ import org.dubhe.datasetutil.service.DataSequenceService;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import java.util.Collection;
+import java.util.HashSet;
+import java.util.Set;
 
 /**
  * @description 数据分片
  * @date 2020-09-21
  */
-public class MyPreciseShardingAlgorithm implements PreciseShardingAlgorithm<Long>{
+@Slf4j
+public class MyPreciseShardingAlgorithm implements PreciseShardingAlgorithm<Long> {
 
     @Autowired
     private DataSequenceService dataSequenceService;
+
+    private static Set<String> tableNames = new HashSet<>();
 
     /**
      * 数据表分片
@@ -45,10 +51,17 @@ public class MyPreciseShardingAlgorithm implements PreciseShardingAlgorithm<Long
     public String doSharding(Collection<String> collection, PreciseShardingValue<Long> preciseShardingValue) {
         long startIndex = MagicNumConstant.ONE;
         long endIndex = MagicNumConstant.FIFTY;
-        dataSequenceService =  SpringContextHolder.getBean(DataSequenceService.class);
-        String tableName = preciseShardingValue.getLogicTableName()+ BusinessConstant.UNDERLINE + preciseSharding(preciseShardingValue.getValue(),startIndex ,endIndex);
-        if(!dataSequenceService.checkTableExist(tableName)){
-            dataSequenceService.createTable(tableName);
+        String tableName = preciseShardingValue.getLogicTableName() + BusinessConstant.UNDERLINE + preciseSharding(preciseShardingValue.getValue(), startIndex, endIndex);
+        if (!tableNames.contains(tableName)) {
+            dataSequenceService = SpringContextHolder.getBean(DataSequenceService.class);
+            if (!dataSequenceService.checkTableExist(tableName)) {
+                try {
+                    dataSequenceService.createTable(tableName);
+                } catch (Exception e) {
+                    log.error("table name repeat {}", tableName);
+                }
+            }
+            tableNames.add(tableName);
         }
         return tableName;
     }
@@ -61,11 +74,11 @@ public class MyPreciseShardingAlgorithm implements PreciseShardingAlgorithm<Long
      * @param endIndex   结束值
      * @return long 返回截止值
      */
-    public long preciseSharding(long indexId,long startIndex , long endIndex){
-        if(indexId > endIndex){
+    public long preciseSharding(long indexId, long startIndex, long endIndex) {
+        if (indexId > endIndex) {
             startIndex = startIndex + BusinessConstant.INTERVAL_NUMBER;
             endIndex = endIndex + BusinessConstant.INTERVAL_NUMBER;
-            return preciseSharding(indexId,startIndex,endIndex);
+            return preciseSharding(indexId, startIndex, endIndex);
         }
         return endIndex / BusinessConstant.INTERVAL_NUMBER;
     }

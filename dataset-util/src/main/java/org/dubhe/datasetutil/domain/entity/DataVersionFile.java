@@ -14,11 +14,10 @@
  * limitations under the License.
  * =============================================================
  */
-package org.dubhe.datasetutil.domain.dto;
+package org.dubhe.datasetutil.domain.entity;
 
-import com.baomidou.mybatisplus.annotation.IdType;
-import com.baomidou.mybatisplus.annotation.TableId;
-import lombok.Data;
+import com.baomidou.mybatisplus.annotation.TableName;
+import lombok.*;
 import org.dubhe.datasetutil.common.base.BaseEntity;
 
 import java.io.Serializable;
@@ -28,13 +27,16 @@ import java.io.Serializable;
  * @description 数据集文件关系类
  * @date 2020-9-17
  */
+@AllArgsConstructor
+@EqualsAndHashCode(callSuper = false)
+@Builder
+@TableName("data_dataset_version_file")
 @Data
 public class DataVersionFile extends BaseEntity implements Serializable  {
 
     /**
      * id
      */
-    @TableId(type = IdType.AUTO)
     private Long id;
 
     /**
@@ -72,6 +74,12 @@ public class DataVersionFile extends BaseEntity implements Serializable  {
      */
     private Integer changed;
 
+    /**
+     * 文件名称
+     */
+    private String fileName;
+
+
     public DataVersionFile() {
     }
 
@@ -84,10 +92,11 @@ public class DataVersionFile extends BaseEntity implements Serializable  {
      * @param status            状态
      * @return DataVersionFile  数据集版本文件表
      */       
-    public DataVersionFile(Long datasetId, Long fileId,Integer annotationStatus,Integer status) {
+    public DataVersionFile(Long datasetId, Long fileId,Integer annotationStatus,Integer status,String fileName) {
         this.datasetId = datasetId;
         this.fileId = fileId;
         this.annotationStatus = annotationStatus;
         this.status = status;
+        this.fileName = fileName;
     }
 }

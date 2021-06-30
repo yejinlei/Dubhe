@@ -54,4 +54,17 @@ public class DatasetDataLabelServiceImpl implements DatasetDataLabelService {
             datasetDataLabelMapper.saveBatchDatasetDataLabel(listDatasetDataLabel);
         }
     }
+
+
+    /**
+     * 删除数据集标签关系通过数据集ID
+     *
+     * @param datasetId 数据集ID
+     */
+    @Override
+    public void deleteDatasetLabelByDatasetId(long datasetId) {
+        datasetDataLabelMapper.deleteDatasetLabelByDatasetId(datasetId);
+    }
+
+
 }

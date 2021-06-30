@@ -140,6 +140,10 @@ public class Dataset extends BaseEntity implements Serializable  {
      */
     private Long originUserId;
 
+
+    private Long labelGroupId;
+
+
     public Dataset() {}
 
 }

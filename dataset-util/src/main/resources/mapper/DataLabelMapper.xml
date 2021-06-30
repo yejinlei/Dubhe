@@ -9,4 +9,18 @@
             ( #{dataLabel.name},#{dataLabel.color},#{dataLabel.createUserId})
         </foreach>
     </insert>
+
+    <select id="getPresetLabelList" parameterType="java.util.List"
+            resultType="org.dubhe.datasetutil.domain.entity.DataLabel">
+        select dl.id,dl.name from data_label  dl
+        left join  data_group_label dgl on dl.id = dgl.label_id
+        left join data_label_group dlg on dgl.label_group_id = dlg.id
+        where dl.deleted = 0
+        <if test="groupIds!=null and groupIds.size()&gt; 0">
+            <foreach collection="groupIds" item="item" separator="," open="and dlg.id in(" close=")">
+                #{item}
+            </foreach>
+        </if>
+    </select>
+
 </mapper>

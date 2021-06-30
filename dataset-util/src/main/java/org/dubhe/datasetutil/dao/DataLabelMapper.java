@@ -17,6 +17,7 @@
 package org.dubhe.datasetutil.dao;
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
+import org.apache.ibatis.annotations.Delete;
 import org.apache.ibatis.annotations.Param;
 import org.dubhe.datasetutil.domain.entity.DataLabel;
 
@@ -33,4 +34,24 @@ public interface DataLabelMapper extends BaseMapper<DataLabel> {
      * @param listDataLabel 标签数据
      */
     void saveBatchDataLabel(@Param("listDataLabel") List<DataLabel> listDataLabel);
+
+
+
+    /**
+     * 根据预置标签组获取预置标签
+     *
+     * @param groupIds 预置标签组IDS
+     * @return  预置标签 key: 预置标签名称 value:预置标签ID
+     */
+    List<DataLabel> getPresetLabelList(@Param("groupIds") List<Long> groupIds);
+
+    /**
+     * 删除标签
+     *
+     * @param datasetId
+     */
+    @Delete("delete from data_label where id  IN (\n" +
+            "   select * from ( select label_id from data_dataset_label where dataset_id = #{datasetId}) t\n" +
+            ")")
+    void deleteLabelByDatasetId(@Param("datasetId") long datasetId);
 }

@@ -57,4 +57,34 @@ public class DataFileServiceImpl extends ServiceImpl<DataFileMapper, DataFile> i
         }
     }
 
+
+
+    /**
+     * 创建新表
+     *
+     * @param tableName 表名称
+     */
+    @Override
+    public void createNewTable(String tableName){
+        int count = baseMapper.selectCountByTableName(tableName);
+        if(count == 0 ){
+            if((BusinessConstant.DATASET_FILE+BusinessConstant.TABLE_SUFFIX).equals(tableName)){
+                baseMapper.createNewTableOne();
+            }else {
+                baseMapper.createNewTableTwo();
+            }
+        }
+    }
+
+
+    /**
+     * 删除数据集文件通过数据集ID
+     *
+     * @param datasetId 数据集ID
+     */
+    @Override
+    public void deleteFileByDatasetId(long datasetId) {
+        baseMapper.deleteFileByDatasetId(datasetId);
+    }
+
 }

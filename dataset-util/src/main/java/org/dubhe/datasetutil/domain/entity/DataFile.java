@@ -16,10 +16,16 @@
  */
 package org.dubhe.datasetutil.domain.entity;
 
-import com.baomidou.mybatisplus.annotation.IdType;
-import com.baomidou.mybatisplus.annotation.TableId;
+import com.baomidou.mybatisplus.annotation.TableName;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
+import org.apache.commons.lang3.StringUtils;
 import org.dubhe.datasetutil.common.base.BaseEntity;
+import org.dubhe.datasetutil.common.base.MagicNumConstant;
+import org.dubhe.datasetutil.common.constant.BusinessConstant;
+import org.dubhe.datasetutil.common.constant.FileStateCodeConstant;
 
 import java.awt.image.BufferedImage;
 import java.io.Serializable;
@@ -28,13 +34,16 @@ import java.io.Serializable;
  * @description 文件类
  * @date 2020-09-17
  */
+@AllArgsConstructor
+@EqualsAndHashCode(callSuper = false)
+@Builder
+@TableName("data_file")
 @Data
 public class DataFile extends BaseEntity implements Serializable {
 
     /**
      * id
      */
-    @TableId(type = IdType.AUTO)
     private Long id;
 
     /**
@@ -92,7 +101,52 @@ public class DataFile extends BaseEntity implements Serializable {
      */
     private Long originUserId;
 
-    public DataFile() {}
+    public DataFile() {
+    }
+
+    /**
+     * 插入文件表
+     *
+     * @param name         文件名字
+     * @param datasetId    数据集id
+     * @param url          文件路径
+     * @param createUserId 创建人id
+     * @return DataFile   file对象
+     */
+    public DataFile(String name, Long datasetId, String url, Long createUserId, int status) {
+        this.name = name;
+        this.datasetId = datasetId;
+        this.url = url;
+        this.status = status;
+        this.setDeleted(false);
+        this.originUserId = createUserId;
+    }
+
+
+    /**
+     * 插入文件表
+     *
+     * @param name         文件名字
+     * @param datasetId    数据集id
+     * @param url          文件路径
+     * @param createUserId 创建人id
+     * @param status       状态
+     * @param fileType     文件类型
+     * @param pid          父文件ID
+     * @param originUserId 资源拥有者ID
+     * @return DataFile   file对象
+     */
+    public DataFile(String name, Long datasetId, String url, Long createUserId,  int status, int fileType, long pid, long originUserId) {
+        this.name = name;
+        this.datasetId = datasetId;
+        this.url = url;
+        this.status = status;
+        this.setDeleted(false);
+        this.setCreateUserId(createUserId);
+        this.fileType = fileType;
+        this.pid = pid;
+        this.originUserId = originUserId;
+    }
 
     /**
      * 插入文件表
@@ -102,17 +156,24 @@ public class DataFile extends BaseEntity implements Serializable {
      * @param url          文件路径
      * @param createUserId 创建人id
      * @param read         文件宽高
+     * @param status       状态
+     * @param fileType     文件类型
+     * @param pid          父文件ID
+     * @param originUserId 资源拥有者ID
      * @return DataFile   file对象
-     */       
-    public DataFile(String name, Long datasetId, String url, Long createUserId, BufferedImage read) {
-        this.name = name.substring(0, name.lastIndexOf("."));
+     */
+    public DataFile(String name, Long datasetId, String url, Long createUserId, BufferedImage read, int status, int fileType, long pid, long originUserId) {
+        this.name = name;
         this.datasetId = datasetId;
         this.url = url;
-        this.status = 101;
+        this.status = status;
         this.setDeleted(false);
-        this.originUserId = createUserId;
+        this.setCreateUserId(createUserId);
         this.width = read.getWidth();
         this.height = read.getHeight();
+        this.fileType = fileType;
+        this.pid = pid;
+        this.originUserId = originUserId;
     }
 
 }
