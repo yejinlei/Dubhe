@@ -32,6 +32,10 @@
 ├── webapp                        前端服务 
 ├── dataset-util                  数据集上传脚本服务
 ├── distribute-train-operator     分布式训练OP服务
+├── tianshu_serving               天枢serving服务
+├── model_compress                模型压缩服务
+├── model_measuring               模型度量服务
+├── model-converter               模型转换服务
 ```
 
 ## 技术架构
