@@ -23,4 +23,4 @@ mvn clean compile package
 ```
 
 ### 部署
-部署过程参看文档：[部署 分布式训练operator](http://tianshu.org.cn/?/course/1.html)
+部署过程参看文档：[部署 分布式训练operator](http://docs.dubhe.ai/docs/setup/deploy-distribute-train-operator)

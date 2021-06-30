@@ -1,5 +1,5 @@
-/**
- * Copyright 2020 Zhejiang Lab & The OneFlow Authors. All Rights Reserved.
+ /**
+ * Copyright 2020 Tianshu AI Platform. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -104,5 +104,19 @@ public class DistributeTrainSpec implements KubernetesResource {
      * 模型目录挂载
      */
     private Volume modelStorage;
+
+    /**
+     * 内部映射
+     */
+    private List<VolumeMount> volumeMounts;
+    /**
+     * 外部挂载
+     */
+    private List<Volume> volumes;
+
+    /**
+     * 容忍度
+     */
+    private List<Toleration> tolerations;
 
 }

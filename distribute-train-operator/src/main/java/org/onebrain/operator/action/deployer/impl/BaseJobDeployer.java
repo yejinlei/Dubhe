@@ -1,5 +1,5 @@
-/**
- * Copyright 2020 Zhejiang Lab & The OneFlow Authors. All Rights Reserved.
+ /**
+ * Copyright 2020 Tianshu AI Platform. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,6 +33,7 @@ import io.fabric8.kubernetes.api.model.batch.JobBuilder;
 import org.onebrain.operator.action.deployer.ChildResourceCreateInfo;
 import org.onebrain.operator.action.deployer.JobDeployer;
 import org.onebrain.operator.constants.KubeConstants;
+import org.springframework.util.CollectionUtils;
 
 import java.util.*;
 
@@ -46,13 +47,7 @@ import static org.onebrain.operator.constants.NumberConstant.NUMBER_22;
  */
 public class BaseJobDeployer implements JobDeployer<ChildResourceCreateInfo> {
 
-    public static final String PVC_WORKSPACE = "pvc-workspace";
     public static final String SSH = "ssh";
-    public static final String WORKSPACE = "/workspace";
-    public static final String PVC_DATASET = "pvc-dataset";
-    public static final String DATASET = "/dataset";
-    public static final String PVC_MODEL = "pvc-model";
-    public static final String MODEL = "/model";
     public static final String MEMORY = "Memory";
     public static final String DEV_SHM = "/dev/shm";
     public static final String BIN_BASH = "/bin/bash";
@@ -73,6 +68,11 @@ public class BaseJobDeployer implements JobDeployer<ChildResourceCreateInfo> {
         List<Volume> volumes = buildVolumes(info);
         //挂载
         List<VolumeMount> volumeMounts = buildVolumeMounts(volumes);
+
+        if (!CollectionUtils.isEmpty(info.getVolumes()) && !CollectionUtils.isEmpty(info.getVolumeMounts())){
+            volumes.addAll(info.getVolumes());
+            volumeMounts.addAll(info.getVolumeMounts());
+        }
 
         container.setVolumeMounts(volumeMounts);
 
@@ -123,6 +123,7 @@ public class BaseJobDeployer implements JobDeployer<ChildResourceCreateInfo> {
                             .addToContainers(container)
                             .addToVolumes(volumes.toArray(new Volume[volumes.size()]))
                             .withRestartPolicy(RESTART_POLICY_NEVER)
+                            .withTolerations(info.getTolerations())
                         .endSpec()
                     .endTemplate()
                 .endSpec();
@@ -192,9 +193,6 @@ public class BaseJobDeployer implements JobDeployer<ChildResourceCreateInfo> {
     private List<Volume> buildVolumes(ChildResourceCreateInfo info){
         //存储卷
         List<Volume> volumes = new LinkedList<>();
-        Optional.ofNullable(info.getWorkspaceVolume()).ifPresent(v-> volumes.add(v));
-        Optional.ofNullable(info.getDatasetVolume()).ifPresent(v-> volumes.add(v));
-        Optional.ofNullable(info.getModelVolume()).ifPresent(v-> volumes.add(v));
         //shm默认就有
         volumes.add(new VolumeBuilder()
                 .withName(KubeConstants.VOLUME_SHM)
@@ -213,30 +211,6 @@ public class BaseJobDeployer implements JobDeployer<ChildResourceCreateInfo> {
      */
     private List<VolumeMount> buildVolumeMounts(List<Volume> volumes) {
         List<VolumeMount> volumeMounts = new LinkedList<>();
-        for (Volume volume : volumes) {
-            if(PVC_WORKSPACE.equals(volume.getName())){
-                volumeMounts.add(new VolumeMountBuilder()
-                        .withName(volume.getName())
-                        .withMountPath(WORKSPACE)
-                        .build());
-                continue;
-            }
-            if(PVC_DATASET.equals(volume.getName())){
-                volumeMounts.add(new VolumeMountBuilder()
-                        .withName(volume.getName())
-                        .withMountPath(DATASET)
-                        .build());
-                continue;
-            }
-            if(PVC_MODEL.equals(volume.getName())){
-                volumeMounts.add(new VolumeMountBuilder()
-                        .withName(volume.getName())
-                        .withMountPath(MODEL)
-                        .build());
-                continue;
-            }
-        }
-
         volumeMounts.add(new VolumeMountBuilder()
                 .withName(KubeConstants.VOLUME_SHM)
                 .withMountPath(DEV_SHM)

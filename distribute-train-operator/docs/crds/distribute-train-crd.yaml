@@ -45,12 +45,12 @@ spec:
               type: object
             initContainer:
               type: object
-            datasetStorage:
-              type: object
-            workspaceStorage:
-              type: object
-            modelStorage:
-              type: object
+            volumeMounts:
+              type: array
+            volumes:
+              type: array
+            tolerations:
+              type: array
           required:
             - image
             - imagePullPolicy

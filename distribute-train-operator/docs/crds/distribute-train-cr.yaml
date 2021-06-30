@@ -48,18 +48,22 @@ spec:
       value: 6
     - name: NCCL_DEBUG
       value: INFO
-  datasetStorage:
-    name: pvc-dataset
-    nfs:
-      path: {{DATASET}}
-      server: {{NFS}}
-  workspaceStorage:
-    name: pvc-workspace
-    nfs:
-      path: /nfs/resnet50/workspace
-      server: {{WORKSPACE}}
-  modelStorage:
-    name: pvc-model
-    nfs:
-      path: /nfs/resnet50/model
-      server: {{MODEL}}
+  volumeMounts:
+    - mountPath: /dataset
+      name: volume-0
+    - mountPath: /workspace
+      name: volume-1
+  volumes:
+    - name: volume-0
+      nfs:
+        path: /nfs/dubhe-prod/dataset/5/versionFile/V0001/ofrecord/train
+        server: {{NFS IP}}
+    - name: volume-1
+      nfs:
+        path: /nfs/dubhe-prod/train-manage/1/train-1-20200825173815-v0020
+        server: {{NFS IP}}
+  tolerations:
+    - key: "platform/node-isolate"
+      operator: "Equal"
+      value: "prod-isolate-1"
+      effect: "NoSchedule"

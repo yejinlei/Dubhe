@@ -1,5 +1,5 @@
-/**
- * Copyright 2020 Zhejiang Lab & The OneFlow Authors. All Rights Reserved.
+ /**
+ * Copyright 2020 Tianshu AI Platform. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -123,21 +123,6 @@ public class ChildResourceCreateInfo extends AbstractResourceCreateInfo {
     private Container initContainer;
 
     /**
-     * 工作目录挂载
-     */
-    private Volume workspaceVolume;
-
-    /**
-     * 数据集目录挂载
-     */
-    private Volume datasetVolume;
-
-    /**
-     * 模型目录挂载
-     */
-    private Volume modelVolume;
-
-    /**
      * 环境变量
      */
     private List<EnvVar> env;
@@ -146,6 +131,19 @@ public class ChildResourceCreateInfo extends AbstractResourceCreateInfo {
      * 拥有者信息
      */
     private OwnerReference ownerReference;
+
+    /**
+     * 内部映射
+     */
+    private List<VolumeMount> volumeMounts;
+    /**
+     * 外部挂载
+     */
+    private List<Volume> volumes;
+    /**
+     * 容忍度
+     */
+    private List<Toleration> tolerations;
 
     /**
      * 将分布式训练转换为K8S的资源信息
@@ -173,12 +171,14 @@ public class ChildResourceCreateInfo extends AbstractResourceCreateInfo {
         info.setMasterCmd(distributeTrain.getSpec().getMasterCmd())
                 .setSlaveCmd(distributeTrain.getSpec().getSlaveCmd());
         //挂载
-        Optional.ofNullable(distributeTrain.getSpec().getWorkspaceStorage())
-                .ifPresent(v -> info.setWorkspaceVolume(v));
-        Optional.ofNullable(distributeTrain.getSpec().getDatasetStorage())
-                .ifPresent(v -> info.setDatasetVolume(v));
-        Optional.ofNullable(distributeTrain.getSpec().getModelStorage())
-                .ifPresent(v -> info.setModelVolume(v));
+        Optional.ofNullable(distributeTrain.getSpec().getVolumeMounts())
+                .ifPresent(v -> info.setVolumeMounts(v));
+        Optional.ofNullable(distributeTrain.getSpec().getVolumes())
+                .ifPresent(v -> info.setVolumes(v));
+
+        //容忍度
+        Optional.ofNullable(distributeTrain.getSpec().getTolerations())
+                .ifPresent(v -> info.setTolerations(v));
 
         //主从两组资源限制
         Optional.ofNullable(distributeTrain.getSpec().getMasterResources())

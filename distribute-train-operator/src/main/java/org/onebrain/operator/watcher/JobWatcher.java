@@ -1,5 +1,5 @@
-/**
- * Copyright 2020 Zhejiang Lab & The OneFlow Authors. All Rights Reserved.
+ /**
+ * Copyright 2020 Tianshu AI Platform. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -51,7 +51,7 @@ public class JobWatcher implements Watcher<Job> {
      */
     @Override
     public void eventReceived(Action action, Job job) {
-        log.info("Job Event received: {} at {}", job.getMetadata().getUid(), job.getMetadata().getCreationTimestamp());
+        log.info("Job Event received: {} action {}", job.getMetadata().getName(), action.toString());
         jobHandler.handleJob(job);
     }
 

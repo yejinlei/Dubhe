@@ -1,46 +1,43 @@
 #!/bin/bash
-if [ ! -f "/etc/init.d/ssh" ]; then
-	if [ ! -f "/etc/redhat-release" ]; then
+if [ -f "/etc/lsb-release" ]; then
+	if [ ! -f "/etc/init.d/ssh" ]; then
 		echo 'apt install -y openssh-server' >> pretreatment.log
 		apt update >> pretreatment.log
 		apt install -y openssh-server >> pretreatment.log
+		echo '/etc/init.d/ssh start' >> pretreatment.log
+		/etc/init.d/ssh start >> pretreatment.log
 	fi
-	if [ ! -f "/etc/lsb-release" ]; then
-		echo 'yum install -y sshd' >> pretreatment.log
-		yum update >> pretreatment.log
-		yum install -y sshd >> pretreatment.log
-	fi
-fi
-echo '/etc/init.d/ssh start' >> pretreatment.log
-/etc/init.d/ssh start >> pretreatment.log
-if [ -f "/etc/redhat-release" ]; then
-	if command -v nslookup >/dev/null 2>&1; then 
-	  echo 'exists nslookup' >> pretreatment.log
-	else 
-		echo 'yum install dnsutils jq' >> pretreatment.log
-		yum install -y dnsutils >> pretreatment.log
-		yum install -y  jq >> pretreatment.log
-	fi
-	if command -v nslookup >/dev/null 2>&1; then 
-	  echo 'exists nslookup' >> pretreatment.log
-	else 
-		echo 'yum install dnsutils jq' >> pretreatment.log
-		yum install -y dnsutils >> pretreatment.log
-		yum install -y  jq >> pretreatment.log
-	fi
-fi
-
-if [ -f "/etc/lsb-release" ]; then
-	if command -v jq >/dev/null 2>&1; then 
+	if command -v jq >/dev/null 2>&1; then
 	  echo 'exists jq' >> pretreatment.log
-	else 
+	else
 	  echo 'apt install jq' >> pretreatment.log
 	  apt install -y  jq >> pretreatment.log
 	fi
-	if command -v nslookup >/dev/null 2>&1; then 
+	if command -v nslookup >/dev/null 2>&1; then
 	  echo 'exists nslookup' >> pretreatment.log
-	else 
+	else
 	  echo 'apt install dnsutils' >> pretreatment.log
 	  apt install -y dnsutils >> pretreatment.log
+	fi
+fi
+if [ -f "/etc/redhat-release" ]; then
+	if [ ! -f "/usr/sbin/sshd" ]; then
+		echo 'yum install -y sshd' >> pretreatment.log
+		yum update >> pretreatment.log
+		yum install -y sshd >> pretreatment.log
+		echo 'sshd start' >> pretreatment.log
+		service sshd start >> pretreatment.log
+	fi
+	if command -v nslookup >/dev/null 2>&1; then
+	  echo 'exists nslookup' >> pretreatment.log
+	else
+		echo 'yum install -y bind-utils' >> pretreatment.log
+		yum install -y bind-utils >> pretreatment.log
+	fi
+	if command -v jq >/dev/null 2>&1; then
+	  echo 'exists jq' >> pretreatment.log
+	else
+		echo 'yum install -y  jq' >> pretreatment.log
+		yum install -y  jq >> pretreatment.log
 	fi
 fi

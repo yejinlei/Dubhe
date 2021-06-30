@@ -1,5 +1,5 @@
-/**
- * Copyright 2020 Zhejiang Lab & The OneFlow Authors. All Rights Reserved.
+ /**
+ * Copyright 2020 Tianshu AI Platform. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -184,11 +184,11 @@ public class DistributeTrainOperatorManager {
                 .addToProperties("slaveResources", objectType)
                 .addToProperties("nodeSelector", objectType)
                 .addToProperties("initContainer", objectType)
-                .addToProperties("datasetStorage", objectType)
-                .addToProperties("workspaceStorage", objectType)
-                .addToProperties("modelStorage", objectType)
+                .addToProperties("volumeMounts", arrayType)
+                .addToProperties("volumes", arrayType)
+                .addToProperties("tolerations", arrayType)
                 .withType("object")
-                .addToRequired("image", "imagePullPolicy", "size", "masterCmd", "slaveCmd", "workspaceStorage")
+                .addToRequired("image", "imagePullPolicy", "size", "masterCmd", "slaveCmd")
                 .build();
         properties.put("apiVersion", stringType);
         properties.put("kind", stringType);
