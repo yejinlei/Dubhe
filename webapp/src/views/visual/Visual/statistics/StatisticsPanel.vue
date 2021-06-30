@@ -1,18 +1,18 @@
 /** Copyright 2020 Tianshu AI Platform. All Rights Reserved.
-*
-* Licensed under the Apache License, Version 2.0 (the "License");
-* you may not use this file except in compliance with the License.
-* You may obtain a copy of the License at
-*
-*     http://www.apache.org/licenses/LICENSE-2.0
-*
-* Unless required by applicable law or agreed to in writing, software
-* distributed under the License is distributed on an "AS IS" BASIS,
-* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-* See the License for the specific language governing permissions and
-* limitations under the License.
-* =============================================================
-*/
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ * =============================================================
+ */
 
 <template>
   <div class="temp statisticPanelTemp">
@@ -21,7 +21,6 @@
         <div class="statisticPanel">
           <div class="infoTitle" @click="scrollToTop(0)">直方图</div>
           <div class="statisticPanelContent">
-
             <div class="histPanel">
               <div class="scroll scroll1">
                 <span>数据显示比率({{ showNumber }}%)</span>
@@ -181,7 +180,8 @@ export default {
       document.getElementsByClassName('statistics-container')[index].scrollIntoView(true);
     },
     myChangeShownumber(showNumber) {
-      if (!this.getDrawAllSvgFinished) { // 没有绘制完，不允许操作控制面板，并还原数据
+      if (!this.getDrawAllSvgFinished) {
+        // 没有绘制完，不允许操作控制面板，并还原数据
         this.$message({
           message: '统计分析页面还在渲染中，勿操作控制面板',
           type: 'warning',
@@ -215,7 +215,8 @@ export default {
     },
   },
 };
-</script>>
+</script>
+>
 
 <style lang="less" scoped>
 .statisticPanel {
@@ -345,8 +346,8 @@ export default {
   color: #9492cb;
 }
 
-/deep/ .histmodeselect [class*=" el-icon-"],
-[class^=el-icon-] {
+/deep/ .histmodeselect [class*=' el-icon-'],
+[class^='el-icon-'] {
   font-weight: 900;
 }
 

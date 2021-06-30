@@ -1,18 +1,18 @@
 /** Copyright 2020 Tianshu AI Platform. All Rights Reserved.
-*
-* Licensed under the Apache License, Version 2.0 (the "License");
-* you may not use this file except in compliance with the License.
-* You may obtain a copy of the License at
-*
-*     http://www.apache.org/licenses/LICENSE-2.0
-*
-* Unless required by applicable law or agreed to in writing, software
-* distributed under the License is distributed on an "AS IS" BASIS,
-* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-* See the License for the specific language governing permissions and
-* limitations under the License.
-* =============================================================
-*/
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ * =============================================================
+ */
 
 <template>
   <div>
@@ -22,6 +22,7 @@
         placeholder="请选择模型"
         value-key="model"
         clearable
+        filterable
         @change="onOptimizeModelChange"
       >
         <el-option
@@ -51,11 +52,7 @@
       </el-select>
     </el-form-item>
     <el-form-item ref="algorithmPath" label="优化算法" prop="algorithmPath">
-      <el-select
-        v-model="form.algorithmType"
-        clearable
-        @change="onAlgorithmTypeChange"
-      >
+      <el-select v-model="form.algorithmType" clearable filterable @change="onAlgorithmTypeChange">
         <el-option
           v-for="item in algorithmTypeList"
           :key="item.type"
@@ -67,6 +64,7 @@
         v-model="selectedOptimizeAlgorithm"
         value-key="algorithm"
         clearable
+        filterable
         @change="onOptimizeAlgoritmhChange"
       >
         <el-option
@@ -83,11 +81,13 @@
 <script>
 import { isNil } from 'lodash';
 
-import { getBuiltInModel, getOptimizeAlgorithms, getOptimizeDatasets } from '@/api/modelOptimize/optimize';
-
 import {
-  OPTIMIZE_ALGORITHM_TYPE_MAP,
-} from '../util';
+  getBuiltInModel,
+  getOptimizeAlgorithms,
+  getOptimizeDatasets,
+} from '@/api/modelOptimize/optimize';
+
+import { OPTIMIZE_ALGORITHM_TYPE_MAP } from '../util';
 
 const defaultForm = {
   modelName: null, // 内置模型名
@@ -121,8 +121,8 @@ export default {
   },
   computed: {
     algorithmTypeList() {
-      const types = new Set(this.optimizeAlgorithmList.map(algorithm => algorithm.type));
-      return Array.from(types).map(type => {
+      const types = new Set(this.optimizeAlgorithmList.map((algorithm) => algorithm.type));
+      return Array.from(types).map((type) => {
         return {
           type,
           name: OPTIMIZE_ALGORITHM_TYPE_MAP[type],
@@ -151,7 +151,9 @@ export default {
   },
   methods: {
     init(form, matchData) {
-      Object.keys(this.form).forEach(key => { !isNil(form[key]) && (this.form[key] = form[key]); });
+      Object.keys(this.form).forEach((key) => {
+        !isNil(form[key]) && (this.form[key] = form[key]);
+      });
       this.getDatas(matchData);
     },
     reset() {
@@ -167,7 +169,9 @@ export default {
       this.builtInModelList = await getBuiltInModel(this.optimizeParams);
 
       if (matchData) {
-        this.selectedOptimizeModel = this.builtInModelList.find(model => model.model === this.form.modelName);
+        this.selectedOptimizeModel = this.builtInModelList.find(
+          (model) => model.model === this.form.modelName
+        );
         if (!this.selectedOptimizeModel) {
           this.$message.warning('原内置模型不存在，请重新选择');
           this.form.modelName = null;
@@ -178,7 +182,9 @@ export default {
       this.optimizeDatasetList = await getOptimizeDatasets(this.optimizeParams);
 
       if (matchData) {
-        this.selectedOptimizeDataset = this.optimizeDatasetList.find(dataset => dataset.dataset === this.form.datasetName);
+        this.selectedOptimizeDataset = this.optimizeDatasetList.find(
+          (dataset) => dataset.dataset === this.form.datasetName
+        );
         if (!this.selectedOptimizeDataset) {
           this.$message.warning('原内置数据集不存在，请重新选择');
           this.form.datasetName = this.form.datasetPath = null;
@@ -189,7 +195,9 @@ export default {
       this.optimizeAlgorithmList = await getOptimizeAlgorithms(this.optimizeParams);
 
       if (matchData) {
-        this.selectedOptimizeAlgorithm = this.optimizeAlgorithmList.find(algorithm => algorithm.algorithm === this.form.algorithmName);
+        this.selectedOptimizeAlgorithm = this.optimizeAlgorithmList.find(
+          (algorithm) => algorithm.algorithm === this.form.algorithmName
+        );
         if (!this.selectedOptimizeAlgorithm) {
           this.$message.warning('原内置优化算法不存在，请重新选择');
           this.form.algorithmName = this.form.algorithmPath = null;

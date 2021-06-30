@@ -1,25 +1,21 @@
 /** Copyright 2020 Tianshu AI Platform. All Rights Reserved.
-*
-* Licensed under the Apache License, Version 2.0 (the "License");
-* you may not use this file except in compliance with the License.
-* You may obtain a copy of the License at
-*
-*     http://www.apache.org/licenses/LICENSE-2.0
-*
-* Unless required by applicable law or agreed to in writing, software
-* distributed under the License is distributed on an "AS IS" BASIS,
-* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-* See the License for the specific language governing permissions and
-* limitations under the License.
-* =============================================================
-*/
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ * =============================================================
+ */
 
 <template>
-  <div
-    v-if="showMore"
-    class="ToolbarButton more usn rel"
-    :active="state.isOpen ? 'true' : 'false'"
-  >
+  <div v-if="showMore" class="ToolbarButton more usn rel" :active="state.isOpen ? 'true' : 'false'">
     <div v-click-outside="onClickOutside" @click="toggleDropdown">
       <IconFont type="more" />
       <div>
@@ -30,14 +26,20 @@
     <div v-if="state.isOpen">
       <div class="control-options">
         标注精度
-        <el-slider v-model="state.precision" :min=0.01 :max=1 :step=0.01 :format-tooltip="formatTooltip"/>
+        <el-slider
+          v-model="state.precision"
+          :min="0.01"
+          :max="1"
+          :step="0.01"
+          :format-tooltip="formatTooltip"
+        />
       </div>
     </div>
   </div>
 </template>
 <script>
-import { statusCodeMap } from '@/views/dataset/util';
-import { reactive,computed } from '@vue/composition-api';
+import { isStatus } from '@/views/dataset/util';
+import { reactive, computed } from '@vue/composition-api';
 import vClickOutside from 'v-click-outside';
 import { isNil } from 'lodash';
 
@@ -52,7 +54,7 @@ export default {
     annotations: String,
     status: Number,
   },
-  setup(props, ctx){
+  setup(props, ctx) {
     const state = reactive({
       isOpen: false,
       precision: props.precision,
@@ -66,7 +68,7 @@ export default {
 
     // 更新 precision
     const updatePrecision = () => {
-      if(props.precision !== state.precision) {
+      if (props.precision !== state.precision) {
         ctx.emit('change', {
           command: 'SetPrecision',
           precision: state.precision,
@@ -84,11 +86,11 @@ export default {
     };
 
     const formatTooltip = (val) => {
-      return String((val*100).toFixed(0)).concat('%');
+      return String((val * 100).toFixed(0)).concat('%');
     };
 
     const showMore = computed(() => {
-      return statusCodeMap[props.status] === 'AUTO_ANNOTATED';
+      return isStatus(props, 'AUTO_ANNOTATED');
     });
 
     return {
@@ -103,7 +105,7 @@ export default {
 };
 </script>
 <style lang="scss" scoped>
-@import "~@/assets/styles/mixin.scss";
+@import '~@/assets/styles/mixin.scss';
 
 .more {
   span {

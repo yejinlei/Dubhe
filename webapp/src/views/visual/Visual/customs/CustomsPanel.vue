@@ -1,97 +1,97 @@
 /** Copyright 2020 Tianshu AI Platform. All Rights Reserved.
-*
-* Licensed under the Apache License, Version 2.0 (the "License");
-* you may not use this file except in compliance with the License.
-* You may obtain a copy of the License at
-*
-*     http://www.apache.org/licenses/LICENSE-2.0
-*
-* Unless required by applicable law or agreed to in writing, software
-* distributed under the License is distributed on an "AS IS" BASIS,
-* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-* See the License for the specific language governing permissions and
-* limitations under the License.
-* =============================================================
-*/
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ * =============================================================
+ */
 
 <style lang="less" scoped>
-  .temp {
-    height: 100px;
+.temp {
+  height: 100px;
 
-    .test1 {
-      margin: 3% 0 0 0;
-      text-align: center;
-    }
+  .test1 {
+    margin: 3% 0 0 0;
+    text-align: center;
   }
+}
 
-  .show {
-    display: none;
+.show {
+  display: none;
+}
+
+.infoTitle {
+  height: 30px;
+  padding-left: 5%;
+  font-size: 12px;
+  line-height: 30px;
+  color: white;
+  text-align: left;
+  background-color: #625eb3;
+  border-radius: 3px;
+
+  .dot {
+    margin-right: 2%;
   }
+}
 
-  .infoTitle {
-    height: 30px;
-    padding-left: 5%;
-    font-size: 12px;
-    line-height: 30px;
-    color: white;
-    text-align: left;
-    background-color: #625eb3;
-    border-radius: 3px;
+.statisticPanelContent {
+  padding: 5% 10% 8% 10%;
+  font-size: 11px;
+  text-align: left;
+  border-radius: 0 0 3px 3px;
+}
 
-    .dot {
-      margin-right: 2%;
-    }
-  }
+.selectMode {
+  margin-top: 12%;
+  line-height: 30px;
+}
 
-  .statisticPanelContent {
-    padding: 5% 10% 8% 10%;
-    font-size: 11px;
-    text-align: left;
-    border-radius: 0 0 3px 3px;
-  }
+.scroll1 {
+  margin-top: 7%;
+}
 
-  .selectMode {
-    margin-top: 12%;
-    line-height: 30px;
-  }
+.scroll .rangeNumber {
+  margin-top: 1%;
+}
 
-  .scroll1 {
-    margin-top: 7%;
-  }
+.statisticInfo {
+  margin-top: 6%;
+}
 
-  .scroll .rangeNumber {
-    margin-top: 1%;
-  }
+.info {
+  width: 100%;
+}
 
-  .statisticInfo {
-    margin-top: 6%;
-  }
+.infoContent {
+  padding: 5% 10% 3% 10%;
+  font-size: 11px;
+  text-align: left;
+}
 
-  .info {
-    width: 100%;
-  }
+.infoContent div {
+  margin-bottom: 3%;
+}
 
-  .infoContent {
-    padding: 5% 10% 3% 10%;
-    font-size: 11px;
-    text-align: left;
-  }
+.el-select-dropdown__item.selected {
+  color: #625eb3;
+}
 
-  .infoContent div {
-    margin-bottom: 3%;
-  }
-
-  .el-select-dropdown__item.selected {
-    color: #625eb3;
-  }
-
-  .el-select-dropdown__item {
-    font-size: 11px;
-  }
+.el-select-dropdown__item {
+  font-size: 11px;
+}
 </style>
 <template>
   <div style="display: flex; flex-direction: column; height: 100%;">
-    <div id="8888" style="height: 50%; overflow: auto;" :class="[scalar?'':'show']">
+    <div id="8888" style="height: 50%; overflow: auto;" :class="[scalar ? '' : 'show']">
       <el-col :span="24">
         <ScalarsPanel style="clear: both;" />
         <div />
@@ -117,7 +117,11 @@
             <el-row>
               <el-col :span="8">模式</el-col>
               <el-col :span="16">
-                <el-select v-model="statisticMode" class="histmodeselect" @change="setStatisticMode(statisticMode)">
+                <el-select
+                  v-model="statisticMode"
+                  class="histmodeselect"
+                  @change="setStatisticMode(statisticMode)"
+                >
                   <el-option value="三维">三维</el-option>
                   <el-option value="二维">二维</el-option>
                 </el-select>
@@ -163,9 +167,11 @@
 </template>
 <script>
 import { createNamespacedHelpers } from 'vuex';
-import ScalarsPanel from "../scalars/ScalarsPanel";
+import ScalarsPanel from '../scalars/ScalarsPanel';
 
-const { mapMutations: mapCustomMutations, mapGetters: mapCustomGetters } = createNamespacedHelpers('Visual/custom');
+const { mapMutations: mapCustomMutations, mapGetters: mapCustomGetters } = createNamespacedHelpers(
+  'Visual/custom'
+);
 const { mapGetters: mapStatisticGatters } = createNamespacedHelpers('Visual/statistic');
 export default {
   components: {

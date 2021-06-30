@@ -1,18 +1,18 @@
 /** Copyright 2020 Tianshu AI Platform. All Rights Reserved.
-*
-* Licensed under the Apache License, Version 2.0 (the "License");
-* you may not use this file except in compliance with the License.
-* You may obtain a copy of the License at
-*
-*     http://www.apache.org/licenses/LICENSE-2.0
-*
-* Unless required by applicable law or agreed to in writing, software
-* distributed under the License is distributed on an "AS IS" BASIS,
-* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-* See the License for the specific language governing permissions and
-* limitations under the License.
-* =============================================================
-*/
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ * =============================================================
+ */
 
 <template>
   <div class="app-container">
@@ -34,9 +34,9 @@
       </cdOperation>
     </div>
     <el-tabs v-model="active" class="eltabs-inlineblock" @tab-click="handleClick">
-      <el-tab-pane id="tab_0" label="我的镜像" :name="IMAGE_TABS.TRAIN" />
-      <el-tab-pane id="tab_1" label="预置镜像" :name="IMAGE_TABS.PRESET" />
-      <el-tab-pane id="tab_1" label="NoteBook镜像" :name="IMAGE_TABS.NOTEBOOK" />
+      <el-tab-pane id="tab_0" label="我的镜像" :name="IMAGE_RESOURCE_ENUM.CUSTOM" />
+      <el-tab-pane id="tab_1" label="预置镜像" :name="IMAGE_RESOURCE_ENUM.PRESET" />
+      <el-tab-pane id="tab_1" label="Notebook 镜像" :name="IMAGE_RESOURCE_ENUM.NOTEBOOK" />
     </el-tabs>
     <!--表格渲染-->
     <el-table
@@ -48,7 +48,13 @@
       @selection-change="crud.selectionChangeHandler"
       @sort-change="crud.sortChange"
     >
-      <el-table-column v-if="!judgeTabs.preset" prop="id" label="ID" sortable="custom" width="80px" />
+      <el-table-column
+        v-if="!judgeTabs.preset"
+        prop="id"
+        label="ID"
+        sortable="custom"
+        width="80px"
+      />
       <el-table-column prop="imageName" label="镜像名称" sortable="custom" />
       <el-table-column prop="imageTag" label="镜像版本号" sortable="custom" />
       <el-table-column prop="imageStatus" label="状态" width="160px">
@@ -72,32 +78,50 @@
           <span>{{ parseTime(scope.row.createTime) }}</span>
         </template>
       </el-table-column>
-      <el-table-column v-if="judgeTabs.notebook" prop="imageResource" label="是否为默认" align="center">
+      <el-table-column
+        v-if="judgeTabs.notebook"
+        prop="imageResource"
+        label="是否为默认"
+        align="center"
+      >
         <template slot-scope="scope">
-          <i :class="resourceObj(scope.row.imageResource).icon" :style="{color: resourceObj(scope.row.imageResource).color, fontSize: '20px'}"></i>
+          <i
+            :class="resourceObj(scope.row.imageResource).icon"
+            :style="{ color: resourceObj(scope.row.imageResource).color, fontSize: '20px' }"
+          ></i>
         </template>
       </el-table-column>
-      <el-table-column  v-if="!operationProps.disabled" label="操作" width="200px" fixed="right">
+      <el-table-column v-if="!operationProps.disabled" label="操作" width="200px" fixed="right">
         <template slot-scope="scope">
           <el-tooltip
-            v-if="rolePermissions && judgeTabs.notebook"
+            v-if="isAdmin && judgeTabs.notebook"
             effect="dark"
             content="设为在线编辑算法时创建nootbook的默认镜像"
             placement="top"
           >
-            <el-button 
-              :id="`doPrecast_`+scope.$index" 
+            <el-button
+              :id="`doPrecast_` + scope.$index"
               :disabled="Boolean(scope.row.imageResource)"
-              type="text" 
+              type="text"
               @click.stop="doPrecast(scope.row.id)"
             >
               {{ resourceObj(scope.row.imageResource).butText }}
             </el-button>
           </el-tooltip>
-          <el-button v-if="judgeTabs.train" :id="`doEdit_`+scope.$index" type="text" @click.stop="doEdit(scope.row)">
+          <el-button
+            v-if="hasPermission('training:image:edit') && judgeTabs.train"
+            :id="`doEdit_` + scope.$index"
+            type="text"
+            @click.stop="doEdit(scope.row)"
+          >
             编辑
           </el-button>
-          <el-button v-if="!judgeTabs.preset" :id="`doDelete_`+scope.$index" type="text" @click.stop="doDelete(scope.row.id)">
+          <el-button
+            v-if="hasPermission('training:image:delete') && (!judgeTabs.preset || isAdmin)"
+            :id="`doDelete_` + scope.$index"
+            type="text"
+            @click.stop="doDelete(scope.row.id)"
+          >
             删除
           </el-button>
         </template>
@@ -118,16 +142,23 @@
       @cancel="crud.cancelCU"
       @ok="crud.submitCU"
     >
-      <el-form
-        ref="form"
-        :model="form"
-        :rules="rules"
-        label-width="120px"
-      >
-        <el-form-item v-if="isEdit && rolePermissions" label="镜像类型" prop="imageType">
+      <el-form ref="form" :model="form" :rules="rules" label-width="120px">
+        <el-form-item v-if="isEdit && isAdmin" label="镜像类型" prop="imageType">
           <el-radio-group v-model="form.projectType" @change="onImageTypeChange">
             <el-radio :label="IMAGE_PROJECT_TYPE.TRAIN" border class="mr-0">训练镜像</el-radio>
-            <el-radio :label="IMAGE_PROJECT_TYPE.NOTEBOOK" border>notebook镜像</el-radio>
+            <el-radio :label="IMAGE_PROJECT_TYPE.NOTEBOOK" border>Notebook 镜像</el-radio>
+          </el-radio-group>
+        </el-form-item>
+        <el-form-item
+          v-if="isEdit && isAdmin && form.projectType === IMAGE_PROJECT_TYPE.TRAIN"
+          label="镜像来源"
+          prop="imageResource"
+        >
+          <el-radio-group v-model="form.imageResource">
+            <el-radio :label="Number(IMAGE_RESOURCE_ENUM.CUSTOM)" border class="mr-0"
+              >我的镜像</el-radio
+            >
+            <el-radio :label="Number(IMAGE_RESOURCE_ENUM.PRESET)" border>预置镜像</el-radio>
           </el-radio-group>
         </el-form-item>
         <el-form-item v-if="isEdit" label="镜像名称" prop="imageName">
@@ -141,12 +172,7 @@
             allow-create
             default-first-option
           >
-            <el-option
-              v-for="item in harborProjectList"
-              :key="item"
-              :label="item"
-              :value="item"
-            />
+            <el-option v-for="item in harborProjectList" :key="item" :label="item" :value="item" />
           </el-select>
         </el-form-item>
         <el-form-item v-if="isEdit" ref="imagePath" label="镜像文件路径" prop="imagePath">
@@ -161,7 +187,6 @@
             :params="uploadParams"
             :show-file-count="false"
             :auto-upload="true"
-            :hash="false"
             :filters="uploadFilters"
             :limit="1"
             :on-remove="onFileRemove"
@@ -169,21 +194,17 @@
             @uploadSuccess="uploadSuccess"
             @uploadError="uploadError"
           />
-          <upload-progress 
-            v-if="loading" 
-            :progress="progress" 
-            :color="customColors" 
-            :status="status" 
-            :size="size" 
+          <upload-progress
+            v-if="loading"
+            :progress="progress"
+            :color="customColors"
+            :status="status"
+            :size="size"
             @onSetProgress="onSetProgress"
           />
         </el-form-item>
         <el-form-item v-if="isEdit" label="镜像版本号" prop="imageTag">
-          <el-input
-            id="imageTag"
-            v-model="form.imageTag"
-            style="width: 400px;"
-          />
+          <el-input id="imageTag" v-model="form.imageTag" style="width: 400px;" />
         </el-form-item>
         <el-form-item label="描述" prop="remark">
           <el-input
@@ -203,7 +224,6 @@
 </template>
 
 <script>
-
 import { mapGetters } from 'vuex';
 // eslint-disable-next-line import/no-extraneous-dependencies
 import { debounce } from 'throttle-debounce';
@@ -213,13 +233,19 @@ import rrOperation from '@crud/RR.operation';
 import pagination from '@crud/Pagination';
 import CRUD, { presenter, header, form, crud } from '@crud/crud';
 import trainingImageApi, { getImageNameList, del, setPrecast } from '@/api/trainingImage/index';
-import { getUniqueId, uploadSizeFomatter, invalidFileNameChar } from '@/utils';
+import {
+  getUniqueId,
+  uploadSizeFomatter,
+  invalidFileNameChar,
+  ADMIN_ROLE_ID,
+  hasPermission,
+} from '@/utils';
 import BaseModal from '@/components/BaseModal';
 import UploadInline from '@/components/UploadForm/inline';
 import DropdownHeader from '@/components/DropdownHeader';
 import UploadProgress from '@/components/UploadProgress';
 import { imageConfig } from '@/config';
-import { IMAGE_TABS, IMAGE_PROJECT_TYPE } from '../trainingJob/utils';
+import { IMAGE_RESOURCE_ENUM, IMAGE_PROJECT_TYPE } from '../trainingJob/utils';
 
 const defaultForm = {
   imageName: null,
@@ -227,7 +253,14 @@ const defaultForm = {
   imageTag: null,
   remark: null,
   projectType: IMAGE_PROJECT_TYPE.TRAIN,
+  imageResource: Number(IMAGE_RESOURCE_ENUM.CUSTOM),
 };
+
+const defaultQuery = {
+  imageStatus: null,
+  imageNameOrId: null,
+};
+
 export default {
   name: 'TrainingImage',
   components: {
@@ -244,6 +277,7 @@ export default {
       title: '镜像',
       crudMethod: { ...trainingImageApi },
       optShow: {
+        add: imageConfig.allowUploadImage && hasPermission('training:image:upload'),
         del: false,
       },
       queryOnPresenterCreated: false,
@@ -282,11 +316,8 @@ export default {
       }
     };
     return {
-      active: IMAGE_TABS.TRAIN,
-      localQuery: {
-        imageStatus: null,
-        imageNameOrId: null,
-      },
+      active: IMAGE_RESOURCE_ENUM.CUSTOM,
+      localQuery: { ...defaultQuery },
       map: {
         0: 'info',
         1: 'success',
@@ -298,13 +329,13 @@ export default {
         2: '制作失败',
       },
       rules: {
+        projectType: [{ required: true, message: '请选择镜像类型', trigger: 'change' }],
+        imageResource: [{ required: true, message: '请选择镜像来源', trigger: 'change' }],
         imageName: [
           { required: true, message: '请选择项目名称', trigger: 'change' },
           { validator: validateImageName, trigger: ['blur', 'change'] },
         ],
-        imagePath: [
-          { required: true, message: '请输入镜像路径', trigger: ['blur', 'manual'] },
-        ],
+        imagePath: [{ required: true, message: '请输入镜像路径', trigger: ['blur', 'manual'] }],
         imageTag: [
           { required: true, message: '请输入镜像版本号', trigger: 'blur' },
           { validator: validateImageTag, trigger: ['blur', 'change'] },
@@ -318,9 +349,9 @@ export default {
       progress: 0,
       size: 0,
       customColors: [
-        {color: '#909399', percentage: 40},
-        {color: '#e6a23c', percentage: 80},
-        {color: '#67c23a', percentage: 100},
+        { color: '#909399', percentage: 40 },
+        { color: '#e6a23c', percentage: 80 },
+        { color: '#67c23a', percentage: 100 },
       ],
       disableEdit: false,
       loading: false,
@@ -328,29 +359,27 @@ export default {
       prefabricate: true,
       // 以下为配置参数及常量参数
       imageConfig,
-      IMAGE_TABS,
+      IMAGE_RESOURCE_ENUM,
       IMAGE_PROJECT_TYPE,
       uploadFilters: [invalidFileNameChar],
     };
   },
   computed: {
-    ...mapGetters([
-      'user',
-    ]),
+    ...mapGetters(['user', 'isAdmin']),
     rolePermissions() {
       const { roles } = this.user;
-      return roles && roles.length && roles[0].permission === 'admin';
+      return roles && roles.length && roles[0].id === ADMIN_ROLE_ID;
     },
     judgeTabs() {
       return {
-        train: this.active === IMAGE_TABS.TRAIN,
-        preset: this.active === IMAGE_TABS.PRESET,
-        notebook: this.active === IMAGE_TABS.NOTEBOOK,
+        train: this.active === IMAGE_RESOURCE_ENUM.CUSTOM,
+        preset: this.active === IMAGE_RESOURCE_ENUM.PRESET,
+        notebook: this.active === IMAGE_RESOURCE_ENUM.NOTEBOOK,
       };
     },
     operationProps() {
       return {
-        disabled: !this.judgeTabs.train && !(this.rolePermissions && this.judgeTabs.notebook),
+        disabled: !this.isAdmin && !this.judgeTabs.train, // 非管理员只能上传我的镜像；管理员可以上传预置镜像和 Notebook 镜像
       };
     },
     imageStatusList() {
@@ -365,19 +394,21 @@ export default {
     },
   },
   mounted() {
-    this.crudQuery();
     this.crud.refresh();
     this.refetch = debounce(3000, this.crud.refresh);
     this.updateImagePath();
   },
   methods: {
+    hasPermission,
     // handle
     handleClick() {
-      this.crudQuery();
-      this.crud.refresh();
+      this.localQuery = { ...defaultQuery };
+      this.crud.toQuery();
       // 切换tab键时让表格重渲
       this.prefabricate = false;
-      this.$nextTick(() => { this.prefabricate = true; });
+      this.$nextTick(() => {
+        this.prefabricate = true;
+      });
     },
     onFileRemove() {
       this.form.imagePath = null;
@@ -386,7 +417,7 @@ export default {
     },
     uploadStart(files) {
       this.updateImagePath();
-      [ this.loading, this.size, this.progress ] = [ true, files.size, 0 ];
+      [this.loading, this.size, this.progress] = [true, files.size, 0];
     },
     onSetProgress(val) {
       this.progress += val;
@@ -415,17 +446,36 @@ export default {
     [CRUD.HOOK.beforeToAdd]() {
       this.isEdit = true;
       this.formType = 'add';
+      if (this.judgeTabs.preset) {
+        this.form.imageResource = Number(IMAGE_RESOURCE_ENUM.PRESET);
+      } else if (this.judgeTabs.notebook) {
+        this.form.projectType = IMAGE_PROJECT_TYPE.NOTEBOOK;
+      }
     },
     [CRUD.HOOK.beforeRefresh]() {
-      this.crud.query = { ...this.localQuery};
-      this.crudQuery();
+      this.crud.query = { ...this.localQuery };
+      switch (this.active) {
+        case IMAGE_RESOURCE_ENUM.CUSTOM:
+        case IMAGE_RESOURCE_ENUM.PRESET:
+          this.crud.query.projectType = IMAGE_PROJECT_TYPE.TRAIN;
+          this.crud.query.imageResource = Number(this.active);
+          break;
+        case IMAGE_RESOURCE_ENUM.NOTEBOOK:
+          this.crud.query.projectType = IMAGE_PROJECT_TYPE.NOTEBOOK;
+          break;
+        // no default
+      }
     },
     [CRUD.HOOK.beforeToEdit]() {
       this.isEdit = false;
     },
-    async onImageTypeChange() {
-      this.form.imageName = null;
+    async getImageNameList() {
       this.harborProjectList = await getImageNameList({ projectType: this.form.projectType });
+    },
+    onImageTypeChange() {
+      this.form.imageName = null;
+      this.form.imageResource = Number(IMAGE_RESOURCE_ENUM.CUSTOM);
+      this.getImageNameList();
     },
     onDialogClose() {
       if (this.isEdit) {
@@ -434,34 +484,19 @@ export default {
       this.loading = false;
     },
     async onDialogOpen() {
-      if (this.rolePermissions) {
-        this.onImageTypeChange();
-      } else {
-        this.form.projectType = IMAGE_PROJECT_TYPE.TRAIN;
-        this.harborProjectList = await getImageNameList({ projectType: this.form.projectType });
-      }
+      this.getImageNameList();
     },
     checkStatus() {
-      if (this.crud.data.some(item => [0].includes(item.imageStatus))) {
+      if (this.crud.data.some((item) => [0].includes(item.imageStatus))) {
         this.refetch();
       }
-    },
-    crudQuery() {
-      const isTrain = [IMAGE_TABS.TRAIN, IMAGE_TABS.PRESET].includes(this.active);
-      this.crud.query.projectType = isTrain ? IMAGE_PROJECT_TYPE.TRAIN : IMAGE_PROJECT_TYPE.NOTEBOOK;
-      if (isTrain) {
-        this.crud.query.imageResource = Number(this.active);
-      };
     },
     filterStatus(status) {
       this.localQuery.imageStatus = status;
       this.crud.toQuery();
     },
     resetQuery() {
-      this.localQuery = {
-        imageStatus: null,
-        imageNameOrId: null,
-      };
+      this.localQuery = { ...defaultQuery };
     },
     updateImagePath() {
       this.uploadParams.objectPath = `upload-temp/${this.user.id}/${getUniqueId()}`;
@@ -474,16 +509,14 @@ export default {
       await this.crud.toEdit(dataObj);
     },
     doDelete(id) {
-      this.$confirm('此操作将永久删除该镜像, 是否继续?', '请确认').then(
-        async() => {
-          await del({ ids: [id] });
-          this.$message({
-            message: '删除成功',
-            type: 'success',
-          });
-          this.crud.refresh();
-        },
-      );
+      this.$confirm('此操作将永久删除该镜像, 是否继续?', '请确认').then(async () => {
+        await del({ ids: [id] });
+        this.$message({
+          message: '删除成功',
+          type: 'success',
+        });
+        this.crud.refresh();
+      });
     },
     doPrecast(i) {
       setPrecast({ id: i }).then(() => {
@@ -495,8 +528,9 @@ export default {
       });
     },
     resourceObj(resource) {
-      return resource ? { icon: 'el-icon-circle-check', color: '#67C23A', butText: '当前为默认' }
-      : { icon: 'el-icon-circle-close', color: '#F56C6C', butText: '设为默认' };
+      return resource
+        ? { icon: 'el-icon-circle-check', color: '#67C23A', butText: '当前为默认' }
+        : { icon: 'el-icon-circle-close', color: '#F56C6C', butText: '设为默认' };
     },
     uploadSizeFomatter,
   },

@@ -102,4 +102,24 @@
     border-right: $color-border-style;
     border-bottom: $transparent-border-style;
   }
+
+  @else if $direction==right-up {
+    border: $width solid $color;
+    border-top: $transparent-border-style;
+    border-left: $transparent-border-style;
+  }
+}
+
+@mixin rotate($duration) {
+  animation: spin infinite $duration linear;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(330deg);
+  }
+
+  to {
+    transform: rotate(-30deg);
+  }
 }

@@ -1,20 +1,20 @@
 /** Copyright 2020 Tianshu AI Platform. All Rights Reserved.
-*
-* Licensed under the Apache License, Version 2.0 (the "License");
-* you may not use this file except in compliance with the License.
-* You may obtain a copy of the License at
-*
-*     http://www.apache.org/licenses/LICENSE-2.0
-*
-* Unless required by applicable law or agreed to in writing, software
-* distributed under the License is distributed on an "AS IS" BASIS,
-* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-* See the License for the specific language governing permissions and
-* limitations under the License.
-* =============================================================
-*/
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ * =============================================================
+ */
 
-<!--使用场景: add: 任务创建(jobAdd）， edit：任务版本修改（jobDetail），paramAdd:模板创建（jobDetail），paramEdit：模板修改（job）-->
+<!--使用场景: add: 任务创建(jobAdd), edit: 任务版本修改(jobDetail), paramsAdd: 模板创建(jobDetail), paramsEdit: 模板修改(job)-->
 <template>
   <div>
     <el-form
@@ -24,13 +24,21 @@
       label-width="120px"
       :style="`width: ${widthPercent}%; margin-top: 20px;`"
     >
-      <el-form-item v-if="type==='add' || type === 'paramsAdd' || type === 'algoAdd'" label="任务名称" prop="trainName">
+      <el-form-item
+        v-if="type === 'add' || type === 'paramsAdd' || type === 'algoAdd'"
+        label="任务名称"
+        prop="trainName"
+      >
         <el-input v-model="form.trainName" />
       </el-form-item>
-      <el-form-item v-if="type==='edit'" label="任务名称" prop="jobName">
+      <el-form-item v-if="type === 'edit'" label="任务名称" prop="jobName">
         <div>{{ form.jobName }}</div>
       </el-form-item>
-      <el-form-item v-if="type==='saveParams' || type==='paramEdit'" label="任务模板名称" prop="paramName">
+      <el-form-item
+        v-if="type === 'saveParams' || type === 'paramsEdit'"
+        label="任务模板名称"
+        prop="paramName"
+      >
         <el-input id="paramName" v-model="form.paramName" />
       </el-form-item>
       <el-form-item label="描述" prop="description">
@@ -38,32 +46,25 @@
       </el-form-item>
       <el-divider />
       <!--可编辑-->
-      <template v-if="type!=='saveParams'">
+      <template v-if="type !== 'saveParams'">
         <el-form-item label="选用算法类型" prop="algorithmSource">
           <el-radio-group v-model="form.algorithmSource" @change="onAlgorithmSourceChange">
-            <el-radio
-              id="algorithm_tab_0"
-              :label="1"
-              border
-            >我的算法</el-radio>
-            <el-radio
-              id="algorithm_tab_1"
-              :label="2"
-              border
-            >预置算法</el-radio>
+            <el-radio id="algorithm_tab_0" :label="ALGORITHM_RESOURCE_ENUM.CUSTOM" border
+              >我的算法</el-radio
+            >
+            <el-radio id="algorithm_tab_1" :label="ALGORITHM_RESOURCE_ENUM.PRESET" border
+              >预置算法</el-radio
+            >
           </el-radio-group>
         </el-form-item>
-        <el-form-item
-          ref="algorithmId"
-          label="选用算法"
-          prop="algorithmId"
-        >
+        <el-form-item ref="algorithmId" label="选用算法" prop="algorithmId">
           <el-select
             id="algorithmId"
             v-model="form.algorithmId"
             v-el-select-load-more="getAlgorithmList"
             placeholder="请选择您使用的算法代码"
             class="w270"
+            filterable
             @change="onAlgorithmChange"
           >
             <el-option
@@ -74,25 +75,17 @@
             />
           </el-select>
         </el-form-item>
-        <el-form-item
-          ref="imageTag"
-          label="镜像选择"
-          prop="imageTag"
-        >
+        <el-form-item ref="imageTag" label="镜像选择" prop="imageTag">
           <el-select
             id="imageName"
             v-model="form.imageName"
             placeholder="请选择镜像"
             style="width: 190px;"
             clearable
+            filterable
             @change="getHarborImages"
           >
-            <el-option
-              v-for="item in harborProjectList"
-              :key="item"
-              :label="item"
-              :value="item"
-            />
+            <el-option v-for="item in harborProjectList" :key="item" :label="item" :value="item" />
           </el-select>
           <el-select
             id="imageTag"
@@ -100,6 +93,7 @@
             placeholder="请选择镜像版本"
             style="width: 305px;"
             clearable
+            filterable
             @change="validateField('imageTag')"
           >
             <el-option
@@ -111,31 +105,31 @@
           </el-select>
         </el-form-item>
         <el-form-item label="加载模型">
-          <el-switch
-            v-model="useModel"
-            @change="onUseModelChange"
-          />
+          <el-switch v-model="useModel" @change="onUseModelChange" />
         </el-form-item>
         <el-form-item v-if="useModel" label="选用模型类型">
           <el-radio-group v-model="form.modelResource" @change="onModelResourceChange">
-            <el-radio :label="0" border>我的模型</el-radio>
-            <el-radio :label="1" border>预训练模型</el-radio>
-            <el-radio :label="2" border>炼知模型</el-radio>
+            <el-radio :label="MODEL_RESOURCE_ENUM.CUSTOM" border>我的模型</el-radio>
+            <el-radio :label="MODEL_RESOURCE_ENUM.PRESET" border>预训练模型</el-radio>
+            <el-radio :label="MODEL_RESOURCE_ENUM.ATLAS" border>炼知模型</el-radio>
           </el-radio-group>
         </el-form-item>
         <el-form-item
-          v-if="[0, 1].includes(form.modelResource)"
+          v-if="
+            [MODEL_RESOURCE_ENUM.CUSTOM, MODEL_RESOURCE_ENUM.PRESET].includes(form.modelResource)
+          "
           key="modelSelect"
           label="模型选择"
           class="is-required"
           :error="modelSelectionErrorMsg"
         >
           <el-select
-            id="modelId" 
+            id="modelId"
             v-model="form.modelId"
             placeholder="请选择模型"
             style="width: 190px;"
             clearable
+            filterable
             @change="onModelChange"
           >
             <el-option
@@ -146,22 +140,27 @@
             />
           </el-select>
           <el-select
-            v-if="useMineModel"
+            v-if="useCustomModel"
             id="modelBranchId"
             v-model="form.modelBranchId"
             placeholder="请选择模型版本"
             style="width: 305px;"
             clearable
+            filterable
             @change="onModelBranchChange"
           >
             <el-option
               v-for="item in modelBranchList"
               :key="item.id"
-              :label="item.versionNum"
+              :label="item.version"
               :value="item.id"
             />
           </el-select>
-          <el-tooltip effect="dark" content="模型路径通过 model_load_dir 传到算法内部" placement="top">
+          <el-tooltip
+            effect="dark"
+            content="模型路径通过“model_load_dir”传到算法内部"
+            placement="top"
+          >
             <i class="el-icon-warning-outline primary f18 v-text-top" />
           </el-tooltip>
         </el-form-item>
@@ -176,6 +175,7 @@
             v-model="teacherModelIds"
             multiple
             clearable
+            filterable
             placeholder="请选择教师模型"
             @change="onTeacherModelChange"
           >
@@ -187,14 +187,12 @@
             />
           </el-select>
         </el-form-item>
-        <el-form-item
-          v-if="useAtlasModel"
-          label="学生模型"
-        >
+        <el-form-item v-if="useAtlasModel" label="学生模型">
           <el-select
             v-model="studentModelIds"
             multiple
             clearable
+            filterable
             placeholder="请选择学生模型"
           >
             <el-option
@@ -215,10 +213,7 @@
             @change="onTrainDataSourceChange"
           />
         </el-form-item>
-        <el-form-item
-          label="验证数据集"
-          prop="valType"
-        >
+        <el-form-item label="验证数据集" prop="valType">
           <el-switch
             v-model="form.valType"
             :active-value="1"
@@ -226,7 +221,12 @@
             @change="onVerifyTypeChange"
           />
         </el-form-item>
-        <el-form-item v-if="form.valType" ref="verifyDataSource" label="验证数据集" prop="verifyDataSourcePath">
+        <el-form-item
+          v-if="form.valType"
+          ref="verifyDataSource"
+          label="验证数据集"
+          prop="verifyDataSourcePath"
+        >
           <DataSourceSelector
             ref="verifyDataSourceSelector"
             type="verify"
@@ -254,82 +254,60 @@
           @updateRunParams="updateRunParams"
         />
         <el-divider />
-        <el-form-item
-          label="分布式训练"
-          prop="trainType"
-          class="mt-10"
-        >
-          <el-switch
-            id="trainType"
-            v-model="form.trainType"
-            :active-value="1"
-            :inactive-value="0"
-            @change="onTrainTypeChange"
-          />
-        </el-form-item>
-        <el-form-item
-          v-if="form.trainType"
-          label="节点数"
-          prop="resourcesPoolNode"
-        >
+        <el-form-item label="节点数" prop="resourcesPoolNode">
           <el-input-number
             id="resourcesPoolNode"
             v-model="form.resourcesPoolNode"
-            :min="2"
+            :min="1"
             :max="trainConfig.trainNodeMax"
             :step-strictly="true"
+            @change="onResourcesPoolNodeChange"
           />
-          <el-tooltip effect="dark" content="请确保代码中包含“num_nodes”参数和“node_ips”参数用于接收分布式相关参数" placement="top">
+          <el-tooltip
+            v-show="form.resourcesPoolNode > 1"
+            effect="dark"
+            content="请确保代码中包含“num_nodes”参数和“node_ips”参数用于接收分布式相关参数"
+            placement="top"
+          >
             <i class="el-icon-warning-outline primary f18 v-text-top" />
           </el-tooltip>
         </el-form-item>
         <el-form-item label="节点类型" class="is-required">
-          <el-radio-group
-            v-model="form.resourcesPoolType"
-            @change="onResourcesPoolTypeChange"
-          >
-            <el-radio
-              id="resourcesPoolType_tab_0"
-              :label="0"
-              border
-            >CPU</el-radio>
-            <el-radio
-              id="resourcesPoolType_tab_1"
-              :label="1"
-              border
-            >GPU</el-radio>
+          <el-radio-group v-model="form.resourcesPoolType" @change="onResourcesPoolTypeChange">
+            <el-radio id="resourcesPoolType_tab_0" :label="0" border>CPU</el-radio>
+            <el-radio id="resourcesPoolType_tab_1" :label="1" border>GPU</el-radio>
           </el-radio-group>
-          <el-tooltip v-if="form.resourcesPoolType" effect="dark" content="后台将自动获取并填充参数 gpu_num_per_node" placement="top">
+          <el-tooltip
+            v-if="form.resourcesPoolType"
+            effect="dark"
+            content="后台将自动获取并填充参数 gpu_num_per_node"
+            placement="top"
+          >
             <i class="el-icon-warning-outline primary f18 v-text-top" />
           </el-tooltip>
         </el-form-item>
         <el-form-item ref="trainJobSpecs" label="节点规格" prop="trainJobSpecsName" class="w270">
-          <el-select id="trainJobSpecsName" v-model="form.trainJobSpecsName">
+          <el-select id="trainJobSpecsName" v-model="form.trainJobSpecsName" filterable>
             <el-option
-              v-for="spec in specList"
+              v-for="spec in specsList"
               :key="spec.id"
-              :label="spec.label"
-              :value="spec.label"
+              :label="spec.specsName"
+              :value="spec.specsName"
             />
           </el-select>
-          <el-tooltip v-if="form.trainType" effect="dark" content="每个节点的节点规格" placement="top">
+          <el-tooltip
+            v-if="form.trainType"
+            effect="dark"
+            content="每个节点的节点规格"
+            placement="top"
+          >
             <i class="el-icon-warning-outline primary f18 v-text-top" />
           </el-tooltip>
         </el-form-item>
-        <el-form-item
-          label="延迟启停"
-        >
-          <el-switch
-            id="delayCreateDelete"
-            v-model="delayCreateDelete"
-            @change="onDelayChange"
-          />
+        <el-form-item label="延迟启停">
+          <el-switch id="delayCreateDelete" v-model="delayCreateDelete" @change="onDelayChange" />
         </el-form-item>
-        <el-form-item
-          v-if="delayCreateDelete"
-          label="延迟启动"
-          prop="delayCreateTime"
-        >
+        <el-form-item v-if="delayCreateDelete" label="延迟启动" prop="delayCreateTime">
           <el-input-number
             id="delayCreateTime"
             v-model="form.delayCreateTime"
@@ -338,11 +316,7 @@
             :step-strictly="true"
           />&nbsp;小时
         </el-form-item>
-        <el-form-item
-          v-if="delayCreateDelete"
-          label="训练时长上限"
-          prop="delayDeleteTime"
-        >
+        <el-form-item v-if="delayCreateDelete" label="训练时长上限" prop="delayDeleteTime">
           <el-input-number
             id="delayDeleteTime"
             v-model="form.delayDeleteTime"
@@ -361,9 +335,9 @@
         </el-form-item>
       </template>
       <!--不可编辑-->
-      <template v-if="type==='saveParams'">
+      <template v-if="type === 'saveParams'">
         <el-form-item label="选用算法类型">
-          {{ form.algorithmSource === 2 ? '预置算法' : '我的算法' }}
+          {{ form.algorithmSource === ALGORITHM_RESOURCE_ENUM.PRESET ? '预置算法' : '我的算法' }}
         </el-form-item>
         <el-form-item label="选用算法">
           {{ form.algorithmName }}
@@ -372,21 +346,17 @@
           {{ form.imageName }}
         </el-form-item>
         <el-form-item
-          v-if="[0, 1].includes(form.modelResource)"
+          v-if="
+            [MODEL_RESOURCE_ENUM.CUSTOM, MODEL_RESOURCE_ENUM.PRESET].includes(form.modelResource)
+          "
           label="模型选择"
         >
           {{ trainModel.name }}
         </el-form-item>
-        <el-form-item
-          v-if="useAtlasModel"
-          label="教师模型"
-        >
+        <el-form-item v-if="useAtlasModel" label="教师模型">
           {{ teacherModelNames }}
         </el-form-item>
-        <el-form-item
-          v-if="useAtlasModel"
-          label="学生模型"
-        >
+        <el-form-item v-if="useAtlasModel" label="学生模型">
           {{ studentModelNames }}
         </el-form-item>
         <el-form-item label="训练数据集">
@@ -399,10 +369,9 @@
           {{ form.runCommand }}
         </el-form-item>
         <el-form-item label="运行参数">
-          <span
-            v-for="key of Object.keys(form.runParams || {})"
-            :key="key"
-          >--{{ key }}={{ form.runParams[key] }} </span>
+          <span v-for="key of Object.keys(form.runParams || {})" :key="key"
+            >--{{ key }}={{ form.runParams[key] }}
+          </span>
         </el-form-item>
         <el-form-item label="分布式训练">
           {{ form.trainType === 1 ? '是' : '否' }}
@@ -423,7 +392,7 @@
           {{ form.resourcesPoolNode }}
         </el-form-item>
         <el-form-item label="节点规格">
-          {{ formSpecs && formSpecs.label }}
+          {{ formSpecs && formSpecs.specsName }}
         </el-form-item>
         <el-form-item label="运行命令预览">
           <div class="command-preview">
@@ -436,14 +405,22 @@
 </template>
 
 <script>
-import { validateNameWithHyphen, getQueueMessage } from '@/utils';
+import {
+  validateNameWithHyphen,
+  getQueueMessage,
+  ALGORITHM_RESOURCE_ENUM,
+  MODEL_RESOURCE_ENUM,
+  RESOURCES_MODULE_ENUM,
+} from '@/utils';
 import { list as getAlgorithmList } from '@/api/algorithm/algorithm';
 import { getModelByResource } from '@/api/model/model';
 import { list as getModelBranchs } from '@/api/model/modelVersion';
 import { getTrainModel } from '@/api/trainingJob/job';
 import { getImageNameList, getImageTagList } from '@/api/trainingImage/index';
+import { list as getSpecsNames } from '@/api/system/resources';
 import { trainConfig } from '@/config';
 import { IMAGE_PROJECT_TYPE } from '@/views/trainingJob/utils';
+
 import RunParamForm from './runParamForm';
 import DataSourceSelector from './dataSourceSelector';
 
@@ -461,7 +438,7 @@ const defaultForm = {
   jobName: '', // 用于编辑训练任务时, 表单展示 jobName
   paramName: '',
   description: '',
-  algorithmSource: 1,
+  algorithmSource: ALGORITHM_RESOURCE_ENUM.CUSTOM,
   algorithmId: null,
   algorithmName: null,
   algorithmUsage: null,
@@ -494,12 +471,11 @@ const defaultForm = {
 
 export default {
   name: 'JobForm',
-  dicts: ['cpu_specs', 'gpu_specs'],
   components: { RunParamForm, DataSourceSelector },
   props: {
     type: {
       type: String,
-      default: 'add', // add: 新增训练任务; paramsAdd: 任务参数创建训练任务; algoAdd: 算法创建训练任务; edit: 修改训练任务; saveParams: 保存训练参数模板; paramEdit: 修改训练参数模板。
+      default: 'add', // add: 新增训练任务; paramsAdd: 任务参数创建训练任务; algoAdd: 算法创建训练任务; edit: 修改训练任务; saveParams: 保存训练参数模板; paramsEdit: 修改训练参数模板。
     },
     widthPercent: {
       type: Number,
@@ -508,6 +484,9 @@ export default {
   },
   data() {
     return {
+      ALGORITHM_RESOURCE_ENUM,
+      MODEL_RESOURCE_ENUM,
+
       algorithmIdList: [],
       harborProjectList: [],
       harborImageList: [],
@@ -532,6 +511,7 @@ export default {
       trainModelList: [],
       teacherModelList: [],
       studentModelList: [],
+      specsList: [],
 
       form: { ...defaultForm },
       rules: {
@@ -545,56 +525,39 @@ export default {
           { max: 32, message: '长度控制在32个字符', trigger: 'blur' },
           { validator: validateNameWithHyphen, trigger: ['blur', 'change'] },
         ],
-        algorithmSource: [
-          { required: true, message: '请选择算法', trigger: 'change' },
-        ],
-        algorithmId: [
-          { required: true, message: '请选择算法', trigger: 'manual' },
-        ],
-        imageTag: [
-          { required: true, message: '请选择镜像', trigger: 'manual' },
-        ],
-        dataSourcePath: [
-          { required: true, message: '请选择数据集', trigger: 'manual' },
-        ],
-        trainJobSpecsName: [
-          { required: true, message: '请选择节点规格', trigger: 'change' },
-        ],
-        runCommand: [
-          { required: true, message: '请输入运行命令', trigger: ['blur', 'change'] },
-        ],
+        algorithmSource: [{ required: true, message: '请选择算法', trigger: 'change' }],
+        algorithmId: [{ required: true, message: '请选择算法', trigger: 'manual' }],
+        imageTag: [{ required: true, message: '请选择镜像', trigger: 'manual' }],
+        dataSourcePath: [{ required: true, message: '请选择数据集', trigger: 'manual' }],
+        trainJobSpecsName: [{ required: true, message: '请选择节点规格', trigger: 'change' }],
+        runCommand: [{ required: true, message: '请输入运行命令', trigger: ['blur', 'change'] }],
       },
     };
   },
   computed: {
     formSpecs() {
-      return this.specList.find(spec => spec.label === this.form.trainJobSpecsName);
-    },
-    specList() {
-      switch(this.form.resourcesPoolType) {
-        case 0:
-          return this.dict.cpu_specs;
-        case 1:
-          return this.dict.gpu_specs;
-        default:
-          return [];
-      }
+      return this.specsList.find((spec) => spec.specsName === this.form.trainJobSpecsName);
     },
     isSaveParams() {
       return this.type === 'saveParams';
     },
     preview() {
       let str = this.form.runCommand;
-      for(const key of Object.keys(this.runParamObj)) {
+      for (const key of Object.keys(this.runParamObj)) {
         str += ` --${key}=${this.runParamObj[key]}`;
       }
       if (this.selectedAlgorithm) {
-        str += this.selectedAlgorithm.isTrainLog? ' --train_log=/workspace/log' : '';
-        str += this.selectedAlgorithm.isTrainOut? ' --train_out=/workspace/out' : '';
-        str += this.selectedAlgorithm.isVisualizedLog? ' --train_visualized_log=/workspace/visualizedlog' : '';
+        str += this.selectedAlgorithm.isTrainOut ? ' --train_out=/workspace/log' : '';
+        str += this.selectedAlgorithm.isTrainModelOut ? ' --train_model_out=/workspace/out' : '';
+        str += this.selectedAlgorithm.isVisualizedLog
+          ? ' --train_visualized_log=/workspace/visualizedlog'
+          : '';
         str += ' --data_url=/dataset';
       }
-      str += this.form.valDataSourceName && this.form.valDataSourcePath ? ' --val_data_url=/valdataset' : '';
+      str +=
+        this.form.valDataSourceName && this.form.valDataSourcePath
+          ? ' --val_data_url=/valdataset'
+          : '';
       str += this.form.modelId && this.form.modelBranchId ? ' --model_load_dir=/modeldir' : '';
       if (this.form.resourcesPoolType) {
         // eslint-disable-next-line no-template-curly-in-string
@@ -602,36 +565,38 @@ export default {
       }
       return str;
     },
-    useMineModel() {
-      return this.form.modelResource === 0;
+    useCustomModel() {
+      return this.form.modelResource === MODEL_RESOURCE_ENUM.CUSTOM;
     },
     useAtlasModel() {
-      return this.form.modelResource === 2;
+      return this.form.modelResource === MODEL_RESOURCE_ENUM.ATLAS;
     },
     trainModel() {
       return this.trainModelList.length ? this.trainModelList[0] : {};
     },
     teacherModelNames() {
-      return this.teacherModelList.map(model => model.name).join(', ');
+      return this.teacherModelList.map((model) => model.name).join(', ');
     },
     studentModelNames() {
-      return this.studentModelList.map(model => model.name).join(', ');
+      return this.studentModelList.map((model) => model.name).join(', ');
+    },
+    usePresetAlgorithm() {
+      return this.form.algorithmSource === ALGORITHM_RESOURCE_ENUM.PRESET;
     },
   },
   created() {
-    this.$on('dictReady', this.getInitResourceSpecs);
     this.callMsg = getQueueMessage();
   },
   methods: {
     initForm(form) {
       const newForm = form || {};
-      Object.keys(this.form).forEach(item => {
+      Object.keys(this.form).forEach((item) => {
         if (newForm[item] !== null && newForm[item] !== undefined) {
           this.form[item] = newForm[item];
         }
       });
       setTimeout(async () => {
-        this.delayCreateDelete = (this.form.delayCreateTime !== 0) && (this.form.delayDeleteTime !== 0);
+        this.delayCreateDelete = this.form.delayCreateTime !== 0 && this.form.delayDeleteTime !== 0;
         this.getAlgorithmList();
         if (!this.isSaveParams) {
           this.getHarborProjects().then(() => {
@@ -639,7 +604,11 @@ export default {
           });
           this.getModels(true);
           this.$refs.trainDataSourceSelector.updateAlgorithmUsage(this.form.algorithmUsage, true);
-          this.form.valType && this.$refs.verifyDataSourceSelector.updateAlgorithmUsage(this.form.valAlgorithmUsage, true);
+          this.form.valType &&
+            this.$refs.verifyDataSourceSelector.updateAlgorithmUsage(
+              this.form.valAlgorithmUsage,
+              true
+            );
         } else if (this.form.modelResource !== null) {
           const { modelList, teacherModelList, studentModelList } = await getTrainModel({
             modelResource: this.form.modelResource,
@@ -652,21 +621,14 @@ export default {
           this.teacherModelList = teacherModelList;
           this.studentModelList = studentModelList;
         }
-        this.getInitResourceSpecs();
+        this.onResourcesPoolTypeChange(!['add', 'algoAdd'].includes(this.type));
 
         // 根据 modelResource 的值来判断是否使用了模型
         this.useModel = this.form.modelResource !== null;
         // runParamObj 初始值为 form.runParams
-        this.runParamObj = {...this.form.runParams};
+        this.runParamObj = { ...this.form.runParams };
         this.clearValidate();
       }, 0);
-    },
-    getInitResourceSpecs() {
-      if (!this.dictOrFormReady) {
-        this.dictOrFormReady = true;
-        return;
-      }
-      this.onResourcesPoolTypeChange(!['add', 'algoAdd'].includes(this.type));
     },
     validate(...args) {
       this.$refs.form.validate.apply(this, args);
@@ -700,8 +662,10 @@ export default {
         });
         return;
       }
-      
-      if (!this.isSaveParams && !this.checkModelValid()) { return; };
+
+      if (!this.isSaveParams && !this.checkModelValid()) {
+        return;
+      }
 
       // 清除模型部分多余字段
       if (!this.useAtlasModel) {
@@ -710,12 +674,15 @@ export default {
           studentModelIds: null,
         });
       }
-      
-      this.$refs.form.validate(async valid => {
+
+      this.$refs.form.validate(async (valid) => {
         if (valid) {
-          const params = {...this.form};
-          params.runParams = {...this.runParamObj};
-          params.trainJobSpecsInfo = this.formSpecs.value;
+          const params = { ...this.form };
+          params.runParams = { ...this.runParamObj };
+          if (this.formSpecs) {
+            const { cpuNum, gpuNum, memNum, workspaceRequest } = this.formSpecs;
+            Object.assign(params, { cpuNum, gpuNum, memNum, workspaceRequest });
+          }
           // 请求交互都不放在组件完成
           this.$emit('getForm', params);
         } else {
@@ -729,7 +696,7 @@ export default {
     // 镜像项目为空时选择默认项目
     resetProject() {
       if (!this.form.imageName) {
-        if (this.harborProjectList.some(project => project === 'oneflow')) {
+        if (this.harborProjectList.some((project) => project === 'oneflow')) {
           this.form.imageName = 'oneflow';
         } else if (this.harborProjectList.length) {
           Object.assign(this.form, { imageName: this.harborProjectList[0] });
@@ -768,14 +735,20 @@ export default {
     },
     async getHarborProjects() {
       this.harborProjectList = await getImageNameList({ projectType: IMAGE_PROJECT_TYPE.TRAIN });
-      if (this.form.imageName && !this.harborProjectList.some(project => project === this.form.imageName)) {
+      if (
+        this.form.imageName &&
+        !this.harborProjectList.some((project) => project === this.form.imageName)
+      ) {
         this.$message.warning('该训练原有的运行项目不存在，请重新选择');
         this.form.imageName = null;
         this.form.imageTag = null;
         return;
       }
-      this.form.imageName && await this.getHarborImages(true);
-      if (this.form.imageTag && !this.harborImageList.some(image => image.imageTag === this.form.imageTag)) {
+      this.form.imageName && (await this.getHarborImages(true));
+      if (
+        this.form.imageTag &&
+        !this.harborImageList.some((image) => image.imageTag === this.form.imageTag)
+      ) {
         this.$message.warning('该训练原有的运行镜像不存在，请重新选择');
         this.form.imageTag = null;
       }
@@ -786,43 +759,51 @@ export default {
       }
       if (!this.form.imageName) {
         this.harborImageList = [];
-        return;
+        return Promise.reject();
       }
-      return getImageTagList({ imageName: this.form.imageName, projectType: IMAGE_PROJECT_TYPE.TRAIN })
-        .then(res => {
-          this.harborImageList = res;
-        });
+      return getImageTagList({
+        imageName: this.form.imageName,
+        projectType: IMAGE_PROJECT_TYPE.TRAIN,
+      }).then((res) => {
+        this.harborImageList = res;
+      });
     },
-    
+
     // saveModel 用于表示是否需要根据模型列表匹配模型/版本/教师模型/学生模型
     async getModels(saveModel = false) {
       // modelResource 不存在时，获取 我的模型 的模型列表
       this.modelList = await getModelByResource(this.form.modelResource || 0);
 
       // 如果不保留则不进行其余任何操作
-      if (!saveModel) { return; }
+      if (!saveModel) {
+        return;
+      }
 
       switch (this.form.modelResource) {
         // 我的模型
         case 0:
-          if (!this.form.modelId) { return; }
-          if (!this.modelList.find(model => model.id === this.form.modelId)) {
+          if (!this.form.modelId) {
+            return;
+          }
+          if (!this.modelList.find((model) => model.id === this.form.modelId)) {
             this.$message.warning('选择的模型不存在，请重新选择');
             this.form.modelId = this.form.modelBranchId = null;
             return;
           }
           this.getModelBranchs(this.form.modelId, saveModel);
           break;
-        
+
         // 预训练模型
         case 1:
-          if (!this.form.modelId) { return; }
-          if (!this.modelList.find(model => model.id === this.form.modelId)) {
+          if (!this.form.modelId) {
+            return;
+          }
+          if (!this.modelList.find((model) => model.id === this.form.modelId)) {
             this.$message.warning('选择的模型不存在，请重新选择');
-            this.form.modelId =  null;
+            this.form.modelId = null;
           }
           break;
-        
+
         // 炼知模型
         case 2:
           this.pushModel(this.teacherModelIds, this.form.teacherModelIds, '教师');
@@ -832,37 +813,43 @@ export default {
       }
     },
     async getModelBranchs(parentId, saveBranchId = false) {
-      if (!this.useMineModel) { return; } // 只有使用 我的模型 时，才获取版本列表
+      if (!this.useCustomModel) {
+        return;
+      } // 只有使用 我的模型 时，才获取版本列表
       this.modelBranchList = (await getModelBranchs({ parentId })).result;
 
       // 如果不保留则清空模型版本选项
       if (!saveBranchId) {
         this.form.modelBranchId = null;
         return;
-      };
+      }
 
-      if (!this.form.modelBranchId) { return; }
-      if (!this.modelBranchList.find(model => model.id === this.form.modelBranchId)) {
+      if (!this.form.modelBranchId) {
+        return;
+      }
+      if (!this.modelBranchList.find((model) => model.id === this.form.modelBranchId)) {
         this.$message.warning('选择的模型版本不存在，请重新选择');
         this.form.modelBranchId = null;
       }
     },
     pushModel(modelList, modelIdString, modelType = '') {
-      if (!modelIdString) { return; }
+      if (!modelIdString) {
+        return;
+      }
       const modelIdList = modelIdString.split(',');
       const existSet = new Set();
       const notExistSet = new Set();
 
       // 教师、学生模型 在修改时，如果部分模型不存在，则只显示剩余模型
-      modelIdList.forEach(id => {
-        if (this.modelList.find(model => model.id === Number(id))) {
+      modelIdList.forEach((id) => {
+        if (this.modelList.find((model) => model.id === Number(id))) {
           existSet.add(Number(id));
         } else {
           notExistSet.add(id);
         }
       });
 
-      Array.from(existSet).forEach(id => modelList.push(id));
+      Array.from(existSet).forEach((id) => modelList.push(id));
       if (notExistSet.size > 0) {
         this.callMsg({
           message: `以下 id 的${modelType}模型不存在: ${Array.from(notExistSet).join('、')}`,
@@ -883,7 +870,7 @@ export default {
     },
     onUseModelChange(useModel) {
       if (useModel) {
-        this.form.modelResource = 0;
+        this.form.modelResource = MODEL_RESOURCE_ENUM.CUSTOM;
       } else {
         Object.assign(this.form, {
           modelResource: null,
@@ -899,8 +886,12 @@ export default {
       }
     },
     onModelChange(id) {
-      if (this.useMineModel) {
-        this.getModelBranchs(id);
+      if (this.useCustomModel) {
+        if (id) {
+          this.getModelBranchs(id);
+        } else {
+          this.modelBranchList = [];
+        }
       } else {
         this.checkModelValid();
       }
@@ -916,7 +907,7 @@ export default {
       let errorMsg = null;
       switch (this.form.modelResource) {
         // 我的模型
-        case 0:
+        case MODEL_RESOURCE_ENUM.CUSTOM:
           if (!this.form.modelId) {
             errorMsg = '模型不能为空';
           } else if (!this.form.modelBranchId) {
@@ -930,7 +921,7 @@ export default {
           break;
 
         // 预训练模型
-        case 1:
+        case MODEL_RESOURCE_ENUM.PRESET:
           if (!this.form.modelId) {
             errorMsg = '模型不能为空';
           }
@@ -942,7 +933,7 @@ export default {
           break;
 
         // 炼知模型
-        case 2:
+        case MODEL_RESOURCE_ENUM.ATLAS:
           if (!this.teacherModelIds.length) {
             errorMsg = '教师模型不能为空';
           }
@@ -967,33 +958,45 @@ export default {
       }
       this.algLoading = true;
       const params = {
-        algorithmSource: Number(this.form.algorithmSource || 1),
+        algorithmSource: this.form.algorithmSource || ALGORITHM_RESOURCE_ENUM.CUSTOM,
         current: this.currentAlgPage,
         size: this.algPageSize,
       };
-      getAlgorithmList(params).then(res => {
-        this.algorithmIdList = this.algorithmIdList.concat(res.result);
-        this.currentAlgPage += 1;
-        this.algLoading = false;
-        if (res.result.length < this.algPageSize) {
-          this.noMoreLoadAlg = true;
-        }
-        if (this.form.algorithmId) {
-          this.selectedAlgorithm = this.algorithmIdList.find(item => item.id === this.form.algorithmId);
-          if (!this.selectedAlgorithm) {
-            this.$message.warning('原有算法不存在，请重新选择');
-            this.form.algorithmId = null;
+      getAlgorithmList(params)
+        .then((res) => {
+          this.algorithmIdList = this.algorithmIdList.concat(res.result);
+          this.currentAlgPage += 1;
+          this.algLoading = false;
+          if (res.result.length < this.algPageSize) {
+            this.noMoreLoadAlg = true;
           }
-        }
-      }).finally(() => {
-        this.algLoading = false;
-      });
+          if (this.form.algorithmId) {
+            this.selectedAlgorithm = this.algorithmIdList.find(
+              (item) => item.id === this.form.algorithmId
+            );
+            if (!this.selectedAlgorithm) {
+              this.$message.warning('原有算法不存在，请重新选择');
+              this.form.algorithmId = null;
+            }
+          }
+        })
+        .finally(() => {
+          this.algLoading = false;
+        });
     },
 
-    onResourcesPoolTypeChange(keepSpec = false) {
+    async onResourcesPoolTypeChange(keepSpec = false) {
+      this.specsList = (
+        await getSpecsNames({
+          module: RESOURCES_MODULE_ENUM.TRAIN,
+          resourcesPoolType: this.form.resourcesPoolType,
+          current: 1,
+          size: 500,
+        })
+      ).result;
       // 当没有显式指定保留节点规格时，选择规格列表第一个选项
-      if (keepSpec !== true && this.specList.length) {
-        this.form.trainJobSpecsName = this.specList[0].label;
+      if (keepSpec !== true && this.specsList.length) {
+        this.form.trainJobSpecsName = this.specsList[0].specsName;
       }
     },
     onTrainDataSourceChange(dataSourceResult) {
@@ -1010,37 +1013,49 @@ export default {
     async onAlgorithmChange(id) {
       // 选用算法变更时，需要对自动填充的表单项进行验证
       this.validateField('algorithmId');
-      // 选用算法变更时，需要同步算法的算法用途、运行项目、运行镜像、运行命令、运行参数
-      const algorithm = this.algorithmIdList.find(i => i.id === id);
+      // 选用算法变更时，需要同步算法的模型类别、运行项目、运行镜像、运行命令、运行参数
+      const algorithm = this.algorithmIdList.find((i) => i.id === id);
       this.selectedAlgorithm = algorithm;
-      this.form.algorithmUsage = algorithm?.algorithmUsage || null;
-      this.form.valAlgorithmUsage = algorithm?.algorithmUsage || null;
-      this.$refs.trainDataSourceSelector.updateAlgorithmUsage(this.form.algorithmUsage);
-      this.form.valType && this.$refs.verifyDataSourceSelector.updateAlgorithmUsage(this.form.valAlgorithmUsage);
-      this.form.runCommand = algorithm?.runCommand || '';
-      this.form.runParams = algorithm?.runParams || {};
-      this.runParamObj = {...this.form.runParams};
-      this.form.imageName = algorithm?.imageName;
-      this.$nextTick(() => {
-        this.clearFieldValidate('runCommand');
-      });
-      if (this.form.imageName && !this.harborProjectList.some(project => project === this.form.imageName)) {
-        this.$message.warning('算法选择的运行项目不存在，请重新选择');
-        this.form.imageName = null;
-        this.form.imageTag = null;
-        return;
+      this.form.algorithmUsage = algorithm?.algorithmUsage || null; // 同步算法用途
+      this.form.valAlgorithmUsage = algorithm?.algorithmUsage || null; // 同步算法用途到验证数据集
+      this.$refs.trainDataSourceSelector.updateAlgorithmUsage(this.form.algorithmUsage); // 根据算法用途更新数据集列表
+      this.form.valType &&
+        this.$refs.verifyDataSourceSelector.updateAlgorithmUsage(this.form.valAlgorithmUsage); // 根据验证数据集算法用途更新数据集列表
+      if (this.usePresetAlgorithm) {
+        this.form.runCommand = algorithm?.runCommand || ''; // 同步运行命令
+        this.form.runParams = algorithm?.runParams || {}; // 同步运行参数
+        this.runParamObj = { ...this.form.runParams }; // 同步运行参数
+        this.form.imageName = algorithm?.imageName; // 同步镜像名称
+        this.$nextTick(() => {
+          this.clearFieldValidate('runCommand'); // 清空运行命令的表单校验
+        });
+        // 镜像名校验
+        if (
+          this.form.imageName &&
+          !this.harborProjectList.some((project) => project === this.form.imageName)
+        ) {
+          this.$message.warning('算法选择的运行项目不存在，请重新选择');
+          this.form.imageName = null;
+          this.form.imageTag = null;
+          return;
+        }
+        this.form.imageName && (await this.getHarborImages(true)); // 获取镜像版本列表
+        this.form.imageTag = algorithm?.imageTag; // 同步镜像版本
+        // 镜像版本校验
+        if (
+          this.form.imageTag &&
+          !this.harborImageList.some((image) => image.imageTag === this.form.imageTag)
+        ) {
+          this.$message.warning('算法选择的运行镜像不存在，请重新选择');
+          this.form.imageTag = null;
+          return;
+        }
+        if (this.form.imageTag) {
+          this.validateField('imageTag');
+        }
+        // 镜像项目为空时选择默认项目
+        this.resetProject();
       }
-      this.form.imageName && await this.getHarborImages(true);
-      this.form.imageTag = algorithm?.imageTag;
-      if (this.form.imageTag && !this.harborImageList.some(image => image.imageTag === this.form.imageTag)) {
-        this.$message.warning('算法选择的运行镜像不存在，请重新选择');
-        this.form.imageTag = null;
-        return;
-      }
-      if (this.form.imageTag) {
-        this.validateField('imageTag');
-      }
-      this.resetProject();
     },
     onDelayChange(isDelay) {
       if (!isDelay) {
@@ -1049,7 +1064,7 @@ export default {
       }
     },
     onVerifyTypeChange() {
-      if (this.form.valType === 0 ) {
+      if (this.form.valType === 0) {
         this.form = Object.assign(this.form, {
           valDataSourceName: null,
           valDataSourcePath: null,
@@ -1058,7 +1073,10 @@ export default {
       } else {
         // 打开训练数据集时获取相应值
         this.$nextTick(() => {
-          this.$refs.verifyDataSourceSelector.updateAlgorithmUsage(this.form.valAlgorithmUsage, false);
+          this.$refs.verifyDataSourceSelector.updateAlgorithmUsage(
+            this.form.valAlgorithmUsage,
+            false
+          );
         });
       }
     },
@@ -1099,7 +1117,7 @@ export default {
       this.harborImageList = [];
       this.resetProject();
       this.onResourcesPoolTypeChange();
-      
+
       // 模型数据重置
       this.useModel = false;
       this.teacherModelIds = [];
@@ -1107,8 +1125,8 @@ export default {
       this.teacherModelErrorMsg = '';
       this.getModels();
     },
-    onTrainTypeChange(trainType) {
-      this.form.resourcesPoolNode = trainType === 0 ? 1 : 2;
+    onResourcesPoolNodeChange(node) {
+      this.form.trainType = node > 1 ? 1 : 0;
     },
   },
 };

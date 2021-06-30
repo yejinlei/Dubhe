@@ -22,12 +22,23 @@
 @import 'sidebar';
 @import 'common';
 
+@media screen and (max-width: 768px) {
+  .mb-dn {
+    display: none !important;
+  }
+
+  .mb-w100 {
+    width: 100% !important;
+  }
+}
+
 body {
   height: 100%;
   -moz-osx-font-smoothing: grayscale;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
   font-family: Helvetica Neue, Helvetica, PingFang SC, Hiragino Sans GB, Microsoft YaHei, Arial, sans-serif;
+  color: rgba(0, 0, 0, 0.85);
 }
 
 label {

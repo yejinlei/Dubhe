@@ -1,18 +1,18 @@
 /** Copyright 2020 Tianshu AI Platform. All Rights Reserved.
-*
-* Licensed under the Apache License, Version 2.0 (the "License");
-* you may not use this file except in compliance with the License.
-* You may obtain a copy of the License at
-*
-*     http://www.apache.org/licenses/LICENSE-2.0
-*
-* Unless required by applicable law or agreed to in writing, software
-* distributed under the License is distributed on an "AS IS" BASIS,
-* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-* See the License for the specific language governing permissions and
-* limitations under the License.
-* =============================================================
-*/
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ * =============================================================
+ */
 
 import http from '@/utils/VisualUtils/request';
 import port from '@/utils/VisualUtils/api';
@@ -26,7 +26,7 @@ const state = {
   curNewData: [], // 记录点击step后获取的新数据
   curNewExcepBox: [],
   rectCurInfo: {},
-  curIqrTimes: ['', '', '', 1.50, 1.50], // 当前选中的盒线图的一些数据 {run, tag, step, box}
+  curIqrTimes: ['', '', '', 1.5, 1.5], // 当前选中的盒线图的一些数据 {run, tag, step, box}
   linkChecked: false,
   excepBoxStatistic: [], // 异常点数据统计
   errorMessage: '',
@@ -55,7 +55,8 @@ const getters = {
 
 const actions = {
   async getSelfCategoryInfo(context, param) {
-    if (context.state.freshFlag) { // 连类目信息都要等到这一次全部数据获取后再更新
+    if (context.state.freshFlag) {
+      // 连类目信息都要等到这一次全部数据获取后再更新
       context.commit('setFreshFlag', false);
       context.commit('setSelfCategoryInfo', param);
       if (param[2].initStateFlag) {
@@ -66,17 +67,17 @@ const actions = {
     }
   },
   async fetchAllStep(context) {
-    const {run} = context.state;
+    const { run } = context.state;
     if (run.length === 0) return;
-    const {tag} = context.state;
+    const { tag } = context.state;
     const allStepTemp = [];
     // 在用数据的时候限制了顺序，需要再优化
     for (let i = 0; i < run.length; i += 1) {
       for (let j = 0; j < tag[i].length; j += 1) {
         const param = { run: run[i], tag: tag[i][j] };
-        await http.useGet(port.category.exception, param).then(res => {
+        await http.useGet(port.category.exception, param).then((res) => {
           if (Number(res.data.code) !== 200) {
-            context.commit('setErrorMessage', `${run[i]  },${  tag[i][j]  },${  res.data.msg}`);
+            context.commit('setErrorMessage', `${run[i]},${tag[i][j]},${res.data.msg}`);
             return;
           }
           allStepTemp.push([run[i], tag[i][j], res.data.data[tag[i][j]]]);
@@ -85,10 +86,11 @@ const actions = {
     }
     context.commit('setAllStep', allStepTemp);
   },
-  async fetchAllData(context) { // 获得初始数据,step均为step[0]
+  async fetchAllData(context) {
+    // 获得初始数据,step均为step[0]
     context.commit('clearAllData');
-    const {run} = context.state;
-    const {tag} = context.state;
+    const { run } = context.state;
+    const { tag } = context.state;
     let count = 0;
     for (let i = 0; i < run.length && count < context.state.allStep.length; i += 1) {
       for (let j = 0; j < tag[i].length && count < context.state.allStep.length; j += 1) {
@@ -96,17 +98,18 @@ const actions = {
         const param = { run: run[i], tag: tag[i][j], step: initStep };
         const oneDataTemp = [];
         let successFlag = true;
-        await http.useGet(port.category.exception_data, param).then(res => {
+        await http.useGet(port.category.exception_data, param).then((res) => {
           if (Number(res.data.code) !== 200) {
             successFlag = false;
-            context.commit('setErrorMessage', `${run[i]  },${  tag[i][j]  },${  res.data.msg}`);
+            context.commit('setErrorMessage', `${run[i]},${tag[i][j]},${res.data.msg}`);
             return;
           }
           oneDataTemp.push(param.run);
           oneDataTemp.push(param.tag);
           oneDataTemp.push(0);
           const rectDataTemp = res.data.data[initStep];
-          if (rectDataTemp[0].length === 1) { // 处理一维数据
+          if (rectDataTemp[0].length === 1) {
+            // 处理一维数据
             const rectLenTemp = rectDataTemp[0][0];
             rectDataTemp[0][0] = 1;
             rectDataTemp[0].push(rectLenTemp);
@@ -116,33 +119,36 @@ const actions = {
           }
           oneDataTemp.push(rectDataTemp);
         });
-        if (successFlag) { // 默认上一个请求到了，这个也可以请求到，嵌套好像不行
-          await http.useGet(port.category.exception_hist, param).then(res => {
+        if (successFlag) {
+          // 默认上一个请求到了，这个也可以请求到，嵌套好像不行
+          await http.useGet(port.category.exception_hist, param).then((res) => {
             oneDataTemp.push(res.data.data[initStep][0]);
           });
           context.commit('setAllData', oneDataTemp);
         }
-        count  += 1;
+        count += 1;
       }
     }
     // 取完step后立马取出颜色矩阵和直方图，需要这些数据都取到后再刷新
     context.commit('setFreshFlag', true);
   },
   // 双击盒线图调用这个获取一个step的三个数据：直方图、颜色矩阵
-  async fetchOneData(context, param) { // {run: param.run, tag: param.tag, step: param.step, down: param.down, up: param.up}
+  async fetchOneData(context, param) {
+    // {run: param.run, tag: param.tag, step: param.step, down: param.down, up: param.up}
     const oneDataTemp = [];
     let successFlag = true;
-    await http.useGet(port.category.exception_data, param).then(res => {
+    await http.useGet(port.category.exception_data, param).then((res) => {
       if (Number(res.data.code) !== 200) {
         successFlag = false;
-        context.commit('setErrorMessage', `${param.run  },${  param.tag  },${  res.data.msg}`);
+        context.commit('setErrorMessage', `${param.run},${param.tag},${res.data.msg}`);
         return;
       }
       oneDataTemp.push(param.run);
       oneDataTemp.push(param.tag);
       oneDataTemp.push(param.step);
       const rectDataTemp = res.data.data[param.step];
-      if (rectDataTemp[0].length === 1) { // 处理一维数据
+      if (rectDataTemp[0].length === 1) {
+        // 处理一维数据
         const rectLenTemp = rectDataTemp[0][0];
         rectDataTemp[0][0] = 1;
         rectDataTemp[0].push(rectLenTemp);
@@ -154,7 +160,7 @@ const actions = {
     });
     if (successFlag) {
       // 上一个请求成功了再进行下一个请求
-      await http.useGet(port.category.exception_hist, param).then(res => {
+      await http.useGet(port.category.exception_hist, param).then((res) => {
         oneDataTemp.push(res.data.data[param.step][0]);
       });
       oneDataTemp.push(param.index); // index确定当前（run,tag）的数据在allData数组中的下标
@@ -162,10 +168,11 @@ const actions = {
     }
   },
   // 移动盒线图上下边界时获取异常点
-  async fetchExcepBox(context, param) { // param={run:, tag:,step:,down:,up:},异常点数据
-    await http.useGet(port.category.exception_box, param).then(res => {
+  async fetchExcepBox(context, param) {
+    // param={run:, tag:,step:,down:,up:},异常点数据
+    await http.useGet(port.category.exception_box, param).then((res) => {
       if (Number(res.data.code) !== 200) {
-        context.commit('setErrorMessage', `${param.run  },${  param.tag  },${  res.data.msg}`);
+        context.commit('setErrorMessage', `${param.run},${param.tag},${res.data.msg}`);
         return;
       }
       context.commit('setExcepBox', [param.run, param.tag, res.data.data[param.step]]);
@@ -203,7 +210,8 @@ const mutations = {
     state.curNewExcepBox = param;
   },
   // 调整box中上下两条线，根据这个来计算筛选异常点
-  setAllStepBoxDown(state, param) { // param={index:,step:,down}，index:是run\tag对应的下标
+  setAllStepBoxDown(state, param) {
+    // param={index:,step:,down}，index:是run\tag对应的下标
     state.allStep[param.index][2].box[param.step][0][4] = param.down;
   },
   setAllStepBoxUp(state, param) {
@@ -216,8 +224,14 @@ const mutations = {
     // 还是要存储run, tag, step的
     param[3] = Number(param[3]);
     param[4] = Number(param[4]);
-    if (state.curIqrTimes[0] === param[0] && state.curIqrTimes[1] === param[1] && state.curIqrTimes[2] === param[2] &&
-      state.curIqrTimes[3] === param[3] && state.curIqrTimes[4] === param[4]) { // 数据没有变化就不存进去
+    if (
+      state.curIqrTimes[0] === param[0] &&
+      state.curIqrTimes[1] === param[1] &&
+      state.curIqrTimes[2] === param[2] &&
+      state.curIqrTimes[3] === param[3] &&
+      state.curIqrTimes[4] === param[4]
+    ) {
+      // 数据没有变化就不存进去
       return;
     }
     state.curIqrTimes = param;

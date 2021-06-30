@@ -15,26 +15,21 @@
  */
 
 import request from '@/utils/request';
+import { API_MODULE_NAME } from '@/config';
 
 export function list(params) {
   const { datasetId } = params;
   return request({
-    url: `api/data/datasets/${datasetId}/files/txt`,
+    url: `/${API_MODULE_NAME.DATA}/datasets/${datasetId}/files/txt`,
     method: 'get',
     params,
   });
 }
 
-export function count(datasetId) {
-  return  request({
-    url: `/api/data/datasets/${datasetId}/count`,
-  });
-}
-
-// 获取分页信息
+// 获取分页信息 deprecated
 export function queryFiles(datasetId, params) {
-  return  request({
-    url: `/api/data/datasets/${datasetId}/files/txt`,
+  return request({
+    url: `/${API_MODULE_NAME.DATA}/datasets/${datasetId}/files/txt`,
     params,
   });
 }
@@ -42,7 +37,7 @@ export function queryFiles(datasetId, params) {
 // 删除文件
 export function deleteFile(datasetId, fileId) {
   return request({
-    url: `/api/data/datasets/files`,
+    url: `/${API_MODULE_NAME.DATA}/datasets/files`,
     method: 'delete',
     data: {
       datasetIds: [Number(datasetId)],
@@ -52,11 +47,20 @@ export function deleteFile(datasetId, fileId) {
 }
 
 // 保存
-export function save(datasetId, fileId, data){
+export function save(datasetId, fileId, data) {
   return request({
-    url: `/api/data/datasets/files/${datasetId}/${fileId}/annotations/finish`,
+    url: `/${API_MODULE_NAME.DATA}/datasets/files/${datasetId}/${fileId}/annotations/finish`,
     method: 'post',
     data,
+  });
+}
+
+export function search(params) {
+  const { datasetId } = params;
+  return request({
+    url: `/${API_MODULE_NAME.DATA}/datasets/${datasetId}/files/content`,
+    method: 'get',
+    params,
   });
 }
 

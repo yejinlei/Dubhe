@@ -1,18 +1,18 @@
 /** Copyright 2020 Tianshu AI Platform. All Rights Reserved.
-*
-* Licensed under the Apache License, Version 2.0 (the "License");
-* you may not use this file except in compliance with the License.
-* You may obtain a copy of the License at
-*
-*     http://www.apache.org/licenses/LICENSE-2.0
-*
-* Unless required by applicable law or agreed to in writing, software
-* distributed under the License is distributed on an "AS IS" BASIS,
-* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-* See the License for the specific language governing permissions and
-* limitations under the License.
-* =============================================================
-*/
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ * =============================================================
+ */
 
 import http from '@/utils/VisualUtils/request';
 import port from '@/utils/VisualUtils/api';
@@ -58,11 +58,11 @@ const actions = {
     }
   },
   async featchAllData(context, param) {
-    http.useGet(port.category.hyperparm, param).then(res => {
+    http.useGet(port.category.hyperparm, param).then((res) => {
       if (+res.data.code !== 200) {
         context.commit('setAllData', 'null');
         const d = new Date();
-        context.commit('setErrorMessage', `${res.data.msg  }_${  d.getTime()}`);
+        context.commit('setErrorMessage', `${res.data.msg}_${d.getTime()}`);
         return;
       }
       context.commit('setAllData', res.data.data);
@@ -85,7 +85,7 @@ const mutations = {
       return;
     }
     const resultData = [];
-    const {hparamsInfo} = data;
+    const { hparamsInfo } = data;
     const size = hparamsInfo.length;
     const mainFilter = new Set();
     const axisFilter = new Set();
@@ -99,7 +99,7 @@ const mutations = {
       const tempData = hparamsInfo[i][tempKey[0]];
       const temp = {};
       tempData.hparams.forEach(function _nonName(d) {
-        if (Number(d.data) <= 0 || isNaN(Number(d.data)) || isBoolean(d.data) || (isString(d.data))) {
+        if (Number(d.data) <= 0 || isNaN(Number(d.data)) || isBoolean(d.data) || isString(d.data)) {
           axisFilter.add(d.name);
         }
         if (!isNumber(d.data)) {
@@ -112,7 +112,7 @@ const mutations = {
         }
       });
       for (let j = 0; j < metricsLength; j += 1) {
-        const mkey = `metric/${  data.metrics[j].tag}`;
+        const mkey = `metric/${data.metrics[j].tag}`;
         const metricsValue = data.metrics[j].value;
         if (Number(metricsValue[i]) <= 0) {
           axisFilter.add(mkey);
@@ -134,8 +134,8 @@ const mutations = {
       tmpDatas.push(tmpData);
     });
     state.allData = tmpDatas;
-    const axisParams = (Object.keys(tmpDatas[0])).filter(x => !axisFilter.has(x));
-    const mainParams = (Object.keys(tmpDatas[0])).filter(x => !mainFilter.has(x));
+    const axisParams = Object.keys(tmpDatas[0]).filter((x) => !axisFilter.has(x));
+    const mainParams = Object.keys(tmpDatas[0]).filter((x) => !mainFilter.has(x));
     state.axisParams = axisParams;
     state.mainParams = mainParams;
     const temp = {};
@@ -143,7 +143,7 @@ const mutations = {
       temp[d] = 'linear';
     });
     state.axisType = temp;
-    [state.selected]= mainParams;
+    [state.selected] = mainParams;
     state.globalSelectedDatas = tmpDatas;
   },
   setSelected(state, param) {

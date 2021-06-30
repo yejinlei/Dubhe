@@ -1,20 +1,20 @@
 /** Copyright 2020 Tianshu AI Platform. All Rights Reserved.
-*
-* Licensed under the Apache License, Version 2.0 (the "License");
-* you may not use this file except in compliance with the License.
-* You may obtain a copy of the License at
-*
-*     http://www.apache.org/licenses/LICENSE-2.0
-*
-* Unless required by applicable law or agreed to in writing, software
-* distributed under the License is distributed on an "AS IS" BASIS,
-* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-* See the License for the specific language governing permissions and
-* limitations under the License.
-* =============================================================
-*/
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ * =============================================================
+ */
 
-const Constant = {
+export const Constant = {
   // map
   tableSortMap: {
     ascending: 'asc',
@@ -25,7 +25,7 @@ const Constant = {
     asc: 'ascending',
     desc: 'descending',
   },
-  
+
   // 表单标题映射
   FORM_TYPE_MAP: {
     add: '创建',
@@ -34,36 +34,62 @@ const Constant = {
   },
 };
 
-export const MODEL_RESOURCE = {
-  CUSTOM: {
-    label: '我的模型',
-    value: 0,
-  },
-  PRESET: {
-    label: '预训练模型',
-    value: 1,
-  },
+// 算法来源枚举值
+export const ALGORITHM_RESOURCE_ENUM = {
+  CUSTOM: 1, // 我的算法
+  PRESET: 2, // 预置算法
 };
 
+// 模型分类枚举值
+export const MODEL_RESOURCE_ENUM = {
+  CUSTOM: 0, // 我的模型
+  PRESET: 1, // 预训练模型
+  ATLAS: 2, // 炼知模型
+};
+
+// 模型分类名称
 export const MODEL_RESOURCE_MAP = {
-  0: '我的模型',
-  1: '预训练模型',
+  [MODEL_RESOURCE_ENUM.CUSTOM]: '我的模型',
+  [MODEL_RESOURCE_ENUM.PRESET]: '预训练模型',
+  [MODEL_RESOURCE_ENUM.ATLAS]: '炼知模型',
 };
 
-export const RESOURCES_POOL_TYPE = {
-  CPU: {
-    label: 'CPU',
-    value: 0,
-  },
-  GPU: {
-    label: 'GPU',
-    value: 1,
-  },
+// 炼知模型打包状态枚举
+export const ALTAS_MODEL_PACKAGE_ENUM = {
+  UNPACKAGED: 0,
+  PACKAGED: 1,
 };
 
+// 资源类型枚举
+export const RESOURCES_POOL_TYPE_ENUM = {
+  CPU: 0,
+  GPU: 1,
+};
+
+// 资源业务场景枚举
+export const RESOURCES_MODULE_ENUM = {
+  NOTEBOOK: 1,
+  TRAIN: 2,
+  SERVING: 3,
+};
+
+// 资源类型名称
 export const RESOURCES_POOL_TYPE_MAP = {
-  0: 'CPU',
-  1: 'GPU',
+  [RESOURCES_POOL_TYPE_ENUM.CPU]: 'CPU',
+  [RESOURCES_POOL_TYPE_ENUM.GPU]: 'GPU',
 };
 
-export { Constant };
+// 默认进度条颜色
+export const defaultProcessColors = [
+  { color: '#909399', percentage: 40 },
+  { color: '#e6a23c', percentage: 80 },
+  { color: '#67c23a', percentage: 100 },
+];
+
+// 系统管理员ID
+export const ADMIN_ROLE_ID = 1;
+
+// 时间常量
+export const ONE_MINUTE = 1000 * 60;
+
+export const ONE_HOUR = ONE_MINUTE * 60;

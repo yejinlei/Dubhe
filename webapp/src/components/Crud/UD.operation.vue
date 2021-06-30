@@ -16,10 +16,22 @@
 
 <template>
   <span>
-    <el-button :loading="crud.status.cu === 2" :disabled="disabledEdit" type="text" @click="crud.toEdit(data)">
+    <el-button
+      v-if="showEdit"
+      :loading="crud.status.cu === 2"
+      :disabled="disabledEdit"
+      type="text"
+      @click="crud.toEdit(data)"
+    >
       {{ crud.props.optText.edit }}
     </el-button>
-    <el-button slot="reference" :disabled="disabledDle" type="text" @click="toDelete">
+    <el-button
+      v-if="showDelete"
+      slot="reference"
+      :disabled="disabledDle"
+      type="text"
+      @click="toDelete"
+    >
       {{ crud.props.optText.del }}
     </el-button>
   </span>
@@ -41,6 +53,14 @@ export default {
     disabledDle: {
       type: Boolean,
       default: false,
+    },
+    showEdit: {
+      type: Boolean,
+      default: true,
+    },
+    showDelete: {
+      type: Boolean,
+      default: true,
     },
     msg: {
       type: String,

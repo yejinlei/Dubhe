@@ -1,18 +1,18 @@
 /** Copyright 2020 Tianshu AI Platform. All Rights Reserved.
-*
-* Licensed under the Apache License, Version 2.0 (the "License");
-* you may not use this file except in compliance with the License.
-* You may obtain a copy of the License at
-*
-*     http://www.apache.org/licenses/LICENSE-2.0
-*
-* Unless required by applicable law or agreed to in writing, software
-* distributed under the License is distributed on an "AS IS" BASIS,
-* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-* See the License for the specific language governing permissions and
-* limitations under the License.
-* =============================================================
-*/
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ * =============================================================
+ */
 
 <template>
   <div :class="className" />
@@ -35,7 +35,7 @@ export default {
   },
   data() {
     return {
-      id: `dist${  this.itemp}`,
+      id: `dist${this.itemp}`,
     };
   },
   computed: {
@@ -53,8 +53,8 @@ export default {
   methods: {
     drawDistri() {
       const label = this.id;
-      const {data} = this;
-      const className = `.${  this.className}`;
+      const { data } = this;
+      const className = `.${this.className}`;
 
       const svgwidth = 290;
       const svgheight = 250;
@@ -62,7 +62,7 @@ export default {
       const div = d3
         .select(className)
         .append('div')
-        .attr('id', `${label  }div`);
+        .attr('id', `${label}div`);
       const svg = div
         .append('svg')
         .attr('width', '100%')
@@ -78,11 +78,11 @@ export default {
       const stepMax = data[0][data[0].length - 1][0];
       let valueMin = 10000;
       let valueMax = -10000;
-      for (let j = 0; j < data[0].length; j+=1) {
+      for (let j = 0; j < data[0].length; j += 1) {
         const pixel = data[0][j][1];
         if (pixel < valueMin) valueMin = pixel;
       }
-      for (let j = 0; j < data[dataLen - 1].length; j+=1) {
+      for (let j = 0; j < data[dataLen - 1].length; j += 1) {
         const pixel2 = data[dataLen - 1][j][1];
         if (pixel2 > valueMax) {
           valueMax = pixel2;
@@ -101,39 +101,39 @@ export default {
       svg
         .append('g')
         .attr('class', 'axis')
-        .attr(
-          'transform',
-          `translate(${  padding.left  },${  height + padding.top  })`,
-        )
+        .attr('transform', `translate(${padding.left},${height + padding.top})`)
         .call(
           d3
             .axisBottom()
             .scale(xscale)
             .tickSize(-height)
-            .tickFormat(d => {
+            .tickFormat((d) => {
               if (d > 10000) {
                 const numLen = d.toString().length - 1;
                 // eslint-disable-next-line no-restricted-properties
-                return `${d / Math.pow(10, numLen)  }e+${  numLen}`;
+                return `${d / Math.pow(10, numLen)}e+${numLen}`;
               }
               return d;
-            }),
+            })
         );
       svg
         .append('g')
         .attr('class', 'axis')
-        .attr(
-          'transform',
-          `translate(${  padding.left  },${  padding.top  })`,
-        )
+        .attr('transform', `translate(${padding.left},${padding.top})`)
         .call(
           d3
             .axisLeft()
             .scale(yscale)
-            .tickSize(-width),
+            .tickSize(-width)
         );
-      svg.append('g').append('text').text('step').attr('fill', 'grey')
-        .attr('x', svgwidth / 2).attr('y', svgheight - padding.bottom / 5).attr('font-size', '10px');
+      svg
+        .append('g')
+        .append('text')
+        .text('step')
+        .attr('fill', 'grey')
+        .attr('x', svgwidth / 2)
+        .attr('y', svgheight - padding.bottom / 5)
+        .attr('font-size', '10px');
       const pathg = svg.append('g');
       const areaFunction = d3
         .area()
@@ -148,15 +148,12 @@ export default {
         });
       const dopa = (1.0 / dataLen) * 2;
       const middle = Math.ceil(dataLen / 2);
-      for (let j = 1; j < dataLen; j+=1) {
+      for (let j = 1; j < dataLen; j += 1) {
         let opacity = dopa * j;
         if (j >= middle) opacity = dopa * (dataLen - j);
         pathg
           .append('path')
-          .attr(
-            'transform',
-            `translate(${  padding.left  },${  padding.top  })`,
-          )
+          .attr('transform', `translate(${padding.left},${padding.top})`)
           .attr('fill', this.runColor)
           .attr('stroke', this.runColor)
           .attr('stroke-width', '0.5')
@@ -174,10 +171,7 @@ export default {
         });
       pathg
         .append('path')
-        .attr(
-          'transform',
-          `translate(${  padding.left  },${  padding.top  })`,
-        )
+        .attr('transform', `translate(${padding.left},${padding.top})`)
         .attr('fill', 'none')
         .style('stroke', 'white')
         .style('stroke-width', '0.5')

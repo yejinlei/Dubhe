@@ -1,42 +1,27 @@
 /** Copyright 2020 Tianshu AI Platform. All Rights Reserved.
-*
-* Licensed under the Apache License, Version 2.0 (the "License");
-* you may not use this file except in compliance with the License.
-* You may obtain a copy of the License at
-*
-*     http://www.apache.org/licenses/LICENSE-2.0
-*
-* Unless required by applicable law or agreed to in writing, software
-* distributed under the License is distributed on an "AS IS" BASIS,
-* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-* See the License for the specific language governing permissions and
-* limitations under the License.
-* =============================================================
-*/
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ * =============================================================
+ */
 
 <template>
   <div :class="rootClass" class="img-gallery">
     <ul v-if="dataImagesLocal.length" :class="rootClass + '__wrapper'">
-      <li
-        v-for="(dataImage) in dataImagesLocal"
-        :key="dataImage.id"
-        :class="rootClass + '__item'"
-      >
+      <li v-for="dataImage in dataImagesLocal" :key="dataImage.id" :class="rootClass + '__item'">
+        <div v-if="!isMultiple" :class="classThumbnail(singleSelected.id, dataImage.id)">
+          <img :src="formatUrl(dataImage.url)" :alt="dataImage.alt" :class="rootClass + '__img'" />
 
-        <div
-          v-if="!isMultiple"
-          :class="classThumbnail(singleSelected.id, dataImage.id)"
-        >
-          <img
-            :src="formatUrl(dataImage.url)"
-            :alt="dataImage.alt"
-            :class="rootClass + '__img'"
-          >
-
-          <label
-            v-if="useLabel"
-            :class="rootClass + '__lbl'"
-          >
+          <label v-if="useLabel" :class="rootClass + '__lbl'">
             {{ dataImage.alt }}
           </label>
         </div>
@@ -52,17 +37,25 @@
             :alt="dataImage.alt"
             :class="rootClass + '__img'"
             @click="onClickImg(dataImage)"
+          />
+          <el-tag
+            v-if="imageTagVisible && !isStatus(dataImage, 'UNANNOTATED')"
+            :hit="false"
+            class="image-tag"
+            :color="imageLabelTag[dataImage.id]['color']"
+            >{{ imageLabelTag[dataImage.id]['text'] }}</el-tag
           >
-          <el-tag v-if="imageTagVisible && statusCodeMap[dataImage.status] !== 'UNANNOTATED'" :hit="false" class="image-tag" :color="imageLabelTag[dataImage.id]['color']">{{ imageLabelTag[dataImage.id]['text'] }}</el-tag>
-          <el-checkbox v-show="showOption(dataImage.id)" :value="selectedMap[dataImage.id]" class="image-checkbox" @change="checked => handleCheck(dataImage, checked)" />
+          <el-checkbox
+            v-show="showOption(dataImage.id)"
+            :value="selectedMap[dataImage.id]"
+            class="image-checkbox"
+            @change="(checked) => handleCheck(dataImage, checked)"
+          />
           <div v-show="showOption(dataImage.id)" :title="dataImage.name" class="img-name-row">
             <div class="img-name">{{ basename(dataImage.url) }}</div>
           </div>
 
-          <label
-            v-if="useLabel"
-            :class="rootClass + '__lbl'"
-          >
+          <label v-if="useLabel" :class="rootClass + '__lbl'">
             {{ dataImage.alt }}
           </label>
         </div>
@@ -74,7 +67,7 @@
 <script>
 import Vue from 'vue';
 import { bucketHost } from '@/utils/minIO';
-import { fileCodeMap, findKey, statusCodeMap } from '@/views/dataset/util';
+import { fileCodeMap, findKey, isStatus } from '@/views/dataset/util';
 
 // eslint-disable-next-line import/no-extraneous-dependencies
 const path = require('path');
@@ -119,13 +112,13 @@ export default {
       multipleSelected: [],
       imageTagVisible: true,
       imgStatusMap: {
-        'UNRECOGNIZED': {'text': '未识别', 'color': '#FFFFFF'},
-        'UNANNOTATED': {'text': '未标注', 'color': '#FFFFFF'},
-        'AUTO_ANNOTATED': { 'text': '自动', 'color': '#468CFF' },
-        'MANUAL_ANNOTATED': { 'text': '人工', 'color': '#FF9943' },
+        UNRECOGNIZED: { text: '未识别', color: '#FFFFFF' },
+        UNANNOTATED: { text: '未标注', color: '#FFFFFF' },
+        AUTO_ANNOTATED: { text: '自动', color: '#468CFF' },
+        MANUAL_ANNOTATED: { text: '人工', color: '#FF9943' },
       },
       hoverImg: null,
-      statusCodeMap,
+      isStatus,
     };
   },
   computed: {
@@ -142,21 +135,28 @@ export default {
     },
     imageLabelTag() {
       const labelTag = {};
-      this.dataImages.forEach((item) => {
-        const statusInfo = this.imgStatusMap[findKey(item.status, fileCodeMap)];
-        const annotation = JSON.parse(item.annotation);
-        let categoryName = '未识别';
-        let tagColor = '#db2a2a';
-        if (statusInfo && (annotation instanceof Array) && annotation.length > 0) {
-          const categoryId = annotation[0].category_id;
-          categoryName = this.categoryId2Name[categoryId];
-          tagColor = statusInfo.color;
-        }
-        labelTag[item.id] = {
-          'text': `${statusInfo.text} | ${categoryName}`,
-          'color': tagColor,
-        };
-      });
+      try {
+        this.dataImages.forEach((item) => {
+          const statusInfo = this.imgStatusMap[findKey(item.status, fileCodeMap)];
+          const annotation = JSON.parse(item.annotation);
+          let categoryName = '未识别';
+          let tagColor = '#db2a2a';
+          if (statusInfo && Array.isArray(annotation) && annotation.length > 0) {
+            annotation.sort((a, b) => b.score - a.score); // 标注按照score降序排序
+            const categoryId = annotation[0].category_id; // 取score最高的标注标签予以显示
+            categoryName = this.categoryId2Name[categoryId] || '';
+            tagColor = statusInfo.color;
+          }
+          const divider = categoryName && `| ${categoryName}`;
+          labelTag[item.id] = {
+            text: `${statusInfo.text} ${divider}`,
+            color: tagColor,
+          };
+        });
+      } catch (err) {
+        console.error(err);
+        throw err;
+      }
       return labelTag;
     },
   },
@@ -187,7 +187,7 @@ export default {
       return `${baseMultipleClass}`;
     },
     onSelectImage(objectImage) {
-      this.singleSelected = { ...this.singleSelected, ...objectImage};
+      this.singleSelected = { ...this.singleSelected, ...objectImage };
       this.$emit('onselectimage', objectImage);
     },
     onClickImg(objectImage) {
@@ -211,7 +211,7 @@ export default {
       return this.hoverImg?.id === id;
     },
     hasSelected(id) {
-      return this.multipleSelected.find(item => id === item);
+      return this.multipleSelected.find((item) => id === item);
     },
     showOption(id) {
       return this.isHover(id) || this.hasSelected(id);
@@ -234,7 +234,7 @@ export default {
       this.$emit('onselectmultipleimage', this.multipleSelected);
     },
     selectAll() {
-      this.multipleSelected = this.dataImages.map(d => d.id);
+      this.multipleSelected = this.dataImages.map((d) => d.id);
       for (const key in this.selectedMap) {
         this.selectedMap[key] = true;
       }
@@ -257,7 +257,7 @@ export default {
     setInitialSelection() {
       if (this.selectImgsId) {
         if (!this.isMultiple && this.selectImgsId.length === 1) {
-          this.singleSelected = { ...this.selectImgsId[0]};
+          this.singleSelected = { ...this.selectImgsId[0] };
         } else {
           this.multipleSelected = [].concat(this.selectImgsId);
         }
@@ -271,8 +271,8 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-@import "~@/assets/styles/variables.scss";
-@import "~@/assets/styles/mixin.scss";
+@import '~@/assets/styles/variables.scss';
+@import '~@/assets/styles/mixin.scss';
 
 .img-gallery {
   min-height: 200px;

@@ -1,28 +1,26 @@
 /** Copyright 2020 Tianshu AI Platform. All Rights Reserved.
-*
-* Licensed under the Apache License, Version 2.0 (the "License");
-* you may not use this file except in compliance with the License.
-* You may obtain a copy of the License at
-*
-*     http://www.apache.org/licenses/LICENSE-2.0
-*
-* Unless required by applicable law or agreed to in writing, software
-* distributed under the License is distributed on an "AS IS" BASIS,
-* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-* See the License for the specific language governing permissions and
-* limitations under the License.
-* =============================================================
-*/
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ * =============================================================
+ */
 
 <template>
   <div class="app-container">
     <!--任务版本新增-->
-    <job-form
-      ref="jobForm"
-      :type="formType"
-      @getForm="getForm"
-    />
-    <el-button type="primary" :loading="loading" style="margin-left: 120px;" @click="save">开始训练</el-button>
+    <job-form ref="jobForm" :type="formType" @getForm="getForm" />
+    <el-button type="primary" :loading="loading" style="margin-left: 120px;" @click="save"
+      >开始训练</el-button
+    >
     <el-button @click="reset">清空</el-button>
   </div>
 </template>
@@ -43,13 +41,13 @@ export default {
   created() {
     const from = this.$route.params.from || 'job';
     if (from === 'algorithm') {
-      const {params} = this.$route.params;
+      const { params } = this.$route.params;
       this.formType = 'algoAdd';
       this.$nextTick(() => {
         this.$refs.jobForm.initForm(params);
       });
     } else if (from === 'param') {
-      const {paramsInfo} = this.$route.params;
+      const { paramsInfo } = this.$route.params;
       paramsInfo.trainName = paramsInfo.paramName;
       this.formType = 'paramsAdd';
       this.$nextTick(() => {
@@ -69,7 +67,7 @@ export default {
     },
     // 任务新增
     async getForm(form) {
-      const params = { ...form};
+      const params = { ...form };
       delete params.algorithmSource;
       this.loading = true;
       const res = await addJob(params).finally(() => {

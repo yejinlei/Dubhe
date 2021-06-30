@@ -1,18 +1,18 @@
 /** Copyright 2020 Tianshu AI Platform. All Rights Reserved.
-*
-* Licensed under the Apache License, Version 2.0 (the "License");
-* you may not use this file except in compliance with the License.
-* You may obtain a copy of the License at
-*
-*     http://www.apache.org/licenses/LICENSE-2.0
-*
-* Unless required by applicable law or agreed to in writing, software
-* distributed under the License is distributed on an "AS IS" BASIS,
-* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-* See the License for the specific language governing permissions and
-* limitations under the License.
-* =============================================================
-*/
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ * =============================================================
+ */
 
 import http from '@/utils/VisualUtils/request';
 import port from '@/utils/VisualUtils/api';
@@ -78,11 +78,11 @@ const actions = {
   async getSelfCategoryInfo(context, param) {
     const initDetailData = {};
     const initshowrun = {};
-    for (let i = 0; i < param[1].length; i+=1) {
-      Object.keys(param[1][i]).forEach(value=> {
-        initDetailData[value]= [];
+    for (let i = 0; i < param[1].length; i += 1) {
+      Object.keys(param[1][i]).forEach((value) => {
+        initDetailData[value] = [];
         if (!(value in initshowrun)) {
-          initshowrun[value]= {};
+          initshowrun[value] = {};
         }
         initshowrun[value][param[0][i]] = true;
       });
@@ -96,8 +96,8 @@ const actions = {
   },
   async getData(context, param) {
     if (context.state.detailData[param[0]].length === 0) {
-      for (let j = 0; j < param[1].length; j+=1) {
-        for (let i = 0; i < context.state.categoryInfo[0].length; i+=1) {
+      for (let j = 0; j < param[1].length; j += 1) {
+        for (let i = 0; i < context.state.categoryInfo[0].length; i += 1) {
           if (Object.keys(context.state.categoryInfo[1][i]).indexOf(param[0]) > -1) {
             if (context.state.categoryInfo[1][i][param[0]].indexOf(param[1][j]) > -1) {
               const parameter = {
@@ -105,12 +105,16 @@ const actions = {
                 tag: param[1][j],
               };
               // eslint-disable-next-line no-await-in-loop
-              await http.useGet(port.category.scalar, parameter).then(res => { // port.category.scalar 'scalar' 换成你需要的接口
+              await http.useGet(port.category.scalar, parameter).then((res) => {
+                // port.category.scalar 'scalar' 换成你需要的接口
                 if (+res.data.code !== 200) {
-                  context.commit('setErrorMessage', `${res.data.msg  }_${  new Date().getTime()}`);
+                  context.commit('setErrorMessage', `${res.data.msg}_${new Date().getTime()}`);
                   return;
                 }
-                context.commit('setDetailData', [param[0], { 'run': context.state.categoryInfo[0][i], 'value': res.data.data }]);
+                context.commit('setDetailData', [
+                  param[0],
+                  { run: context.state.categoryInfo[0][i], value: res.data.data },
+                ]);
               });
             }
           }
@@ -212,7 +216,7 @@ const mutations = {
   },
   setdatainit: (state) => {
     state.checkeditem = [];
-    for (let i = 0; i < state.checkedorder.length; i+=1) {
+    for (let i = 0; i < state.checkedorder.length; i += 1) {
       state.downLoadArray.pop();
     }
     state.checkedorder = [];

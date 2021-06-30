@@ -44,6 +44,15 @@
   }
 }
 
+.el-button.danger {
+  color: $red;
+
+  &:hover,
+  &:active {
+    color: $red;
+  }
+}
+
 // el-radio border
 .el-radio.is-bordered {
   &.is-checked,

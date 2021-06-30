@@ -1,21 +1,21 @@
 /** Copyright 2020 Tianshu AI Platform. All Rights Reserved.
-*
-* Licensed under the Apache License, Version 2.0 (the "License");
-* you may not use this file except in compliance with the License.
-* You may obtain a copy of the License at
-*
-*     http://www.apache.org/licenses/LICENSE-2.0
-*
-* Unless required by applicable law or agreed to in writing, software
-* distributed under the License is distributed on an "AS IS" BASIS,
-* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-* See the License for the specific language governing permissions and
-* limitations under the License.
-* =============================================================
-*/
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ * =============================================================
+ */
 
 import { bucketHost, bucketName } from '@/utils/minIO';
-import { isValidText, isValidVideo } from '@/utils/validate';
+import { isValidVideo } from '@/utils/validate';
 import { generateUuid, performanceTiming } from '@/utils';
 
 const pMap = require('p-map');
@@ -27,21 +27,16 @@ const minIOPrefix = `${process.env.VUE_APP_MINIO_API}/upload`;
 const path = require('path');
 
 // 是否为视频文件
-const isValidVideoFile = file => {
+const isValidVideoFile = (file) => {
   const extname = path.extname(file.name);
   return isValidVideo(extname);
-};
-
-const isValidTextFile = file => {
-  const extname = path.extname(file.name);
-  return isValidText(extname);
 };
 
 // 给图片名称添加时间戳
 export const hashName = (name) => {
   // 后缀名 .png
   const extname = path.extname(name);
-  // 返回文件名称 test
+  // 返回文件名称
   const basename = path.basename(name, extname);
   // 如果是视频文件，直接返回随机字符串名称（算法解析中文会有问题）
   const isVideo = isValidVideo(extname);
@@ -60,7 +55,7 @@ export const putObject = (uploadUrl, file, options = {}) => {
     const xhr = new XMLHttpRequest();
     xhr.open('PUT', uploadUrl, true);
     xhr.withCredentials = false;
-    xhr.onload = e => {
+    xhr.onload = (e) => {
       if (xhr.readyState === 4 && xhr.status === 200) {
         resolve({
           err: null,
@@ -79,29 +74,39 @@ export const putObject = (uploadUrl, file, options = {}) => {
       };
     }
     // todo: 视频进度loaded 解析会回滚，暂时不清楚原因
-    xhr.upload.addEventListener('progress', event => {
-      if (event.lengthComputable) {
-        loaded = event.loaded;
-        total = event.total;
-      } else {
-        // eslint-disable-next-line no-multi-assign
-        loaded = total = event.total;
-      }
-      // 只解析视频进度
-      if (typeof callback === 'function' && isValidVideoFile(file)) {
-        callback(loaded, total);
-      }
-    }, false);
+    xhr.upload.addEventListener(
+      'progress',
+      (event) => {
+        if (event.lengthComputable) {
+          loaded = event.loaded;
+          total = event.total;
+        } else {
+          // eslint-disable-next-line no-multi-assign
+          loaded = total = event.total;
+        }
+        // 只解析视频进度
+        if (typeof callback === 'function' && isValidVideoFile(file)) {
+          callback(loaded, total);
+        }
+      },
+      false
+    );
     xhr.send(file);
   });
 };
 
 // 默认通过 minIO 上传
-export const minIOUpload = async({ objectPath, fileList, transformFile }, callback, errCallback) => {
+export const minIOUpload = async (
+  { objectPath, fileList, transformFile },
+  callback,
+  errCallback
+) => {
   // add 进度条
   let resolved = 0;
+  // 记录已上传的文件列表
+  const resolveFiles = [];
 
-  const mapper = async d => {
+  const mapper = async (d) => {
     // 生成 stream 流
     // const blob = fileReaderStream(d.raw)
 
@@ -116,17 +121,15 @@ export const minIOUpload = async({ objectPath, fileList, transformFile }, callba
     // const result = await window.minioClient.putObject(`${objectPath}/${d.name}`, blob, {
     //   'Content-Type': d.raw.type
     // })
-    resolved+=1;
+    resolved += 1;
+    resolveFiles.push(fileRes);
     // 进度反馈
     if (typeof callback === 'function' && fileList.length >= 1) {
-      callback(resolved, fileList.length);
+      callback(resolved, fileList, resolveFiles);
     }
 
-    // 视频不做转换
+    // 视频文件不做转换
     if (isValidVideoFile(d)) return fileRes;
-
-    // 文本也不做转换
-    if (isValidTextFile(d)) return fileRes;
 
     if (typeof transformFile === 'function') {
       const transformed = await transformFile(fileRes, d);
@@ -135,7 +138,7 @@ export const minIOUpload = async({ objectPath, fileList, transformFile }, callba
     return fileRes;
   };
 
-  const result = await pMap(fileList, mapper, {concurrency: 10});
+  const result = await pMap(fileList, mapper, { concurrency: 10 });
   return result;
 };
 
@@ -146,27 +149,32 @@ export const renameFile = (name, options = {}) => {
 };
 
 export const getFileOutputPath = (rawFiles, { objectPath }) => {
-  return rawFiles.map(d => `${bucketHost}/${bucketName}/${objectPath}/${d.name}`);
+  return rawFiles.map((d) => `${bucketHost}/${bucketName}/${objectPath}/${d.name}`);
 };
 
 // 对文件进行自定义转换
 export const transformFile = (result, file) => {
   return new Promise((resolve) => {
     const reader = new FileReader();
-    reader.addEventListener("load", () => {
-      const img = new Image();
-      img.onload = () => resolve({
-        ...result,
-        data: {
-          ...result.data,
-          meta: {
-            width: img.width,
-            height: img.height,
-          },
-        },
-      });
-      img.src = reader.result;
-    }, false);
+    reader.addEventListener(
+      'load',
+      () => {
+        const img = new Image();
+        img.onload = () =>
+          resolve({
+            ...result,
+            data: {
+              ...result.data,
+              meta: {
+                width: img.width,
+                height: img.height,
+              },
+            },
+          });
+        img.src = reader.result;
+      },
+      false
+    );
 
     reader.readAsDataURL(file.raw);
   });

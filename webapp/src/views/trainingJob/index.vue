@@ -1,18 +1,18 @@
 /** Copyright 2020 Tianshu AI Platform. All Rights Reserved.
-*
-* Licensed under the Apache License, Version 2.0 (the "License");
-* you may not use this file except in compliance with the License.
-* You may obtain a copy of the License at
-*
-*     http://www.apache.org/licenses/LICENSE-2.0
-*
-* Unless required by applicable law or agreed to in writing, software
-* distributed under the License is distributed on an "AS IS" BASIS,
-* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-* See the License for the specific language governing permissions and
-* limitations under the License.
-* =============================================================
-*/
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ * =============================================================
+ */
 
 <template>
   <div class="app-container">
@@ -28,7 +28,8 @@
             icon="el-icon-plus"
             round
             @click="toAdd"
-          >创建训练任务</el-button>
+            >创建训练任务</el-button
+          >
         </span>
         <span class="cd-opts-right">
           <span slot="right">
@@ -58,7 +59,9 @@
             </template>
             <span>
               <el-button id="resetQuery" class="filter-item" @click="resetQuery">重置</el-button>
-              <el-button id="toQuery" class="filter-item" type="primary" @click="toQuery">搜索</el-button>
+              <el-button id="toQuery" class="filter-item" type="primary" @click="toQuery"
+                >搜索</el-button
+              >
             </span>
           </span>
         </span>
@@ -76,16 +79,15 @@
 </template>
 
 <script>
-import jobList from "./jobList";
-import jobParam from "./jobParam";
+import jobList from './jobList';
+import jobParam from './jobParam';
 
 export default {
-  name: "Job",
-  dicts: ["job_status"],
+  name: 'Job',
   components: { jobList, jobParam },
   data() {
     return {
-      active: "0",
+      active: '0',
       id: null,
       currentPage: 1,
       jobQuery: {
@@ -99,13 +101,13 @@ export default {
   },
   computed: {
     isAllTrain() {
-      return this.active === "0";
+      return this.active === '0';
     },
     isRunningTrain() {
-      return this.active === "1";
+      return this.active === '1';
     },
     isParams() {
-      return this.active === "2";
+      return this.active === '2';
     },
   },
   mounted() {
@@ -115,8 +117,8 @@ export default {
     });
   },
   beforeRouteEnter(to, from, next) {
-    if (from.name === "JobDetail" && from.params.currentPage) {
-      next(vm => {
+    if (from.name === 'JobDetail' && from.params.currentPage) {
+      next((vm) => {
         vm.currentPage = from.params.currentPage;
       });
       return;
@@ -126,9 +128,8 @@ export default {
   methods: {
     // tab change
     handleClick() {
-      this.jobQuery.trainStatus = this.isRunningTrain ? 1 : undefined;
       this.currentPage = 1;
-      this.toQuery();
+      this.resetQuery();
     },
     // ACTION
     toQuery() {
@@ -144,7 +145,7 @@ export default {
       }
     },
     toAdd() {
-      this.$router.push({ path: "/training/jobadd" });
+      this.$router.push({ path: '/training/jobadd' });
     },
     resetQuery() {
       if (this.isParams) {

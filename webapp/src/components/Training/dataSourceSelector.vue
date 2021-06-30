@@ -1,24 +1,25 @@
 /** Copyright 2020 Tianshu AI Platform. All Rights Reserved.
-*
-* Licensed under the Apache License, Version 2.0 (the "License");
-* you may not use this file except in compliance with the License.
-* You may obtain a copy of the License at
-*
-*     http://www.apache.org/licenses/LICENSE-2.0
-*
-* Unless required by applicable law or agreed to in writing, software
-* distributed under the License is distributed on an "AS IS" BASIS,
-* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-* See the License for the specific language governing permissions and
-* limitations under the License.
-* =============================================================
-*/
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ * =============================================================
+ */
 
 <template>
   <div>
     <el-select
       v-model="algoUsage"
       placeholder="请选择数据集用途"
+      filterable
       @change="onAlgorithmUsageChange"
     >
       <el-option :value="null" label="全部" />
@@ -36,17 +37,13 @@
       value-key="id"
       @change="onDataSourceChange"
     >
-      <el-option
-        v-for="item in datasetIdList"
-        :key="item.id"
-        :value="item"
-        :label="item.name"
-      />
+      <el-option v-for="item in datasetIdList" :key="item.id" :value="item" :label="item.name" />
     </el-select>
     <el-select
       v-model="dataSourceVersion"
       placeholder="请选择您挂载的数据集版本"
       value-key="versionUrl"
+      filterable
       @change="onDataSourceVersionChange"
     >
       <el-option
@@ -59,12 +56,15 @@
     <el-tooltip effect="dark" :content="urlTooltip" placement="top">
       <i class="el-icon-warning-outline primary f18 v-text-top" />
     </el-tooltip>
-    <el-tooltip effect="dark" :disabled="!dataSourceVersion" :content="ofRecordTooltip" placement="top">
-      <el-checkbox
-        v-model="useOfRecord"
-        :disabled="!ofRecordDisabled"
-        @change="onUseOfRecordChange"
-      >使用 OfRecord</el-checkbox>
+    <el-tooltip
+      effect="dark"
+      :disabled="!dataSourceVersion"
+      :content="ofRecordTooltip"
+      placement="top"
+    >
+      <el-checkbox v-model="useOfRecord" :disabled="!ofRecordDisabled" @change="onUseOfRecordChange"
+        >使用 OFRecord</el-checkbox
+      >
     </el-tooltip>
   </div>
 </template>
@@ -115,7 +115,7 @@ export default {
   computed: {
     ofRecordTooltip() {
       const content = this.dataSourceVersion?.versionOfRecordUrl
-        ? '选中 OfRecord 将使用二进制数据集文件'
+        ? '选中 OFRecord 将使用二进制数据集文件'
         : '二进制数据集文件不可用或正在生成中';
       return content;
     },
@@ -143,7 +143,7 @@ export default {
   methods: {
     // handlers
     onAlgorithmUsageChange(annotateType, datasetInit = false) {
-      // 算法用途修改之后，重新获取数据集列表，清空数据集结果
+      // 模型类别修改之后，重新获取数据集列表，清空数据集结果
       this.getDataSetList(annotateType, datasetInit);
     },
     async onDataSourceChange(dataSource) {
@@ -178,7 +178,7 @@ export default {
         current: 1,
         size: 1000,
       };
-      getAlgorithmUsages(params).then(res => {
+      getAlgorithmUsages(params).then((res) => {
         this.algorithmUsageList = res.result;
       });
     },
@@ -199,7 +199,9 @@ export default {
         this.dataSource = this.dataSourceVersion = this.result.dataSourceName = this.result.dataSourcePath = null;
       } else {
         // 根据传入的数据集信息进行初始化
-        this.dataSource = this.datasetIdList.find(dataset => dataset.name === this.dataSourceName.split(':')[0]);
+        this.dataSource = this.datasetIdList.find(
+          (dataset) => dataset.name === this.dataSourceName.split(':')[0]
+        );
         if (!this.dataSource) {
           // 无法在数据集列表中找到同名的数据集
           this.$message.warning('原有数据集不存在，请重新选择');
@@ -208,10 +210,14 @@ export default {
         }
         this.datasetVersionList = await getDatasetVersions(this.dataSource.id);
         // 首先尝试使用 versionUrl 进行数据集路径匹配
-        this.dataSourceVersion = this.datasetVersionList.find(dataset => dataset.versionUrl === this.dataSourcePath);
+        this.dataSourceVersion = this.datasetVersionList.find(
+          (dataset) => dataset.versionUrl === this.dataSourcePath
+        );
         if (!this.dataSourceVersion) {
           // 无法匹配上时使用 versionOfRecordUrl 进行数据集路径匹配
-          this.dataSourceVersion = this.datasetVersionList.find(dataset => dataset.versionOfRecordUrl === this.dataSourcePath);
+          this.dataSourceVersion = this.datasetVersionList.find(
+            (dataset) => dataset.versionOfRecordUrl === this.dataSourcePath
+          );
           this.dataSourceVersion && (this.useOfRecord = true);
         }
         // 如果二者都不能匹配上，说明原有的数据集版本目前不存在
@@ -223,8 +229,11 @@ export default {
     },
     // 外部调用接口方法
     updateAlgorithmUsage(usage, init = false) {
-      this.algoUsage = usage || null;
-      this.onAlgorithmUsageChange(usage, init);
+      // 如果新的算法用途与原有的一致，则不做任何修改
+      if (init || this.algoUsage !== usage) {
+        this.algoUsage = usage || null;
+        this.onAlgorithmUsageChange(usage, init);
+      }
     },
     reset() {
       Object.assign(this.result, {

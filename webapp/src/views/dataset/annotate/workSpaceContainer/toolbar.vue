@@ -1,27 +1,31 @@
 /** Copyright 2020 Tianshu AI Platform. All Rights Reserved.
-*
-* Licensed under the Apache License, Version 2.0 (the "License");
-* you may not use this file except in compliance with the License.
-* You may obtain a copy of the License at
-*
-*     http://www.apache.org/licenses/LICENSE-2.0
-*
-* Unless required by applicable law or agreed to in writing, software
-* distributed under the License is distributed on an "AS IS" BASIS,
-* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-* See the License for the specific language governing permissions and
-* limitations under the License.
-* =============================================================
-*/
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ * =============================================================
+ */
 
 <template>
   <div class="workspace-toolbar flex flex-between">
     <div class="toolbar-left">
-      <el-tooltip content="开始标注" placement="top" :open-delay="400">
+      <el-tooltip
+        :content="isSegmentation ? '自定义绘制' : '绘制选框'"
+        placement="top"
+        :open-delay="400"
+      >
         <IconFont
           v-click-outside="onClickOutside"
           :class="api.active === 'selection' ? 'active' : ''"
-          type="SELECTION"
+          :type="isSegmentation ? 'draw' : 'SELECTION'"
           @click="onSelection"
         />
       </el-tooltip>
@@ -67,12 +71,17 @@
                 <div>确认提交：Enter</div>
                 <div>手动标注: N</div>
                 <div>删除标注：Backspace</div>
+                <div v-if="isSegmentation">完成绘制：F</div>
+                <div v-if="isSegmentation">放弃绘制：ESC</div>
+                <div v-if="isSegmentation">连续绘制：SHIFT</div>
               </div>
             </div>
           </div>
-          <IconFont type="help" />
+          <div>
+            <IconFont type="help" />
+            <span>帮助</span>
+          </div>
         </el-tooltip>
-        <span>帮助</span>
       </div>
     </div>
   </div>
@@ -97,6 +106,7 @@ export default {
     clearSelection: Function,
     confirm: Function,
     setApi: Function,
+    isSegmentation: Boolean,
   },
   setup(props, ctx) {
     const { clearSelection, zoomIn, zoomOut, zoomReset, setApi } = props;
@@ -144,7 +154,7 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-@import "~@/assets/styles/variables.scss";
+@import '~@/assets/styles/variables.scss';
 
 .workspace-toolbar {
   position: relative;

@@ -1,18 +1,18 @@
 /** Copyright 2020 Tianshu AI Platform. All Rights Reserved.
-*
-* Licensed under the Apache License, Version 2.0 (the "License");
-* you may not use this file except in compliance with the License.
-* You may obtain a copy of the License at
-*
-*     http://www.apache.org/licenses/LICENSE-2.0
-*
-* Unless required by applicable law or agreed to in writing, software
-* distributed under the License is distributed on an "AS IS" BASIS,
-* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-* See the License for the specific language governing permissions and
-* limitations under the License.
-* =============================================================
-*/
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ * =============================================================
+ */
 
 <template>
   <div class="ts-drawer">
@@ -26,12 +26,13 @@
         <div class="label">运行时长</div>
         <div class="text">{{ item.runtime }}</div>
       </el-col>
-      <el-col v-if="item.trainStatus===1" :span="12">
+      <el-col :span="12">
+        <div class="label">运行日志</div>
+        <el-button @click="onCheckLog">点击查看</el-button>
+      </el-col>
+      <el-col v-if="item.trainStatus === 1" :span="12">
         <div class="label">监控信息</div>
-        <el-button
-          size="mini"
-          @click="getGarafana"
-        >进入 Grafana</el-button>
+        <el-button size="mini" @click="checkMetrics">查看监控信息</el-button>
       </el-col>
     </el-row>
     <el-row class="row">
@@ -44,75 +45,55 @@
         <div class="text">剩余 {{ item.delayDeleteCountDown | minute2Time }}</div>
       </el-col>
     </el-row>
-    <!--日志信息-->
-    <div v-if="prepared" id="log-wrapper">
-      <div class="title">
-        运行日志
-        <el-button
-          class="fr log-download-btn"
-          :disabled="!podList.length"
-          :loading="logDownloading"
-          @click="downloadTrainLog"
-        >下载{{ isDistributed ? '全部' : '' }}运行日志</el-button>
-      </div>
-      <pod-log-container
-        v-if="!isDistributed && item.trainStatus !== 7 && logPodName"
-        ref="logContainer"
-        :pod-name="logPodName.podName"
-        class="log single-log"
+    <el-dialog
+      :visible.sync="metricsVisible"
+      width="800px"
+      title="监控信息"
+      append-to-body
+      top="5vh"
+      custom-class="metrics-dialog"
+      :close-on-click-modal="false"
+      @opened="onMetricsDialogOpened"
+      @close="onMetricsDialogClose"
+    >
+      <label class="pr-20">选择节点</label>
+      <el-select
+        v-model="selectedPod"
+        placeholder="请选择节点"
+        class="w-300 mb-20"
+        filterable
+        multiple
+        collapse-tags
+        @change="onSelectedPodChange"
+      >
+        <el-option
+          v-for="pod in podList"
+          :key="pod.podName"
+          :value="pod.podName"
+          :label="pod.displayName"
+        />
+      </el-select>
+      <PodMonitor
+        ref="podMonitor"
+        :namespace="item.k8sNamespace"
+        :resource-name="item.jobName"
+        :pod-name="selectedPod"
+        :display-gpu="item.resourcesPoolType === RESOURCES_POOL_TYPE_ENUM.GPU"
       />
-      <div v-else-if="podList.length" id="distributed-log-wrapper">
-        <el-tabs
-          v-model="activeLogTab"
-          class="log-tabs"
-          @tab-click="onLogTabClick"
-        >
-          <el-tab-pane
-            v-for="pod in podList"
-            :key="pod.podName"
-            :label="pod.displayName"
-            :name="pod.podName"
-          />
-        </el-tabs>
-        <el-button class="fr log-download-btn mb-20" @click="() => doDownloadPodLog()">下载节点运行日志</el-button>
-        <keep-alive>
-          <pod-log-container
-            :key="activePod.podName"
-            ref="podLogContainer"
-            :pod-name="activePod.podName"
-            class="log distributed-log"
-          />
-        </keep-alive>
-      </div>
-      <div v-else class="log">
-        <p class="log-error-msg">{{ logErrorMsg }}</p>
-      </div>
-    </div>
+    </el-dialog>
   </div>
 </template>
 
 <script>
-import { downloadFile } from '@/utils';
-import {
-  getTrainLog,
-  getJobDetail,
-  getGarafanaInfo,
-  getPods,
-} from '@/api/trainingJob/job';
-import {
-  getPodLog,
-  downloadPodLog,
-  batchDownloadPodLog,
-  countPodLogs,
-} from '@/api/system/pod';
-import podLogContainer from '@/components/LogContainer/podLogContainer';
-import JobDetail from './jobDetail';
+import { RESOURCES_POOL_TYPE_ENUM } from '@/utils';
+import { getJobDetail, getPods } from '@/api/trainingJob/job';
+import PodMonitor from '@/components/PodMonitor';
 
-const LOG_DOWNLOAD_LINES_THRESHOLD = 100000; // 暂定阈值 100K 条
+import JobDetail from './jobDetail';
 
 export default {
   name: 'JobDrawer',
-  components: { JobDetail, podLogContainer },
+  components: { JobDetail, PodMonitor },
   filters: {
     minute2Time(totalMinutes) {
       let remainMinutes = totalMinutes || 0;
@@ -129,101 +110,16 @@ export default {
   },
   data() {
     return {
-      item: {},
-      prepared: false,
+      RESOURCES_POOL_TYPE_ENUM,
 
+      item: {},
+      podList: [], // pod 列表
+      selectedPod: [],
       keepCountDown: false,
-      logDownloading: false,
-      podList: [],
-      activeLogTab: null,
-      podLogLoadTags: {}, // 用于记录分布式训练中，节点的运行日志是否已加载过
+      metricsVisible: false,
     };
   },
-  computed: {
-    isDistributed() {
-      return this.item.trainType === 1;
-    },
-    logPodName() {
-      return this.podList[0];
-    },
-    activePod() {
-      return this.podList.find(pod => pod.podName === this.activeLogTab) || {};
-    },
-    podLogOption() {
-      return { podName: this.activePod.podName };
-    },
-    logErrorMsg() {
-      if (this.item.trainStatus === 7) {
-        return this.item.trainMsg;
-      }
-      return '暂无节点值';
-    },
-  },
   methods: {
-    getTrainLog,
-    getPodLog,
-    async downloadTrainLog() {
-      this.logDownloading = true;
-      const logLines = await countPodLogs(this.podList);
-      if (!this.isDistributed) {
-        const pod = this.podList[0];
-        await this.doDownloadPodLog(pod, logLines[pod.podName], true);
-        this.logDownloading = false;
-      } else {
-        let count = 0;
-        this.podList.forEach(pod => {
-          count += logLines[pod.podName];
-        });
-        // 日志总行数小于阈值，则打包下载，否则每节点单独下载
-        if (count < LOG_DOWNLOAD_LINES_THRESHOLD) {
-          const data = await batchDownloadPodLog({ podVOList: this.podList }).finally(() => { this.logDownloading = false; });
-          downloadFile(data, `${this.item.jobName}-log.zip`);
-        } else {
-          this.$message.warning('节点日志总行数过多，将以单个节点为单位分别下载日志，请允许多个文件下载');
-          const jobList = [];
-          this.podList.forEach(pod => {
-            jobList.push(this.doDownloadPodLog(pod, logLines[pod.podName], false));
-          });
-          Promise.all(jobList).then(() => {
-            this.logDownloading = false;
-          });
-        }
-      }
-    },
-    /**
-     * 下载节点日志
-     * @param {*} pod 下载的 pod，如果为空则为 this.activePod
-     * @param {*} podLogLines 下载的 pod 对应的日志行数，如果为空则调用接口单独查询
-     * @param {*} divisionWarning 是否在超过阈值需要分片下载时进行提示
-     */
-    async doDownloadPodLog(pod, podLogLines, divisionWarning = true) {
-      pod = pod || this.activePod;
-      const { podName } = pod;
-      const displayName = this.item.jobName + (this.isDistributed ? `-${pod.displayName}` : '');
-      if (!podLogLines) {
-        const count = await countPodLogs([{ podName }]);
-        podLogLines = count[podName];
-      }
-      // 如果节点日志行数超过阈值，则以阈值行数为单位分片下载
-      if (podLogLines < LOG_DOWNLOAD_LINES_THRESHOLD) {
-        this.downloadPodLog({ podName }, `${displayName}-log.log`);
-      } else {
-        if(divisionWarning) {
-          this.$message.warning(`目标 ${displayName} 日志总行数过多，将按行数进行日志分片下载，请允许多个文件下载`);
-        }
-        let startLine = 1;
-        let lines = LOG_DOWNLOAD_LINES_THRESHOLD;
-        while (startLine < podLogLines) {
-          this.downloadPodLog({ podName, startLine, lines }, `${displayName}-log-${startLine}-${startLine + lines - 1}.log`);
-          startLine += lines;
-          lines = podLogLines - startLine > LOG_DOWNLOAD_LINES_THRESHOLD ? lines : podLogLines - startLine;
-        }
-      }
-    },
-    async downloadPodLog(query, name) {
-      const data = await downloadPodLog(query);
-      downloadFile(data, name);
-    },
     countDown() {
       if (this.keepCountDown) {
         setTimeout(() => {
@@ -233,91 +129,58 @@ export default {
       }
     },
     async onOpen(jobId) {
+      this.getPodList(jobId);
       await this.getJobDetail(jobId);
-      this.prepared =  true;
       if (this.item.delayCreateCountDown > 0 || this.item.delayDeleteCountDown > 0) {
         this.keepCountDown = true;
         this.countDown();
-      }
-      this.podList = await getPods(this.item.id);
-      if (this.isDistributed) {
-        if (this.podList.length) {
-          this.activeLogTab = this.podList[0].podName;
-          this.podLogLoadTags = {};
-          this.$nextTick(() => {
-            this.$refs.podLogContainer.reset();
-            this.podLogLoadTags[this.activeLogTab] = true;
-          });
-        }
-        return;
-      }
-      if (this.item.trainStatus !== 7 && this.podList.length) {
-        this.$nextTick(() => {
-          this.$refs.logContainer.reset();
-        });
-      }
-    },
-    onClose() {
-      this.keepCountDown = false;
-      this.prepared = false;
-    },
-    onLogTabClick() {
-      if (!this.podLogLoadTags[this.activeLogTab]) {
-        this.$nextTick(() => {
-          this.$refs.podLogContainer.reset();
-          this.podLogLoadTags[this.activeLogTab] = true;
-        });
       }
     },
     async getJobDetail(jobId) {
       this.item = await getJobDetail(jobId);
     },
-    async getGarafana() {
-      const res = await getGarafanaInfo(this.item.id);
-      if (res.length) {
-        const newWindow = window.open('', '_blank');
-        res.forEach(item => {
-          newWindow.document.write(
-            `<p>${item.jobPodName}</p>
-             <iframe src="${item.jobMetricsGrafanaUrl}" style = 'width: 100%; height: 100%;' scrolling="yes"></iframe>`,
-          );
-        });
+    async getPodList(jobId) {
+      this.podList = await getPods(jobId);
+    },
+    onSelectedPodChange() {
+      this.$nextTick(() => {
+        this.$refs.podMonitor.init();
+      });
+    },
+    checkMetrics() {
+      if (this.item.k8sNamespace && this.item.jobName) {
+        this.metricsVisible = true;
       } else {
-        this.$message({
-          message: '暂无有效的监控信息',
-          type: 'warning',
-        });
+        this.$message.warning('命名空间或资源名称为空，无法查看监控信息');
       }
+    },
+    onMetricsDialogOpened() {
+      this.podList.length && (this.selectedPod = [this.podList[0].podName]);
+      this.$nextTick(() => {
+        this.$refs.podMonitor.init();
+      });
+    },
+    onMetricsDialogClose() {
+      this.$refs.podMonitor.stop();
+      this.selectedPod = []; // 弹窗关闭时清空所选节点列表
+    },
+    onClose() {
+      this.keepCountDown = false;
+    },
+    onCheckLog() {
+      this.$emit('show-log', this.item);
     },
   },
 };
 </script>
 
 <style lang="scss" scoped>
-#distributed-log-wrapper {
-  margin: 20px 0;
-}
+::v-deep .metrics-dialog {
+  margin-bottom: 5vh;
 
-.log {
-  width: 90%;
-  height: 500px;
-  margin: 40px 5%;
-}
-
-.log-tabs {
-  margin: 0 5%;
-}
-
-.distributed-log {
-  margin-top: 60px;
-}
-
-.log-download-btn {
-  margin-right: 5%;
-}
-
-.log-error-msg {
-  padding: 16px;
-  margin: 6px 0 0;
+  .el-dialog__body {
+    max-height: calc(90vh - 54px);
+    overflow-y: auto;
+  }
 }
 </style>

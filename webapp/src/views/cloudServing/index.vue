@@ -1,37 +1,28 @@
 /** Copyright 2020 Tianshu AI Platform. All Rights Reserved.
-*
-* Licensed under the Apache License, Version 2.0 (the "License");
-* you may not use this file except in compliance with the License.
-* You may obtain a copy of the License at
-*
-*     http://www.apache.org/licenses/LICENSE-2.0
-*
-* Unless required by applicable law or agreed to in writing, software
-* distributed under the License is distributed on an "AS IS" BASIS,
-* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-* See the License for the specific language governing permissions and
-* limitations under the License.
-* =============================================================
-*/
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ * =============================================================
+ */
 
 <template>
   <div id="cloud-serving-container" class="app-container">
     <!--工具栏-->
     <div class="head-container">
-      <cdOperation
-        linkType="custom"
-        @to-add="onToAdd"
-      >
-        <span
-          v-show="crud.loading"
-          slot="left"
-        >
+      <cdOperation linkType="custom" @to-add="onToAdd">
+        <span v-show="crud.loading" slot="left">
           <i class="el-icon-loading" />
         </span>
-        <span
-          slot="right"
-          class="flex flex-end flex-wrap"
-        >
+        <span slot="right" class="flex flex-end flex-wrap">
           <el-input
             v-model="localQuery.name"
             clearable
@@ -52,22 +43,12 @@
       highlight-current-row
       @sort-change="crud.sortChange"
     >
-      <el-table-column
-        prop="id"
-        label="ID"
-        sortable="custom"
-        width="80px"
-        fixed
-      />
-      <el-table-column
-        prop="name"
-        label="服务名称"
-        min-width="120px"
-        show-overflow-tooltip
-        fixed
-      >
+      <el-table-column prop="id" label="ID" sortable="custom" width="80px" fixed />
+      <el-table-column prop="name" label="服务名称" min-width="120px" show-overflow-tooltip fixed>
         <template slot-scope="scope">
-          <el-link class="name-col" @click="goDetail(scope.row.id)">{{ scope.row.name }}</el-link>
+          <el-link class="name-col" type="primary" @click="goDetail(scope.row.id)">{{
+            scope.row.name
+          }}</el-link>
         </template>
       </el-table-column>
       <el-table-column
@@ -76,102 +57,82 @@
         min-width="180px"
         show-overflow-tooltip
       />
-      <el-table-column
-        prop="status"
-        label="状态"
-        min-width="120px"
-      >
+      <el-table-column prop="status" label="状态" min-width="120px">
         <template #header>
           <dropdown-header
             title="状态"
             :list="serviceStatusList"
             :filtered="Boolean(localQuery.status)"
-            @command="cmd => filter('status', cmd)"
+            @command="(cmd) => filter('status', cmd)"
           />
         </template>
         <template slot-scope="scope">
-          <el-tag
-            :type="statusTagMap[scope.row.status]"
-            effect="plain"
-          >{{ statusNameMap[scope.row.status] || '--' }}</el-tag>
+          <el-tag :type="statusTagMap[scope.row.status]" effect="plain">{{
+            statusNameMap[scope.row.status] || '--'
+          }}</el-tag>
+          <msg-popover
+            :status-detail="scope.row.statusDetail"
+            :show="showMessage(scope.row.status)"
+          />
         </template>
       </el-table-column>
-      <el-table-column
-        prop="progress"
-        label="运行节点数/总节点数"
-        width="180px"
-        align="center"
-      >
+      <el-table-column prop="progress" label="运行节点数/总节点数" width="180px" align="center">
         <template slot-scope="scope">
           <span>{{ scope.row.runningNode || 0 }}/{{ scope.row.totalNode || 0 }}</span>
         </template>
       </el-table-column>
-      <el-table-column
-        prop="progress"
-        label="调用失败次数/总次数"
-        width="180px"
-        align="center"
-      >
+      <el-table-column prop="progress" label="调用失败次数/总次数" width="180px" align="center">
         <template slot-scope="scope">
           <span>{{ getCallCount(scope.row) }}</span>
         </template>
       </el-table-column>
-      <el-table-column
-        prop="type"
-        label="服务类型"
-        min-width="100px"
-      >
+      <el-table-column prop="type" label="服务类型" min-width="100px">
         <template #header>
           <dropdown-header
             title="服务类型"
             :list="servingTypeList"
             :filtered="Boolean(localQuery.type)"
-            @command="cmd => filter('type', cmd)"
+            @command="(cmd) => filter('type', cmd)"
           />
         </template>
         <template slot-scope="scope">
           <span>{{ serviceTypeMap[scope.row.type] }}</span>
         </template>
       </el-table-column>
-      <el-table-column
-        prop="createTime"
-        label="创建时间"
-        sortable="custom"
-        min-width="160px"
-      >
+      <el-table-column prop="createTime" label="创建时间" sortable="custom" min-width="160px">
         <template slot-scope="scope">
           <span>{{ parseTime(scope.row.createTime) }}</span>
         </template>
       </el-table-column>
-      <el-table-column
-        label="操作"
-        width="250px"
-        fixed="right"
-      >
+      <el-table-column label="操作" width="250px" fixed="right">
         <template slot-scope="scope">
           <el-button
             type="text"
             :disabled="!canEdit(scope.row.status)"
             @click.stop="doEdit(scope.row.id)"
-          >编辑</el-button>
+            >编辑</el-button
+          >
           <el-button
             v-if="canStart(scope.row.status)"
             type="text"
-            @click.stop="doStart(scope.row)"
-          >启动</el-button>
+            @click.stop="doStartDebounce(scope.row)"
+            >启动</el-button
+          >
           <el-button
             v-else
             type="text"
             :disabled="!canStop(scope.row.status)"
-            @click.stop="doStop(scope.row.id)"
-          >停止</el-button>
+            @click.stop="doStopDebounce(scope.row.id)"
+            >停止</el-button
+          >
           <el-button
             type="text"
             :disabled="!canDelete(scope.row.status)"
             @click.native="doDelete(scope.row.id)"
-          >删除</el-button>
+            >删除</el-button
+          >
           <el-dropdown>
-            <el-button type="text" style="margin-left: 10px;" @click.stop="()=>{}">
+            <el-button type="text" style="margin-left: 10px;" @click.stop="() => {}">
               更多<i class="el-icon-arrow-down el-icon--right" />
             </el-button>
             <el-dropdown-menu slot="dropdown">
@@ -179,19 +140,13 @@
                 :disabled="!canPredict(scope.row.status)"
                 @click.native="doPredict(scope.row.id)"
               >
-                <el-button
-                  :disabled="!canPredict(scope.row.status)"
-                  type="text"
-                >预测</el-button>
+                <el-button :disabled="!canPredict(scope.row.status)" type="text">预测</el-button>
               </el-dropdown-item>
               <el-dropdown-item
                 :disabled="!canEdit(scope.row.status)"
                 @click.native="doRollback(scope.row.id)"
               >
-                <el-button
-                  :disabled="!canEdit(scope.row.status)"
-                  type="text"
-                >回滚</el-button>
+                <el-button :disabled="!canEdit(scope.row.status)" type="text">回滚</el-button>
               </el-dropdown-item>
             </el-dropdown-menu>
           </el-dropdown>
@@ -211,13 +166,20 @@ import { mapActions } from 'vuex';
 import { list, start, stop, del as deleteServing } from '@/api/cloudServing';
 import CRUD, { presenter, header, crud } from '@crud/crud';
 import DropdownHeader from '@/components/DropdownHeader';
+import MsgPopover from '@/components/MsgPopover';
 import cdOperation from '@crud/CD.operation';
 import rrOperation from '@crud/RR.operation';
 import pagination from '@crud/Pagination';
 
-import { Constant } from '@/utils';
+import { Constant, generateMap } from '@/utils';
 
-import { SERVING_STATUS_ENUM, ONLINE_SERVING_STATUS_MAP, ONLINE_SERVING_TYPE, generateMap, serviceTypeMap, numFormatter } from './util';
+import {
+  SERVING_STATUS_ENUM,
+  ONLINE_SERVING_STATUS_MAP,
+  ONLINE_SERVING_TYPE,
+  serviceTypeMap,
+  numFormatter,
+} from './util';
 
 // 搜索用字段
 const defaultQuery = {
@@ -230,6 +192,7 @@ export default {
   name: 'CloudServing',
   components: {
     DropdownHeader,
+    MsgPopover,
     pagination,
     rrOperation,
     cdOperation,
@@ -269,7 +232,7 @@ export default {
     },
     serviceStatusList() {
       const list = [{ label: '全部', value: null }];
-      Object.keys(this.statusNameMap).forEach(status => {
+      Object.keys(this.statusNameMap).forEach((status) => {
         list.push({ label: this.statusNameMap[status], value: status });
       });
       return list;
@@ -289,11 +252,11 @@ export default {
     },
   },
   beforeRouteEnter(to, from, next) {
-    const goFirstPage = vm => {
+    const goFirstPage = (vm) => {
       vm.pageEnter(false);
     };
 
-    const goPreviousPage = vm => {
+    const goPreviousPage = (vm) => {
       vm.pageEnter(true);
     };
 
@@ -329,6 +292,8 @@ export default {
   },
   mounted() {
     this.refetch = debounce(1000, this.getServices);
+    this.doStartDebounce = debounce(1000, this.doStart);
+    this.doStopDebounce = debounce(1000, this.doStop);
   },
   beforeDestroy() {
     this.keepPoll = false;
@@ -424,15 +389,14 @@ export default {
       }
     },
     doDelete(id) {
-      this.$confirm('此操作将删除该服务, 是否继续?', '请确认')
-        .then(async () => {
-          await deleteServing(id);
-          this.$message({
-            message: '删除成功',
-            type: 'success',
-          });
-          this.getServices();
+      this.$confirm('此操作将删除该服务, 是否继续?', '请确认').then(async () => {
+        await deleteServing(id);
+        this.$message({
+          message: '删除成功',
+          type: 'success',
         });
+        this.getServices();
+      });
     },
     doRollback(id) {
       this.$router.push({
@@ -443,10 +407,10 @@ export default {
         },
       });
     },
-    
+
     // Crud Hooks
     [CRUD.HOOK.beforeRefresh]() {
-      this.crud.query = { ...this.localQuery};
+      this.crud.query = { ...this.localQuery };
     },
     [CRUD.HOOK.afterRefresh]() {
       this.updatePage(this.crud.page.current);
@@ -454,13 +418,13 @@ export default {
         sort: this.crud.sort,
         order: this.crud.order,
       });
-      if (this.keepPoll && this.crud.data.some(service => this.needPoll(service.status))) {
+      if (this.keepPoll && this.crud.data.some((service) => this.needPoll(service.status))) {
         setTimeout(() => {
           this.refetch();
         }, 1000);
       }
     },
-    
+
     // Other methods
     numFormatter,
     getCallCount(service) {
@@ -474,34 +438,29 @@ export default {
       this.crud.toQuery();
     },
     needPoll(status) {
-      return [SERVING_STATUS_ENUM.WORKING, SERVING_STATUS_ENUM.IN_DEPLOYMENT].indexOf(status) !== -1;
+      return (
+        [SERVING_STATUS_ENUM.WORKING, SERVING_STATUS_ENUM.IN_DEPLOYMENT].indexOf(status) !== -1
+      );
     },
     canEdit(status) {
-      return [
-          SERVING_STATUS_ENUM.EXCEPTION,
-          SERVING_STATUS_ENUM.STOP,
-        ].indexOf(status) !== -1;
+      return [SERVING_STATUS_ENUM.EXCEPTION, SERVING_STATUS_ENUM.STOP].indexOf(status) !== -1;
     },
     canPredict(status) {
       return SERVING_STATUS_ENUM.WORKING === status;
     },
     canStart(status) {
-      return [
-          SERVING_STATUS_ENUM.EXCEPTION,
-          SERVING_STATUS_ENUM.STOP,
-        ].indexOf(status) !== -1;
+      return [SERVING_STATUS_ENUM.EXCEPTION, SERVING_STATUS_ENUM.STOP].indexOf(status) !== -1;
     },
     canStop(status) {
-      return [
-          SERVING_STATUS_ENUM.IN_DEPLOYMENT,
-          SERVING_STATUS_ENUM.WORKING,
-        ].indexOf(status) !== -1;
+      return (
+        [SERVING_STATUS_ENUM.IN_DEPLOYMENT, SERVING_STATUS_ENUM.WORKING].indexOf(status) !== -1
+      );
     },
     canDelete(status) {
-      return [
-          SERVING_STATUS_ENUM.EXCEPTION,
-          SERVING_STATUS_ENUM.STOP,
-        ].indexOf(status) !== -1;
+      return [SERVING_STATUS_ENUM.EXCEPTION, SERVING_STATUS_ENUM.STOP].indexOf(status) !== -1;
+    },
+    showMessage(status) {
+      return [SERVING_STATUS_ENUM.EXCEPTION, SERVING_STATUS_ENUM.IN_DEPLOYMENT].includes(status);
     },
   },
 };

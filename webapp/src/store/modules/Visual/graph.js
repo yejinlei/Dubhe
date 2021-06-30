@@ -1,18 +1,18 @@
 /** Copyright 2020 Tianshu AI Platform. All Rights Reserved.
-*
-* Licensed under the Apache License, Version 2.0 (the "License");
-* you may not use this file except in compliance with the License.
-* You may obtain a copy of the License at
-*
-*     http://www.apache.org/licenses/LICENSE-2.0
-*
-* Unless required by applicable law or agreed to in writing, software
-* distributed under the License is distributed on an "AS IS" BASIS,
-* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-* See the License for the specific language governing permissions and
-* limitations under the License.
-* =============================================================
-*/
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ * =============================================================
+ */
 
 import { getGraph } from '@/api/visual';
 
@@ -68,13 +68,13 @@ const actions = {
     }
     state.sInitState = 0;
     if (param.tag === 'c_graph') {
-      getGraph(param).then(res => {
+      getGraph(param).then((res) => {
         const data = JSON.parse(res);
         context.commit('setGraphData', data.net);
         context.commit('setRetList', data.operator);
       });
     } else {
-      getGraph(param).then(res => {
+      getGraph(param).then((res) => {
         const data = JSON.parse(res);
         context.commit('setSrcData', data.net);
         context.commit('setGraphData', data.net[0]);
@@ -88,10 +88,10 @@ const actions = {
 const mutations = {
   setOptionList: (state, param) => {
     const optionList = [];
-    for (let i = 0; i < param; i  += 1) {
+    for (let i = 0; i < param; i += 1) {
       const item = {};
       item.value = i;
-      item.label = `结构图${  i}`;
+      item.label = `结构图${i}`;
       optionList.push(item);
     }
     state.list = optionList;
@@ -148,7 +148,7 @@ const mutations = {
     state.isDrawing = param;
   },
   setData: (state, param) => {
-    if(state.curTag === 's_graph') {
+    if (state.curTag === 's_graph') {
       state.graphData = state.srcData[param];
       state.copy[0] = state.srcData[param];
       state.sInitState = param;

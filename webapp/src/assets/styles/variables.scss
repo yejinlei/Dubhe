@@ -40,12 +40,15 @@ $menuBg: #f3f7ff;
 $menuText: $commonTextColor;
 $menuActiveText: $primaryColor;
 
-$menuHoverBg:#d8dfff;
+$menuHoverBg: #d8dfff;
 $subMenuBg: #edf0ff;
-$menuActiveBg:#d8dfff;
+$menuActiveBg: #d8dfff;
 $sideBarWidth: 205px;
 $iconBarWidth: 64px;
 $navBarHeight: 50px;
+
+$tipBgColor: #ffe9cc;
+$tipColor: #f38900;
 
 :export {
   menuBg: $menuBg;

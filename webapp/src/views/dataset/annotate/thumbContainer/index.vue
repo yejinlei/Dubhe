@@ -1,25 +1,25 @@
 /** Copyright 2020 Tianshu AI Platform. All Rights Reserved.
-*
-* Licensed under the Apache License, Version 2.0 (the "License");
-* you may not use this file except in compliance with the License.
-* You may obtain a copy of the License at
-*
-*     http://www.apache.org/licenses/LICENSE-2.0
-*
-* Unless required by applicable law or agreed to in writing, software
-* distributed under the License is distributed on an "AS IS" BASIS,
-* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-* See the License for the specific language governing permissions and
-* limitations under the License.
-* =============================================================
-*/
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ * =============================================================
+ */
 
 <template>
   <div class="thumb-wrapper">
     <div>
       <el-button
         v-if="state.datasetInfo.value.dataType === 0"
-        class="mb-20"
+        style="margin-bottom: 8px;"
         type="primary"
         icon="el-icon-plus"
         round
@@ -28,24 +28,29 @@
         添加图片
       </el-button>
     </div>
-    <div class="file-infobar flex">
-      <el-dropdown trigger="click" @command="handleDropdown">
-        <span class="el-dropdown-link primary" :title="activeAnnotationName">
-          {{ activeAnnotationName }}<i class="el-icon-arrow-down el-icon--right" />
-        </span>
-        <el-dropdown-menu slot="dropdown">
-          <el-dropdown-item
-            v-for="item in dropdownList"
-            :key="item.command"
-            :command="item.command"
-          >
-            {{ item.label }}
-          </el-dropdown-item>
-        </el-dropdown-menu>
-      </el-dropdown>
+    <div class="file-infobar flex flex-wrap">
+      <SearchBox
+        ref="searchBoxRef"
+        :formItems="thumbState.formItems"
+        :handleFilter="handleFilter"
+        :initialValue="initialValue"
+        :popperAttrs="popperAttrs"
+        klass="annotate-search-box"
+      >
+        <el-button slot="trigger" type="text" class="mx-10" style="margin-top: -4px;"
+          >筛选<i class="el-icon-arrow-down el-icon--right"
+        /></el-button>
+      </SearchBox>
       <div>
-        {{ state.total.value }}&nbsp;<span class="f14">张</span>
+        <span class="f14">共&nbsp;{{ state.total.value }}&nbsp;张</span>
       </div>
+      <el-checkbox
+        v-model="thumbState.filterUnfinished"
+        class="pl-16 primary normal"
+        @change="handleStatusChange"
+      >
+        只看无标注文件
+      </el-checkbox>
     </div>
     <List
       ref="listRef"
@@ -57,6 +62,7 @@
       :total="state.total.value"
       :offset="state.offset.value"
       :type="thumbState.type"
+      :labelId="thumbState.labelId"
       :history="state.history.value"
       v-on="$listeners"
     />
@@ -71,7 +77,8 @@
           :max="state.total.value"
           @keyup.native.enter="handleKeyup"
         />
-        张</span>
+        张
+      </span>
       <el-tooltip content="跳转位置为图片在数据集列表中的位置" placement="top">
         <i class="el-icon-question" />
       </el-tooltip>
@@ -80,6 +87,7 @@
       ref="uploaderRef"
       action="fakeApi"
       title="导入图片"
+      :hash="true"
       :visible="thumbState.showDialog"
       :transformFile="withDimensionFile"
       :toggleVisible="handleClose"
@@ -91,12 +99,13 @@
 </template>
 
 <script>
-import { reactive, computed, ref, watch } from '@vue/composition-api';
+import { reactive, ref, watch } from '@vue/composition-api';
 import { Message } from 'element-ui';
-import { pick } from 'lodash';
+import { isEqual } from 'lodash';
 
 import UploadForm from '@/components/UploadForm';
-import { fileTypeEnum, fileCodeMap, getImgFromMinIO, withDimensionFile } from '@/views/dataset/util';
+import SearchBox from '@/components/SearchBox';
+import { getFileFromMinIO, withDimensionFile, fileCodeMap } from '@/views/dataset/util';
 import { submit } from '@/api/preparation/datafile';
 import { detectFileList, queryFileOffset } from '@/api/preparation/dataset';
 import List from './list';
@@ -106,6 +115,7 @@ export default {
   components: {
     List,
     UploadForm,
+    SearchBox,
   },
   inheritAttrs: false,
   props: {
@@ -119,45 +129,75 @@ export default {
 
     const uploaderRef = ref(null);
     const listRef = ref(null);
-
+    const searchBoxRef = ref(null);
     const { updateList, state, updateState, isTrack } = props;
     const { datasetId } = state;
+    const detectOptions = [
+      { label: '不限', value: '' },
+      { label: '未标注', value: 101 },
+      { label: '手动标注中', value: 102 },
+      { label: '自动标注完成', value: 103 },
+      { label: '手动标注完成', value: 104 },
+      { label: '未识别', value: 105 },
+    ];
+    const trackOptions = detectOptions.concat({ label: '目标跟踪完成', value: 201 });
+    const rawFormItems = [
+      {
+        label: '标注状态:',
+        prop: 'annotateStatus',
+        type: 'checkboxGroup',
+        options: isTrack ? trackOptions : detectOptions,
+      },
+      {
+        label: '标签:',
+        prop: 'labelId',
+        type: 'select',
+        attrs: {
+          multiple: true,
+          clearable: true,
+          filterable: true,
+        },
+        options: [],
+      },
+    ];
+
+    const popperAttrs = {
+      placement: 'bottom-start',
+    };
+
     const thumbState = reactive({
-      type: props.state.fileFilterType.value, // 文件筛选状态
+      type: props.state.fileFilterType.value, // 文件状态筛选条件
+      labelId: props.state.filterLabelId, // 文件标签筛选条件
       showDialog: false,
       gotoNumber: 1,
+      formItems: rawFormItems,
+      filterUnfinished: props.state.filterUnfinished,
     });
 
-    // 名称
-    const activeAnnotationName = computed(() => {
-      const selectedType = thumbState.type;
-      return fileTypeEnum[selectedType].abbr;
-    });
-    // 下拉列表
-    const dropdownList = computed(() => {
-      let filter = [];
-      if (isTrack) {
-        // 目标跟踪：全部 未标注 未识别 手动标注中 手动标注完成 自动标注完成 目标跟踪完成
-        filter = pick(fileTypeEnum, [fileCodeMap.ALL, fileCodeMap.UNANNOTATED, fileCodeMap.UNRECOGNIZED, fileCodeMap.MANUAL_ANNOTATING, fileCodeMap.MANUAL_ANNOTATED, fileCodeMap.AUTO_ANNOTATED, fileCodeMap.TRACK_SUCCEED]);
-      } else {
-        // 目标检测：全部 未标注 未识别 手动标注中 自动标注完成 手动标注完成
-        filter = pick(fileTypeEnum, [fileCodeMap.ALL, fileCodeMap.UNANNOTATED, fileCodeMap.UNRECOGNIZED, fileCodeMap.MANUAL_ANNOTATING, fileCodeMap.AUTO_ANNOTATED, fileCodeMap.MANUAL_ANNOTATED]);
-      }
-      const statusList = Object.keys(filter).map(k => ({
-        command: k,
-        label: fileTypeEnum[k].label,
-      }));
-      return statusList;
-    });
+    // 重置后的选项值
+    const initialValue = {
+      annotateStatus: [''],
+      labelId: [],
+    };
 
-    const handleDropdown = (command) => {
+    const handleFilter = (form) => {
+      // 筛选框和快速查看无标注的状态同步
+      thumbState.filterUnfinished = isEqual(
+        form.annotateStatus.sort(),
+        [fileCodeMap.UNANNOTATED, fileCodeMap.UNRECOGNIZED].sort()
+      );
       Object.assign(thumbState, {
-        type: command,
+        type: form.annotateStatus,
+        labelId: form.labelId,
         gotoNumber: 1,
       });
-      updateState({ annotations: [], fileFilterType: command });
+      updateState({
+        annotations: [],
+        fileFilterType: form.annotateStatus,
+        filterLabelId: form.labelId,
+      });
       // 重新请求文件
-      updateList({ type: command, offset: 0 });
+      updateList({ type: form.annotateStatus, labelId: form.labelId, offset: 0 });
       // 获取滚动列表容器
       const listWrapper = listRef.value.$refs?.listWrapper;
       listWrapper.scrollTo({
@@ -165,12 +205,23 @@ export default {
       });
     };
 
+    // 快速查看无标注
+    const handleStatusChange = (val) => {
+      searchBoxRef.value.changeOption(
+        'annotateStatus',
+        val ? [fileCodeMap.UNANNOTATED, fileCodeMap.UNRECOGNIZED] : ['']
+      );
+      searchBoxRef.value.handleOk();
+      // 更新是否查看无标注文件
+      updateState({ filterUnfinished: val });
+    };
+
     const handleClose = () => {
       thumbState.showDialog = false;
     };
 
-    const uploadSuccess = async(res) => {
-      const files = getImgFromMinIO(res);
+    const uploadSuccess = async (res) => {
+      const files = getFileFromMinIO(res);
       // 提交业务上传
       submit(datasetId.value, files).then(() => {
         Message.success('上传成功');
@@ -180,7 +231,7 @@ export default {
 
     const uploadError = (err) => {
       Message.error('上传失败', err);
-      console.error(err);
+      console.error(err.message || err);
     };
 
     const handleUpload = () => {
@@ -192,8 +243,8 @@ export default {
       objectPath: `dataset/${datasetId.value}/origin`, // 对象存储路径
     };
 
-    const handleKeyup = async({ target, keyCode }) => {
-      let {value} = target;
+    const handleKeyup = async ({ target, keyCode }) => {
+      let { value } = target;
       if (keyCode === 13) {
         if (parseInt(target.value, 10) < parseInt(target.min, 10)) {
           thumbState.gotoNumber = target.min;
@@ -220,39 +271,72 @@ export default {
       }
     };
 
-    watch(() => state.currentImgId.value, async(next) => {
-      // 根据筛选类型来过滤
-      const query = {
-        type: thumbState.type,
-      };
-      if (!next) return;
-      const currentImgIndex = await queryFileOffset(datasetId.value, next, query);
-      thumbState.gotoNumber = currentImgIndex + 1;
-    }, {
-      lazy: false,
-    });
+    watch(
+      () => state.labels.value,
+      (next) => {
+        // 用于筛选功能
+        const labelOptionsIndex = thumbState.formItems.findIndex((d) => d.prop === 'labelId');
+        thumbState.formItems[labelOptionsIndex].options = next.map((item) => {
+          return {
+            label: item.name,
+            value: item.id,
+          };
+        });
+      },
+      {
+        immediate: true,
+      }
+    );
+
+    watch(
+      () => state.currentImgId.value,
+      async (next) => {
+        // 根据筛选类型来过滤
+        const query = {
+          type: thumbState.type,
+          labelId: thumbState.labelId,
+        };
+        if (!next) return;
+        const currentImgIndex = await queryFileOffset(datasetId.value, next, query);
+        thumbState.gotoNumber = currentImgIndex + 1;
+      },
+      {
+        immediate: true,
+      }
+    );
+
+    watch(
+      () => state.filterUnfinished.value,
+      (next) => {
+        Object.assign(thumbState, {
+          filterUnfinished: next,
+        });
+      }
+    );
 
     return {
       listRef,
+      searchBoxRef,
       thumbState,
       withDimensionFile,
       uploadParams,
-      dropdownList,
       handleUpload,
       handleClose,
       uploadSuccess,
       uploadError,
-      activeAnnotationName,
-      handleDropdown,
       uploaderRef,
       handleKeyup,
+      initialValue,
+      handleFilter,
+      popperAttrs,
+      handleStatusChange,
     };
   },
 };
 </script>
 <style lang="scss">
-@import "~@/assets/styles/variables.scss";
-@import "~@/assets/styles/mixin.scss";
+@import '~@/assets/styles/variables.scss';
+@import '~@/assets/styles/mixin.scss';
 
 .thumb-wrapper {
   position: relative;
@@ -260,7 +344,7 @@ export default {
   display: flex;
   flex-direction: column;
   width: 160px;
-  padding-top: 20px;
+  padding-top: 8px;
   text-align: center;
   background: #fff;
   box-shadow: 2px 0 6px 0 rgba(0, 0, 0, 0.15);

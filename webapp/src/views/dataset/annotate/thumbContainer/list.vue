@@ -1,18 +1,18 @@
 /** Copyright 2020 Tianshu AI Platform. All Rights Reserved.
-*
-* Licensed under the Apache License, Version 2.0 (the "License");
-* you may not use this file except in compliance with the License.
-* You may obtain a copy of the License at
-*
-*     http://www.apache.org/licenses/LICENSE-2.0
-*
-* Unless required by applicable law or agreed to in writing, software
-* distributed under the License is distributed on an "AS IS" BASIS,
-* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-* See the License for the specific language governing permissions and
-* limitations under the License.
-* =============================================================
-*/
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ * =============================================================
+ */
 
 <template>
   <div ref="listWrapper" class="infinite-list-wrapper" style="overflow: auto;">
@@ -51,7 +51,12 @@ export default {
       default: () => [],
     },
     type: {
-      type: [String, Number],
+      type: Array,
+      default: () => [],
+    },
+    labelId: {
+      type: Array,
+      default: () => [],
     },
     addList: {
       type: Array,
@@ -80,20 +85,21 @@ export default {
       loading: false,
     });
 
-    watch(() => props.addList, (next) => {
-      // 更新全局 offset
-      updateState({
-        offset: props.offset + Math.min(limit, next.length),
-        hasMore: next.length >= limit,
-      });
-    }, {
-      lazy: true,
-    });
+    watch(
+      () => props.addList,
+      (next) => {
+        // 更新全局 offset
+        updateState({
+          offset: props.offset + Math.min(limit, next.length),
+          hasMore: next.length >= limit,
+        });
+      }
+    );
 
     // 计算值
     const disabled = computed(() => state.loading || !props.hasMore);
 
-    const handleClick = item => {
+    const handleClick = (item) => {
       if (item.id === props.currentImg.id) return;
       // 触发 changeImg
       ctx.emit('changeImg', item);
@@ -105,7 +111,8 @@ export default {
       });
       queryNextPage({
         offset: props.offset,
-        type: Number(props.type),
+        type: props.type,
+        labelId: props.labelId,
       }).then(() => {
         Object.assign(state, {
           loading: false,
@@ -123,10 +130,10 @@ export default {
   },
 };
 </script>
-<style scoped lang='scss'>
-  .infinite-list-wrapper {
-    ul {
-      margin-bottom: 28px;
-    }
+<style scoped lang="scss">
+.infinite-list-wrapper {
+  ul {
+    margin-bottom: 28px;
   }
+}
 </style>

@@ -1,18 +1,18 @@
 /** Copyright 2020 Tianshu AI Platform. All Rights Reserved.
-*
-* Licensed under the Apache License, Version 2.0 (the "License");
-* you may not use this file except in compliance with the License.
-* You may obtain a copy of the License at
-*
-*     http://www.apache.org/licenses/LICENSE-2.0
-*
-* Unless required by applicable law or agreed to in writing, software
-* distributed under the License is distributed on an "AS IS" BASIS,
-* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-* See the License for the specific language governing permissions and
-* limitations under the License.
-* =============================================================
-*/
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ * =============================================================
+ */
 
 <template>
   <div class="temp">
@@ -46,7 +46,9 @@
 <script>
 import { createNamespacedHelpers } from 'vuex';
 
-const { mapMutations: mapScalarMutations, mapGetters: mapScalarGetters } = createNamespacedHelpers('Visual/scalar');
+const { mapMutations: mapScalarMutations, mapGetters: mapScalarGetters } = createNamespacedHelpers(
+  'Visual/scalar'
+);
 const { mapMutations: mapCustomMutations } = createNamespacedHelpers('Visual/custom');
 export default {
   data() {
@@ -57,7 +59,12 @@ export default {
   },
   computed: {
     ...mapScalarGetters([
-      'categoryInfo', 'smoothvalue', 'yaxis', 'checkeditem', 'checkedorder', 'backednumber',
+      'categoryInfo',
+      'smoothvalue',
+      'yaxis',
+      'checkeditem',
+      'checkedorder',
+      'backednumber',
     ]),
     smooth: {
       get() {
@@ -76,25 +83,23 @@ export default {
       },
     },
   },
-  created() {
-  },
+  created() {},
   methods: {
-    ...mapScalarMutations([
-      'setsmoothvalue', 'setyaxis', 'merge', 'back',
-    ]),
-    ...mapCustomMutations([
-      'cleanScalar',
-    ]),
+    ...mapScalarMutations(['setsmoothvalue', 'setyaxis', 'merge', 'back']),
+    ...mapCustomMutations(['cleanScalar']),
     startmerge() {
       if (Object.keys(this.checkeditem).length > 2) {
         this.$alert('选择图表种类至多为两种', '警告', {
-          confirmButtonText: '确定' });
+          confirmButtonText: '确定',
+        });
       } else if (this.checkedorder.length > 6) {
         this.$alert('选择图表数量至多为六幅', '警告', {
-          confirmButtonText: '确定' });
+          confirmButtonText: '确定',
+        });
       } else if (this.checkedorder.length < 2) {
         this.$alert('请选择至少两幅图表', '提示', {
-          confirmButtonText: '确定' });
+          confirmButtonText: '确定',
+        });
       } else {
         this.merge();
       }
@@ -104,7 +109,8 @@ export default {
         this.back();
       } else {
         this.$alert('未选中可还原的图表', '提示', {
-          confirmButtonText: '确定' });
+          confirmButtonText: '确定',
+        });
       }
     },
   },
@@ -169,7 +175,7 @@ export default {
 
 .iconfont {
   margin-right: 7px;
-  font-family: "iconfont" !important;
+  font-family: 'iconfont' !important;
   font-size: 13px;
   font-style: normal;
   -webkit-font-smoothing: antialiased;
@@ -252,9 +258,8 @@ export default {
   color: #9492cb;
 }
 
-.information [class*=" el-icon-"],
-[class^=el-icon-] {
+.information [class*=' el-icon-'],
+[class^='el-icon-'] {
   font-weight: 900;
 }
-
 </style>

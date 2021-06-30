@@ -1,18 +1,18 @@
 /** Copyright 2020 Tianshu AI Platform. All Rights Reserved.
-*
-* Licensed under the Apache License, Version 2.0 (the "License");
-* you may not use this file except in compliance with the License.
-* You may obtain a copy of the License at
-*
-*     http://www.apache.org/licenses/LICENSE-2.0
-*
-* Unless required by applicable law or agreed to in writing, software
-* distributed under the License is distributed on an "AS IS" BASIS,
-* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-* See the License for the specific language governing permissions and
-* limitations under the License.
-* =============================================================
-*/
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ * =============================================================
+ */
 
 <template>
   <div
@@ -33,17 +33,13 @@
       <div class="control-options">
         <ul>
           <li v-for="key in Object.keys(item.options)" :key="key">
-            <label
-              :for="key"
-              class="control-option-label"
-              :class="value === key ? 'active' : ''"
-            >
+            <label :for="key" class="control-option-label" :class="value === key ? 'active' : ''">
               <input
                 :id="key"
                 :name="item.command"
                 :value="key"
                 type="radio"
-                :checked="value === key ? true: false"
+                :checked="value === key ? true : false"
                 @change="updatePreset"
               />
               {{ accessor(key) }}
@@ -77,18 +73,19 @@ export default {
     activeTool: String,
     valueAccessor: Function, // 展示字段
   },
-  setup(props, ctx){
+  setup(props, ctx) {
     const wrapperRef = ref(null);
     const state = reactive({
       isOpen: false,
     });
 
-    const getklass = () => cx({
-      active: props.activeTool === props.item.command,
-    });
+    const getklass = () =>
+      cx({
+        active: props.activeTool === props.item.command,
+      });
 
     // 展示内容默认方法
-    const defaultValueAccessor = key => props.item.options[key].name;
+    const defaultValueAccessor = (key) => props.item.options[key].name;
 
     const toggleDropdown = (open) => {
       const toggle = isNil(open) ? !state.isOpen : open;
@@ -106,7 +103,7 @@ export default {
 
     // 更新 preset
     const updatePreset = (event) => {
-      if(props.value !== event.target.value) {
+      if (props.value !== event.target.value) {
         ctx.emit('change', {
           value: event.target.value,
           ...props.item,
@@ -130,7 +127,7 @@ export default {
 };
 </script>
 <style lang="scss" scoped>
-@import "~@/assets/styles/mixin.scss";
+@import '~@/assets/styles/mixin.scss';
 
 .controls {
   span {

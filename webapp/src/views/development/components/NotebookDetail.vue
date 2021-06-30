@@ -1,18 +1,18 @@
 /** Copyright 2020 Tianshu AI Platform. All Rights Reserved.
-*
-* Licensed under the Apache License, Version 2.0 (the "License");
-* you may not use this file except in compliance with the License.
-* You may obtain a copy of the License at
-*
-*     http://www.apache.org/licenses/LICENSE-2.0
-*
-* Unless required by applicable law or agreed to in writing, software
-* distributed under the License is distributed on an "AS IS" BASIS,
-* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-* See the License for the specific language governing permissions and
-* limitations under the License.
-* =============================================================
-*/
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ * =============================================================
+ */
 
 <template>
   <div style="margin-top: 40px; overflow: auto;">
@@ -42,12 +42,20 @@
         <div class="text">{{ notebookStatus[itemObj.status] }}</div>
       </el-col>
     </el-row>
-    <el-row class="row" style="height: auto;">
+    <el-row class="row">
       <el-col :span="5">
         <div class="label">开发环境</div>
       </el-col>
       <el-col :span="19">
-        <div class="text" style="height: auto;">{{ itemObj.k8sImageName.split('jupyterlab:')[1] || '--' }}</div>
+        <div class="text">{{ itemObj.k8sImageName.split('jupyterlab:')[1] || '--' }}</div>
+      </el-col>
+    </el-row>
+    <el-row class="row">
+      <el-col :span="5">
+        <div class="label">挂载数据集</div>
+      </el-col>
+      <el-col :span="19">
+        <div class="text">{{ datasetContent }}</div>
       </el-col>
     </el-row>
     <el-row class="row">
@@ -67,13 +75,19 @@
       </el-col>
     </el-row>
     <!--参数信息-->
-    <div class="title">规格参数</div>
+    <div class="title">
+      规格参数
+      <el-tooltip effect="dark" placement="right">
+        <div slot="content">规格参数单位换算: 1Mi = 1024 x 1024B</div>
+        <i class="el-icon-question" />
+      </el-tooltip>
+    </div>
     <el-row class="row">
       <el-col :span="5">
         <div class="label">CPU</div>
       </el-col>
       <el-col :span="19">
-        <div class="text">{{ itemObj.cpuNum }} Cores</div>
+        <div class="text">{{ itemObj.cpuNum }} 核</div>
       </el-col>
     </el-row>
     <el-row class="row">
@@ -81,7 +95,7 @@
         <div class="label">内存</div>
       </el-col>
       <el-col :span="19">
-        <div class="text">{{ itemObj.memNum }} GB</div>
+        <div class="text">{{ itemObj.memNum }} Mi</div>
       </el-col>
     </el-row>
     <el-row class="row">
@@ -89,7 +103,7 @@
         <div class="label">GPU</div>
       </el-col>
       <el-col :span="19">
-        <div class="text">{{ itemObj.gpuNum }} Cores</div>
+        <div class="text">{{ itemObj.gpuNum }} 核</div>
       </el-col>
     </el-row>
     <el-row class="row">
@@ -97,7 +111,7 @@
         <div class="label">存储</div>
       </el-col>
       <el-col :span="19">
-        <div class="text">{{ itemObj.diskMemNum }} GB</div>
+        <div class="text">{{ itemObj.diskMemNum }} Mi</div>
       </el-col>
     </el-row>
   </div>
@@ -116,6 +130,19 @@ export default {
     notebookStatus: {
       type: Object,
       default: () => {},
+    },
+  },
+  computed: {
+    datasetContent() {
+      const { dataSourceName, dataSourcePath } = this.itemObj;
+      if (dataSourceName && dataSourcePath) {
+        const dataSourceVersion = dataSourcePath.substring(
+          dataSourcePath.lastIndexOf('/') + 1,
+          dataSourcePath.length
+        );
+        return `${dataSourceName}:${dataSourceVersion}`;
+      }
+      return null;
     },
   },
   methods: {
@@ -171,4 +198,3 @@ export default {
   border: #ccc solid 1px;
 }
 </style>
-

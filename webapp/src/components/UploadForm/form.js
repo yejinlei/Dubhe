@@ -1,18 +1,18 @@
 /** Copyright 2020 Tianshu AI Platform. All Rights Reserved.
-*
-* Licensed under the Apache License, Version 2.0 (the "License");
-* you may not use this file except in compliance with the License.
-* You may obtain a copy of the License at
-*
-*     http://www.apache.org/licenses/LICENSE-2.0
-*
-* Unless required by applicable law or agreed to in writing, software
-* distributed under the License is distributed on an "AS IS" BASIS,
-* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-* See the License for the specific language governing permissions and
-* limitations under the License.
-* =============================================================
-*/
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ * =============================================================
+ */
 
 import axios from 'axios';
 import { Message } from 'element-ui';
@@ -23,7 +23,7 @@ const path = require('path');
 
 let msgInstance;
 
-const defaultAccept = d => `${d} MB`;
+const defaultAccept = (d) => `${d} MB`;
 
 export default {
   name: 'UploadForm',
@@ -37,7 +37,8 @@ export default {
       type: Number, // 如果传入 0 代表不限制
       default: 5, // MB
     },
-    acceptSizeFormat: { // 格式化文本
+    acceptSizeFormat: {
+      // 格式化文本
       type: Function,
       default: defaultAccept,
     },
@@ -51,7 +52,7 @@ export default {
     },
     dataType: {
       type: String,
-      default: "visual",
+      default: 'visual',
     },
     /**
      * filters 数组要求：
@@ -60,9 +61,9 @@ export default {
      */
     filters: {
       type: Array,
-      default: () => ([]),
-      validator: value => {
-        for(const filter of value) {
+      default: () => [],
+      validator: (value) => {
+        for (const filter of value) {
           if (!filter.message || typeof filter.judge !== 'function') {
             return false;
           }
@@ -121,18 +122,27 @@ export default {
 
       const addFilter = this.addFileFilter.bind(this, file, fileList);
 
-      if (addFilter(!mimeType, '文件格式不支持')) { return; };
+      // 不限定文件格式时跳过验证
+      if (this.accept !== 'unspecified' && addFilter(!mimeType, '文件格式不支持')) {
+        return;
+      }
 
-      // accept 支持传入 0 代表不限制大小
-      const isOverSize = this.acceptSize !== 0 && (file.size / (1024 * 1024)) > this.acceptSize;
-      if (addFilter(isOverSize, `不能添加大于${this.acceptSize}MB的文件`)) { return; }
+      // acceptSize 支持传入 0 代表不限制大小
+      const isOverSize = this.acceptSize !== 0 && file.size / (1024 * 1024) > this.acceptSize;
+      if (addFilter(isOverSize, `不能添加大于${this.acceptSize}MB的文件`)) {
+        return;
+      }
 
       for (const item of fileList.slice(0, fileList.length - 1)) {
-        if (addFilter(item.name === file.name, '不能添加文件名相同的文件')) { return; };
+        if (addFilter(item.name === file.name, '不能添加文件名相同的文件')) {
+          return;
+        }
       }
 
       for (const filter of this.filters) {
-        if (addFilter(filter.judge(file, fileList), filter.message)) { return; };
+        if (addFilter(filter.judge(file, fileList), filter.message)) {
+          return;
+        }
       }
 
       this.lenOfFileList = fileList.length;
@@ -140,9 +150,10 @@ export default {
       this.$emit('fileChange', file, fileList);
     },
     onProgress(res) {
-      const {loaded} = res;
-      const {total} = res;
-      const uploadPercent = Math.floor((loaded / total) * 100) > 1 ? Math.floor((loaded / total) * 100) : 1;
+      const { loaded } = res;
+      const { total } = res;
+      const uploadPercent =
+        Math.floor((loaded / total) * 100) > 1 ? Math.floor((loaded / total) * 100) : 1;
       this.$emit('onUploadPercent', uploadPercent);
     },
     onRemove(file, fileList) {
@@ -160,7 +171,7 @@ export default {
       }
     },
   },
-  render(h) {
+  render() {
     // vue jsx 属性传递需要把 on- 放到 props 内
     // 详细参考：https://zhuanlan.zhihu.com/p/37920151
     const uploadProps = {
@@ -174,33 +185,39 @@ export default {
     };
 
     return (
-      <div id='upload-form-style' class='upload-form'>
+      <div id="upload-form-style" class="upload-form">
         <el-upload
           action={this.action}
           accept={this.accept}
-          class='upload-field'
+          class="upload-field"
           limit={this.limit}
           multiple
-          list-type={this.lenOfFileList > 100 || this.dataType === "text" ? 'text' : 'picture'}
+          list-type={this.lenOfFileList > 100 || this.dataType === 'text' ? 'text' : 'picture'}
           auto-upload={false}
           disabled={this.uploading}
           {...uploadProps}
         >
-          <el-button disabled={this.uploading || this.$attrs.disabled} size='mini' icon='el-icon-upload'>上传文件</el-button>
-          <div slot='tip' class='flex f1 flex-between' style='margin-left: 20px;'>
-            <div class='upload-tip'>
-              <span>文件格式: { this.acceptFormatStr }</span>
-              {
-                 this.acceptSize > 0 && (
-                   <span>, 单个文件不大于 { this.acceptSizeFormat(this.acceptSize) }</span>
-                 )
-              }
+          <el-button
+            disabled={this.uploading || this.$attrs.disabled}
+            size="mini"
+            icon="el-icon-upload"
+          >
+            上传文件
+          </el-button>
+          <div slot="tip" class="flex f1 flex-between" style="margin-left: 20px;">
+            <div class="upload-tip">
+              {this.accept === 'unspecified' ? (
+                <span>文件格式不限</span>
+              ) : (
+                <span>文件格式：{this.acceptFormatStr}</span>
+              )}
+              {this.acceptSize > 0 && (
+                <span>, 单个文件不大于 {this.acceptSizeFormat(this.acceptSize)}</span>
+              )}
             </div>
-            {
-              this.showFileCount && (
-                <span class='upload-chosen-tip'>已选择{ this.lenOfFileList }个</span>
-              )
-            }
+            {this.showFileCount && (
+              <span class="upload-chosen-tip">已选择{this.lenOfFileList}个</span>
+            )}
           </div>
         </el-upload>
       </div>

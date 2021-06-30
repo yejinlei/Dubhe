@@ -1,18 +1,20 @@
 /** Copyright 2020 Tianshu AI Platform. All Rights Reserved.
-*
-* Licensed under the Apache License, Version 2.0 (the "License");
-* you may not use this file except in compliance with the License.
-* You may obtain a copy of the License at
-*
-*     http://www.apache.org/licenses/LICENSE-2.0
-*
-* Unless required by applicable law or agreed to in writing, software
-* distributed under the License is distributed on an "AS IS" BASIS,
-* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-* See the License for the specific language governing permissions and
-* limitations under the License.
-* =============================================================
-*/
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ * =============================================================
+ */
+
+import { memNormalize } from '@/utils';
 
 export const SERVING_STATUS_ENUM = {
   EXCEPTION: '0',
@@ -38,14 +40,6 @@ export const BATCH_SERVING_STATUS_MAP = {
   [SERVING_STATUS_ENUM.COMPLETED]: { name: '运行完成', tagMap: 'success' },
   [SERVING_STATUS_ENUM.UNKNOWN]: { name: '未知', tagMap: 'info' },
 };
-
-export function generateMap(originMap, field) {
-  const map = {};
-  Object.keys(originMap).forEach(key => {
-    map[key] = originMap[key][field];
-  });
-  return map;
-}
 
 export const ONLINE_SERVING_TYPE = {
   HTTP: 0,
@@ -95,12 +89,13 @@ export function upload(options) {
   if (xhr.upload && options.onUploadProgress) {
     xhr.upload.onprogress = function progress(e) {
       if (e.total > 0) {
-        e.percent = e.loaded / e.total * 100;
+        e.percent = (e.loaded / e.total) * 100;
       }
       options.onUploadProgress(e);
     };
   }
 
+  // eslint-disable-next-line consistent-return
   xhr.onreadystatechange = () => {
     if (xhr.readyState === 4) {
       const response = getResponseBody(xhr);
@@ -133,54 +128,26 @@ export function cpuFormatter(num, unit) {
   return num + unit;
 }
 
-export function cpuPercentage(used, usedUnit, total, totalUnit) {
-  const _transition = (num, unit) => {
-    switch (unit) {
-      case '':
-        num *= 1e9;
-        break;
-      case 'm':
-        num *= 1e6;
-        break;
-      // no default
-    }
-    return num;
-  };
-  return Math.round(_transition(used, usedUnit) / _transition(total, totalUnit) * 10000) / 100;
-}
-
 export function memFormatter(num, unit) {
-  if (unit === 'Ki' && num > 1024) {
-    unit = 'Mi';
-    num /= 1024;
-  }
-  if (unit === 'Mi' && num > 1024) {
-    unit = 'Gi';
-    num /= 1024;
-  }
-  return Math.round(num * 10) / 10 + unit;
+  return `${Math.round(memNormalize(num, unit) * 10) / 10} Gi`;
 }
 
-export function memPercentage(used, usedUnit, total, totalUnit) {
-  const _transition = (num, unit) => {
-    switch (unit) {
-      case 'Gi':
-        num *= 2 ** 20;
-        break;
-      case 'Mi':
-        num *= 2 ** 10;
-        break;
-      // no default
-    }
-    return num;
-  };
-  return Math.round(_transition(used, usedUnit) / _transition(total, totalUnit) * 10000) / 100;
-}
-
-export const batchServingProgressColor = [
-  { color: '#67c23a', percentage: 100 },
-];
+export const batchServingProgressColor = [{ color: '#67c23a', percentage: 100 }];
 
 export function getPollId() {
   return new Date().getTime();
-};
+}
+
+/**
+ * 将对象解析为字符串后返回
+ * @param {Object} target 被解析的对象
+ * @param {String} separator 连接键值对的分隔符
+ * @returns 解析后的字符串
+ */
+export function parseObj(target, separator = '; ') {
+  if (!(target instanceof Object)) return '';
+  return Object.keys(target)
+    .filter((key) => target[key] !== null || target[key] !== '')
+    .map((key) => `${key}: ${target[key]}`)
+    .join(separator);
+}

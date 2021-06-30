@@ -1,18 +1,18 @@
 /** Copyright 2020 Tianshu AI Platform. All Rights Reserved.
-*
-* Licensed under the Apache License, Version 2.0 (the "License");
-* you may not use this file except in compliance with the License.
-* You may obtain a copy of the License at
-*
-*     http://www.apache.org/licenses/LICENSE-2.0
-*
-* Unless required by applicable law or agreed to in writing, software
-* distributed under the License is distributed on an "AS IS" BASIS,
-* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-* See the License for the specific language governing permissions and
-* limitations under the License.
-* =============================================================
-*/
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ * =============================================================
+ */
 
 <template>
   <div class="app-container">
@@ -26,15 +26,17 @@
             type="primary"
             icon="el-icon-plus"
             round
+            :disabled="isPreset"
             @click="toAdd"
-          >创建模型</el-button>
+            >上传模型</el-button
+          >
         </span>
         <span class="cd-opts-right">
           <el-input
             id="queryName"
             v-model="query.name"
             clearable
-            placeholder="请输入模型名称或ID"
+            :placeholder="queryPlaceholder"
             class="filter-item"
             style="width: 200px;"
             @keyup.enter.native="crud.toQuery"
@@ -43,15 +45,16 @@
         </span>
       </div>
       <div>
-        <el-tabs v-model="active" class="eltabs-inlineblock" @tab-click="crud.toQuery">
-          <el-tab-pane id="tab_0" label="我的模型" name="0" />
-          <el-tab-pane id="tab_1" label="预训练模型" name="1" />
-          <el-tab-pane id="tab_2" label="炼知模型" name="2" />
+        <el-tabs v-model="active" class="eltabs-inlineblock" @tab-click="onTabClick">
+          <el-tab-pane id="tab_0" label="我的模型" :name="String(MODEL_RESOURCE_ENUM.CUSTOM)" />
+          <el-tab-pane id="tab_1" label="预训练模型" :name="String(MODEL_RESOURCE_ENUM.PRESET)" />
+          <el-tab-pane id="tab_2" label="炼知模型" :name="String(MODEL_RESOURCE_ENUM.ATLAS)" />
         </el-tabs>
       </div>
     </div>
     <!--表格渲染-->
     <el-table
+      v-if="showTable"
       ref="table"
       v-loading="crud.loading"
       :data="crud.data"
@@ -59,16 +62,20 @@
       @selection-change="crud.selectionChangeHandler"
       @sort-change="crud.sortChange"
     >
-      <el-table-column prop="id" label="ID" width="80" sortable="custom" />
+      <el-table-column v-if="!isPreset" prop="id" label="ID" width="80" sortable="custom" />
       <el-table-column prop="name" label="模型名称" min-width="180px" />
       <el-table-column prop="frameType" label="框架名称" min-width="150px">
-        <template slot-scope="scope">{{ dict.label.frame_type[scope.row.frameType]|| "--" }}</template>
+        <template slot-scope="scope">{{
+          dict.label.frame_type[scope.row.frameType] || '--'
+        }}</template>
       </el-table-column>
       <el-table-column prop="modelType" label="模型格式" min-width="150px">
-        <template slot-scope="scope">{{ dict.label.model_type[scope.row.modelType]|| "--" }}</template>
+        <template slot-scope="scope">{{
+          dict.label.model_type[scope.row.modelType] || '--'
+        }}</template>
       </el-table-column>
       <el-table-column prop="modelClassName" label="模型类别" min-width="150px">
-        <template slot-scope="scope">{{ scope.row.modelClassName || "--" }}</template>
+        <template slot-scope="scope">{{ scope.row.modelClassName || '--' }}</template>
       </el-table-column>
       <el-table-column
         prop="modelDescription"
@@ -76,13 +83,12 @@
         min-width="300px"
         show-overflow-tooltip
       />
-      <el-table-column v-if="isCustom" prop="versionNum" label="版本" width="80">
+      <el-table-column v-if="isCustom" prop="version" label="版本" width="80">
         <template slot-scope="scope">
-          <a
-            v-if="scope.row.versionNum"
-            @click="goVersion(scope.row.id, scope.row.name)"
-          >{{ scope.row.versionNum }}</a>
-          <span v-if="!scope.row.versionNum">--</span>
+          <a v-if="scope.row.version" @click="goVersion(scope.row.id, scope.row.name)">{{
+            scope.row.version
+          }}</a>
+          <span v-if="!scope.row.version">--</span>
         </template>
       </el-table-column>
       <el-table-column prop="updateTime" label="更新时间" width="160" sortable="custom">
@@ -94,61 +100,71 @@
         <template slot-scope="scope">
           <el-button
             v-if="isCustom"
-            :id="`goVersion_`+scope.$index"
+            :id="`goVersion_` + scope.$index"
             type="text"
             @click="goVersion(scope.row.id, scope.row.name)"
-          >历史版本</el-button>
+            >历史版本</el-button
+          >
           <el-tooltip
             :disabled="!!scope.row.modelAddress"
             effect="dark"
             content="暂无版本"
             placement="top"
           >
-            <span :class="{'ml-10 mr-10': isCustom}">
+            <span :class="{ 'ml-10 mr-10': isCustom }">
               <el-button
-                :id="`doDownload_`+scope.$index"
+                :id="`doDownload_` + scope.$index"
                 :disabled="!scope.row.modelAddress"
                 type="text"
                 @click="doDownload(scope.row)"
-              >下载</el-button>
+                >下载</el-button
+              >
             </span>
           </el-tooltip>
           <el-button
             v-if="isCustom"
-            :id="`doEdit_`+scope.$index"
+            :id="`doEdit_` + scope.$index"
             type="text"
             @click="doEdit(scope.row)"
-          >编辑</el-button>
+            >编辑</el-button
+          >
           <el-button
-            v-if="isCustom"
-            :id="`doDelete_`+scope.$index"
+            v-if="isAtlas && scope.row.packaged === ALTAS_MODEL_PACKAGE_ENUM.UNPACKAGED"
+            type="text"
+            @click="doPack(scope.row.id)"
+            >打包</el-button
+          >
+          <el-tooltip
+            v-if="isPreset"
+            content="该模型不支持部署"
+            placement="top"
+            :disabled="scope.row.servingModel"
+          >
+            <el-dropdown>
+              <el-button
+                type="text"
+                style="margin-left: 10px;"
+                :disabled="!scope.row.servingModel"
+                @click.stop="() => {}"
+                >部署<i class="el-icon-arrow-down el-icon--right" />
+              </el-button>
+              <el-dropdown-menu slot="dropdown">
+                <el-dropdown-item @click.native="doServing(scope.row, 'onlineServing')">
+                  <el-button type="text">在线服务</el-button>
+                </el-dropdown-item>
+                <el-dropdown-item @click.native="doServing(scope.row, 'batchServing')">
+                  <el-button type="text">批量部署</el-button>
+                </el-dropdown-item>
+              </el-dropdown-menu>
+            </el-dropdown>
+          </el-tooltip>
+          <el-button
+            v-if="isCustom || isAtlas || isAdmin"
+            :id="`doDelete_` + scope.$index"
             type="text"
             @click="doDelete(scope.row.id)"
-          >删除</el-button>
-          <el-dropdown v-if="isPreset">
-            <el-button
-              type="text"
-              style="margin-left: 10px;"
-              @click.stop="()=>{}"
-            >部署<i class="el-icon-arrow-down el-icon--right" />
-            </el-button>
-            <el-dropdown-menu slot="dropdown">
-              <el-dropdown-item
-                @click.native="doServing(scope.row, 'onlineServing')"
-              >
-                <el-button
-                  type="text"
-                >在线服务</el-button>
-              </el-dropdown-item>
-              <el-dropdown-item
-                @click.native="doServing(scope.row, 'batchServing')"
-              >
-                <el-button
-                  type="text"
-                >批量部署</el-button>
-              </el-dropdown-item>
-            </el-dropdown-menu>
-          </el-dropdown>
+            >删除</el-button
+          >
         </template>
       </el-table-column>
     </el-table>
@@ -171,7 +187,7 @@
             id="name"
             v-model.trim="form.name"
             style="width: 300px;"
-            maxlength="15"
+            maxlength="32"
             placeholder="请输入模型名称"
             show-word-limit
           />
@@ -182,6 +198,8 @@
             v-model="form.frameType"
             placeholder="请选择框架"
             style="width: 300px;"
+            filterable
+            @change="onFrameTypeChange"
           >
             <el-option
               v-for="item in dict.frame_type"
@@ -197,9 +215,10 @@
             v-model="form.modelType"
             placeholder="请选择模型格式"
             style="width: 300px;"
+            filterable
           >
             <el-option
-              v-for="item in dict.model_type"
+              v-for="item in modelTypeList"
               :key="item.value"
               :value="item.value"
               :label="item.label"
@@ -238,12 +257,25 @@
       </el-form>
     </BaseModal>
     <!--多步骤新增dialog-->
-    <add-model-dialog ref="addModel" @addDone="addDone" />
+    <add-model-dialog ref="addModel" :create-model-type="createModelType" @addDone="addDone" />
+    <BaseModal
+      title="炼知模型打包"
+      :visible.sync="packageVisible"
+      width="800px;"
+      :loading="packageSubmitting"
+      @ok="onPackageConfirm"
+      @cancel="onPackageCancel"
+      @close="onPackageClose"
+    >
+      <PackageForm ref="packageForm" />
+    </BaseModal>
   </div>
 </template>
 
 <script>
-import crudModel, { del } from '@/api/model/model';
+import { mapGetters } from 'vuex';
+
+import crudModel, { del, packageAtlasModel, getModelTypeMap } from '@/api/model/model';
 import {
   list as getAlgorithmUsages,
   add as addAlgorithmUsage,
@@ -252,8 +284,14 @@ import CRUD, { presenter, header, form, crud } from '@crud/crud';
 import BaseModal from '@/components/BaseModal';
 import rrOperation from '@crud/RR.operation';
 import pagination from '@crud/Pagination';
-import { downloadZipFromObjectPath, validateNameWithHyphen } from '@/utils';
+import {
+  validateNameWithHyphen,
+  downloadZipFromObjectPath,
+  MODEL_RESOURCE_ENUM,
+  ALTAS_MODEL_PACKAGE_ENUM,
+} from '@/utils';
 import AddModelDialog from './components/addModelDialog';
+import PackageForm from './components/packageForm';
 
 const defaultForm = {
   name: null,
@@ -262,17 +300,24 @@ const defaultForm = {
   modelClassName: null,
   modelDescription: null,
 };
+
 export default {
   name: 'Model',
   dicts: ['model_type', 'frame_type'],
-  components: { BaseModal, pagination, rrOperation, AddModelDialog },
+  components: {
+    BaseModal,
+    pagination,
+    rrOperation,
+    AddModelDialog,
+    PackageForm,
+  },
   cruds() {
     return CRUD({
       title: '模型',
       crudMethod: { ...crudModel },
       props: {
         optText: {
-          add: '创建模型',
+          add: '上传模型',
         },
       },
       optShow: {
@@ -283,21 +328,20 @@ export default {
   mixins: [presenter(), header(), form(defaultForm), crud()],
   data() {
     return {
+      MODEL_RESOURCE_ENUM,
+      ALTAS_MODEL_PACKAGE_ENUM,
+
       rules: {
         name: [
           { required: true, message: '请输入模型名称', trigger: 'blur' },
-          { max: 20, message: '长度在 20 个字符以内', trigger: 'blur' },
+          { max: 32, message: '长度在 32 个字符以内', trigger: 'blur' },
           {
             validator: validateNameWithHyphen,
             trigger: ['blur', 'change'],
           },
         ],
-        frameType: [
-          { required: true, message: '请选择模型框架', trigger: 'blur' },
-        ],
-        modelType: [
-          { required: true, message: '请选择模型格式', trigger: 'blur' },
-        ],
+        frameType: [{ required: true, message: '请选择模型框架', trigger: 'blur' }],
+        modelType: [{ required: true, message: '请选择模型格式', trigger: 'blur' }],
         modelClassName: [
           {
             required: true,
@@ -305,24 +349,51 @@ export default {
             trigger: ['blur', 'change'],
           },
         ],
-        modelDescription: [
-          { required: true, message: '请输入模型描述', trigger: 'blur' },
-          { max: 255, message: '长度在255个字符以内', trigger: 'blur' },
-        ],
+        modelDescription: [{ max: 255, message: '长度在255个字符以内', trigger: 'blur' }],
       },
       algorithmUsageList: [],
-      active: '0',
+      active: String(MODEL_RESOURCE_ENUM.CUSTOM),
+      showTable: true,
+
+      packageVisible: false, // 炼知模型打包弹窗
+      packageSubmitting: false,
+      modelTypeMap: {},
     };
   },
   computed: {
+    ...mapGetters(['isAdmin']),
     isCustom() {
-      return this.active === '0';
+      return this.active === String(MODEL_RESOURCE_ENUM.CUSTOM);
     },
     isPreset() {
-      return this.active === '1';
+      return this.active === String(MODEL_RESOURCE_ENUM.PRESET);
+    },
+    isAtlas() {
+      return this.active === String(MODEL_RESOURCE_ENUM.ATLAS);
+    },
+    createModelType() {
+      if (this.isCustom) {
+        return 'Custom';
+      }
+      if (this.isAtlas) {
+        return 'Atlas';
+      }
+      return null;
+    },
+    queryPlaceholder() {
+      return `请输入模型名称${this.isPreset ? '' : '或ID'}`;
+    },
+    modelTypeList() {
+      if (!this.form.frameType || !this.modelTypeMap[this.form.frameType]) {
+        return this.dict.model_type;
+      }
+      return this.dict.model_type.filter((type) =>
+        this.modelTypeMap[this.form.frameType].includes(+type.value)
+      );
     },
   },
   mounted() {
+    this.getModelTypeMap();
     if (this.$route.params?.type === 'add') {
       setTimeout(() => {
         this.crud.toAdd();
@@ -336,7 +407,7 @@ export default {
         current: 1,
         size: 1000,
       };
-      getAlgorithmUsages(params).then(res => {
+      getAlgorithmUsages(params).then((res) => {
         this.algorithmUsageList = res.result;
       });
     },
@@ -345,13 +416,21 @@ export default {
       this.getAlgorithmUsages();
     },
     // handle
+    onTabClick() {
+      this.query.name = undefined;
+      this.crud.toQuery();
+
+      // 切换 tab 时需要让表格重新渲染
+      this.showTable = false;
+      this.$nextTick(() => {
+        this.showTable = true;
+      });
+    },
     onDialogOpen() {
       this.getAlgorithmUsages();
     },
     onAlgorithmUsageChange(value) {
-      const usageRes = this.algorithmUsageList.find(
-        usage => usage.auxInfo === value,
-      );
+      const usageRes = this.algorithmUsageList.find((usage) => usage.auxInfo === value);
       if (!usageRes) {
         this.createAlgorithmUsage(value);
       }
@@ -362,6 +441,37 @@ export default {
     addDone() {
       this.crud.refresh();
     },
+
+    // 获取模型框架 —— 模型格式匹配关系
+    async getModelTypeMap() {
+      this.modelTypeMap = await getModelTypeMap();
+    },
+
+    // 模型框架
+    onFrameTypeChange() {
+      this.form.modelType = null;
+    },
+
+    onPackageConfirm() {
+      this.$refs.packageForm.validate((form) => {
+        this.packageSubmitting = true;
+        packageAtlasModel(form)
+          .then(() => {
+            this.packageVisible = false;
+            this.$message.success('模型打包成功');
+          })
+          .finally(() => {
+            this.packageSubmitting = false;
+          });
+      });
+    },
+    onPackageCancel() {
+      this.packageVisible = false;
+    },
+    onPackageClose() {
+      this.$refs.packageForm.resetForm();
+    },
+
     // link
     goVersion(id, name, type = 'detail') {
       this.$router.push({ path: '/model/version', query: { id, name, type } });
@@ -373,38 +483,52 @@ export default {
       item.modelType = String(item.modelType);
       this.crud.toEdit(item);
     },
+    doPack(id) {
+      this.packageVisible = true;
+      this.$nextTick(() => {
+        this.$refs.packageForm.initForm(id);
+      });
+    },
     doDelete(id) {
-      this.$confirm('此操作将永久删除该模型, 是否继续?', '请确认').then(
-        async () => {
-          const params = {
-            ids: [id],
-          };
-          await del(params);
-          this.$message({
-            message: '删除成功',
-            type: 'success',
-          });
-          this.crud.refresh();
-        },
-      );
+      this.$confirm('此操作将永久删除该模型, 是否继续?', '请确认').then(async () => {
+        const params = {
+          ids: [id],
+        };
+        await del(params);
+        this.$message({
+          message: '删除成功',
+          type: 'success',
+        });
+        this.crud.refresh();
+      });
     },
     doDownload(row) {
-      const { name, versionNum, modelAddress } = row;
-      const msg = this.isCustom
-        ? `此操作将下载 ${name} 模型的 ${versionNum} 版本, 是否继续?`
-        : `此操作将下载预训练模型 ${name}, 是否继续?`;
+      const { name, version, modelAddress } = row;
+      let msg;
+      switch (this.active) {
+        case String(MODEL_RESOURCE_ENUM.CUSTOM):
+          msg = `此操作将下载 ${name} 模型的 ${version} 版本, 是否继续?`;
+          break;
+        case String(MODEL_RESOURCE_ENUM.PRESET):
+          msg = `此操作将下载预训练模型 ${name}, 是否继续?`;
+          break;
+        case String(MODEL_RESOURCE_ENUM.ATLAS):
+          msg = `此操作将下载炼知模型 ${name}, 是否继续?`;
+          break;
+        default:
+          msg = `此操作将下载模型 ${name}, 是否继续?`;
+          break;
+      }
       this.$confirm(msg, '请确认').then(
         () => {
-          const url = /^\//.test(modelAddress)
-            ? modelAddress
-            : `/${modelAddress}`;
+          const url = /^\//.test(modelAddress) ? modelAddress : `/${modelAddress}`;
           downloadZipFromObjectPath(url, 'model.zip');
           this.$message({
             message: '请查看下载文件',
             type: 'success',
           });
         },
-        () => {},
+        () => {}
       );
     },
     doServing(model, type) {

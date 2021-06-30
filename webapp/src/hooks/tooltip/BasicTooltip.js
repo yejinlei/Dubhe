@@ -1,18 +1,18 @@
 /** Copyright 2020 Tianshu AI Platform. All Rights Reserved.
-*
-* Licensed under the Apache License, Version 2.0 (the "License");
-* you may not use this file except in compliance with the License.
-* You may obtain a copy of the License at
-*
-*     http://www.apache.org/licenses/LICENSE-2.0
-*
-* Unless required by applicable law or agreed to in writing, software
-* distributed under the License is distributed on an "AS IS" BASIS,
-* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-* See the License for the specific language governing permissions and
-* limitations under the License.
-* =============================================================
-*/
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ * =============================================================
+ */
 
 // 基础 Tooltip 组件，用于在手动标注页面框选标注，选择标签
 import { isFunction } from 'lodash';
@@ -78,7 +78,7 @@ export default {
       }
     },
     onDocumentClick(event) {
-      const {target} = event;
+      const { target } = event;
       const root = this.$el;
       // 过滤 popper
       // element popper 是挂在 document 下面，临时过滤
@@ -99,7 +99,7 @@ export default {
   beforeDestroy() {
     this.clearOutsideHandler();
   },
-  render(h) {
+  render() {
     const { position = {}, curVisible } = this;
 
     // // this sucks~
@@ -121,7 +121,7 @@ export default {
 
     return (
       <div class={`zj-tooltip basic-tooltip`} style={positionStyle}>
-        { this.$slots.default }
+        {this.$slots.default}
       </div>
     );
   },

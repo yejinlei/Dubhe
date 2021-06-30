@@ -1,49 +1,60 @@
 /** Copyright 2020 Tianshu AI Platform. All Rights Reserved.
-*
-* Licensed under the Apache License, Version 2.0 (the "License");
-* you may not use this file except in compliance with the License.
-* You may obtain a copy of the License at
-*
-*     http://www.apache.org/licenses/LICENSE-2.0
-*
-* Unless required by applicable law or agreed to in writing, software
-* distributed under the License is distributed on an "AS IS" BASIS,
-* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-* See the License for the specific language governing permissions and
-* limitations under the License.
-* =============================================================
-*/
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ * =============================================================
+ */
 
 <template>
   <div class="annotation-table mb-10">
     <el-form-item label="全部标注" style="margin-bottom: 0;" />
-    <el-table :data="notions" fit style="width: 100%;" max-height="240" :row-class-name="rowClass" @row-click="handleRowClick">
+    <el-table
+      :data="notions"
+      fit
+      style="width: 100%;"
+      max-height="240"
+      :row-class-name="rowClass"
+      @row-click="handleRowClick"
+    >
       <el-table-column label="标注 Id" :min-width="100">
-        <template slot-scope="{row}">
+        <template slot-scope="{ row }">
           <span>{{ row.name }}</span>
-          <Edit :row="row" title="修改标注 Id" valueBy="name" rules="required" label="标注 Id " @handleOk="handleEdit" />
+          <Edit
+            :row="row"
+            title="修改标注 Id"
+            valueBy="name"
+            rules="required"
+            label="标注 Id "
+            @handleOk="handleEdit"
+          />
         </template>
       </el-table-column>
       <el-table-column label="标签类型">
-        <template slot-scope="{row}">
+        <template slot-scope="{ row }">
           <span>{{ row.labelName }}</span>
           <EditLabel :row="row" :labels="labels" :handleEditLabel="handleEditLabel(row)" />
         </template>
       </el-table-column>
-      <el-table-column label="置信分" :width="72">
-        <template slot-scope="{row}">
+      <el-table-column v-if="showScore" label="置信分" :width="72">
+        <template slot-scope="{ row }">
           <el-tooltip effect="dark" :content="String(row.data.rawScore)" placement="top">
-            <span>{{ row.data._score || "--" }}</span>
+            <span>{{ row.data._score || '--' }}</span>
           </el-tooltip>
         </template>
       </el-table-column>
       <el-table-column label="操作" :width="48">
-        <template slot-scope="{row}">
-          <el-popconfirm
-            title="确定删除这个标注吗？"
-            @onConfirm="() => onConfirm(row)"
-          >
-            <span slot="reference"><i class="el-icon-delete cp" /></span>
+        <template slot-scope="{ row }">
+          <el-popconfirm title="确定删除这个标注吗？" @onConfirm="() => onConfirm(row)">
+            <span slot="reference"><i class="el-icon-delete cp"/></span>
           </el-popconfirm>
         </template>
       </el-table-column>
@@ -68,8 +79,9 @@ export default {
   props: {
     annotations: {
       type: Array,
-      default: () => ([]),
+      default: () => [],
     },
+    annotationType: String,
     updateState: Function,
     getColorLabel: Function,
     deleteAnnotation: Function,
@@ -77,11 +89,18 @@ export default {
     currentAnnotationId: String,
     labels: {
       type: Array,
-      default: () => ([]),
+      default: () => [],
     },
   },
   setup(props) {
-    const { annotations: rawAnnotations, updateState, getColorLabel, findRowIndex, deleteAnnotation } = props;
+    const {
+      annotations: rawAnnotations,
+      updateState,
+      getColorLabel,
+      findRowIndex,
+      deleteAnnotation,
+      annotationType,
+    } = props;
     let labelMap = {};
 
     const state = reactive({
@@ -90,11 +109,15 @@ export default {
     });
 
     // 将 labels 转化为 map
-    const rLabels = computed(() => props.labels.reduce((acc, cur) => {
-      return Object.assign(acc, {
-        [cur.id]: cur.name,
-      });
-    }, {}));
+    const rLabels = computed(() =>
+      props.labels.reduce((acc, cur) => {
+        return Object.assign(acc, {
+          [cur.id]: cur.name,
+        });
+      }, {})
+    );
+
+    const showScore = computed(() => annotationType !== 'shapes');
 
     const validTrackId = (trackId) => {
       if (isNil(trackId) || trackId === -1) return false;
@@ -107,7 +130,9 @@ export default {
       const labelName = rLabels.value[categoryId];
       const labelNameTxt = labelName ? `${labelName}_` : '';
       // 更新索引
-      const labelIndex = !isNil(labelMap[categoryId]) ? (labelMap[categoryId]+=1) : (labelMap[categoryId] = 0);
+      const labelIndex = !isNil(labelMap[categoryId])
+        ? (labelMap[categoryId] += 1)
+        : (labelMap[categoryId] = 0);
 
       const newIndex = leadingZero(labelIndex + 1);
       // 新创建的注释 item，执行顺序
@@ -157,7 +182,7 @@ export default {
         const nextItem = { ...curItem, name };
         const updateList = replace(props.annotations, updateIndex, nextItem);
         updateState({
-          annotations: updateList,
+          [annotationType]: updateList,
         });
       }
     };
@@ -177,29 +202,30 @@ export default {
         };
         const updateList = replace(props.annotations, updateIndex, nextItem);
         updateState({
-          annotations: updateList,
+          [annotationType]: updateList,
         });
       }
     };
 
     const notions = computed({
-      get: () => state.annotations.map(d => withEdit(d, false)),
+      get: () => state.annotations.map((d) => withEdit(d, false)),
     });
 
-    const rowClass = ({row}) => {
+    const rowClass = ({ row }) => {
       return row.id === props.currentAnnotationId ? 'activeRow' : '';
     };
 
     // 外部更新后同步为 state
-    watch(() => props.annotations, (next) => {
-      // 重置 labelMap
-      labelMap = {};
-      Object.assign(state, {
-        annotations: next,
-      });
-    }, {
-      lazy: true,
-    });
+    watch(
+      () => props.annotations,
+      (next) => {
+        // 重置 labelMap
+        labelMap = {};
+        Object.assign(state, {
+          annotations: next,
+        });
+      }
+    );
 
     return {
       state,
@@ -210,12 +236,13 @@ export default {
       handleEdit,
       handleEditLabel,
       rowClass,
+      showScore,
     };
   },
 };
 </script>
 <style lang="scss">
-@import "~@/assets/styles/variables.scss";
+@import '~@/assets/styles/variables.scss';
 
 .annotation-table {
   .activeRow {

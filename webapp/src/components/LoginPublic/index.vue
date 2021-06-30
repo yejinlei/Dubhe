@@ -1,18 +1,18 @@
 /** Copyright 2020 Tianshu AI Platform. All Rights Reserved.
-*
-* Licensed under the Apache License, Version 2.0 (the "License");
-* you may not use this file except in compliance with the License.
-* You may obtain a copy of the License at
-*
-*     http://www.apache.org/licenses/LICENSE-2.0
-*
-* Unless required by applicable law or agreed to in writing, software
-* distributed under the License is distributed on an "AS IS" BASIS,
-* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-* See the License for the specific language governing permissions and
-* limitations under the License.
-* =============================================================
-*/
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ * =============================================================
+ */
 
 <template>
   <div style="height: 100%;">
@@ -21,12 +21,8 @@
       <div class="right" />
     </div>
     <div id="content">
-      <div class="left">
-        <div
-          class="image"
-          @mouseenter="stopSlider"
-          @mouseleave="startSlider"
-        >
+      <div class="left mb-dn">
+        <div class="image" @mouseenter="stopSlider" @mouseleave="startSlider">
           <transition-group ref="loginList" name="login-list" tag="ul">
             <li
               v-for="item in loginImageList"
@@ -35,25 +31,21 @@
               class="image-item"
             >
               <!-- 文本介绍 -->
-              <div class="carousel-title">{{item.title}}</div>
-              <div class="carousel-text">{{item.text}}</div>
+              <div class="carousel-title">{{ item.title }}</div>
+              <div class="carousel-text">{{ item.text }}</div>
             </li>
           </transition-group>
           <!-- 翻页指示器 -->
           <ul class="indicator-item">
             <li
-              v-for="(item,index) in loginImageList.length"
+              v-for="(item, index) in loginImageList.length"
               :key="index"
-              :class="{'active': index === currentIndex}"
+              :class="{ active: index === currentIndex }"
               @click="currentIndex = index"
-            >
-            </li>
+            ></li>
           </ul>
           <!--  底部  -->
-          <div
-            v-if="$store.state.settings.showFooter"
-            id="el-login-footer"
-          >
+          <div v-if="$store.state.settings.showFooter" id="el-login-footer">
             <span>{{ $store.state.settings.footerTxt }}</span>
             <template v-if="$store.state.settings.caseNumber">
               <span>⋅</span>
@@ -62,11 +54,11 @@
           </div>
         </div>
       </div>
-      <div class="right">
+      <div class="right mb-w100">
         <!-- 左侧部分 -->
         <slot />
         <div class="footer-logo">
-          <img src="@/assets/images/dubhe-logo.svg" width="74" alt>
+          <img src="@/assets/images/dubhe-logo.svg" width="74" alt />
         </div>
       </div>
     </div>
@@ -282,4 +274,3 @@ export default {
   transition: all 0.5s linear;
 }
 </style>
-

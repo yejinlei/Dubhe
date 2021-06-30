@@ -1,25 +1,26 @@
 /** Copyright 2020 Tianshu AI Platform. All Rights Reserved.
-*
-* Licensed under the Apache License, Version 2.0 (the "License");
-* you may not use this file except in compliance with the License.
-* You may obtain a copy of the License at
-*
-*     http://www.apache.org/licenses/LICENSE-2.0
-*
-* Unless required by applicable law or agreed to in writing, software
-* distributed under the License is distributed on an "AS IS" BASIS,
-* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-* See the License for the specific language governing permissions and
-* limitations under the License.
-* =============================================================
-*/
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ * =============================================================
+ */
 
 import request from '@/utils/request';
+import { API_MODULE_NAME } from '@/config';
 
 // 获取数据集对应的 studyInstanceUID 和 seriesInstanceUID
 export function getCaseInfo(datasetId) {
   return request({
-    url: `api/data/datasets/medical/detail/${datasetId}`,
+    url: `/${API_MODULE_NAME.DCM}/datasets/medical/detail/${datasetId}`,
     method: 'get',
   });
 }
@@ -27,7 +28,7 @@ export function getCaseInfo(datasetId) {
 // 获取自动标注详情
 export const queryAutoResult = (datasetId) => {
   return request({
-    url: `api/data/datasets/medical/getAuto/${datasetId}`,
+    url: `/${API_MODULE_NAME.DCM}/datasets/medical/getAuto/${datasetId}`,
     method: 'get',
   });
 };
@@ -35,14 +36,14 @@ export const queryAutoResult = (datasetId) => {
 // 获取手动标注详情
 export const queryManualResult = (datasetId) => {
   return request({
-    url: `api/data/datasets/medical/getFinished/${datasetId}`,
+    url: `/${API_MODULE_NAME.DCM}/datasets/medical/getFinished/${datasetId}`,
     method: 'get',
   });
 };
 
 export function list(params) {
   return request({
-    url: '/api/data/datasets/medical',
+    url: `/${API_MODULE_NAME.DCM}/datasets/medical`,
     method: 'get',
     params,
   });
@@ -51,7 +52,7 @@ export function list(params) {
 // 数据集详情
 export function detail(id) {
   return request({
-    url: `/api/data/datasets/medical/${id}`,
+    url: `/${API_MODULE_NAME.DCM}/datasets/medical/${id}`,
     method: 'get',
   });
 }
@@ -59,7 +60,7 @@ export function detail(id) {
 // 创建数据集
 export function add(data) {
   return request({
-    url: 'api/data/datasets/medical',
+    url: `/${API_MODULE_NAME.DCM}/datasets/medical`,
     method: 'post',
     data,
   });
@@ -68,7 +69,7 @@ export function add(data) {
 // 保存标注
 export function save(data) {
   return request({
-    url: '/api/data/datasets/medical/annotation/save',
+    url: `/${API_MODULE_NAME.DCM}/datasets/medical/annotation/save`,
     method: 'post',
     data,
   });
@@ -77,7 +78,7 @@ export function save(data) {
 // 上传文件
 export function upload(datasetId, params) {
   return request({
-    url: '/api/data/datasets/medical/files',
+    url: `/${API_MODULE_NAME.DCM}/datasets/medical/files`,
     method: 'post',
     data: {
       id: datasetId,
@@ -89,7 +90,7 @@ export function upload(datasetId, params) {
 export function del(ids) {
   const delData = { ids };
   return request({
-    url: 'api/data/datasets/medical',
+    url: `/${API_MODULE_NAME.DCM}/datasets/medical`,
     method: 'delete',
     data: delData,
   });
@@ -97,7 +98,7 @@ export function del(ids) {
 
 export function editDataset(data) {
   return request({
-    url: `api/data/datasets/medical/${data.medicalId}`,
+    url: `/${API_MODULE_NAME.DCM}/datasets/medical/${data.medicalId}`,
     method: 'put',
     data,
   });
@@ -106,7 +107,7 @@ export function editDataset(data) {
 // 导入自定义数据集
 export function addCustomDataset(data) {
   return request({
-    url: `api/data/datasets/medical/custom`,
+    url: `/${API_MODULE_NAME.DCM}/datasets/medical/custom`,
     method: 'post',
     data,
   });
@@ -115,7 +116,7 @@ export function addCustomDataset(data) {
 export function autoAnnotate(id) {
   const data = { medicalId: id };
   return request({
-    url: 'api/data/datasets/medical/annotation/auto',
+    url: `/${API_MODULE_NAME.DCM}/datasets/medical/annotation/auto`,
     method: 'post',
     data,
   });
@@ -124,7 +125,7 @@ export function autoAnnotate(id) {
 // 查询数据集状态
 export function queryDatasetsProgress(params) {
   return request({
-    url: `/api/data/datasets/medical/annotation/schedule`,
+    url: `/${API_MODULE_NAME.DCM}/datasets/medical/annotation/schedule`,
     method: 'get',
     params,
   });
@@ -133,7 +134,7 @@ export function queryDatasetsProgress(params) {
 // 保存病灶信息
 export function saveLesions(medicalId, data) {
   return request({
-    url: `/api/data/datasets/medical/lesion/${medicalId}`,
+    url: `/${API_MODULE_NAME.DCM}/datasets/medical/lesion/${medicalId}`,
     method: 'post',
     data,
   });
@@ -142,7 +143,7 @@ export function saveLesions(medicalId, data) {
 // 查询病灶信息
 export function queryLesions(medicalId, params) {
   return request({
-    url: `/api/data/datasets/medical/lesion/${medicalId}`,
+    url: `/${API_MODULE_NAME.DCM}/datasets/medical/lesion/${medicalId}`,
     method: 'get',
     params,
   });
@@ -151,7 +152,7 @@ export function queryLesions(medicalId, params) {
 // 删除病灶信息
 export function deleteLesion(id) {
   return request({
-    url: `/api/data/datasets/medical/lesion`,
+    url: `/${API_MODULE_NAME.DCM}/datasets/medical/lesion`,
     method: 'delete',
     data: { id },
   });
@@ -160,11 +161,10 @@ export function deleteLesion(id) {
 // 修改病灶信息
 export function updateLesion(id) {
   return request({
-    url: `/api/data/datasets/medical/lesion`,
+    url: `/${API_MODULE_NAME.DCM}/datasets/medical/lesion`,
     method: 'put',
     data: { id },
   });
 }
 
 export default { list, add, del };
-

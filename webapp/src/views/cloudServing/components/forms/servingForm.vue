@@ -1,49 +1,28 @@
 /** Copyright 2020 Tianshu AI Platform. All Rights Reserved.
-*
-* Licensed under the Apache License, Version 2.0 (the "License");
-* you may not use this file except in compliance with the License.
-* You may obtain a copy of the License at
-*
-*     http://www.apache.org/licenses/LICENSE-2.0
-*
-* Unless required by applicable law or agreed to in writing, software
-* distributed under the License is distributed on an "AS IS" BASIS,
-* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-* See the License for the specific language governing permissions and
-* limitations under the License.
-* =============================================================
-*/
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ * =============================================================
+ */
 
 <template>
-  <el-form
-    ref="form"
-    :model="form"
-    :rules="rules"
-    label-width="120px"
-  >
+  <el-form ref="form" :model="form" :rules="rules" label-width="120px">
     <el-form-item label="服务名称" prop="name">
-      <el-input
-        ref="nameInput"
-        v-model.trim="form.name"
-        maxlength="32"
-        show-word-limit
-      />
+      <el-input ref="nameInput" v-model.trim="form.name" maxlength="32" show-word-limit />
     </el-form-item>
     <el-form-item label="服务类型" prop="type">
-      <el-radio-group
-        v-model="form.type"
-        @change="onTypeChange"
-      >
-        <el-radio
-          border
-          :label="0"
-          class="mr-0 w-150"
-        >HTTP 模式</el-radio>
-        <el-radio
-          border
-          :label="1"
-          class="w-150"
-        >GRPC 模式</el-radio>
+      <el-radio-group v-model="form.type" @change="onTypeChange">
+        <el-radio border :label="0" class="mr-0 w-150">HTTP 模式</el-radio>
+        <el-radio border :label="1" class="w-150">GRPC 模式</el-radio>
       </el-radio-group>
     </el-form-item>
     <el-form-item label="服务描述" prop="description">
@@ -56,26 +35,22 @@
       />
     </el-form-item>
     <el-divider />
-    <el-card
-      v-for="(config, index) in modelConfigList"
-      :key="config.id"
-      class="mb-10 ml-120"
-    >
+    <el-card v-for="(config, index) in modelConfigList" :key="config.id" class="mb-10 ml-120">
       <ServingModelConfig
         ref="modelConfig"
         label-width="120px"
         :deletable="modelConfigList.length >= 2"
         :config="config"
         :model-disabled="index !== 0"
-        :model-address-map="modelAddressMap"
+        :model-address-map="modelBranchIdMap"
         :release-rate-disabled="modelConfigList.length === 1"
         :release-rate-sum-valid="releaseRateSumValid"
         :node-count-valid="nodeCountValid"
         @model-resource-change="onModelResourceChange"
         @model-change="onModelChange"
-        @model-version-change="version => onModelVersionChange(config.id, version)"
-        @release-rate-change="rate => onModelReleaseRateChange(rate, index)"
-        @change="config => onModelConfigChange(config, index)"
+        @model-version-change="(version) => onModelVersionChange(config.id, version)"
+        @release-rate-change="(rate) => onModelReleaseRateChange(rate, index)"
+        @change="(config) => onModelConfigChange(config, index)"
         @delete="onModelConfigDelete"
       />
     </el-card>
@@ -84,7 +59,8 @@
       :disabled="disableAddModelConfig"
       class="ml-120"
       @click="addModelConfig"
-    >添加模型版本进行灰度发布</el-button>
+      >添加模型版本进行灰度发布</el-button
+    >
   </el-form>
 </template>
 
@@ -107,12 +83,16 @@ const defaultForm = {
 const defaultModelConfig = {
   modelResource: 0, // 模型类型
   modelId: null,
-  modelAddress: null,
+  modelBranchId: null,
+  imageName: null, // 镜像名称
+  imageTag: null, // 镜像版本
   resourcesPoolType: 0, // 节点类型
   resourcesPoolSpecs: null, // 节点规格
   resourcesPoolNode: 1, // 节点数
   releaseRate: 100, // 灰度发布分流
-  deployParams: '{}', // 部署动态参数 JSON 字符串
+  deployParams: {}, // 部署参数
+  useScript: false, // 是否上传脚本
+  algorithmId: null, // 脚本 ID
 };
 
 let configId = 1; // 用于给 modelConfig 唯一的 id
@@ -123,7 +103,7 @@ export default {
   data() {
     return {
       modelConfigList: [], // 本地维护模型配置列表
-      modelAddressMap: {}, // 用于维护所选模型的模型地址
+      modelBranchIdMap: {}, // 用于维护所选模型的模型版本 ID
       isPresetModel: false, // 预置模型不允许灰度发布
 
       releaseRateSumValid: true,
@@ -160,7 +140,11 @@ export default {
   },
   computed: {
     disableAddModelConfig() {
-      return this.form.type === ONLINE_SERVING_TYPE.GRPC || this.modelConfigList.length >= 2 || this.isPresetModel;
+      return (
+        this.form.type === ONLINE_SERVING_TYPE.GRPC ||
+        this.modelConfigList.length >= 2 ||
+        this.isPresetModel
+      );
     },
   },
   methods: {
@@ -168,14 +152,16 @@ export default {
     onTypeChange(type) {
       // GRPC 模式不支持灰度发布
       if (type === ONLINE_SERVING_TYPE.GRPC && this.modelConfigList.length > 1) {
-        this.modelAddressMap = { [this.modelConfigList[0].id]: this.modelConfigList[0].modelAddress };
+        this.modelBranchIdMap = {
+          [this.modelConfigList[0].id]: this.modelConfigList[0].modelBranchId,
+        };
         this.modelConfigList.splice(1, this.modelConfigList.length - 1);
         this.modelConfigList.length && this.$refs.modelConfig[0].updateReleaseRate(100);
       }
     },
     onModelResourceChange(modelResource) {
       // 预置模型不支持灰度发布
-      this.modelAddressMap = {};
+      this.modelBranchIdMap = {};
       this.isPresetModel = modelResource === 1;
       this.modelConfigList.splice(1, this.modelConfigList.length - 1);
       this.modelConfigList.length && this.$refs.modelConfig[0].updateReleaseRate(100);
@@ -186,9 +172,11 @@ export default {
       for (let i = 1; i < this.modelConfigList.length; i += 1) {
         this.$refs.modelConfig[i].updateModel(modelId);
       }
+      // 需要清空 modelBranchIdMap
+      this.modelBranchIdMap = {};
     },
-    onModelVersionChange(configId, modelAddress) {
-      this.updateModelAddressMap(configId, modelAddress);
+    onModelVersionChange(configId, modelBranchId) {
+      this.updateModelAddressMap(configId, modelBranchId);
     },
     onModelReleaseRateChange(rate, i) {
       this.modelConfigList[i].releaseRate = rate;
@@ -206,10 +194,10 @@ export default {
       this.validateNodeCount();
     },
     onModelConfigDelete(configId) {
-      const index = this.modelConfigList.findIndex(config => config.id === configId);
+      const index = this.modelConfigList.findIndex((config) => config.id === configId);
       if (index !== -1) {
         this.modelConfigList.splice(index, 1);
-        Reflect.deleteProperty(this.modelAddressMap, configId);
+        Reflect.deleteProperty(this.modelBranchIdMap, configId);
       }
       this.$nextTick(() => {
         if (this.modelConfigList.length === 1) {
@@ -225,11 +213,13 @@ export default {
     initForm(originForm) {
       // 获取初始表单对象或空对象作为初始表单
       const form = originForm || Object.create(null);
-      
+
       // 根据表单的字段，将初始表单的对应字段赋值到表单上，若字段不存在则使用默认值
-      Object.keys(this.form).forEach(key => { form[key] && (this.form[key] = form[key]); });
+      Object.keys(this.form).forEach((key) => {
+        form[key] && (this.form[key] = form[key]);
+      });
       // modelConfigList 需要赋值新的数组，避免数组对象的引用问题
-      this.modelConfigList = [ ...this.form.modelConfigList ] || [];
+      this.modelConfigList = [...this.form.modelConfigList] || [];
       // 如果模型配置列表为空，则添加一个默认模型配置
       if (!this.modelConfigList.length) {
         this.modelConfigList.push({ ...defaultModelConfig });
@@ -238,8 +228,8 @@ export default {
       // 判断是否使用预训练模型
       this.isPresetModel = this.modelConfigList[0].modelResource === 1;
       // 如果模型配置缺少字段，则使用对应字段的默认值
-      this.modelConfigList.forEach(config => {
-        Object.keys(defaultModelConfig).forEach(key => {
+      this.modelConfigList.forEach((config) => {
+        Object.keys(defaultModelConfig).forEach((key) => {
           if (config[key] === undefined) {
             config[key] = defaultModelConfig[key];
           }
@@ -247,10 +237,10 @@ export default {
         // 为模型配置列表增加唯一 ID
         // eslint-disable-next-line no-plusplus
         config.id = configId++;
-        // 初始化 modelAddressMap
-        this.modelAddressMap[config.id] = config.modelAddress || undefined;
+        // 初始化 modelBranchIdMap
+        this.modelBranchIdMap[config.id] = config.modelBranchId || undefined;
       });
-      
+
       // 渲染完成后清空表单验证，避免初始值导致表单错误提示
       this.$nextTick(() => {
         this.clearValidate();
@@ -258,7 +248,7 @@ export default {
     },
     resetForm() {
       this.form = { ...defaultForm, modelConfigList: [] };
-      this.modelAddressMap = {};
+      this.modelBranchIdMap = {};
       this.$nextTick(() => {
         this.clearValidate();
       });
@@ -267,13 +257,13 @@ export default {
     validate(resolve, reject) {
       let valid = true;
       // 对基础表单进行验证
-      this.$refs.form.validate(isValid => {
+      this.$refs.form.validate((isValid) => {
         if (!isValid) {
           valid = false;
         }
       });
       // 对每个模型配置表单进行表单验证
-      this.$refs.modelConfig.forEach(config => {
+      this.$refs.modelConfig.forEach((config) => {
         config.validate(null, () => {
           valid = false;
         });
@@ -295,7 +285,7 @@ export default {
       // eslint-disable-next-line no-plusplus
       const newConfig = { ...defaultModelConfig, id: configId++ };
       let rateRemain = 100;
-      this.modelConfigList.forEach(config => {
+      this.modelConfigList.forEach((config) => {
         rateRemain -= config.releaseRate;
       });
       newConfig.releaseRate = rateRemain >= 0 ? rateRemain : 0;
@@ -306,19 +296,22 @@ export default {
     },
     validateReleaseRate() {
       let rateTotal = 0;
-      this.modelConfigList.forEach(config => {
+      this.modelConfigList.forEach((config) => {
         rateTotal += config.releaseRate;
       });
       this.releaseRateSumValid = rateTotal === 100;
     },
     validateNodeCount() {
-      const nodeCountSum = this.modelConfigList.reduce((sum, config) => sum + config.resourcesPoolNode, 0);
+      const nodeCountSum = this.modelConfigList.reduce(
+        (sum, config) => sum + config.resourcesPoolNode,
+        0
+      );
       this.nodeCountValid = nodeCountSum <= servingConfig.onlineServingNodeSumMax;
     },
-    updateModelAddressMap(configId, modelAddress) {
-      this.modelAddressMap = {
-        ...this.modelAddressMap,
-        [configId]: modelAddress,
+    updateModelAddressMap(configId, modelBranchId) {
+      this.modelBranchIdMap = {
+        ...this.modelBranchIdMap,
+        [configId]: modelBranchId,
       };
     },
   },

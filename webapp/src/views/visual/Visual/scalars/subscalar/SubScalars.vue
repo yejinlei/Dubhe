@@ -1,25 +1,27 @@
 /** Copyright 2020 Tianshu AI Platform. All Rights Reserved.
-*
-* Licensed under the Apache License, Version 2.0 (the "License");
-* you may not use this file except in compliance with the License.
-* You may obtain a copy of the License at
-*
-*     http://www.apache.org/licenses/LICENSE-2.0
-*
-* Unless required by applicable law or agreed to in writing, software
-* distributed under the License is distributed on an "AS IS" BASIS,
-* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-* See the License for the specific language governing permissions and
-* limitations under the License.
-* =============================================================
-*/
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ * =============================================================
+ */
 
 <template>
   <div v-show="subshow" class="scalars-container">
     <div class="scalars-title" @click="showContent()">
-      <div :class="[show?'sub':'sub1']">
+      <div :class="[show ? 'sub' : 'sub1']">
         <div class="my-label">
-          <div class="my-text"><span>{{ info }}</span></div>
+          <div class="my-text">
+            <span>{{ info }}</span>
+          </div>
           <div class="circle-father"><div class="circle" /></div>
           <div class="triangle-father">
             <div class="triangle" />
@@ -27,12 +29,18 @@
         </div>
       </div>
       <div class="line1" />
-      <div :class="['line2', show?'linestyle':'']" />
+      <div :class="['line2', show ? 'linestyle' : '']" />
     </div>
-    <div :class="[show?'showClass':'']">
+    <div :class="[show ? 'showClass' : '']">
       <div class="scalarscontent">
         <el-row :gutter="20">
-          <scalar-container v-for="item in data" v-show="isshow[item.run]" :key="item.index" :content="item" :subname="subname" />
+          <scalar-container
+            v-for="item in data"
+            v-show="isshow[item.run]"
+            :key="item.index"
+            :content="item"
+            :subname="subname"
+          />
         </el-row>
       </div>
     </div>
@@ -42,7 +50,11 @@
 import { createNamespacedHelpers } from 'vuex';
 import { ScalarContainer } from '../scalarcontainer';
 
-const { mapGetters: mapScalarGetters, mapActions: mapScalarActions, mapMutations: mapScalarMutations } = createNamespacedHelpers('Visual/scalar');
+const {
+  mapGetters: mapScalarGetters,
+  mapActions: mapScalarActions,
+  mapMutations: mapScalarMutations,
+} = createNamespacedHelpers('Visual/scalar');
 const { mapState: mapLayoutStates } = createNamespacedHelpers('Visual/layout');
 export default {
   components: {
@@ -63,17 +75,13 @@ export default {
     };
   },
   computed: {
-    ...mapScalarGetters([
-      'detailData', 'categoryInfo', 'initshowrun', 'showFlag', 'subisshow',
-    ]),
-    ...mapLayoutStates([
-      'userSelectRunFile',
-    ]),
+    ...mapScalarGetters(['detailData', 'categoryInfo', 'initshowrun', 'showFlag', 'subisshow']),
+    ...mapLayoutStates(['userSelectRunFile']),
   },
   watch: {
     userSelectRunFile(val) {
       let flag = 1;
-      for (let i = 0; i < Object.keys(this.isshow).length; i+=1) {
+      for (let i = 0; i < Object.keys(this.isshow).length; i += 1) {
         if (val.indexOf(Object.keys(this.isshow)[i]) > -1) {
           this.isshow[Object.keys(this.isshow)[i]] = true;
           flag -= 1;
@@ -93,7 +101,7 @@ export default {
   created() {
     this.info = this.subname;
     if (this.info.length > 10) {
-      this.info = `${this.info.slice(0, 7)  }...`;
+      this.info = `${this.info.slice(0, 7)}...`;
     }
     this.isshow = this.initshowrun[this.subname];
     if (!(this.subname in this.showFlag)) {
@@ -121,11 +129,14 @@ export default {
     }
   },
   methods: {
-    ...mapScalarActions([
-      'getData',
-    ]),
+    ...mapScalarActions(['getData']),
     ...mapScalarMutations([
-      'setDetailData', 'setshowrun', 'back', 'setFreshInfo', 'setshowFlag', 'setsubisshow',
+      'setDetailData',
+      'setshowrun',
+      'back',
+      'setFreshInfo',
+      'setshowFlag',
+      'setsubisshow',
     ]),
     showContent() {
       if (this.showFlag[this.subname]) {
@@ -142,7 +153,8 @@ export default {
     },
   },
 };
-</script>>
+</script>
+>
 
 <style lang="less" scoped>
 .scalars-container {
@@ -176,8 +188,8 @@ export default {
     width: 0;
     height: 0;
     overflow: hidden;
-    border-color: transparent transparent   transparent #7f7cc1;
-    border-style: dashed  dashed  dashed solid;
+    border-color: transparent transparent transparent #7f7cc1;
+    border-style: dashed dashed dashed solid;
     border-top-width: 15px;
     border-right-width: 18px;
     border-bottom-width: 15px;
@@ -223,7 +235,7 @@ export default {
 }
 
 .sub .triangle {
-  border-color: transparent transparent   transparent #b8c6ff;
+  border-color: transparent transparent transparent #b8c6ff;
 }
 
 .sub .circle-father {

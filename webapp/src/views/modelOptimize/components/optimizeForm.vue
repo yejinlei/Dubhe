@@ -1,26 +1,21 @@
 /** Copyright 2020 Tianshu AI Platform. All Rights Reserved.
-*
-* Licensed under the Apache License, Version 2.0 (the "License");
-* you may not use this file except in compliance with the License.
-* You may obtain a copy of the License at
-*
-*     http://www.apache.org/licenses/LICENSE-2.0
-*
-* Unless required by applicable law or agreed to in writing, software
-* distributed under the License is distributed on an "AS IS" BASIS,
-* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-* See the License for the specific language governing permissions and
-* limitations under the License.
-* =============================================================
-*/
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ * =============================================================
+ */
 
 <template>
-  <el-form
-    ref="form"
-    :model="form"
-    :rules="rules"
-    label-width="100px"
-  >
+  <el-form ref="form" :model="form" :rules="rules" label-width="100px">
     <el-form-item label="任务名称" prop="name">
       <el-input ref="nameInput" v-model.trim="form.name" maxlength="32" show-word-limit />
     </el-form-item>
@@ -33,35 +28,17 @@
         show-word-limit
       />
     </el-form-item>
-    <el-form-item
-      label="优化类型"
-      prop="isBuiltIn"
-    >
-      <el-radio-group
-        v-model="form.isBuiltIn"
-        @change="onModelBuiltInChange"
-      >
-        <el-radio
-          border
-          :label="true"
-          class="mr-0 w-200"
-        >内置优化</el-radio>
-        <el-radio
-          border
-          :label="false"
-          class="w-200"
-        >我的优化</el-radio>
+    <el-form-item label="优化类型" prop="isBuiltIn">
+      <el-radio-group v-model="form.isBuiltIn" @change="onModelBuiltInChange">
+        <el-radio border :label="true" class="mr-0 w-200">内置优化</el-radio>
+        <el-radio border :label="false" class="w-200">我的优化</el-radio>
       </el-radio-group>
     </el-form-item>
-    <BuiltInForm
-      v-if="isBuiltIn"
-      ref="builtInForm"
-      @change="form => assignForm(form)"
-    />
+    <BuiltInForm v-if="isBuiltIn" ref="builtInForm" @change="(form) => assignForm(form)" />
     <CustomizeForm
       v-else
       ref="customizeForm"
-      @change="form => assignForm(form)"
+      @change="(form) => assignForm(form)"
       @toBottom="onToBottom"
     />
   </el-form>
@@ -80,10 +57,11 @@ const defaultForm = {
   name: null,
   description: null,
   isBuiltIn: true,
-  
+
   modelId: null, // 用于标记模型
   modelName: null, // 内置模型名
   modelAddress: null, // 我的模型路径
+  modelBranchId: null, // 我的模型版本 ID
 
   datasetId: null, // 我的优化使用 datasetId 作为数据主键
   datasetName: null, // 数据集名
@@ -184,14 +162,16 @@ export default {
     initForm(originForm) {
       // 获取初始表单对象或空对象作为初始表单
       const form = originForm || Object.create(null);
-      
+
       // 根据表单的字段，将初始表单的对应字段赋值到表单上，若字段不存在则使用默认值
-      Object.keys(this.form).forEach(key => { !isNil(form[key]) && (this.form[key] = form[key]); });
+      Object.keys(this.form).forEach((key) => {
+        !isNil(form[key]) && (this.form[key] = form[key]);
+      });
       this.$nextTick(() => {
         if (this.isBuiltIn) {
-          this.$refs.builtInForm.init(this.form, (originForm !== undefined && this.isBuiltIn));
+          this.$refs.builtInForm.init(this.form, originForm !== undefined && this.isBuiltIn);
         } else {
-          this.$refs.customizeForm.init(this.form, (originForm !== undefined && !this.isBuiltIn));
+          this.$refs.customizeForm.init(this.form, originForm !== undefined && !this.isBuiltIn);
         }
       });
 
@@ -216,13 +196,13 @@ export default {
       } else {
         Object.assign(this.form, this.$refs.customizeForm.form);
       }
-      
-      this.$refs.form.validate(isValid => {
+
+      this.$refs.form.validate((isValid) => {
         valid = valid && isValid;
       });
 
       if (!this.isBuiltIn) {
-        this.$refs.customizeForm.validate(isValid => {
+        this.$refs.customizeForm.validate((isValid) => {
           valid = valid && isValid;
         });
       }

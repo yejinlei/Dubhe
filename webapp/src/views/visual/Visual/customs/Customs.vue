@@ -1,18 +1,18 @@
 /** Copyright 2020 Tianshu AI Platform. All Rights Reserved.
-*
-* Licensed under the Apache License, Version 2.0 (the "License");
-* you may not use this file except in compliance with the License.
-* You may obtain a copy of the License at
-*
-*     http://www.apache.org/licenses/LICENSE-2.0
-*
-* Unless required by applicable law or agreed to in writing, software
-* distributed under the License is distributed on an "AS IS" BASIS,
-* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-* See the License for the specific language governing permissions and
-* limitations under the License.
-* =============================================================
-*/
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ * =============================================================
+ */
 
 <style lang="less" scoped>
 .temp {
@@ -180,37 +180,58 @@
           <div>
             <div class="scalarscontent">
               <el-row :gutter="20">
-                <ScalarContainer v-for="(val, name) in scalarData" :key="name" :content="val" :chartname="name" />
+                <ScalarContainer
+                  v-for="(val, name) in scalarData"
+                  :key="name"
+                  :content="val"
+                  :chartname="name"
+                />
               </el-row>
             </div>
           </div>
         </div>
 
         <div id="audio">
-          <div :style="hasAudio.hasData?'':'display:none'">
+          <div :style="hasAudio.hasData ? '' : 'display:none'">
             <div class="scalarscontent">
               <el-row :gutter="20">
-                <AudioContainer v-for="item in audioData" ref="AudioContainer" :key="item.index" :content="item.content" :index="item.index" />
+                <AudioContainer
+                  v-for="item in audioData"
+                  ref="AudioContainer"
+                  :key="item.index"
+                  :content="item.content"
+                  :index="item.index"
+                />
               </el-row>
             </div>
           </div>
         </div>
 
         <div id="image">
-          <div :style="hasImage.hasData?'':'display:none'">
+          <div :style="hasImage.hasData ? '' : 'display:none'">
             <div class="scalarscontent">
               <el-row :gutter="20">
-                <ImageContainer v-for="item in imageData" ref="ImageContainer" :key="item.content.run + '/' + Object.keys(item.content.value)[0]" :content="item.content" />
+                <ImageContainer
+                  v-for="item in imageData"
+                  ref="ImageContainer"
+                  :key="item.content.run + '/' + Object.keys(item.content.value)[0]"
+                  :content="item.content"
+                />
               </el-row>
             </div>
           </div>
         </div>
 
         <div id="text">
-          <div :style="hasText.hasData?'':'display:none'">
+          <div :style="hasText.hasData ? '' : 'display:none'">
             <div class="scalarscontent">
               <el-row :gutter="20">
-                <TextContainer v-for="item in textData" ref="TextContainer" :key="item.content.run + '/' + Object.keys(item.content.value)[0]" :content="item.content" />
+                <TextContainer
+                  v-for="item in textData"
+                  ref="TextContainer"
+                  :key="item.content.run + '/' + Object.keys(item.content.value)[0]"
+                  :content="item.content"
+                />
               </el-row>
             </div>
           </div>
@@ -219,8 +240,12 @@
         <div id="histogram">
           <div class="statistics-container">
             <div :class="['statistics-content']">
-              <div v-for="item in statisticData" :id="item.divId" :key="item.divId" class="allStatisticContainer">
-
+              <div
+                v-for="item in statisticData"
+                :id="item.divId"
+                :key="item.divId"
+                class="allStatisticContainer"
+              >
                 <statisticContainer
                   ref="histoContainer"
                   :key="item.ttlabel"
@@ -239,7 +264,10 @@
           </div>
         </div>
         <div v-if="!hasData">
-          <p>本页面支持将其他页面的数据通过“定制”按钮  <i class="iconfont icon-ziyuan104" />  导入到本页面</p>
+          <p>
+            本页面支持将其他页面的数据通过“定制”按钮
+            <i class="iconfont icon-ziyuan104" /> 导入到本页面
+          </p>
           <p>支持将媒体数据、统计分析和标量数据导入到本页面</p>
         </div>
       </div>
@@ -248,16 +276,15 @@
 </template>
 <script>
 import { createNamespacedHelpers } from 'vuex';
-import statisticContainer from "../statistics/drawStatistic/statisticContainer";
-import ImageContainer from "../medias/image/imagecontainer/ImageContainer";
-import TextContainer from "../medias/text/textContainer/TextContainer";
-import AudioContainer from "../medias/audio/audioContainer/AudioContainer";
-import ScalarContainer from "../scalars/scalarcontainer/ScalarCustom";
+import statisticContainer from '../statistics/drawStatistic/statisticContainer';
+import ImageContainer from '../medias/image/imagecontainer/ImageContainer';
+import TextContainer from '../medias/text/textContainer/TextContainer';
+import AudioContainer from '../medias/audio/audioContainer/AudioContainer';
+import ScalarContainer from '../scalars/scalarcontainer/ScalarCustom';
 
-const {
-  mapMutations: mapCustomMutations,
-  mapGetters: mapCustomGetters,
-} = createNamespacedHelpers('Visual/custom');
+const { mapMutations: mapCustomMutations, mapGetters: mapCustomGetters } = createNamespacedHelpers(
+  'Visual/custom'
+);
 
 export default {
   components: {
@@ -325,7 +352,13 @@ export default {
         this.hasText.hasData = 0;
         this.hasText.showFlag = 0;
       }
-      if (this.audioData.length || this.textData.length || this.imageData.length || this.statisticData.length || Object.keys(this.scalarData).length) {
+      if (
+        this.audioData.length ||
+        this.textData.length ||
+        this.imageData.length ||
+        this.statisticData.length ||
+        Object.keys(this.scalarData).length
+      ) {
         this.hasData = true;
       } else {
         this.hasData = false;
@@ -337,7 +370,13 @@ export default {
         this.hasImage.showFlag = 0;
       }
       this.imageData = this.getImageData;
-      if (this.audioData.length || this.textData.length || this.imageData.length || this.statisticData.length || Object.keys(this.scalarData).length) {
+      if (
+        this.audioData.length ||
+        this.textData.length ||
+        this.imageData.length ||
+        this.statisticData.length ||
+        Object.keys(this.scalarData).length
+      ) {
         this.hasData = true;
       } else {
         this.hasData = false;
@@ -345,7 +384,13 @@ export default {
     },
     getScalarData(val) {
       this.scalarData = val;
-      if (this.audioData.length || this.textData.length || this.imageData.length || this.statisticData.length || Object.keys(this.scalarData).length) {
+      if (
+        this.audioData.length ||
+        this.textData.length ||
+        this.imageData.length ||
+        this.statisticData.length ||
+        Object.keys(this.scalarData).length
+      ) {
         this.hasData = true;
       } else {
         this.hasData = false;
@@ -353,7 +398,13 @@ export default {
     },
     getStatisticData(val) {
       this.statisticData = val;
-      if (this.audioData.length || this.textData.length || this.imageData.length || this.statisticData.length || Object.keys(this.scalarData).length) {
+      if (
+        this.audioData.length ||
+        this.textData.length ||
+        this.imageData.length ||
+        this.statisticData.length ||
+        Object.keys(this.scalarData).length
+      ) {
         this.hasData = true;
       } else {
         this.hasData = false;
@@ -366,7 +417,13 @@ export default {
     this.imageData = this.getImageData;
     this.scalarData = this.getScalarData;
     this.statisticData = this.getStatisticData;
-    if (this.audioData.length || this.textData.length || this.imageData.length || this.statisticData.length || Object.keys(this.scalarData).length) {
+    if (
+      this.audioData.length ||
+      this.textData.length ||
+      this.imageData.length ||
+      this.statisticData.length ||
+      Object.keys(this.scalarData).length
+    ) {
       this.hasData = true;
     } else {
       this.hasData = false;

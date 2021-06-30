@@ -1,37 +1,27 @@
 /** Copyright 2020 Tianshu AI Platform. All Rights Reserved.
-*
-* Licensed under the Apache License, Version 2.0 (the "License");
-* you may not use this file except in compliance with the License.
-* You may obtain a copy of the License at
-*
-*     http://www.apache.org/licenses/LICENSE-2.0
-*
-* Unless required by applicable law or agreed to in writing, software
-* distributed under the License is distributed on an "AS IS" BASIS,
-* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-* See the License for the specific language governing permissions and
-* limitations under the License.
-* =============================================================
-*/
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ * =============================================================
+ */
 
 <template>
   <div class="rel pod-log-container-inside">
-    <div
-      v-if="showFunctional"
-    >
+    <div v-if="showFunctional">
       <el-tooltip effect="dark" content="日志置顶" placement="left">
-        <el-button
-          class="log-left-btn"
-          icon="el-icon-caret-top"
-          @click="onToTop"
-        />
+        <el-button class="log-left-btn" icon="el-icon-caret-top" @click="onToTop" />
       </el-tooltip>
       <el-tooltip effect="dark" content="日志置底" placement="left">
-        <el-button
-          class="log-left-btn"
-          icon="el-icon-caret-bottom"
-          @click="onToBottom"
-        />
+        <el-button class="log-left-btn" icon="el-icon-caret-bottom" @click="onToBottom" />
       </el-tooltip>
       <el-tooltip effect="dark" content="自动跟随" placement="left">
         <el-button
@@ -42,18 +32,10 @@
         />
       </el-tooltip>
       <el-tooltip effect="dark" content="清空日志" placement="left">
-        <el-button
-          icon="el-icon-delete"
-          class="log-left-btn"
-          @click="onClearLogs"
-        />
+        <el-button icon="el-icon-delete" class="log-left-btn" @click="onClearLogs" />
       </el-tooltip>
     </div>
-    <div
-      ref="logContent"
-      v-mouse-wheel="params"
-      class="log-content"
-    >
+    <div ref="logContent" v-mouse-wheel="params" class="log-content">
       <prism-render :code="logTxt" />
     </div>
   </div>
@@ -76,9 +58,9 @@ export default {
     PrismRender,
   },
   props: {
-    // 包含podName的pod对象, 用于请求日志总行数
-    podName: {
-      type: String,
+    // 包含 podName、namespace 的 podVO 对象
+    pod: {
+      type: Object,
       required: true,
     },
     // 查询日志需要用到的其他参数
@@ -95,15 +77,6 @@ export default {
     lineLimit: {
       type: Number,
       default: 200,
-    },
-    // 顶部展示特定信息
-    showMsg: {
-      type: Boolean,
-      default: false,
-    },
-    msg: {
-      type: String,
-      default: '',
     },
     disabled: {
       type: Boolean,
@@ -123,16 +96,15 @@ export default {
       logBottomLine: 0, // 当前日志数组最后一行的行号
 
       autoFollow: false, // 自动跟随
-      topWarning: true, // 向上滚动请求时，如果已经到顶了，会提示一次日志到顶；每次请求日志时刷新
+      noRenderTag: false, // 自动跟随中点击清空时，对于下一次的结果不进行处理
     };
   },
   computed: {
     params() {
-      return {up: throttle(1000, this.mouseUp), down: throttle(1000, this.mouseDown)};
+      return { up: throttle(1000, this.mouseUp), down: throttle(1000, this.mouseDown) };
     },
-    // 传入的 msg 信息会展示在所有日志的最前面
     logTxt() {
-      return `${this.showMsg ? `${this.msg}\n` : ''}${this.logList.join('\n')}`;
+      return this.logList.length ? this.logList.join('\n') : '暂无日志\n';
     },
     // 确保存放日志的数组上限至少为两倍日志请求行数。
     localLineLimit() {
@@ -148,17 +120,25 @@ export default {
     this.mouseDownThrottle = throttle(1000, this.mouseDown);
     this.mouseUpThrottle = throttle(1000, this.mouseUp);
   },
+  deactivated() {
+    // 切出时停止跟随轮询
+    this.stopPolling();
+  },
   methods: {
     getLog(startLine, lines) {
-      if (!this.podName) {
-        this.message('没有传入 podName, 无法查询日志');
-        return;
+      if (!this.pod.namespace) {
+        this.message('缺少 namespace 信息, 无法查询日志');
+        return Promise.reject();
+      }
+      if (!this.pod.podName) {
+        this.message('缺少 podName 信息, 无法查询日志');
+        return Promise.reject();
       }
       startLine = startLine || 1;
       lines = lines || this.logLines;
-      this.topWarning = true;
       return getPodLog({
-        podName: this.podName,
+        podName: this.pod.podName,
+        namespace: this.pod.namespace,
         startLine,
         lines,
         ...this.options,
@@ -169,18 +149,13 @@ export default {
     async mouseUp() {
       // 如果已处于第一行或没有日志, 不向上请求
       if (this.logTopLine <= 1) {
-        // 只进行一次到达顶部提示；任意请求日志后刷新
-        if (this.topWarning) {
-          this.topWarning = false;
-          if(!this.logMsgInstance) {
-            this.message('已经到达日志顶部.');
-          }
-        }
         return;
       }
-      
+
       // 如果此时元素已不存在，则不进行任何其他操作
-      if (!this.$refs.logContent) { return; }
+      if (!this.$refs.logContent) {
+        return;
+      }
 
       // 向上滚动时，起始行为 logTopLine 减去请求行数
       let reqStartLine = this.logTopLine - this.logLines;
@@ -189,19 +164,24 @@ export default {
       // 请求前日志区高度
       const beforeHeight = this.$refs.logContent.scrollHeight;
 
-      const { content, startLine: resStartLine } = await this.getLog(reqStartLine, this.logTopLine - reqStartLine);
+      const result = await this.getLog(reqStartLine, this.logTopLine - reqStartLine);
+      if (!result) return;
+      const { content, startLine: resStartLine } = result;
+
       this.logList = content.concat(this.logList);
 
       this.$nextTick(() => {
         // 如果此时元素已不存在，则不进行任何其他操作
-        if (!this.$refs.logContent) { return; }
+        if (!this.$refs.logContent) {
+          return;
+        }
 
         // 请求后日志区高度，从而设置顶部高度差
         const afterHeight = this.$refs.logContent.scrollHeight;
         this.$refs.logContent.scrollTop = afterHeight - beforeHeight;
 
         // 限制总行数为 localLineLimit
-        if(this.logList.length > this.localLineLimit) {
+        if (this.logList.length > this.localLineLimit) {
           this.logList.splice(this.localLineLimit);
         }
 
@@ -211,42 +191,71 @@ export default {
     },
 
     // 滚轮向上滚动到底部时的事件
-    async mouseDown(disableWarning) {
+    async mouseDown(toBottom = false) {
       // 如果此时元素已不存在，则不进行任何其他操作
-      if (!this.$refs.logContent) { return; }
+      if (!this.$refs.logContent) {
+        return;
+      }
+
+      // 不进行请求，同时重置 tag
+      if (this.noRenderTag) {
+        this.noRenderTag = false;
+        return;
+      }
 
       // 请求前日志区顶部高度
       const beforeTop = this.$refs.logContent.scrollTop;
 
-      const { content, endLine, lines } = await this.getLog(this.logBottomLine + 1);
+      const result = await this.getLog(this.logBottomLine + 1);
+      if (!result) return;
+      const { content, endLine } = result;
       this.logList = this.logList.concat(content);
+      this.logBottomLine = endLine; // 向下滚动时, 返回的 endLine 就是最后一行的行号
+
+      if (toBottom) {
+        if (this.logList.length > this.localLineLimit) {
+          this.logList.splice(0, this.logList.length - this.localLineLimit);
+        }
+        // 将进度条拉到底部
+        this.$nextTick(() => {
+          // 如果此时元素已不存在，则不进行任何其他操作
+          if (!this.$refs.logContent) {
+            return;
+          }
+
+          this.$refs.logContent.scrollTop = this.$refs.logContent.scrollHeight;
+        });
+        return;
+      }
 
       this.$nextTick(() => {
         // 如果此时元素已不存在，则不进行任何其他操作
-        if (!this.$refs.logContent) { return; }
+        if (!this.$refs.logContent) {
+          return;
+        }
 
         // 请求后日志区高度
         const afterReqHeight = this.$refs.logContent.scrollHeight;
 
         // 限制总行数为 localLineLimit
-        if(this.logList.length > this.localLineLimit) {
+        if (this.logList.length > this.localLineLimit) {
           this.logList.splice(0, this.logList.length - this.localLineLimit);
         }
 
         this.$nextTick(() => {
           // 如果此时元素已不存在，则不进行任何其他操作
-          if (!this.$refs.logContent) { return; }
-          
-          // 剪切后日志区高度，计算高度变化差，设置去掉高度差后的 scrollTop 
-          const afterSpliceHeight = this.$refs.logContent.scrollHeight;
-          this.$refs.logContent.scrollTop = Math.max(0, beforeTop - (afterReqHeight - afterSpliceHeight));
-
-          this.logBottomLine = endLine; // 向下滚动时, 返回的 endLine 就是最后一行的行号
-          this.logTopLine = this.logBottomLine - this.logList.length + 1; // 此时第一行的行号需要通过 logList 的长度进行计算
-
-          if (lines < 3 && !this.logMsgInstance && !this.autoFollow && disableWarning !== true) {
-            this.message('已经到达日志底部.');
+          if (!this.$refs.logContent) {
+            return;
           }
+
+          // 剪切后日志区高度，计算高度变化差，设置去掉高度差后的 scrollTop
+          const afterSpliceHeight = this.$refs.logContent.scrollHeight;
+          this.$refs.logContent.scrollTop = Math.max(
+            0,
+            beforeTop - (afterReqHeight - afterSpliceHeight)
+          );
+
+          this.logTopLine = this.logBottomLine - this.logList.length + 1; // 此时第一行的行号需要通过 logList 的长度进行计算
         });
       });
     },
@@ -257,7 +266,7 @@ export default {
       this.logList = [];
       this.logTopLine = this.logBottomLine = 0;
       this.$nextTick(() => {
-        this.mouseDown(true);
+        this.mouseDown();
       });
     },
 
@@ -292,6 +301,10 @@ export default {
 
     // 清空当前日志内容
     async onClearLogs() {
+      if (this.autoFollow) {
+        // 如果已经在自动跟随中，则设置 tag
+        this.noRenderTag = true;
+      }
       await this.changeAutoFollow(true);
       // 开启自动跟随请求最底部日志之后，清空当前日志列表
       this.logList = [];
@@ -306,33 +319,27 @@ export default {
         return;
       }
       this.logList = [];
-      const countObj = await countPodLogs([{ podName: this.podName }]); // 获取对应pod日志总行数
-      const linesCount = countObj[this.podName];
+      const countObj = await countPodLogs(this.pod.namespace, [this.pod]); // 获取对应pod日志总行数
+      const linesCount = countObj[this.pod.podName];
 
       // 请求最后的 logLines 行
       this.logBottomLine = Math.max(linesCount - this.logLines, 0);
-      await this.mouseDown();
-      // 将进度条拉到底部
-      this.$nextTick(() => {
-        // 如果此时元素已不存在，则不进行任何其他操作
-        if (!this.$refs.logContent) { return; }
-
-        this.$refs.logContent.scrollTop = this.$refs.logContent.scrollHeight;
-      });
+      await this.mouseDown(true);
     },
 
+    // 日志跟随实现
     async logPolling() {
-      if (!this.autoFollow) { return; }
+      if (!this.autoFollow) {
+        return;
+      }
 
-      await this.mouseDownThrottle();
-      // 将进度条拉到底部
-      this.$nextTick(() => {
-        // 如果此时元素已不存在，则不进行任何其他操作
-        if (!this.$refs.logContent) { return; }
+      await this.mouseDownThrottle(true);
 
-        this.$refs.logContent.scrollTop = this.$refs.logContent.scrollHeight;
-      });
       setTimeout(this.logPolling, 1000);
+    },
+    // 停止跟随
+    stopPolling() {
+      this.autoFollow = false;
     },
 
     // 判断在自动跟随滚轮是否向上
@@ -360,5 +367,9 @@ export default {
   height: 100%;
   overflow: auto;
   border: #ccc solid 1px;
+}
+
+::v-deep pre[class*='language-'] {
+  margin: 0;
 }
 </style>

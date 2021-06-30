@@ -1,18 +1,18 @@
 /** Copyright 2020 Tianshu AI Platform. All Rights Reserved.
-*
-* Licensed under the Apache License, Version 2.0 (the "License");
-* you may not use this file except in compliance with the License.
-* You may obtain a copy of the License at
-*
-*     http://www.apache.org/licenses/LICENSE-2.0
-*
-* Unless required by applicable law or agreed to in writing, software
-* distributed under the License is distributed on an "AS IS" BASIS,
-* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-* See the License for the specific language governing permissions and
-* limitations under the License.
-* =============================================================
-*/
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ * =============================================================
+ */
 
 <template>
   <div class="infoLayer">
@@ -25,8 +25,7 @@
       <ul>
         <li>WW/WC：{{ overlayInfo.ww }} / {{ overlayInfo.wc }}</li>
         <li>Zoom：{{ overlayInfo.zoom.scale }}</li>
-        <li>Image: {{stack.currentImageIdIndex + 1}} / {{stack.imageIds.length}}
-        </li>
+        <li>Image: {{ stack.currentImageIdIndex + 1 }} / {{ stack.imageIds.length }}</li>
       </ul>
     </div>
   </div>
@@ -34,11 +33,11 @@
 <script>
 import dwv from '@wulucxy/dwv';
 import cx from 'classnames';
-import { reactive, onMounted, watch } from '@vue/composition-api';
+import { reactive, watch } from '@vue/composition-api';
 import overlays from '../lib/overlays.json';
 
 export default {
-  name: "InfoLayer",
+  name: 'InfoLayer',
   props: {
     seriesInfo: {
       type: Object,
@@ -54,7 +53,7 @@ export default {
       default: () => ({}),
     },
   },
-  setup(props){
+  setup(props) {
     const state = reactive({
       overlayData: {},
     });
@@ -65,13 +64,13 @@ export default {
       if (!modality) {
         return {};
       }
-      for(const item of overlays) {
+      for (const item of overlays) {
         // eslint-disable-next-line
         let { value, tags, format, pos } = item;
         // 根据 tags 生成值
         if (typeof tags !== 'undefined' && tags.length !== 0) {
           const values = [];
-          tags.forEach(tag => {
+          tags.forEach((tag) => {
             values.push(dicomElements.getElementValueAsStringFromKey(tag));
           });
 
@@ -91,7 +90,7 @@ export default {
         if (!overlayMap[pos]) {
           overlayMap[pos] = [];
         }
-        overlayMap[pos].push({value: value.trim(), format});
+        overlayMap[pos].push({ value: value.trim(), format });
       }
       return overlayMap;
     };
@@ -105,18 +104,22 @@ export default {
       });
     };
 
-    const klass = pos => cx('info-element', {
-      [`info-${pos}`]: !!pos,
-    });
+    const klass = (pos) =>
+      cx('info-element', {
+        [`info-${pos}`]: !!pos,
+      });
 
-    onMounted(() => {
-    });
-
-    watch(() => props.curInstanceID, (next) => {
-      if(next) {
-        readItem(next);
+    watch(
+      () => props.curInstanceID,
+      (next) => {
+        if (next) {
+          readItem(next);
+        }
+      },
+      {
+        immediate: true,
       }
-    });
+    );
 
     return {
       state,
@@ -126,39 +129,39 @@ export default {
 };
 </script>
 <style lang="scss">
-  .infoLayer {
+.infoLayer {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 2;
+  width: 100%;
+  height: calc(100vh - 80px);
+  pointer-events: none;
+
+  .info-element {
     position: absolute;
-    top: 0;
-    left: 0;
-    z-index: 2;
-    width: 100%;
-    height: calc(100vh - 80px);
-    pointer-events: none;
-
-    .info-element {
-      position: absolute;
-      color: lightblue;
-      text-shadow: 1px 1px black;
-    }
-
-    .info-tl {
-      top: 10px;
-      left: 27px;
-    }
-
-    .info-tr {
-      top: 10px;
-      right: 32px;
-    }
-
-    .info-bl {
-      bottom: 16px;
-      left: 27px;
-    }
-
-    .info-br {
-      right: 32px;
-      bottom: 16px;
-    }
+    color: lightblue;
+    text-shadow: 1px 1px black;
   }
+
+  .info-tl {
+    top: 10px;
+    left: 27px;
+  }
+
+  .info-tr {
+    top: 10px;
+    right: 32px;
+  }
+
+  .info-bl {
+    bottom: 16px;
+    left: 27px;
+  }
+
+  .info-br {
+    right: 32px;
+    bottom: 16px;
+  }
+}
 </style>

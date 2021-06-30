@@ -1,18 +1,18 @@
 /** Copyright 2020 Tianshu AI Platform. All Rights Reserved.
-*
-* Licensed under the Apache License, Version 2.0 (the "License");
-* you may not use this file except in compliance with the License.
-* You may obtain a copy of the License at
-*
-*     http://www.apache.org/licenses/LICENSE-2.0
-*
-* Unless required by applicable law or agreed to in writing, software
-* distributed under the License is distributed on an "AS IS" BASIS,
-* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-* See the License for the specific language governing permissions and
-* limitations under the License.
-* =============================================================
-*/
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ * =============================================================
+ */
 
 <template>
   <div class="app-container">
@@ -45,15 +45,17 @@
     </div>
     <create-dialog ref="create" @on-add="onAdded" />
     <!--右边侧边栏-->
-    <el-drawer
-      :visible.sync="drawer"
-      :with-header="false"
-      size="33%"
-    >
+    <el-drawer :visible.sync="drawer" :with-header="false" size="33%">
       <notebook-detail :itemObj="selectedItemObj" :notebookStatus="notebookStatus" />
     </el-drawer>
     <!--表格渲染-->
-    <el-table ref="table" v-loading="statusOptions.length===0 || crud.loading" :data="crud.data" highlight-current-row @row-click="onRowClick">
+    <el-table
+      ref="table"
+      v-loading="statusOptions.length === 0 || crud.loading"
+      :data="crud.data"
+      highlight-current-row
+      @row-click="onRowClick"
+    >
       <el-table-column prop="noteBookName" label="名称" />
       <el-table-column prop="cpuNum" label="规格">
         <template slot-scope="scope">
@@ -61,7 +63,7 @@
         </template>
       </el-table-column>
       <el-table-column prop="description" label="描述" />
-      <el-table-column prop="status" label="状态" width="100">
+      <el-table-column prop="status" label="状态" width="150">
         <template #header>
           <dropdown-header
             title="状态"
@@ -71,8 +73,22 @@
           />
         </template>
         <template slot-scope="scope">
-          <el-tag v-if="!(scope.row.status==0 && !scope.row.url)" :type="getTagType(scope.row.status)" effect="plain">{{ notebookStatus[scope.row.status] }} </el-tag>
-          <el-tag v-if="(scope.row.status==0 && !scope.row.url)" :type="getTagType(3)" effect="plain">{{ notebookStatus[3] }} </el-tag>
+          <el-tag
+            v-if="!(scope.row.status == 0 && !scope.row.url)"
+            :type="getTagType(scope.row.status)"
+            effect="plain"
+            >{{ notebookStatus[scope.row.status] }}
+          </el-tag>
+          <el-tag
+            v-if="scope.row.status == 0 && !scope.row.url"
+            :type="getTagType(3)"
+            effect="plain"
+            >{{ notebookStatus[3] }}
+          </el-tag>
+          <msg-popover
+            :status-detail="scope.row.statusDetail"
+            :show="showMessage(scope.row.status)"
+          />
         </template>
       </el-table-column>
       <el-table-column show-overflow-tooltip prop="createTime" label="创建时间" width="160">
@@ -82,14 +98,51 @@
       </el-table-column>
       <el-table-column label="操作" width="200" fixed="right">
         <template slot-scope="scope">
-          <el-button v-if="scope.row.status === 1" :id="`start_`+scope.$index" type="text" @click.stop="doStart(scope.row)">启动</el-button>
-          <el-button v-if="scope.row.status === 1" :id="`delete_`+scope.$index" type="text" @click.stop="doDelete(scope.row)">删除</el-button>
-          <el-button v-if="scope.row.status === 0 && scope.row.url" :id="`open_`+scope.$index" type="text" @click.stop="doOpen(scope.row)">
+          <el-button
+            v-if="scope.row.status === 1"
+            :id="`start_` + scope.$index"
+            type="text"
+            @click.stop="doStart(scope.row)"
+            >启动</el-button
+          >
+          <el-button
+            v-if="scope.row.status === 1"
+            :id="`delete_` + scope.$index"
+            type="text"
+            @click.stop="doDelete(scope.row)"
+            >删除</el-button
+          >
+          <el-button
+            v-if="scope.row.status === 0 && scope.row.url"
+            :id="`open_` + scope.$index"
+            type="text"
+            @click.stop="doOpen(scope.row)"
+          >
             打开<IconFont type="externallink" />
           </el-button>
-          <el-button v-if="scope.row.status === 0 && scope.row.url" :id="`stop_`+scope.$index" type="text" @click.stop="doStop(scope.row)">停止</el-button>
-          <el-button v-if="((scope.row.status === 0 && scope.row.url) || scope.row.status === 1) && !scope.row.algorithmId" :id="`save_`+scope.$index" type="text" @click.stop="doSave(scope.row)">保存算法</el-button>
-          <i v-if="[3, 4, 5].includes(scope.row.status) || (scope.row.status === 0 && !scope.row.url)" class="el-icon-loading" />
+          <el-button
+            v-if="scope.row.status === 0 && scope.row.url"
+            :id="`stop_` + scope.$index"
+            type="text"
+            @click.stop="doStop(scope.row)"
+            >停止</el-button
+          >
+          <el-button
+            v-if="
+              ((scope.row.status === 0 && scope.row.url) || scope.row.status === 1) &&
+                !scope.row.algorithmId
+            "
+            :id="`save_` + scope.$index"
+            type="text"
+            @click.stop="doSave(scope.row)"
+            >保存算法</el-button
+          >
+          <i
+            v-if="
+              [3, 4, 5].includes(scope.row.status) || (scope.row.status === 0 && !scope.row.url)
+            "
+            class="el-icon-loading"
+          />
         </template>
       </el-table-column>
     </el-table>
@@ -105,6 +158,7 @@ import { debounce } from 'throttle-debounce';
 import notebookApi, { detail, getStatus, start, stop, open } from '@/api/development/notebook';
 import { add as addAlgorithm } from '@/api/algorithm/algorithm';
 import DropdownHeader from '@/components/DropdownHeader';
+import MsgPopover from '@/components/MsgPopover';
 import CRUD, { presenter, header, crud } from '@crud/crud';
 import rrOperation from '@crud/RR.operation';
 import cdOperation from '@crud/CD.operation';
@@ -119,7 +173,15 @@ const defaultQuery = {
 
 export default {
   name: 'Notebook',
-  components: { pagination, rrOperation, cdOperation, DropdownHeader, CreateDialog, NotebookDetail },
+  components: {
+    pagination,
+    rrOperation,
+    cdOperation,
+    DropdownHeader,
+    CreateDialog,
+    NotebookDetail,
+    MsgPopover,
+  },
   cruds() {
     return CRUD({
       title: 'Notebook',
@@ -140,7 +202,6 @@ export default {
     return {
       statusOptions: [],
       notebookStatus: {},
-      deleteCount: 0,
       drawer: false,
       selectedItemObj: {},
       pollingCount: 0,
@@ -151,12 +212,14 @@ export default {
   },
   computed: {
     notebookStatusList() {
-      return [{ label: '全部', value: null }].concat(this.statusOptions.map(status => {
-        return {
-          label: status.statusName,
-          value: status.statusCode,
-        };
-      }));
+      return [{ label: '全部', value: null }].concat(
+        this.statusOptions.map((status) => {
+          return {
+            label: status.statusName,
+            value: status.statusCode,
+          };
+        })
+      );
     },
   },
   mounted() {
@@ -177,29 +240,25 @@ export default {
     [CRUD.HOOK.afterRefresh]() {
       this.checkStatus();
     },
-    [CRUD.HOOK.afterDelete]() {
-      this.deleteCount = 5;
-    },
     getNotebookStatus() {
-      getStatus()
-        .then((res) => {
-          this.statusOptions = res;
-          res.forEach(item => {
-            this.notebookStatus[item.statusCode] = item.statusName;
-          });
-          this.crud.refresh();
+      getStatus().then((res) => {
+        this.statusOptions = res;
+        res.forEach((item) => {
+          this.notebookStatus[item.statusCode] = item.statusName;
         });
+        this.crud.refresh();
+      });
     },
     filterByStatus(status) {
       this.localQuery.status = status;
       this.crud.toQuery();
     },
     checkStatus() {
-      // 删除操作5s内 或 有进行中的状态需要刷新列表
-      if (this.deleteCount > 0) {
-        this.deleteCount -= 1;
-        this.refetch();
-      } else if (this.crud.data.some(item => [3, 4, 5].includes(item.status) || (item.status === 0 && !item.url))) {
+      if (
+        this.crud.data.some(
+          (item) => [3, 4, 5].includes(item.status) || (item.status === 0 && !item.url)
+        )
+      ) {
         this.detailRefetch();
       }
     },
@@ -209,30 +268,40 @@ export default {
         return;
       }
       const res = await detail(idList);
-      this.pollingCount +=1;
+      this.pollingCount += 1;
       for (const item of res) {
-        if (![0, 3, 4, 5].includes(item.status) || (item.status === 0 && item.url)) { // 如果变成了运行中的状态，需要判断url是否有值
+        if (![0, 3, 4, 5].includes(item.status) || (item.status === 0 && item.url)) {
+          // 如果变成了运行中的状态，需要判断url是否有值
           const ele = this.crud.data.find((d) => {
             return d.id === item.id;
           });
           ele.status = item.status;
           ele.updateTime = item.updateTime;
           ele.url = item.url;
-          // 当变成云心中且有url时，自动打开url
-          if(item.status === 0 && item.url){
+          // 当变成运行中且有url时，自动打开url
+          if (item.status === 0 && item.url) {
             window.open(item.url, '_blank');
           }
         }
       }
-      if (this.crud.data.some(item => [3, 4, 5].includes(item.status)) || this.crud.data.some(item => (item.status === 0 && !item.url))) {
+      if (res.length < idList.length) {
+        this.crud.refresh();
+        return;
+      }
+      if (
+        this.crud.data.some((item) => [3, 4, 5].includes(item.status)) ||
+        this.crud.data.some((item) => item.status === 0 && !item.url)
+      ) {
         this.ct = setTimeout(() => {
-          if (this.pollingCount < 200) { // 400s超时，超时不作提示
+          if (this.pollingCount < 200) {
+            // 400s超时，超时不作提示
             this.detailRefetch();
           }
         }, 2000);
       }
     },
-    checkPollingIds() { // 得到需要轮询的id，状态345，状态0但是没有url
+    checkPollingIds() {
+      // 得到需要轮询的id，状态345，状态0但是没有url
       const idList = [];
       for (const item of this.crud.data) {
         if ([3, 4, 5].includes(item.status) || (item.status === 0 && !item.url)) {
@@ -244,14 +313,22 @@ export default {
     getTagType(status) {
       // 0运行，1停止, 2删除, 3启动中，4停止中，5删除中，6运行异常（暂未启用）
       switch (status) {
-        case 0: return 'success';
-        case 1: return 'danger';
-        case 2: return 'danger';
-        case 3: return 'info';
-        case 4: return 'info';
-        case 5: return 'info';
-        case 6: return 'danger';
-        default: return '';
+        case 0:
+          return 'success';
+        case 1:
+          return 'danger';
+        case 2:
+          return 'danger';
+        case 3:
+          return 'info';
+        case 4:
+          return 'info';
+        case 5:
+          return 'info';
+        case 6:
+          return 'danger';
+        default:
+          return '';
       }
     },
     [CRUD.HOOK.beforeRefresh]() {
@@ -277,26 +354,23 @@ export default {
     },
     // start
     doStart(row) {
-      start({ noteBookId: row.id })
-        .then(() => {
-          this.crud.refresh();
-        });
+      start({ noteBookId: row.id }).then(() => {
+        this.crud.refresh();
+      });
     },
     // stop
     doStop(row) {
-      this.$confirm('此操作将停止该环境, 是否继续?', '请确认')
-        .then(async() => {
-          await stop({ noteBookId: row.id });
-          this.crud.refresh();
-        });
+      this.$confirm('此操作将停止该环境, 是否继续?', '请确认').then(async () => {
+        await stop({ noteBookId: row.id });
+        this.crud.refresh();
+      });
     },
     // open
     doOpen(row) {
-      open(row.id)
-        .then(res => {
-          window.open(res);
-          this.crud.refresh();
-        });
+      open(row.id).then((res) => {
+        window.open(res);
+        this.crud.refresh();
+      });
     },
     async doSave(row) {
       const param = {
@@ -312,10 +386,13 @@ export default {
       });
     },
     doDelete(row) {
-      this.$confirm('此操作将删除该环境, 是否继续?', '请确认')
-        .then(async() => {
-          this.crud.doDelete(row);
-        });
+      this.$confirm('此操作将删除该环境, 是否继续?', '请确认').then(async () => {
+        this.crud.doDelete(row);
+      });
+    },
+
+    showMessage(status) {
+      return [3, 6].includes(status);
     },
   },
 };

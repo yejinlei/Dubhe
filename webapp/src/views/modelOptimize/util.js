@@ -1,18 +1,18 @@
 /** Copyright 2020 Tianshu AI Platform. All Rights Reserved.
-*
-* Licensed under the Apache License, Version 2.0 (the "License");
-* you may not use this file except in compliance with the License.
-* You may obtain a copy of the License at
-*
-*     http://www.apache.org/licenses/LICENSE-2.0
-*
-* Unless required by applicable law or agreed to in writing, software
-* distributed under the License is distributed on an "AS IS" BASIS,
-* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-* See the License for the specific language governing permissions and
-* limitations under the License.
-* =============================================================
-*/
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ * =============================================================
+ */
 
 // 内置算法分类
 export const OPTIMIZE_ALGORITHM_TYPE_ENUM = {
@@ -36,7 +36,7 @@ export const OPTIMIZE_STATUS_ENUM = {
 };
 
 export const OPTIMIZE_STATUS_MAP = {
-  [OPTIMIZE_STATUS_ENUM.WAITING]: { name: '等待中' },
+  [OPTIMIZE_STATUS_ENUM.WAITING]: { name: '待处理' },
   [OPTIMIZE_STATUS_ENUM.RUNNING]: { name: '进行中' },
   [OPTIMIZE_STATUS_ENUM.FINISHED]: { name: '已完成', tagMap: 'success' },
   [OPTIMIZE_STATUS_ENUM.CANCELED]: { name: '已取消', tagMap: 'info' },
@@ -46,9 +46,9 @@ export const OPTIMIZE_STATUS_MAP = {
 export const OPTIIMZE_ALGORITHM_USAGE_NAME = '模型优化';
 
 export const RESULT_NAME_MAP = {
-  'accuracy': '准确度',
-  'reasoningTime': '推理速度',
-  'modelSize': '模型大小',
+  accuracy: '准确度',
+  reasoningTime: '推理速度',
+  modelSize: '模型大小',
 };
 
 export const RESULT_STATUS_ENUM = {

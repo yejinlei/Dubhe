@@ -1,18 +1,18 @@
 /** Copyright 2020 Tianshu AI Platform. All Rights Reserved.
-*
-* Licensed under the Apache License, Version 2.0 (the "License");
-* you may not use this file except in compliance with the License.
-* You may obtain a copy of the License at
-*
-*     http://www.apache.org/licenses/LICENSE-2.0
-*
-* Unless required by applicable law or agreed to in writing, software
-* distributed under the License is distributed on an "AS IS" BASIS,
-* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-* See the License for the specific language governing permissions and
-* limitations under the License.
-* =============================================================
-*/
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ * =============================================================
+ */
 
 <template>
   <ValidationObserver ref="observerRef">
@@ -93,12 +93,12 @@ export default {
 
     // 编辑标注名称
     const handleOk = () => {
-      observerRef.value.validate().then(success => {
+      observerRef.value.validate().then((success) => {
         if (!success) {
           return;
         }
         // 判断是否发生过变更
-        if(String(state.value) !== String(props.row[valueBy])) {
+        if (String(state.value) !== String(props.row[valueBy])) {
           ctx.emit('handleOk', state.value, props.row);
         }
         handleCancel();
@@ -109,16 +109,20 @@ export default {
       // onShow 的时候重置
       state.value = props.row[valueBy];
       Vue.nextTick(() => {
-        const input = inputRef && inputRef.value.$refs.input || inputRef && inputRef.value.$refs.textarea;
+        const input =
+          (inputRef && inputRef.value.$refs.input) || (inputRef && inputRef.value.$refs.textarea);
         input && input.focus();
       });
     };
 
-    watch(() => props.row, (next) => {
-      if (next) {
-        state.value = next[valueBy];
+    watch(
+      () => props.row,
+      (next) => {
+        if (next) {
+          state.value = next[valueBy];
+        }
       }
-    });
+    );
 
     return {
       props,

@@ -1,18 +1,18 @@
 /** Copyright 2020 Tianshu AI Platform. All Rights Reserved.
-*
-* Licensed under the Apache License, Version 2.0 (the "License");
-* you may not use this file except in compliance with the License.
-* You may obtain a copy of the License at
-*
-*     http://www.apache.org/licenses/LICENSE-2.0
-*
-* Unless required by applicable law or agreed to in writing, software
-* distributed under the License is distributed on an "AS IS" BASIS,
-* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-* See the License for the specific language governing permissions and
-* limitations under the License.
-* =============================================================
-*/
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ * =============================================================
+ */
 
 <template>
   <div class="info-data-table">
@@ -135,7 +135,7 @@ export default {
       });
     };
 
-    const queryList = async(cfg = {}) => {
+    const queryList = async (cfg = {}) => {
       if (state.loading) {
         return;
       }
@@ -149,7 +149,7 @@ export default {
           ...cfg,
         });
         // 这边按照统一的 result, page 来进行管理
-        const { result = [], page = {}} = res || {};
+        const { result = [], page = {} } = res || {};
         setPageInfo({ total: page.total });
         setData(result);
       } finally {
@@ -159,44 +159,47 @@ export default {
 
     onMounted(() => {
       // 首先判断是否为异步请求
-      if(typeof request === 'function') {
+      if (typeof request === 'function') {
         queryList();
         if (typeof actionRef === 'function') {
           actionRef().value = {
             refresh: queryList,
           };
         }
-      } else if(Array.isArray(props.dataSource)) {
+      } else if (Array.isArray(props.dataSource)) {
         // 检测是否为静态数据源
         setData(props.dataSource);
       }
     });
 
-    watch(() => pageInfo.pageSize, () => {
-      setPageInfo({ ...pageInfo, current: 1 });
-      queryList();
-    }, {
-      lazy: true,
-    });
+    watch(
+      () => pageInfo.pageSize,
+      () => {
+        setPageInfo({ ...pageInfo, current: 1 });
+        queryList();
+      }
+    );
 
-    watch(() => props.dataSource, (next) => {
-      setData(next);
-    }, {
-      lazy: true,
-    });
+    watch(
+      () => props.dataSource,
+      (next) => {
+        setData(next);
+      }
+    );
 
-    watch(() => pageInfo.current, () => {
-      queryList();
-    }, {
-      lazy: true,
-    });
+    watch(
+      () => pageInfo.current,
+      () => {
+        queryList();
+      }
+    );
 
     return {
       state,
       pageAttrs,
       pageInfo,
       refresh: queryList,
-      setPageInfo: info =>
+      setPageInfo: (info) =>
         setPageInfo({
           ...pageInfo,
           ...info,

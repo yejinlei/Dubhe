@@ -1,25 +1,22 @@
-/*
-* Copyright 2019-2020 Zheng Jie
-*
-* Licensed under the Apache License, Version 2.0 (the "License");
-* you may not use this file except in compliance with the License.
-* You may obtain a copy of the License at
-*
-* http://www.apache.org/licenses/LICENSE-2.0
-*
-* Unless required by applicable law or agreed to in writing, software
-* distributed under the License is distributed on an "AS IS" BASIS,
-* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-* See the License for the specific language governing permissions and
-* limitations under the License.
-*/
+/* * Copyright 2019-2020 Zheng Jie * * Licensed under the Apache License, Version 2.0 (the
+"License"); * you may not use this file except in compliance with the License. * You may obtain a
+copy of the License at * * http://www.apache.org/licenses/LICENSE-2.0 * * Unless required by
+applicable law or agreed to in writing, software * distributed under the License is distributed on
+an "AS IS" BASIS, * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. * See
+the License for the specific language governing permissions and * limitations under the License. */
 
 <template>
   <div class="navbar">
     <div class="navbar-left">
-      <hamburger v-if="showSidebar" id="hamburger-container" :is-active="sidebar.opened" class="hamburger-container" @toggleClick="toggleSideBar" />
+      <hamburger
+        v-if="showSidebar"
+        id="hamburger-container"
+        :is-active="sidebar.opened"
+        class="hamburger-container"
+        @toggleClick="toggleSideBar"
+      />
       <BackIcon v-if="showBack" classname="navbar-back" v-on="$listeners" />
-      <div v-if="showTitle" class="navbar-title" :class="{'navbar-title-split': showBack}">
+      <div v-if="showTitle" class="navbar-title" :class="{ 'navbar-title-split': showBack }">
         {{ $route.meta && $route.meta.title }}
       </div>
       <!-- 左边占位符 -->
@@ -32,7 +29,7 @@
 
       <el-dropdown class="avatar-container right-menu-item hover-effect" trigger="click">
         <div class="avatar-wrapper">
-          <img :src="user.avatar" class="user-avatar">
+          <img :src="user.avatar" class="user-avatar" />
           <i class="el-icon-caret-bottom" />
         </div>
         <el-dropdown-menu slot="dropdown">
@@ -84,11 +81,7 @@ export default {
     };
   },
   computed: {
-    ...mapGetters([
-      'sidebar',
-      'device',
-      'user',
-    ]),
+    ...mapGetters(['sidebar', 'device', 'user']),
   },
   methods: {
     toggleSideBar() {
@@ -105,7 +98,7 @@ export default {
     },
     logout() {
       this.$store.dispatch('LogOut').then(() => {
-        location.reload();
+        window.location.reload();
       });
     },
   },

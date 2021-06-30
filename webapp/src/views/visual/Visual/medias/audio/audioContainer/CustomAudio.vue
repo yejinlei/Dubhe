@@ -1,6 +1,4 @@
-/**
-* Modified from https://segmentfault.com/a/1190000012453975
-*/
+/** * Modified from https://segmentfault.com/a/1190000012453975 */
 <template>
   <div v-loading="audioStruct.waiting" class="di main-wrap">
     <audio
@@ -21,14 +19,18 @@
           <el-col :span="2">
             <el-button
               type="primary"
-              :icon="audioStruct.playing ?'iconfont icon-zanting':'iconfont icon-ziyuan74'"
+              :icon="audioStruct.playing ? 'iconfont icon-zanting' : 'iconfont icon-ziyuan74'"
               size="medium"
               class="playButton"
               @click="playPause"
             />
           </el-col>
           <el-col :span="6" class="hidden-md-and-down">
-            <span type="info" class="timeInfo">{{ audioStruct.curTime | formatSecond }}/{{ audioStruct.maxTime | formatSecond }}</span>
+            <span type="info" class="timeInfo"
+              >{{ audioStruct.curTime | formatSecond }}/{{
+                audioStruct.maxTime | formatSecond
+              }}</span
+            >
           </el-col>
           <el-col :span="13" class="hidden-sm-and-down">
             <el-slider
@@ -73,7 +75,7 @@ function formatSeconds(second) {
     second = parseInt(second, 10);
     const mimute = Math.floor(second / 60);
     second -= mimute * 60;
-    return `${(`0${mimute}`).slice(-2)}:${(`0${second}`).slice(-2)}`;
+    return `${`0${mimute}`.slice(-2)}:${`0${second}`.slice(-2)}`;
   }
   return '00:00';
 }
@@ -122,8 +124,8 @@ export default {
         }),
         mode: 'cors',
       })
-        .then(res => res.blob())
-        .then(blob => {
+        .then((res) => res.blob())
+        .then((blob) => {
           const blobUrl = window.URL.createObjectURL(blob);
           this.download(blobUrl, filename);
           window.URL.revokeObjectURL(blobUrl);
@@ -142,7 +144,7 @@ export default {
       this.audioStruct.muted = this.$refs.myAudio.muted;
     },
     timeLineToolTip(index = 0) {
-      index = parseInt(this.audioStruct.maxTime / 100 * index, 10);
+      index = parseInt((this.audioStruct.maxTime / 100) * index, 10);
       return formatSeconds(index);
     },
     changeVolume(index = 0) {
@@ -150,7 +152,7 @@ export default {
       this.volume = index;
     },
     changeCurTime(index) {
-      this.$refs.myAudio.currentTime  = parseInt(index / 100 * this.audioStruct.maxTime, 10);
+      this.$refs.myAudio.currentTime = parseInt((index / 100) * this.audioStruct.maxTime, 10);
     },
     playPause() {
       return this.audioStruct.playing ? this.pPlay() : this.sPlay();
@@ -173,7 +175,7 @@ export default {
     },
     timeUpdate(val) {
       this.audioStruct.curTime = val.target.currentTime;
-      this.sliderTime = parseInt(this.audioStruct.curTime / this.audioStruct.maxTime * 100, 10);
+      this.sliderTime = parseInt((this.audioStruct.curTime / this.audioStruct.maxTime) * 100, 10);
     },
     loadAudioData(val) {
       this.audioStruct.waiting = false;
@@ -184,99 +186,99 @@ export default {
 </script>
 
 <style lang="less" scoped>
-  .audioSlider {
-    padding-left: 3px;
-  }
+.audioSlider {
+  padding-left: 3px;
+}
 
-  .di {
-    display: block;
-  }
+.di {
+  display: block;
+}
 
-  .download {
-    float: left;
-    color: #8f8ad7;
-  }
+.download {
+  float: left;
+  color: #8f8ad7;
+}
 
-  .shadow {
-    display: none;
-  }
+.shadow {
+  display: none;
+}
 
-  /deep/ .el-button {
-    padding-top: 4px;
-    padding-right: 0;
-    padding-left: 0;
-  }
+/deep/ .el-button {
+  padding-top: 4px;
+  padding-right: 0;
+  padding-left: 0;
+}
 
-  .el-button--primary {
-    font-size: 20px;
-    color: #8f8ad7;
-    background-color: white;
-    border: #8f8ad7;
-  }
+.el-button--primary {
+  font-size: 20px;
+  color: #8f8ad7;
+  background-color: white;
+  border: #8f8ad7;
+}
 
-  .row-bg {
-    align-items: center;
-  }
+.row-bg {
+  align-items: center;
+}
 
-  .mainAudio {
-    width: 100%;
-  }
+.mainAudio {
+  width: 100%;
+}
 
+/deep/ .iconfont {
+  color: #8f8ad7;
+}
+
+.light {
   /deep/ .iconfont {
     color: #8f8ad7;
   }
+}
 
-  .light {
-    /deep/ .iconfont {
-      color: #8f8ad7;
-    }
+.gray {
+  /deep/ .iconfont {
+    color: gray;
+  }
+}
+
+/deep/ .playButton {
+  float: right;
+}
+
+/deep/ .myCard {
+  .timeInfo {
+    font-size: 9px;
   }
 
-  .gray {
-    /deep/ .iconfont {
-      color: gray;
-    }
+  .el-slider__button {
+    border-color: #8f8ad7;
   }
 
-  /deep/ .playButton {
-    float: right;
+  .el-button--primary:active {
+    background-color: white;
   }
 
-  /deep/ .myCard {
-    .timeInfo {
-      font-size: 9px;
-    }
-
-    .el-slider__button {
-      border-color: #8f8ad7;
-    }
-
-    .el-button--primary:active {
-      background-color: white;
-    }
-
-    .el-button--primary:hover,
-    .el-button--primary:focus {
-      background-color: white;
-    }
-
-    .el-slider__bar {
-      background-color: #8f8ad7;
-    }
-
-    .el-card__body {
-      padding: 0;
-    }
-
-    margin-right: 1%;
-    border-radius: 30px;
+  .el-button--primary:hover,
+  .el-button--primary:focus {
+    background-color: white;
   }
 
-  /deep/ .el-icon-bottom {
-    color: #8f8ad7;
+  .el-slider__bar {
+    background-color: #8f8ad7;
   }
 
-  .audioOut {
-    height: 30%;
+  .el-card__body {
+    padding: 0;
   }
+
+  margin-right: 1%;
+  border-radius: 30px;
+}
+
+/deep/ .el-icon-bottom {
+  color: #8f8ad7;
+}
+
+.audioOut {
+  height: 30%;
+}
 </style>

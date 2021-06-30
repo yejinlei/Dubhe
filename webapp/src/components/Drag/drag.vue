@@ -1,18 +1,18 @@
 /** Copyright 2020 Tianshu AI Platform. All Rights Reserved.
-*
-* Licensed under the Apache License, Version 2.0 (the "License");
-* you may not use this file except in compliance with the License.
-* You may obtain a copy of the License at
-*
-*     http://www.apache.org/licenses/LICENSE-2.0
-*
-* Unless required by applicable law or agreed to in writing, software
-* distributed under the License is distributed on an "AS IS" BASIS,
-* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-* See the License for the specific language governing permissions and
-* limitations under the License.
-* =============================================================
-*/
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ * =============================================================
+ */
 
 <script>
 import { reactive } from '@vue/composition-api';
@@ -43,7 +43,7 @@ export default {
     });
 
     function getPoint(event) {
-    // 容器尺寸
+      // 容器尺寸
       const bound = findAncestorSvg(event).getBoundingClientRect();
       const { clientX, clientY } = event;
 
@@ -64,14 +64,14 @@ export default {
         y: resetOnStart ? point.y : -state.dy + point.y,
       };
       Object.assign(state, nextState);
-      if (typeof onDragStart === 'function') onDragStart(nextState, event);      
+      if (typeof onDragStart === 'function') onDragStart(nextState, event);
     }
 
     function dragMove(event) {
       if (!state.isDragging) return;
       const point = getPoint(event);
       // 避免无效移动
-      if(Math.abs(point.x - state.x) < 2 && Math.abs(point.y - state.y) < 2) return;
+      if (Math.abs(point.x - state.x) < 2 && Math.abs(point.y - state.y) < 2) return;
       const nextState = {
         isDragging: true,
         isMoving: true,
@@ -90,9 +90,10 @@ export default {
       const prevState = { ...state };
       Object.assign(state, nextState);
       // 传递 prevState
-      if (typeof onDragEnd === 'function') onDragEnd(state, event, {
-        prevState,
-      });
+      if (typeof onDragEnd === 'function')
+        onDragEnd(state, event, {
+          prevState,
+        });
     }
 
     return {
@@ -108,24 +109,22 @@ export default {
 
     return (
       <g>
-        {this.state.isDragging &&
-        (
+        {this.state.isDragging && (
           <rect
             width={this.width}
             height={this.height}
             onMousemove={this.dragMove}
             onMouseup={this.dragEnd}
-            fill='transparent'
+            fill="transparent"
           />
         )}
-        { typeof children === 'function' && (
+        {typeof children === 'function' &&
           children({
             state: this.state,
             dragStart: this.dragStart,
             dragMove: this.dragMove,
             dragEnd: this.dragEnd,
-          })
-        ) }
+          })}
       </g>
     );
   },

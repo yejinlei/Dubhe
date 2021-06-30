@@ -19,53 +19,29 @@ module.exports = {
     }
   },
   rules: {
-    "comma-dangle": [2, "always-multiline"],
-    "no-var": "error",
-    "no-console": [2, { allow: ["warn", "error"] }],
-    "no-restricted-syntax": "off",
-    "no-underscore-dangle": "off",
-    "guard-for-in": "off",
-    "object-shorthand": 2,
-    "consistent-return": "off",
-    "no-multi-assign": "off",
+    'prettier/prettier': [
+      'error',
+      {
+        printWidth: 100,
+        semi: true,
+        singleQuote: true,
+        trailingComma: 'es5',
+        endOfLine: 'auto',
+        arrowParens: 'always',
+      },
+    ],
+    'vue/require-default-prop': 'off',
+    'vue/attribute-hyphenation': 'off',
+    'no-console': ['error', { allow: ['warn', 'error', 'info'] }],
+    'no-param-reassign': 'off',
+    'import/extensions': 'off',
+    'import/prefer-default-export': 'off',
     "no-shadow": "off",
-    "no-restricted-globals": "off",
-    "no-restricted-properties": "off",
-    "no-prototype-builtins": "off",
-    "no-unused-vars": [
-      2,
-      { ignoreRestSiblings: true, argsIgnorePattern: "^h$" }
-    ],
-    "import/prefer-default-export": "off",
-    'import/extensions': ['error', 'always', {
-      'js': 'never',
-      'vue': 'never'
-    }],
+    "no-underscore-dangle": "off",
     "no-unused-expressions": "off",
-    "no-undef": 2,
-    camelcase: "off",
-    "no-extra-boolean-cast": "off",
-    "no-param-reassign":"off",
-    semi: ["error", "always"],
-    "vue/require-prop-types": "off",
-    "vue/require-default-prop": "off",
-    "vue/no-reserved-keys": "off",
-    "vue/attribute-hyphenation": "off",
-    "vue/comment-directive": "off",
-    "vue/prop-name-casing": "off",
-    "vue/max-attributes-per-line": [2, {
-      singleline: 20,
-      multiline: {
-        max: 1,
-        allowFirstLine: false
-      }}
-    ],
-    "vue/html-indent": ["error", 2, {
-      "attribute": 1,
-      "baseIndent": 1,
-      "closeBracket": 0,
-      "alignAttributesVertically": true,
-      "ignores": []
-    }]
+    "no-restricted-syntax": "off",
+    "guard-for-in": "off",
+    "camelcase": "off",
+    "no-multi-assign": "off",
   }
 };

@@ -1,18 +1,18 @@
 /** Copyright 2020 Tianshu AI Platform. All Rights Reserved.
-*
-* Licensed under the Apache License, Version 2.0 (the "License");
-* you may not use this file except in compliance with the License.
-* You may obtain a copy of the License at
-*
-*     http://www.apache.org/licenses/LICENSE-2.0
-*
-* Unless required by applicable law or agreed to in writing, software
-* distributed under the License is distributed on an "AS IS" BASIS,
-* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-* See the License for the specific language governing permissions and
-* limitations under the License.
-* =============================================================
-*/
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ * =============================================================
+ */
 
 <template>
   <div :class="className" style="width: 100%; height: 100%;" />
@@ -22,7 +22,10 @@
 import * as d3 from 'd3';
 import { createNamespacedHelpers } from 'vuex';
 
-const { mapGetters: mapStatisticGetters, mapMutations: mapStatisticMutations } = createNamespacedHelpers('Visual/statistic');
+const {
+  mapGetters: mapStatisticGetters,
+  mapMutations: mapStatisticMutations,
+} = createNamespacedHelpers('Visual/statistic');
 
 export default {
   name: 'Onethreed',
@@ -36,7 +39,7 @@ export default {
   },
   data() {
     return {
-      id: `offset${  this.itemp}`,
+      id: `offset${this.itemp}`,
     };
   },
   computed: {
@@ -61,14 +64,14 @@ export default {
     // 显示比率
     drawOffset() {
       const label = this.id;
-      const {data} = this;
-      const className = `.${  this.className}`;
+      const { data } = this;
+      const className = `.${this.className}`;
       const that = this;
       // 先找到value和number的最大值和最小值
       let numberMin = 10000;
       let numberMax = 0;
-      for (let i = 0; i < data.length; i+=1) {
-        for (let j = 0; j < data[i].length; j+=1) {
+      for (let i = 0; i < data.length; i += 1) {
+        for (let j = 0; j < data[i].length; j += 1) {
           const pixel = data[i][j][1];
           if (numberMin > pixel) numberMin = pixel;
           if (numberMax < pixel) numberMax = pixel;
@@ -88,7 +91,7 @@ export default {
       const div = d3
         .select(className)
         .append('div')
-        .attr('id', `${label  }div`)
+        .attr('id', `${label}div`)
         .attr('width', '100%')
         .attr('height', '100%');
       const outersvg = div
@@ -109,13 +112,12 @@ export default {
       svg
         .append('g')
         .attr('class', 'axis')
-        .attr(
-          'transform',
-          `translate(${  padding.left  },${  padding.top + height  })`,
-        )
-        .call(d3.axisBottom()
-          .scale(xscale)
-          .ticks(5),
+        .attr('transform', `translate(${padding.left},${padding.top + height})`)
+        .call(
+          d3
+            .axisBottom()
+            .scale(xscale)
+            .ticks(5)
         );
       const stepscale = d3
         .scaleLinear()
@@ -125,38 +127,40 @@ export default {
       svg
         .append('g')
         .attr('class', 'axis stepaxis')
-        .attr(
-          'transform',
-          `translate(${  padding.left + width  },${  padding.top  })`,
-        )
-        .call(d3.axisRight()
-          .scale(stepscale)
-          .tickFormat(d => {
-            if (d > 10000) {
-              const numLen = d.toString().length - 1;
-              // eslint-disable-next-line no-restricted-properties
-              return `${d / Math.pow(10, numLen)  }e+${  numLen}`;
-            } if (d < 0.001) {
-              if (d === 0) return d;
-              const dString = d.toString();
-              let i = 3;
-              for (; i < dString.length; i+=1) {
-                if (dString[i] !== '0') {
-                  break;
-                }
+        .attr('transform', `translate(${padding.left + width},${padding.top})`)
+        .call(
+          d3
+            .axisRight()
+            .scale(stepscale)
+            .tickFormat((d) => {
+              if (d > 10000) {
+                const numLen = d.toString().length - 1;
+                // eslint-disable-next-line no-restricted-properties
+                return `${d / Math.pow(10, numLen)}e+${numLen}`;
               }
-              // eslint-disable-next-line no-restricted-properties
-              return `${(d * Math.pow(10, i - 1)).toFixed(1)  }e-${  i - 1}`;
-            }
-            return d;
-          }),
+              if (d < 0.001) {
+                if (d === 0) return d;
+                const dString = d.toString();
+                let i = 3;
+                for (; i < dString.length; i += 1) {
+                  if (dString[i] !== '0') {
+                    break;
+                  }
+                }
+                // eslint-disable-next-line no-restricted-properties
+                return `${(d * Math.pow(10, i - 1)).toFixed(1)}e-${i - 1}`;
+              }
+              return d;
+            })
         );
       const yscale = d3
         .scaleLinear()
         .domain([numberMin, numberMax])
         .rangeRound([areaHeight, 0]);
       // 显示信息
-      svg.append('g').append('text')
+      svg
+        .append('g')
+        .append('text')
         .attr('transform', 'rotate(90)')
         .attr('y', -(svgWidth - 13))
         .attr('x', svgHeight / 2)
@@ -243,14 +247,14 @@ export default {
         })
         .attr('transform', function _nonName(d) {
           const translateHeight = stepscale(d[0][2]) + heightTop;
-          return `translate(${  padding.left  },${  translateHeight  })`;
+          return `translate(${padding.left},${translateHeight})`;
         })
         .attr('fill', this.runColor)
         .attr('class', function _nonName(d, i) {
-          return `step${  i}`;
+          return `step${i}`;
         })
         .attr('id', function _nonName(d, i) {
-          return `${label  }step${  i}`;
+          return `${label}step${i}`;
         })
         // 添加鼠标操作:珠子+数值
         .on('mousemove', function _nonName(d, i) {
@@ -267,7 +271,7 @@ export default {
               break;
             }
           }
-          if ((curXValue - d[minDistIndex - 1]) < (d[minDistIndex] - curXValue)) {
+          if (curXValue - d[minDistIndex - 1] < d[minDistIndex] - curXValue) {
             minDistIndex -= 1;
           }
           const minDistX = padding.left + xscale(d[minDistIndex][0]);
@@ -284,12 +288,16 @@ export default {
               return d;
             });
           // 当前选中的直方图边界高亮
-          svg.select('.areapathg')
+          svg
+            .select('.areapathg')
             .selectAll('path')
             .style('opacity', 1.0)
             .attr('stroke', 'gainsboro')
             .attr('stroke-width', '0.5');
-          svg.select(`.step${  i}`).attr('stroke', '#fff45a').attr('stroke-width', '1');
+          svg
+            .select(`.step${i}`)
+            .attr('stroke', '#fff45a')
+            .attr('stroke-width', '1');
           // 控制面板需要显示数据
           // 当前step，是对多少个数据进行统计的，统计个数的最小值和最大值，和最大值对应的区间
           // 这个数据不准确，把所有相加
@@ -300,13 +308,18 @@ export default {
             return d[1];
           });
           let curCountMax = 0;
-          for (let it = 0; it < data[i].length; it+=1) {
+          for (let it = 0; it < data[i].length; it += 1) {
             const pixel = data[i][it][1];
             if (curCountMax < pixel) {
               curCountMax = pixel;
             }
           }
-          that.setStatisticInfo([data[i][0][2], Math.ceil(curDataCountSum), curCountMin, curCountMax.toFixed(2)]);
+          that.setStatisticInfo([
+            data[i][0][2],
+            Math.ceil(curDataCountSum),
+            curCountMin,
+            curCountMax.toFixed(2),
+          ]);
           svg
             .select('.xrect')
             .attr('visibility', 'visible')
@@ -330,7 +343,7 @@ export default {
           svg
             .select('.textbox')
             .attr('visibility', 'visible')
-            .text(`count:${  d[minDistIndex][1].toFixed(2)}`)
+            .text(`count:${d[minDistIndex][1].toFixed(2)}`)
             .attr('x', curX + 5)
             .attr('y', curY - 10);
 
@@ -340,15 +353,15 @@ export default {
           const count = Math.ceil(areaHeight / dh);
           const curHeight = [];
           // yscale，值越大高度越小
-          for (let j = 0; j < d.length; j+=1) {
+          for (let j = 0; j < d.length; j += 1) {
             curHeight.push(stepscale(d[j][2]) - (areaHeight - yscale(d[j][1])));
           }
-          for (let j = i + 1; j <= i + count && j < data.length; j+=1) {
+          for (let j = i + 1; j <= i + count && j < data.length; j += 1) {
             const onedata = data[j];
-            for (let k = 0; k < onedata.length; k+=1) {
+            for (let k = 0; k < onedata.length; k += 1) {
               const heightk = stepscale(onedata[k][2]) - (areaHeight - yscale(onedata[k][1]));
               if (heightk <= curHeight[k]) {
-                svg.select(`.step${  j}`).style('opacity', 0.5);
+                svg.select(`.step${j}`).style('opacity', 0.5);
                 break;
               }
             }
@@ -382,7 +395,7 @@ export default {
         const curY = d3.mouse(svg.node())[1];
         const step = parseInt(stepscale.invert(curY - padding.top), 0);
         let k = 0;
-        for (let i = 0; i < data.length; i+=1) {
+        for (let i = 0; i < data.length; i += 1) {
           if (data[i][0][2] > step) {
             k = i;
             if (i !== 0 && data[i][0][2] - step > step - data[i - 1][0][2]) {
@@ -396,7 +409,7 @@ export default {
           .selectAll('path')
           .attr('stroke', 'gainsboro')
           .attr('stroke-width', '0.5');
-        d3.select(`#${  label  }step${  k}`)
+        d3.select(`#${label}step${k}`)
           .attr('stroke', '#fff45a')
           .attr('visibility', 'visible')
           .attr('stroke-width', '1');

@@ -1,18 +1,18 @@
 /** Copyright 2020 Tianshu AI Platform. All Rights Reserved.
-*
-* Licensed under the Apache License, Version 2.0 (the "License");
-* you may not use this file except in compliance with the License.
-* You may obtain a copy of the License at
-*
-*     http://www.apache.org/licenses/LICENSE-2.0
-*
-* Unless required by applicable law or agreed to in writing, software
-* distributed under the License is distributed on an "AS IS" BASIS,
-* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-* See the License for the specific language governing permissions and
-* limitations under the License.
-* =============================================================
-*/
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ * =============================================================
+ */
 
 import constants from '@/utils/VisualUtils/constants';
 // eslint-disable-next-line import/no-cycle
@@ -52,26 +52,27 @@ const getters = {
 
 const actions = {
   async initWaitingPage(context, params) {
-    await initVisual(params)
-      .then(data => {
-        context.commit('setCookie', 'session_id', data.session_id);
-        context.commit('setWaitingMessage', data.msg);
-      });
+    await initVisual(params).then((data) => {
+      context.commit('setCookie', 'session_id', data.session_id);
+      context.commit('setWaitingMessage', data.msg);
+    });
   },
   async initFeatchCategory(context, path) {
     const splitArray = path.split('/');
     const cate = splitArray[splitArray.length - 1];
-    await getCategory({}).then(res => {
+    await getCategory({}).then((res) => {
       const dataCategoryInfo = res;
       let categorys = [];
       const runFile = [];
       const categoryToRunFile = {}; // 根据所选类目显示run信息
-      Object.keys(dataCategoryInfo).forEach(val => {
-        categorys = categorys.concat(Object.keys(dataCategoryInfo[val]).filter(v => !categorys.includes(v)));
+      Object.keys(dataCategoryInfo).forEach((val) => {
+        categorys = categorys.concat(
+          Object.keys(dataCategoryInfo[val]).filter((v) => !categorys.includes(v))
+        );
         runFile.push(val);
       });
       const categoryOrder = [];
-      categorys.forEach(val => {
+      categorys.forEach((val) => {
         categoryOrder.push(constants.CATEGORYORDER.indexOf(val));
       });
       categoryOrder.sort();
@@ -82,11 +83,11 @@ const actions = {
         newIndex = categoryOrder.indexOf(constants.CATEGORYORDER.indexOf(cate));
       }
       if (categorys.length !== 0) {
-        categorys.forEach(ce => {
+        categorys.forEach((ce) => {
           const detailTag = [];
           const tempRunFile = [];
           const temp = [];
-          runFile.forEach(res => {
+          runFile.forEach((res) => {
             if (dataCategoryInfo[res].hasOwnProperty(ce)) {
               tempRunFile.push(res);
               detailTag.push(dataCategoryInfo[res][ce]);
@@ -96,44 +97,53 @@ const actions = {
           });
           if (ce === constants.CATEGORYORDER[categoryOrder[0]] && cate === 'index') {
             context.dispatch(
-              `Visual/${  ce  }/getSelfCategoryInfo`,
-              [tempRunFile, detailTag, { 'initStateFlag': true }],
-              { root: true });
+              `Visual/${ce}/getSelfCategoryInfo`,
+              [tempRunFile, detailTag, { initStateFlag: true }],
+              { root: true }
+            );
           } else if (ce === cate) {
             context.dispatch(
-              `Visual/${  ce  }/getSelfCategoryInfo`,
-              [tempRunFile, detailTag, { 'initStateFlag': true }],
-              { root: true });
+              `Visual/${ce}/getSelfCategoryInfo`,
+              [tempRunFile, detailTag, { initStateFlag: true }],
+              { root: true }
+            );
           } else {
             context.dispatch(
-              `Visual/${  ce  }/getSelfCategoryInfo`,
-              [tempRunFile, detailTag, { 'initStateFlag': false }],
-              { root: true });
+              `Visual/${ce}/getSelfCategoryInfo`,
+              [tempRunFile, detailTag, { initStateFlag: false }],
+              { root: true }
+            );
           }
         });
       } else {
-        context.commit('setErrorMessage', `${'日志文件中尚未发现可展示信息！_'}${  new Date().getTime()}`);
+        context.commit(
+          'setErrorMessage',
+          `${'日志文件中尚未发现可展示信息！_'}${new Date().getTime()}`
+        );
       }
       context.commit('setRunCategoryDetail', categoryToRunFile);
-      context.commit('setCategory', [categoryOrder, newIndex]); 
-      context.commit('setRunCategory', constants.CATEGORYORDER[categoryOrder[newIndex]]); 
+      context.commit('setCategory', [categoryOrder, newIndex]);
+      context.commit('setRunCategory', constants.CATEGORYORDER[categoryOrder[newIndex]]);
     });
   },
-  async timingFeatchCategory(context, parm) { // parm 存储间隔时间
+  async timingFeatchCategory(context, parm) {
+    // parm 存储间隔时间
     const splitArray = parm[1].split('/');
     const cate = splitArray[splitArray.length - 1];
-    const t = setInterval(async() => {
-      await getCategory({ test: 1 }).then(res => {
+    const t = setInterval(async () => {
+      await getCategory({ test: 1 }).then((res) => {
         const dataCategoryInfo = res;
         let categorys = [];
         const runFile = [];
-        const categoryToRunFile = {}; 
-        Object.keys(dataCategoryInfo).forEach(val => {
-          categorys = categorys.concat(Object.keys(dataCategoryInfo[val]).filter(v => !categorys.includes(v)));
+        const categoryToRunFile = {};
+        Object.keys(dataCategoryInfo).forEach((val) => {
+          categorys = categorys.concat(
+            Object.keys(dataCategoryInfo[val]).filter((v) => !categorys.includes(v))
+          );
           runFile.push(val);
         });
         const categoryOrder = [];
-        categorys.forEach(val => {
+        categorys.forEach((val) => {
           categoryOrder.push(constants.CATEGORYORDER.indexOf(val));
         });
         categoryOrder.sort();
@@ -144,11 +154,11 @@ const actions = {
           newIndex = categoryOrder.indexOf(constants.CATEGORYORDER.indexOf(cate));
         }
         if (categorys.length !== 0) {
-          categorys.forEach(ce => {
+          categorys.forEach((ce) => {
             const detailTag = [];
             const tempRunFile = [];
             const temp = [];
-            runFile.forEach(res => {
+            runFile.forEach((res) => {
               if (dataCategoryInfo[res].hasOwnProperty(ce)) {
                 tempRunFile.push(res);
                 detailTag.push(dataCategoryInfo[res][ce]);
@@ -158,23 +168,29 @@ const actions = {
             });
             if (ce === constants.CATEGORYORDER[categoryOrder[0]] && cate === 'index') {
               context.dispatch(
-                `Visual/${  ce  }/getSelfCategoryInfo`,
-                [tempRunFile, detailTag, { 'initStateFlag': true }],
-                { root: true });
+                `Visual/${ce}/getSelfCategoryInfo`,
+                [tempRunFile, detailTag, { initStateFlag: true }],
+                { root: true }
+              );
             } else if (ce === cate) {
               context.dispatch(
-                `Visual/${  ce  }/getSelfCategoryInfo`,
-                [tempRunFile, detailTag, { 'initStateFlag': true }],
-                { root: true });
+                `Visual/${ce}/getSelfCategoryInfo`,
+                [tempRunFile, detailTag, { initStateFlag: true }],
+                { root: true }
+              );
             } else {
               context.dispatch(
-                `Visual/${  ce  }/getSelfCategoryInfo`,
-                [tempRunFile, detailTag, { 'initStateFlag': false }],
-                { root: true });
+                `Visual/${ce}/getSelfCategoryInfo`,
+                [tempRunFile, detailTag, { initStateFlag: false }],
+                { root: true }
+              );
             }
           });
         } else {
-          context.commit('setErrorMessage', `${'日志文件中尚未发现可展示信息！_'}${  new Date().getTime()}`);
+          context.commit(
+            'setErrorMessage',
+            `${'日志文件中尚未发现可展示信息！_'}${new Date().getTime()}`
+          );
         }
         context.commit('setRunCategoryDetail', categoryToRunFile);
         context.commit('setCategory', [categoryOrder, newIndex]);
@@ -186,17 +202,19 @@ const actions = {
   async timingFeatchCategoryOnce(context, parm) {
     const splitArray = parm.split('/');
     const cate = splitArray[splitArray.length - 1];
-    await getCategory({}).then(res => {
+    await getCategory({}).then((res) => {
       const dataCategoryInfo = res;
       let categorys = [];
       const runFile = [];
       const categoryToRunFile = {};
-      Object.keys(dataCategoryInfo).forEach(val => {
-        categorys = categorys.concat(Object.keys(dataCategoryInfo[val]).filter(v => !categorys.includes(v)));
+      Object.keys(dataCategoryInfo).forEach((val) => {
+        categorys = categorys.concat(
+          Object.keys(dataCategoryInfo[val]).filter((v) => !categorys.includes(v))
+        );
         runFile.push(val);
       });
       const categoryOrder = [];
-      categorys.forEach(val => {
+      categorys.forEach((val) => {
         categoryOrder.push(constants.CATEGORYORDER.indexOf(val));
       });
       categoryOrder.sort();
@@ -207,11 +225,11 @@ const actions = {
         newIndex = categoryOrder.indexOf(constants.CATEGORYORDER.indexOf(cate));
       }
       if (categorys.length !== 0) {
-        categorys.forEach(ce => {
+        categorys.forEach((ce) => {
           const detailTag = [];
           const tempRunFile = [];
           const temp = [];
-          runFile.forEach(res => {
+          runFile.forEach((res) => {
             if (dataCategoryInfo[res].hasOwnProperty(ce)) {
               tempRunFile.push(res);
               detailTag.push(dataCategoryInfo[res][ce]);
@@ -221,23 +239,29 @@ const actions = {
           });
           if (ce === constants.CATEGORYORDER[categoryOrder[0]] && cate === 'index') {
             context.dispatch(
-              `Visual/${  ce  }/getSelfCategoryInfo`,
-              [tempRunFile, detailTag, { 'initStateFlag': true }],
-              { root: true });
+              `Visual/${ce}/getSelfCategoryInfo`,
+              [tempRunFile, detailTag, { initStateFlag: true }],
+              { root: true }
+            );
           } else if (ce === cate) {
             context.dispatch(
-              `Visual/${  ce  }/getSelfCategoryInfo`,
-              [tempRunFile, detailTag, { 'initStateFlag': true }],
-              { root: true });
+              `Visual/${ce}/getSelfCategoryInfo`,
+              [tempRunFile, detailTag, { initStateFlag: true }],
+              { root: true }
+            );
           } else {
             context.dispatch(
-              `Visual/${  ce  }/getSelfCategoryInfo`,
-              [tempRunFile, detailTag, { 'initStateFlag': false }],
-              { root: true });
+              `Visual/${ce}/getSelfCategoryInfo`,
+              [tempRunFile, detailTag, { initStateFlag: false }],
+              { root: true }
+            );
           }
         });
       } else {
-        context.commit('setErrorMessage', `${'日志文件中尚未发现可展示信息！_'}${  new Date().getTime()}`);
+        context.commit(
+          'setErrorMessage',
+          `${'日志文件中尚未发现可展示信息！_'}${new Date().getTime()}`
+        );
       }
       context.commit('setRunCategoryDetail', categoryToRunFile);
       context.commit('setCategory', [categoryOrder, newIndex]);
@@ -245,12 +269,12 @@ const actions = {
     });
   },
   async getClickState(context, parm) {
-    context.state.categoryIndex.forEach(value => {
+    context.state.categoryIndex.forEach((value) => {
       const el = constants.CATEGORYORDER[value];
       if (value === parm) {
-        context.commit(`${  el  }/setClickState`, true, { root: true });
+        context.commit(`${el}/setClickState`, true, { root: true });
       } else {
-        context.commit(`${  el  }/setClickState`, false, { root: true });
+        context.commit(`${el}/setClickState`, false, { root: true });
       }
     });
   },
@@ -264,7 +288,7 @@ const mutations = {
     const days = 14;
     const exp = new Date();
     exp.setTime(exp.getTime() + days * 24 * 60 * 60 * 1000);
-    document.cookie = `${name  }=${  escape(value)  };expires=${  exp.toGMTString()  }; path=/`;
+    document.cookie = `${name}=${escape(value)};expires=${exp.toGMTString()}; path=/`;
   },
   setCategory: (state, value) => {
     // eslint-disable-next-line
@@ -274,7 +298,7 @@ const mutations = {
       CategoryInfomation.push({
         id: index,
         rawName: constants.CATEGORYORDER[order],
-        routerName: `/visual/${  constants.CATEGORYORDER[order]}`,
+        routerName: `/visual/${constants.CATEGORYORDER[order]}`,
         name: constants.CATEGORY[order][3],
         nameCopy: constants.CATEGORY[order][3],
         icon: constants.CATEGORY[order][4],
@@ -288,7 +312,7 @@ const mutations = {
       state.initShowPanel = CategoryInfomation[value[1]];
     }
     const download = {};
-    state.category.forEach(val =>{
+    state.category.forEach((val) => {
       download[val.rawName] = [];
       if (val.rawName === 'graph') {
         download.graph.push('#svg-canvas');
@@ -311,8 +335,8 @@ const mutations = {
     let temp = '';
     state.runCategoryDetail[value].forEach((val, i) => {
       detailInfo.push({
-        'value': val,
-        'label': val,
+        value: val,
+        label: val,
       });
       if (constants.RUNFILESHOWFlAG[value] === 0) {
         temp = false;
@@ -329,7 +353,7 @@ const mutations = {
         temp = 2;
       }
     });
-    if(value in state.stateStore) {
+    if (value in state.stateStore) {
       state.userSelectRunFile = state.stateStore[value];
     } else {
       state.stateStore[value] = initOption;

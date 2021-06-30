@@ -1,18 +1,18 @@
 /** Copyright 2020 Tianshu AI Platform. All Rights Reserved.
-*
-* Licensed under the Apache License, Version 2.0 (the "License");
-* you may not use this file except in compliance with the License.
-* You may obtain a copy of the License at
-*
-*     http://www.apache.org/licenses/LICENSE-2.0
-*
-* Unless required by applicable law or agreed to in writing, software
-* distributed under the License is distributed on an "AS IS" BASIS,
-* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-* See the License for the specific language governing permissions and
-* limitations under the License.
-* =============================================================
-*/
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ * =============================================================
+ */
 
 <template>
   <!--训练管理页面-断点续训Dialog-->
@@ -23,10 +23,11 @@
     width="600px"
     @open="onDialogOpen"
     @opened="onDialogOpened"
-    @cancel="visible=false"
+    @cancel="visible = false"
     @ok="ok"
   >
-    <div v-if="fetchDone && treeList.length" class="fontBold">{{desc}}</div>
+    <div v-if="tip" class="ts-tip mb-20 px-20 py-10">{{ tip }}</div>
+    <div v-if="fetchDone && treeList.length" class="fontBold">{{ description }}</div>
     <div class="tree-container">
       <el-tree
         v-if="fetchDone"
@@ -34,12 +35,21 @@
         highlight-current
         :data="treeList"
         :empty-text="emptyText"
-        node-key="id"
+        node-key="originPath"
         :props="defaultProps"
-        :show-checkbox="type === 'modelDownload'"
+        show-checkbox
+        :check-strictly="type !== 'modelDownload'"
         :default-expanded-keys="defaultExpandedKeys.slice(0, 1)"
-        @node-click="handleNodeClick"
-      ></el-tree>
+        @check-change="checkChange"
+      >
+        <span slot-scope="{ node }" class="slot-t-node">
+          <i
+            :class="node.expanded ? 'el-icon-folder-opened' : 'el-icon-folder'"
+            style="color: #5872e5;"
+          />
+          <span>{{ node.label }}</span>
+        </span>
+      </el-tree>
     </div>
   </BaseModal>
 </template>
@@ -49,7 +59,7 @@ import { Loading } from 'element-ui';
 import BaseModal from '@/components/BaseModal';
 import { getTreeListFromFilepath } from '@/utils';
 import { resumeTrain } from '@/api/trainingJob/job';
-import { modelOfficial } from '../utils';
+import { copywriting } from '../utils';
 
 export default {
   name: 'JobResumeDialog',
@@ -66,16 +76,13 @@ export default {
   },
   data() {
     return {
-      title: '断点续训',
-      desc:'',
       visible: false,
       path: '',
       id: '',
-      fileName:'',
+      fileName: '',
       params: {},
       treeList: [],
       defaultExpandedKeys: [],
-      emptyText: '暂无数据',
       selectNode: null,
       defaultProps: {
         children: 'children',
@@ -84,21 +91,27 @@ export default {
       fetchDone: false,
     };
   },
+  computed: {
+    title() {
+      return copywriting.title[this.type];
+    },
+    tip() {
+      return copywriting.tip[this.type];
+    },
+    description() {
+      return copywriting.description[this.type];
+    },
+    emptyText() {
+      return copywriting.emptyText[this.type];
+    },
+  },
   methods: {
     show(item) {
       this.path = item.resumePath;
       this.id = item.id;
       this.fileName = item.fileName;
       this.params = item.params;
-      this.title = this.getCentext(this.type, 0);
-      this.desc = this.getCentext(this.type, 1);
-      this.emptyText = this.getCentext(this.type, 2);
       this.visible = true;
-    },
-    getCentext(type='', num) {
-      if(modelOfficial[num][type]){
-        return modelOfficial[num][type];
-      }
     },
     // handle
     async onDialogOpen() {
@@ -106,26 +119,30 @@ export default {
       this.treeList = [];
     },
     async onDialogOpened() {
-      const loadingInstance = Loading.service({ target: `.${this.classKey} .el-dialog__body` });
-      [this.treeList, this.defaultExpandedKeys] = await getTreeListFromFilepath(
-        this.path,
-      );
+      const loadingInstance = Loading.service({ target: `.${this.classKey} .tree-container` });
+      [this.treeList, this.defaultExpandedKeys] = await getTreeListFromFilepath(this.path);
       setTimeout(() => {
         loadingInstance.close();
         this.fetchDone = true;
       }, 500);
     },
-    handleNodeClick(data) {
-      this.selectNode = data;
+    checkChange(data, checked) {
+      if (this.type === 'modelDownload') return;
+      if (checked) {
+        this.selectNode = data;
+        this.$refs.tree.setCheckedNodes([data]);
+      } else if (this.selectNode === data) {
+        this.selectNode = null;
+      }
     },
-    ok(){
-      if (this.type==='jobResume') {
+    ok() {
+      if (this.type === 'jobResume') {
         this.chooseToResume();
-      } else if (this.type==='modelDownload') {
+      } else if (this.type === 'modelDownload') {
         const nodes = this.$refs.tree.getCheckedNodes();
         const downList = [];
         const pidList = [];
-        for(const node of nodes) {
+        for (const node of nodes) {
           if (pidList.indexOf(node.pid) === -1) {
             downList.push(node.originPath);
           }
@@ -144,7 +161,7 @@ export default {
         });
         return;
       }
-      const loadingInstance = Loading.service({target:'.el-dialog__body'});
+      const loadingInstance = Loading.service({ target: '.el-dialog__body' });
       const params = {
         id: this.id,
         path: this.selectNode.originPath,
@@ -164,12 +181,12 @@ export default {
         });
         return;
       }
-      this.visible = false; 
+      this.visible = false;
       const index = list[0].indexOf('/out/');
       if (index !== -1) {
         const beforePath = list[0].substring(0, index);
         let afterPathList = [];
-        afterPathList = list.map(item => item.substring(index + 1, item.length));
+        afterPathList = list.map((item) => item.substring(index + 1, item.length));
         if (afterPathList.length && afterPathList[0] === 'out/') {
           afterPathList[0] = 'out';
         }

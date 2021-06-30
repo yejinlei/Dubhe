@@ -1,18 +1,18 @@
 /** Copyright 2020 Tianshu AI Platform. All Rights Reserved.
-*
-* Licensed under the Apache License, Version 2.0 (the "License");
-* you may not use this file except in compliance with the License.
-* You may obtain a copy of the License at
-*
-*     http://www.apache.org/licenses/LICENSE-2.0
-*
-* Unless required by applicable law or agreed to in writing, software
-* distributed under the License is distributed on an "AS IS" BASIS,
-* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-* See the License for the specific language governing permissions and
-* limitations under the License.
-* =============================================================
-*/
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ * =============================================================
+ */
 
 <template>
   <BaseModal
@@ -33,7 +33,7 @@
           clearable
           placeholder="标注类型"
           :options="annotateTypeOptions"
-          :props="{expandTrigger: 'hover'}"
+          :props="{ expandTrigger: 'hover' }"
           :show-all-levels="false"
           popper-class="group-cascader"
           style="width: 100%; line-height: 32px;"
@@ -53,11 +53,10 @@
       <el-form-item ref="dcmPath" label="医疗影像" prop="dcmPath">
         <UploadInline
           ref="uploadRef"
-          class='dcm-list'
+          class="dcm-list"
           action="fakeApi"
           accept=".dcm"
           list-type="text"
-          :hash="false"
           :acceptSize="0"
           :show-file-count="false"
           :auto-upload="false"
@@ -68,7 +67,9 @@
         />
       </el-form-item>
     </el-form>
-    <el-button slot="footer" class="tc" type="primary" :loading="state.loading" @click="handleOk">创建数据集</el-button>
+    <el-button slot="footer" class="tc" type="primary" :loading="state.loading" @click="handleOk"
+      >创建数据集</el-button
+    >
   </BaseModal>
 </template>
 <script>
@@ -78,13 +79,13 @@ import BaseModal from '@/components/BaseModal';
 
 import { add, upload } from '@/api/preparation/medical';
 import UploadInline from '@/components/UploadForm/inline';
-import { validateName } from "@/utils/validate";
+import { validateName } from '@/utils/validate';
 import { buildUrlItem } from '@/views/dataset/util';
 import { medicalAnnotationCodeMap } from './constant';
 import { readDicoms, readDicom, validateDicomSeries } from './lib';
 
 export default {
-  name: "CreateMedicalDataset",
+  name: 'CreateMedicalDataset',
   components: {
     BaseModal,
     UploadInline,
@@ -94,7 +95,7 @@ export default {
     toggleVisible: Function,
     onResetFresh: Function,
   },
-  setup(props){
+  setup(props) {
     const { toggleVisible, onResetFresh } = props;
     const formRef = ref(null);
     const uploadRef = ref(null);
@@ -116,14 +117,12 @@ export default {
       name: [
         {
           required: true,
-          message: "请输入数据集名称",
-          trigger: ["change", "blur"],
+          message: '请输入数据集名称',
+          trigger: ['change', 'blur'],
         },
-        { validator: validateName, trigger: ["change", "blur"] },
+        { validator: validateName, trigger: ['change', 'blur'] },
       ],
-      annotateType: [
-        { required: true, message: '请选择标注类型', trigger: 'change' },
-      ],
+      annotateType: [{ required: true, message: '请选择标注类型', trigger: 'change' }],
     };
 
     const annotateTypeOptions = [
@@ -145,16 +144,16 @@ export default {
           {
             value: medicalAnnotationCodeMap.Other,
             label: '其它',
-            disabled:false,
+            disabled: false,
           },
         ],
       },
     ];
 
     const handleAnnotateTypeChange = (val) => {
-      if(val.length === 0) {
+      if (val.length === 0) {
         state.form.annotateType = '';
-      } else if(val.length === 1) {
+      } else if (val.length === 1) {
         // eslint-disable-next-line prefer-destructuring
         state.form.annotateType = val[0];
       } else {
@@ -180,8 +179,8 @@ export default {
 
     const setUploadStatus = (loading) => {
       Object.assign(state, {
-          loading,
-        });
+        loading,
+      });
     };
 
     const transformFile = async (fileRes, file) => {
@@ -200,7 +199,7 @@ export default {
         const series = await readDicoms(fileList);
         // 判断文件是否允许上传
         const validation = validateDicomSeries(series);
-        if(validation !== '') {
+        if (validation !== '') {
           throw new Error(validation);
         }
         // 取出series第一个对象
@@ -210,17 +209,19 @@ export default {
           ...state.form,
         };
         // 先创建好数据集
-        return add(params).then(res => {
-          // 更新当前创建的数据集 id
-          state.medicalId = res;
-          return {
-            objectPath: `dataset/dcm/${res}/origin`,
-          };
-        }).catch((err) => {
-          setUploadStatus(false);
-          throw err;
-        });
-      } catch(err) {
+        return add(params)
+          .then((res) => {
+            // 更新当前创建的数据集 id
+            state.medicalId = res;
+            return {
+              objectPath: `dataset/dcm/${res}/origin`,
+            };
+          })
+          .catch((err) => {
+            setUploadStatus(false);
+            throw err;
+          });
+      } catch (err) {
         console.error('err', err);
         return Promise.reject(err);
       }
@@ -228,18 +229,20 @@ export default {
 
     const uploadSuccess = (res) => {
       // 上传完毕同步文件地址到 db
-      const params = res.map(d => ({
+      const params = res.map((d) => ({
         SOPInstanceUID: d.SOPInstanceUID,
         ...buildUrlItem(d),
       }));
 
-      upload(state.medicalId, params).then(() => {
-        Message.success('数据集创建成功');
-        handleClose();
-        onResetFresh();
-      }).finally(() => {
-        setUploadStatus(false);
-      });
+      upload(state.medicalId, params)
+        .then(() => {
+          Message.success('数据集创建成功');
+          handleClose();
+          onResetFresh();
+        })
+        .finally(() => {
+          setUploadStatus(false);
+        });
     };
 
     const uploadError = (err) => {
@@ -249,7 +252,7 @@ export default {
     };
 
     const handleOk = () => {
-      formRef.value.validate(valid => {
+      formRef.value.validate((valid) => {
         if (!valid) {
           return;
         }
@@ -259,11 +262,15 @@ export default {
       });
     };
 
-    watch(() => props.visible, (next) => {
-      next !== state.visible && Object.assign(state, {
-        visible: next,
-      });
-    });
+    watch(
+      () => props.visible,
+      (next) => {
+        next !== state.visible &&
+          Object.assign(state, {
+            visible: next,
+          });
+      }
+    );
 
     return {
       state,
@@ -282,13 +289,12 @@ export default {
     };
   },
 };
-  
 </script>
 <style lang="scss" scoped>
-  .dcm-list {
-    ::v-deep .el-upload-list__item {
-      display: inline-block;
-      width: 33.3%;
-    }
+.dcm-list {
+  ::v-deep .el-upload-list__item {
+    display: inline-block;
+    width: 33.3%;
   }
+}
 </style>

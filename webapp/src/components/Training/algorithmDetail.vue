@@ -1,18 +1,18 @@
 /** Copyright 2020 Tianshu AI Platform. All Rights Reserved.
-*
-* Licensed under the Apache License, Version 2.0 (the "License");
-* you may not use this file except in compliance with the License.
-* You may obtain a copy of the License at
-*
-*     http://www.apache.org/licenses/LICENSE-2.0
-*
-* Unless required by applicable law or agreed to in writing, software
-* distributed under the License is distributed on an "AS IS" BASIS,
-* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-* See the License for the specific language governing permissions and
-* limitations under the License.
-* =============================================================
-*/
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ * =============================================================
+ */
 
 <template>
   <div class="ts-drawer">
@@ -54,7 +54,7 @@
     </el-row>
     <el-row class="row">
       <el-col :xl="5" :lg="8" :span="24">
-        <div class="label">算法用途</div>
+        <div class="label">模型类别</div>
       </el-col>
       <el-col :xl="19" :lg="16" :span="24">
         <div class="text">{{ item.algorithmUsage }}</div>
@@ -62,12 +62,12 @@
           v-if="displayType === 1"
           v-model="usageEditVisible"
           placement="bottom"
-          title="修改算法用途"
+          title="修改模型类别"
           @show="onUsageEditShow"
         >
           <el-select
             v-model="localUsage"
-            placeholder="请选择或输入算法用途"
+            placeholder="请选择或输入模型类别"
             filterable
             clearable
             allow-create
@@ -85,7 +85,8 @@
                 class="select-del-btn"
                 type="text"
                 @click.stop="delAlgorithmUsage(usage)"
-              ><i class="el-icon-close" /></el-button>
+                ><i class="el-icon-close"
+              /></el-button>
             </el-option>
           </el-select>
           <div class="tc" style="margin-top: 8px;">
@@ -98,27 +99,25 @@
     </el-row>
     <el-row class="row">
       <el-col :xl="5" :lg="8" :span="24">
-        <div class="label">日志输出</div>
+        <div class="label">文件输出</div>
       </el-col>
       <el-col :xl="19" :lg="16" :span="24">
         <div class="text">
-          <div
-            v-if="displayType === 1"
-          >
+          <div v-if="displayType === 1">
             <el-switch
-              v-model="item.isTrainLog"
-              @change="value => editAlgorithm('isTrainLog', value)"
+              v-model="item.isTrainOut"
+              @change="(value) => editAlgorithm('isTrainOut', value)"
             />
             <el-tooltip
               class="item"
               effect="dark"
-              content="请确保代码中包含“train_log”参数用于接收训练的日志输出路径"
+              content="请确保代码中包含“train_out”参数用于接收训练的文件输出路径"
               placement="top"
             >
               <i class="el-icon-warning-outline primary f18 v-bottom" />
             </el-tooltip>
           </div>
-          <span v-else>{{ item.isTrainLog ? '是' : '否' }}</span>
+          <span v-else>{{ item.isTrainOut ? '是' : '否' }}</span>
         </div>
       </el-col>
     </el-row>
@@ -128,12 +127,10 @@
       </el-col>
       <el-col :xl="19" :lg="16" :span="24">
         <div class="text">
-          <div
-            v-if="displayType === 1"
-          >
+          <div v-if="displayType === 1">
             <el-switch
               v-model="item.isVisualizedLog"
-              @change="value => editAlgorithm('isVisualizedLog', value)"
+              @change="(value) => editAlgorithm('isVisualizedLog', value)"
             />
             <el-tooltip
               class="item"
@@ -181,7 +178,9 @@
         </el-col>
         <el-col :xl="19" :lg="16" :span="24">
           <div class="text">
-            <div v-for="(p, index) in runParamsList" :key="p.key">{{ p.key }} = {{ p.value }}{{ index === runParamsList.length - 1 ? '' : ', ' }}</div>
+            <div v-for="(p, index) in runParamsList" :key="p.key">
+              {{ p.key }} = {{ p.value }}{{ index === runParamsList.length - 1 ? '' : ', ' }}
+            </div>
           </div>
         </el-col>
       </el-row>
@@ -192,7 +191,11 @@
 <script>
 import { convertMapToList } from '@/utils';
 import { edit as editAlgorithm } from '@/api/algorithm/algorithm';
-import { list as getUsages, add as addUsage, del as deleteUsage } from '@/api/algorithm/algorithmUsage';
+import {
+  list as getUsages,
+  add as addUsage,
+  del as deleteUsage,
+} from '@/api/algorithm/algorithmUsage';
 import Edit from '@/components/InlineTableEdit';
 
 export default {
@@ -279,7 +282,7 @@ export default {
       this.getAlgorithmUsages();
     },
     onAlgorithmUsageChange(value) {
-      const usage = this.algorithmUsageList.find(usage => usage.auxInfo === value);
+      const usage = this.algorithmUsageList.find((usage) => usage.auxInfo === value);
       if (value && !usage) {
         this.createAlgorithmUsage(value);
       }

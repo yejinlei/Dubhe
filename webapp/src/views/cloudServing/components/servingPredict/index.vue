@@ -1,30 +1,26 @@
 /** Copyright 2020 Tianshu AI Platform. All Rights Reserved.
-*
-* Licensed under the Apache License, Version 2.0 (the "License");
-* you may not use this file except in compliance with the License.
-* You may obtain a copy of the License at
-*
-*     http://www.apache.org/licenses/LICENSE-2.0
-*
-* Unless required by applicable law or agreed to in writing, software
-* distributed under the License is distributed on an "AS IS" BASIS,
-* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-* See the License for the specific language governing permissions and
-* limitations under the License.
-* =============================================================
-*/
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ * =============================================================
+ */
 
 <template>
   <div id="serving-predict-wrapper">
     <el-form>
-      <el-form-item
-        label="请求路径："
-      >
+      <el-form-item label="请求路径：">
         {{ requestUrl }}
       </el-form-item>
-      <el-form-item
-        label="选择预测文件"
-      >
+      <el-form-item label="选择预测文件">
         <el-upload
           ref="upload"
           :disabled="!requestUrl || disabled"
@@ -37,20 +33,9 @@
           :name="uploadName"
           class="serving-predict-upload"
         >
-          <el-button
-            slot="trigger"
-            :disabled="disabled"
-          >上传</el-button>
-          <el-button
-            :disabled="disabled"
-            @click="toPredict"
-          >预测</el-button>
-          <el-tooltip
-            class="item"
-            effect="dark"
-            content="仅支持预测 JPG、JPEG、PNG、BMP 格式的文件，且单次预测选择的文件大小总计不超过 100MB"
-            placement="right"
-          >
+          <el-button slot="trigger" :disabled="disabled">上传</el-button>
+          <el-button :disabled="disabled" @click="toPredict">预测</el-button>
+          <el-tooltip class="item" effect="dark" :content="predictContent" placement="right">
             <i class="el-icon-warning-outline primary f18 vm" />
           </el-tooltip>
           <i v-if="predicting" class="el-icon-loading" />
@@ -58,16 +43,14 @@
       </el-form-item>
       <el-form-item label="预测结果：" />
     </el-form>
-    <el-card
-      class="result-display-area"
-      shadow="never"
-    >{{ result }}</el-card>
+    <el-card class="result-display-area" shadow="never">{{ result }}</el-card>
   </div>
 </template>
 
 <script>
 import { predict } from '@/api/cloudServing';
 import { ONLINE_SERVING_TYPE, upload } from '@/views/cloudServing/util';
+import { servingConfig } from '@/config';
 
 export default {
   name: 'ServingPredict',
@@ -90,7 +73,7 @@ export default {
     },
     uploadName: {
       type: String,
-      default: 'image_files',
+      default: 'files',
     },
   },
   data() {
@@ -107,6 +90,9 @@ export default {
     isGrpc() {
       return this.type === ONLINE_SERVING_TYPE.GRPC;
     },
+    predictContent() {
+      return `仅支持预测 JPG、JPEG、PNG、BMP 格式的文件，且单次预测选择的文件大小总计不超过 ${servingConfig.onlinePredictFileSizeSum}MB`;
+    },
   },
   activated() {
     if (this.refresh) {
@@ -122,20 +108,27 @@ export default {
         this.$message.warning('请先选择文件');
         return;
       }
+      const totalSize = this.fileList.reduce((total, file) => total + file.size, 0) / 1024 / 1024;
+      if (totalSize > servingConfig.onlinePredictFileSizeSum) {
+        this.$message.warning(`当前上传文件大小总和为 ${totalSize.toFixed(2)}MB，超过限制大小`);
+        return;
+      }
 
       this.predicting = true;
       if (this.isGrpc) {
         const formData = new FormData();
-        this.fileList.forEach(file => formData.append('files', file.raw, file.raw.name));
-        predict(formData, { id: this.predictParam.id, url: this.requestUrl }).then(res => {
-          this.onUploadSuccess(res);
-        }).catch(err => {
-          this.onUploadError(err);
-        });
+        this.fileList.forEach((file) => formData.append('files', file.raw, file.raw.name));
+        predict(formData, { id: this.predictParam.id, url: this.requestUrl })
+          .then((res) => {
+            this.onUploadSuccess(res);
+          })
+          .catch((err) => {
+            this.onUploadError(err);
+          });
       } else {
         upload({
           requestUrl: this.requestUrl,
-          fileList: this.fileList.map(file => file.raw),
+          fileList: this.fileList.map((file) => file.raw),
           uploadName: this.uploadName,
           onUploadError: this.onUploadError,
           onUploadSuccess: this.onUploadSuccess,

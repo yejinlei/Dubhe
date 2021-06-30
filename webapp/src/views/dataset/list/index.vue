@@ -1,24 +1,24 @@
 /** Copyright 2020 Tianshu AI Platform. All Rights Reserved.
-*
-* Licensed under the Apache License, Version 2.0 (the "License");
-* you may not use this file except in compliance with the License.
-* You may obtain a copy of the License at
-*
-*     http://www.apache.org/licenses/LICENSE-2.0
-*
-* Unless required by applicable law or agreed to in writing, software
-* distributed under the License is distributed on an "AS IS" BASIS,
-* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-* See the License for the specific language governing permissions and
-* limitations under the License.
-* =============================================================
-*/
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ * =============================================================
+ */
 
 <template>
   <div class="app-container">
     <!--工具栏-->
     <div class="head-container">
-      <cdOperation :addProps="operationProps" :delProps="operationProps">
+      <cdOperation :addProps="operationProps">
         <el-button
           slot="left"
           class="filter-item"
@@ -34,7 +34,7 @@
           class="filter-item"
           icon="el-icon-upload"
           round
-          @click="toggleImportDataset"
+          @click="toggleImportDatasetEvent"
         >
           导入数据集
         </el-button>
@@ -50,7 +50,7 @@
           />
           <el-date-picker
             v-model="query.createTime"
-            :default-time="['00:00:00','23:59:59']"
+            :default-time="['00:00:00', '23:59:59']"
             type="daterange"
             value-format="timestamp"
             range-separator=":"
@@ -66,13 +66,13 @@
     <!--创建数据集表单组件-->
     <CreateDataset
       :visible="createDatasetVisible"
-      :closeCreateDatasetForm="closeCreateDatasetForm"
+      :toggleVisible="closeCreateDatasetForm"
       :onResetFresh="onResetFresh"
     />
     <!--导入自定义数据集表单组件-->
     <ImportDataset
       :visible="importDatasetVisible"
-      :toggleImportDataset="toggleImportDataset"
+      :toggleVisible="toggleImportDataset"
       :onResetFresh="onResetFresh"
     />
     <!--单独导入数据表单组件-->
@@ -88,7 +88,12 @@
       </el-tabs>
       <div>
         <el-tooltip effect="dark" content="刷新" placement="top">
-          <el-button class="filter-item with-border" style="padding: 8px;" icon="el-icon-refresh" @click="onResetFresh"/>
+          <el-button
+            class="filter-item with-border"
+            style="padding: 8px;"
+            icon="el-icon-refresh"
+            @click="onResetFresh"
+          />
         </el-tooltip>
         <TenantSelector :datasetListType="datasetListType" style="margin: 0 3px 10px 10px;" />
       </div>
@@ -109,11 +114,25 @@
         <template slot-scope="scope">
           <span>
             {{ scope.row.id }}
-            <span v-if="isImport(scope.row)" class='ml-10 cp'> 
-              <copy-to-clipboard :text="String(scope.row.id)" @copy="(text, result) => handleCopy(text, result, scope.row)">
-                <el-tooltip effect='dark' placement='top'>
-                  <div slot='content'>当前数据集为外部导入数据集<br />点击复制数据集 ID<br/><a class="mt-10 db primary" target="_blank" href="http://docs.dubhe.ai/docs/module/dataset/import-dataset">使用文档</a></div>
-                  <i :class="scope.row.copySuccess ? 'el-icon-success success' : 'el-icon-copy-document'" />
+            <span v-if="isImport(scope.row)" class="ml-10 cp">
+              <copy-to-clipboard
+                :text="String(scope.row.id)"
+                @copy="(text, result) => handleCopy(text, result, scope.row)"
+              >
+                <el-tooltip effect="dark" placement="top">
+                  <div slot="content">
+                    当前数据集为外部导入数据集<br />点击复制数据集 ID<br /><a
+                      class="mt-10 db primary"
+                      target="_blank"
+                      :href="`${VUE_APP_DOCS_URL}module/dataset/import-dataset`"
+                      >使用文档</a
+                    >
+                  </div>
+                  <i
+                    :class="
+                      scope.row.copySuccess ? 'el-icon-success success' : 'el-icon-copy-document'
+                    "
+                  />
                 </el-tooltip>
               </copy-to-clipboard>
             </span>
@@ -130,8 +149,16 @@
         class-name="dataset-name-col"
       >
         <template slot-scope="scope">
-          <el-link class="mr-10 name-col" @click="goDetail(scope.row)">{{ scope.row.name }}</el-link>
-          <Edit class="edit-icon" :row="scope.row" valueBy="name" title="修改数据集名称" @handleOk="handleEditDatasetName" />
+          <el-link class="mr-10 name-col" type="primary" @click="goDetail(scope.row)">{{
+            scope.row.name
+          }}</el-link>
+          <Edit
+            class="edit-icon"
+            :row="scope.row"
+            valueBy="name"
+            title="修改数据集名称"
+            @handleOk="handleEditDatasetName"
+          />
         </template>
       </el-table-column>
       <el-table-column
@@ -146,7 +173,7 @@
             title="数据类型"
             :list="dataTypeList"
             :filtered="!isNil(dataType)"
-            @command="cmd => filter('dataType', cmd)"
+            @command="(cmd) => filter('dataType', cmd)"
           />
         </template>
       </el-table-column>
@@ -154,11 +181,7 @@
         <template slot-scope="scope">
           <div v-if="scope.row.progress !== null" class="flex progress-wrap">
             <i v-show="scope.row.pollIng" class="el-icon-loading" />
-            <el-popover
-              placement="top-start"
-              trigger="hover"
-              popper-class="f1"
-            >
+            <el-popover placement="top-start" trigger="hover" popper-class="f1">
               <TableTooltip
                 className="progress-tip"
                 :keys="progressKeys(scope.row)"
@@ -170,17 +193,15 @@
               <el-progress
                 slot="reference"
                 :percentage="getProgress(scope.row) || 0"
-                :color="progressFill(statusCodeMap[scope.row.status])"
+                :color="progressFill(scope.row.status)"
+                :format="(progress) => progressFormat(scope.row, progress)"
               />
             </el-popover>
           </div>
           <div v-else class="flex progress-wrap">
             <i class="el-icon-loading" />
             <span>
-              <el-progress
-                slot="reference"
-                :percentage="0"
-              />
+              <el-progress slot="reference" :percentage="0" />
             </span>
           </div>
         </template>
@@ -190,14 +211,14 @@
         prop="annotateType"
         :formatter="parseAnnotateType"
         align="left"
-        min-width="100"
+        min-width="120"
       >
         <template slot="header">
           <dropdown-header
             title="标注类型"
             :list="annotateTypeList"
             :filtered="!isNil(annotateType)"
-            @command="cmd => filter('annotateType', cmd)"
+            @command="(cmd) => filter('annotateType', cmd)"
           />
         </template>
       </el-table-column>
@@ -219,13 +240,15 @@
         sortable="custom"
         align="left"
       />
-      <el-table-column
-        prop="remark"
-        min-width="200"
-        label="数据集描述"
-        align="left"
-        show-overflow-tooltip
-      />
+      <el-table-column prop="remark" min-width="200" label="数据集描述" align="left">
+        <template slot-scope="scope">
+          <el-tooltip :content="scope.row.remark" enterable placement="top">
+            <div class="ellipsis dib " style="max-width: 100%;">
+              {{ scope.row.remark }}
+            </div>
+          </el-tooltip>
+        </template>
+      </el-table-column>
       <Action
         fixed="right"
         min-width="330"
@@ -285,11 +308,18 @@
 
 <script>
 import { Message } from 'element-ui';
-import { isNil, omit } from 'lodash';
+import { isNil, omit, findKey } from 'lodash';
 import { mapState } from 'vuex';
 import CopyToClipboard from 'vue-copy-to-clipboard';
 
-import crudDataset, { editDataset, detail, postDataEnhance, topDataset, queryDatasetsProgress, queryDatasetStatus } from '@/api/preparation/dataset';
+import crudDataset, {
+  editDataset,
+  detail,
+  postDataEnhance,
+  topDataset,
+  queryDatasetsProgress,
+  queryDatasetStatus,
+} from '@/api/preparation/dataset';
 import {
   publish,
   autoAnnotate,
@@ -303,16 +333,20 @@ import cdOperation from '@crud/CD.operation';
 import datePickerMixin from '@/mixins/datePickerMixin';
 
 import {
-  annotationMap,
+  annotationList,
   dataTypeMap,
+  dataTypeCodeMap,
   annotationProgressMap,
   decompressProgressMap,
   datasetStatusMap,
-  statusCodeMap,
-  findKey,
+  rankDatasetStatusMap,
+  isStatus,
+  isIncludeStatus,
   getDatasetType,
   annotationCodeMap,
   isPublishDataset,
+  isPresetDataset,
+  annotationBy,
 } from '@/views/dataset/util';
 import Edit from '@/components/InlineTableEdit';
 import BaseModal from '@/components/BaseModal';
@@ -330,7 +364,7 @@ import ImportDataset from './import-dataset';
 import DataEnhance from './data-enhance';
 import EditDataset from './edit-dataset';
 import UploadDataFile from './upload-datafile';
-import "../style/list.scss";
+import '../style/list.scss';
 
 const defaultForm = {
   id: null,
@@ -342,17 +376,15 @@ const defaultForm = {
   type: 0,
 };
 
+const annotationByCode = annotationBy('code');
+
 // 自定义数据集
-const isImport = d => d.import;
-// todo: 未开始
-const isImportStatus = (d, status) => isImport(d) && statusCodeMap[d.status] === status;
-// 查找状态码是否匹配
-const isStatus = (d, code) => statusCodeMap[d.status] === code;
+const isImport = (d) => d.import;
 
 // 上传中
-const isImportDataset = d => isImportStatus(d, 'IMPORTING');
+const isImportDataset = (d) => isStatus(d, 'IMPORTING');
 
-const enhanceCode = findKey('ENHANCING', statusCodeMap);
+const enhanceCode = findKey(datasetStatusMap, { status: 'ENHANCING' });
 
 export default {
   name: 'DataSet',
@@ -376,7 +408,7 @@ export default {
   },
   beforeRouteEnter(to, from, next) {
     // 拦截非视觉场景
-    if(getDatasetType() !== 0) {
+    if (getDatasetType() !== 0) {
       next('/data/datasets');
     } else {
       // 正常跳转，并将导航高亮切换为数据集管理
@@ -408,17 +440,7 @@ export default {
       annotateType: null,
       dataType: null,
       datasetStatusFilter: 'all',
-      datasetListType: '0',
-      options: [
-        {
-          value: '1',
-          label: '医学影像',
-        }, 
-        {
-          value: '0',
-          label: '视觉/文本',
-        },
-      ],
+      datasetListType: '0', // 视觉/语音/文本
       actionModal: {
         show: false,
         row: undefined,
@@ -428,12 +450,12 @@ export default {
       importRow: null,
       autoTimer: {}, // 自动标注定时器
       decompressStateMap: decompressProgressMap, // deprecated
-      statusCodeMap,
+      datasetStatusMap,
     };
   },
   computed: {
     ...mapState({
-      activePanel: state => {
+      activePanel: (state) => {
         return String(state.dataset.activePanel);
       },
     }),
@@ -441,7 +463,7 @@ export default {
     isImport() {
       return isImport;
     },
-    // 解压缩中的自定义数据集
+    // 上传中数据集
     isImportDataset() {
       return isImportDataset;
     },
@@ -454,22 +476,17 @@ export default {
       };
     },
     annotateTypeList() {
-      // 原始标注列表
-      const rawAnnotateTypeList = Object.keys(annotationMap).map(d => ({
-        label: annotationMap[d].name,
-        value: Number(d),
-      }));
-      return [{ label: '全部', value: null }].concat(rawAnnotateTypeList);
+      return [{ label: '全部', value: null }].concat(annotationList);
     },
     dataTypeList() {
-      const rawDataTypeList = Object.keys(dataTypeMap).map(d => ({
+      const rawDataTypeList = Object.keys(dataTypeMap).map((d) => ({
         label: dataTypeMap[d],
         value: Number(d),
       }));
       return [{ label: '全部', value: null }].concat(rawDataTypeList);
     },
     statusList() {
-      const rawStatusList = Object.keys(datasetStatusMap).map(d => ({
+      const rawStatusList = Object.keys(rankDatasetStatusMap).map((d) => ({
         label: datasetStatusMap[d].name,
         value: Number(d),
       }));
@@ -477,38 +494,52 @@ export default {
     },
     // 区分预置数据集和普通数据集操作权限
     operationProps() {
-      return Number(this.activePanel) === 2 ? { disabled: true } : undefined;
+      return isPresetDataset(this.activePanel) ? { disabled: true } : undefined;
+    },
+    VUE_APP_DOCS_URL() {
+      return process.env.VUE_APP_DOCS_URL;
     },
   },
   watch: {
     // eslint-disable-next-line func-names
     'crud.data': function(next, prev = []) {
       // 首先匹配size, 其次匹配 id 是否一致, 再次检查此前是否存在轮询的数据集
-      if (next.length > 0 && (prev.length !== next.length || !isEqualByProp(prev, next, 'id') || prev.some(d => d.pollIng))) {
+      if (
+        next.length > 0 &&
+        (prev.length !== next.length ||
+          !isEqualByProp(prev, next, 'id') ||
+          prev.some((d) => d.pollIng))
+      ) {
         // 获取自动标注状态列表的结果
-        const autoList = next.filter(d => statusCodeMap[d.status] === 'AUTO_ANNOTATING');
+        const autoList = next.filter((d) => isStatus(d, 'AUTO_ANNOTATING'));
         // 获取正在采样中的数据集
-        const sampleList = next.filter(d => statusCodeMap[d.status] === 'SAMPLING');
+        const sampleList = next.filter((d) => isStatus(d, 'SAMPLING'));
         // 获取正在目标跟踪中的数据集
-        const trackList = next.filter(d => statusCodeMap[d.status] === 'TRACKING');
+        const trackList = next.filter((d) => isStatus(d, 'TRACKING'));
         // 获取数据增强中的数据
-        const enhanceList = next.filter(d => statusCodeMap[d.status] === 'ENHANCING');
+        const enhanceList = next.filter((d) => isStatus(d, 'ENHANCING'));
         // 发布中
         const publishList = next.filter(isPublishDataset);
         // 导入中列表
         const importList = next.filter(isImportDataset);
         // 需要轮询的列表
-        const pollList = autoList.concat(sampleList, trackList, enhanceList, importList, publishList);
+        const pollList = autoList.concat(
+          sampleList,
+          trackList,
+          enhanceList,
+          importList,
+          publishList
+        );
 
         Promise.all(
-          pollList.map(row => {
+          pollList.map((row) => {
             // vue hack, 初始化状态
             this.$set(row, 'pollIng', true);
             // 给 采样、增强、目标跟踪 一个默认起始值
-            if (['SAMPLING', 'ENHANCING', 'TRACKING'].includes(statusCodeMap[row.status])) {
+            if (isIncludeStatus(row, ['SAMPLING', 'ENHANCING', 'TRACKING'])) {
               this.$set(row, 'sample_progress', 10);
             }
-            // 导入自定义数据集
+            // 导入自定义数据集，导入中
             if (isImportDataset(row)) {
               this.$set(row, 'pollType', 'IMPORTING');
             }
@@ -517,8 +548,8 @@ export default {
               this.$set(row, 'pollType', 'PUBLISHING');
             }
             // 轮询类型，兼容自定义数据集
-            return this.poll(row, row.pollType || statusCodeMap[row.status]);
-          }),
+            return this.poll(row, row.pollType || datasetStatusMap[row.status]?.status);
+          })
         );
       }
     },
@@ -535,29 +566,29 @@ export default {
     }
   },
   beforeDestroy() {
-    Object.keys(this.autoTimer).forEach(key => clearTimeout(this.autoTimer[key]));
+    Object.keys(this.autoTimer).forEach((key) => clearTimeout(this.autoTimer[key]));
   },
   methods: {
     // tooltip的key，需要根据数据集类型进行过滤
     progressKeys(row) {
       const keys = Object.keys(annotationProgressMap);
-      if(row.annotateType !== annotationCodeMap.TRACK) {
-        return keys.filter(key => key !== "finishAutoTrack");
+      if (row.annotateType !== annotationCodeMap.TRACK) {
+        return keys.filter((key) => key !== 'finishAutoTrack');
       }
       return keys;
-    }, 
+    },
     keyAccessor: (key) => annotationProgressMap[key],
     valueAccessor: (key, idx, data) => data[key],
     [CRUD.HOOK.beforeRefresh]() {
-      this.crud.query = { ...this.query, ...this.localQuery};
+      this.crud.query = { ...this.query, ...this.localQuery };
     },
     [CRUD.HOOK.afterRefresh]() {
       const { data } = this.crud;
-      this.queryRowProgress(data.map(d => d.id));
+      this.queryRowProgress(data.map((d) => d.id));
     },
     // 计算置顶行的样式
-    tableTopRowClass({row}) {
-      if(row.top){
+    tableTopRowClass({ row }) {
+      if (row.top) {
         return 'table-top-row';
       }
       return '';
@@ -582,11 +613,11 @@ export default {
 
     // 将进度条单独拆分
     queryRowProgress(ids) {
-      if(ids.length === 0) return;
-      queryDatasetsProgress({ datasetIds: ids }).then(res => {
-        const nextData = this.crud.data.map(d => {
+      if (ids.length === 0) return;
+      queryDatasetsProgress({ datasetIds: ids }).then((res) => {
+        const nextData = this.crud.data.map((d) => {
           const rowProgress = res[d.id] || null;
-          return {...d, progress: rowProgress };
+          return { ...d, progress: rowProgress };
         });
 
         Object.assign(this.crud, {
@@ -594,25 +625,24 @@ export default {
         });
       });
     },
-    pollRowProgress(id){
+    pollRowProgress(id) {
       return new Promise((resolve) => {
-        queryDatasetsProgress({ datasetIds: [id] })
-          .then(res => {
-            const progress = res[id];
-            if(this.getAllFinished(progress) > 0) {
-              if (this.pollDone === false){
-                this.pollDone = true;
-                resolve(progress);
-              }
+        queryDatasetsProgress({ datasetIds: [id] }).then((res) => {
+          const progress = res[id];
+          if (this.getAllFinished(progress) > 0) {
+            if (this.pollDone === false) {
+              this.pollDone = true;
+              resolve(progress);
             }
-          });
+          }
+        });
       });
     },
 
     updateRow(id, { progress, info }) {
-      const sIndex = this.crud.data.findIndex(d => d.id === id);
-      if(sIndex > -1) {
-        const nextRow = omit({...this.crud.data[sIndex], ...info, progress }, ['pollType']);
+      const sIndex = this.crud.data.findIndex((d) => d.id === id);
+      if (sIndex > -1) {
+        const nextRow = omit({ ...this.crud.data[sIndex], ...info, progress }, ['pollType']);
         const nextData = replace(this.crud.data, sIndex, nextRow);
         Object.assign(this.crud, {
           data: nextData,
@@ -629,12 +659,15 @@ export default {
     },
     // 进度条颜色
     progressFill(status) {
-      const fillMap = {
-        'AUTO_ANNOTATING': '#52C41A',
-        'SAMPLING': '#606266',
-      };
-      if (fillMap[status]) return fillMap[status];
+      if (status && datasetStatusMap[status].progressColor)
+        return datasetStatusMap[status].progressColor;
       return '#52C41A';
+    },
+    progressFormat(row, progress) {
+      if (isImportDataset(row)) {
+        return '导入中';
+      }
+      return `${progress}%`;
     },
     // 查询数据集详情
     async queryDatasetDetail(datasetId) {
@@ -652,8 +685,11 @@ export default {
       this.createDatasetVisible = false;
     },
     // 导入自定义数据集表单显隐切换
-    toggleImportDataset() {
-      this.importDatasetVisible = !this.importDatasetVisible;
+    toggleImportDataset(visible) {
+      this.importDatasetVisible = isNil(visible) ? !this.importDatasetVisible : visible;
+    },
+    toggleImportDatasetEvent() {
+      return this.toggleImportDataset();
     },
     handleCopy(text, result, row) {
       this.$set(row, 'copySuccess', false);
@@ -677,29 +713,39 @@ export default {
         this.crud.status.edit = CRUD.STATUS.NORMAL;
         this.$set(row, 'name', editForm.name);
         if (row.pollIng) {
-          this.poll(row, statusCodeMap[row.status]);
+          this.poll(row, datasetStatusMap[row.status]?.status);
         }
       });
     },
     isValidDetail(row) {
       // 未采样、采样中、采样失败、自动标注中、目标跟踪中、目标跟踪失败 不能进行查看标注
-      return !['AUTO_ANNOTATING', 'UNSAMPLED', 'SAMPLING', 'SAMPLE_FAILED', 'ENHANCING', 'TRACKING', 'TRACK_FAILED'].includes(statusCodeMap[row.status]);
+      const statusArr = [
+        'AUTO_ANNOTATING',
+        'UNSAMPLED',
+        'SAMPLING',
+        'SAMPLE_FAILED',
+        'ENHANCING',
+        'TRACKING',
+        'TRACK_FAILED',
+      ];
+      return !isIncludeStatus(row, statusArr);
     },
     // 查看标注
     async goDetail(row) {
-      // 版本切换中无法查看详情
-      if(isPublishDataset(row)) return false;
-      // 自定义数据集无法查看详情
-      if(isImport(row) && statusCodeMap[row.status] !== 'ANNOTATED') return false;
+      // 版本切换中
+      if (isPublishDataset(row)) {
+        Message.error('版本切换中，请稍后');
+        return false;
+      }
       const datasetInfo = await this.queryDatasetDetail(row.id);
       if (!this.isValidDetail(datasetInfo)) {
         return Message.error('数据集当前状态不能进行查看');
       }
-      this.$router.push({
-        path: `/data/datasets/${
-          annotationMap[row.annotateType].urlPrefix
-        }/${row.id}`,
-      });
+      const urlPrefix = annotationByCode(row.annotateType, 'urlPrefix');
+      !!urlPrefix &&
+        this.$router.push({
+          path: `/data/datasets/${urlPrefix}/${row.id}`,
+        });
       return null;
     },
 
@@ -720,7 +766,7 @@ export default {
           // 启动自动标注轮询
           this.poll(row, 'AUTO_ANNOTATING');
         })
-        .catch(e => {
+        .catch((e) => {
           row.pollIng = false;
           this.$message({
             message: e.message || '自动标注任务失败',
@@ -749,8 +795,16 @@ export default {
       this.crud.refresh();
     },
     showUploadDataFile(row) {
-      this.importRow = row;
-      this.uploadDataFileVisible = true;
+      // 如果是表格类型，跳转到导入表格页面
+      if (row.dataType === dataTypeCodeMap.TABLE) {
+        this.$router.push({
+          name: `TableImport`,
+          params: { datasetId: row.id, annotateType: row.annotateType },
+        });
+      } else {
+        this.importRow = row;
+        this.uploadDataFileVisible = true;
+      }
     },
     closeUploadDataFile() {
       this.importRow = null;
@@ -758,17 +812,21 @@ export default {
       this.onResetFresh();
     },
     // 统计完成进度
-    getAllFinished (progress = {}){
-      const { finished, autoFinished, finishAutoTrack, annotationNotDistinguishFile} = progress;
+    getAllFinished(progress = {}) {
+      const { finished, autoFinished, finishAutoTrack, annotationNotDistinguishFile } = progress;
       return finished + autoFinished + finishAutoTrack + annotationNotDistinguishFile;
     },
     getProgress(row) {
       const { progress } = row;
       // 采样中 数据增强中 目标跟踪中 模拟一个假的进度条
-      if (['SAMPLING', 'ENHANCING', 'TRACKING'].includes(statusCodeMap[row.status])) {
+      if (isIncludeStatus(row, ['SAMPLING', 'ENHANCING', 'TRACKING'])) {
         return Math.min(Math.floor(row.sample_progress), 99);
       }
-      if (statusCodeMap[row.status] === 'UNANNOTATED' && row.sample_progress > 0) {
+      if (isStatus(row, 'UNANNOTATED') && row.sample_progress > 0) {
+        return 100;
+      }
+      // 自定义格式的数据集，导入后标注状态为完成的，进度100%
+      if (isImport(row) && isStatus(row, 'ANNOTATED')) {
         return 100;
       }
       const allFinished = this.getAllFinished(progress);
@@ -780,7 +838,7 @@ export default {
       return dataTypeMap[cellValue];
     },
     parseAnnotateType(row, column, cellValue) {
-      return (annotationMap[cellValue] || {}).name || '';
+      return annotationByCode(cellValue, 'name');
     },
     parseStatus(row, column, cellValue = 0) {
       return datasetStatusMap[cellValue].name;
@@ -788,7 +846,7 @@ export default {
     // 轮询状态
     poll(row, type, options = {}) {
       // 假进度条：给采样一个递增值
-      if (['SAMPLING', 'ENHANCING', 'TRACKING'].includes(statusCodeMap[row.status])) {
+      if (isIncludeStatus(row, ['SAMPLING', 'ENHANCING', 'TRACKING'])) {
         row.sample_increment = 9;
       }
       return this.setTime(row, 0, { type, callback: options.callback });
@@ -809,14 +867,19 @@ export default {
           }, 3000);
         }
         // 回调
-        if(typeof callback === 'function') {
+        if (typeof callback === 'function') {
           callback(row);
         }
       });
     },
     // deprecate: 展示解压状态
     showUnZip(d) {
-      return d.import && ['UNANNOTATED', 'ANNOTATING', 'AUTO_ANNOTATED'].includes(statusCodeMap[d.decompressState]);
+      return (
+        d.import &&
+        ['UNANNOTATED', 'ANNOTATING', 'AUTO_ANNOTATED'].includes(
+          datasetStatusMap[d.decompressState]?.status
+        )
+      );
     },
     // 数据集轮询进度
     datasetPoll(row, type) {
@@ -827,7 +890,7 @@ export default {
           const res = result[row.id];
           // 开始上传数据集
           if (!isStatus(res, 'UNANNOTATED')) {
-          // 进入下一个阶段
+            // 进入下一个阶段
             Object.assign(row, res, {
               pollIng: false,
             });
@@ -837,11 +900,11 @@ export default {
         });
       }
       // 导入中
-      if (type === 'IMPORTING'){
-        return this.queryDatasetDetail(row.id).then(res => {
+      if (type === 'IMPORTING') {
+        return this.queryDatasetDetail(row.id).then((res) => {
           row.status = res.status; // 更新标注状态
           // 标注状态进入下一个阶段
-          if (statusCodeMap[res.status] !== type) {
+          if (!isStatus(res, type)) {
             row.pollIng = false;
             row.status = res.status; // 更新标注状态
           }
@@ -850,15 +913,14 @@ export default {
       }
       // 轮询数据集发布状态
       if (type === 'PUBLISHING') {
-        return this.queryDatasetDetail(row.id).then(info => {
+        return this.queryDatasetDetail(row.id).then((info) => {
           // 标注状态进入下一个阶段
           if (!isPublishDataset(info)) {
             setTimeout(() => {
-              this.pollRowProgress(row.id)
-                .then(progress => {
-                  row.pollIng = false;
-                  this.updateRow(row.id, { progress, info });
-                });
+              this.pollRowProgress(row.id).then((progress) => {
+                row.pollIng = false;
+                this.updateRow(row.id, { progress, info });
+              });
             }, 2000);
           }
           return Promise.resolve(row);
@@ -866,15 +928,15 @@ export default {
       }
       if (['SAMPLING', 'ENHANCING', 'TRACKING'].includes(type)) {
         // 采样中 数据增强中 目标跟踪中
-        return this.queryDatasetDetail(row.id).then(res => {
-          if (statusCodeMap[res.status] === 'TRACKING') {
+        return this.queryDatasetDetail(row.id).then((res) => {
+          if (isStatus(row, 'TRACKING')) {
             row.status = res.status;
             row.pollIng = true;
             row.sample_progress = (row.sample_progress || 10) + row.sample_increment;
             row.sample_increment *= 0.9;
           }
-          if (statusCodeMap[res.status] !== type) {
-          // 采样视频进入下一个阶段
+          if (!isStatus(res, type)) {
+            // 采样视频进入下一个阶段
             row.pollIng = false;
             row.progress = res.progress; // 更新最新自动标注进度
             row.status = res.status; // 更新标注状态
@@ -888,17 +950,17 @@ export default {
       }
       if (type === 'AUTO_ANNOTATING') {
         // 自动标注中
-        return annotateStatus(row.id).then(res => {
+        return annotateStatus(row.id).then((res) => {
           if (!isNil(res.progress)) {
             row.pollIng = true;
             row.progress = res.progress; // 更新最新自动标注进度
             row.status = res.status; // 更新标注状态
             // 自动标注完成
-            if (statusCodeMap[res.status] === 'TRACKING') {
+            if (isStatus(row, 'TRACKING')) {
               this.poll(row, 'TRACKING');
               return null;
             }
-            if (statusCodeMap[res.status] !== 'AUTO_ANNOTATING') {
+            if (!isStatus(row, 'AUTO_ANNOTATING')) {
               row.pollIng = false;
             }
             return Promise.resolve(row);
@@ -909,12 +971,18 @@ export default {
       // 异常兼容
       return Promise.reject(new Error(`数据集 ${row.id} 查询错误`));
     },
-    // 数据集状态为自动标注中、采样中、数据增强中不能被选中
-    // 数据集导入中允许删除
+    // 判断数据集能否被选中
     canSelect(row) {
-      if(row.import) return true;
-      return !(row.pollIng ||
-        ['AUTO_ANNOTATING', 'SAMPLING', 'ENHANCING', 'TRACKING'].includes(statusCodeMap[row.status])
+      // 预置数据集 若从普通数据集转换生成的是可以删除的
+      if (isPresetDataset(this.activePanel)) {
+        return !isNil(row.sourceId);
+      }
+      // 普通数据集状态为自动标注中、采样中、数据增强中不能被选中
+      // 数据集导入中允许删除
+      if (row.import) return true;
+      return !(
+        row.pollIng ||
+        isIncludeStatus(row, ['AUTO_ANNOTATING', 'SAMPLING', 'ENHANCING', 'TRACKING'])
       );
     },
     showActionModal(row, type) {
@@ -935,7 +1003,7 @@ export default {
       this.showActionModal(row, 'editDataset');
     },
     // 轮询查询数据集状态
-    checkImport(row){
+    checkImport(row) {
       this.$set(row, 'pollIng', true);
       // 启动轮询数据集状态查询
       this.poll(row, 'CHECK_STATUS', {
@@ -949,9 +1017,9 @@ export default {
       });
     },
     resetActionModal() {
-      if (this.actionModal.type === "dataEnhance") {
+      if (this.actionModal.type === 'dataEnhance') {
         this.enhanceKey += 1;
-      };
+      }
       if (this.actionModal.type === 'editDataset') {
         this.editKey += 1;
       }
@@ -967,7 +1035,7 @@ export default {
     },
     handlePublish(row) {
       const publishForm = this.$refs.publishForm.$refs.form;
-      publishForm.validate(async valid => {
+      publishForm.validate(async (valid) => {
         if (valid) {
           const { model } = this.$refs.publishForm.state;
           // 重置 actionModal
@@ -975,6 +1043,7 @@ export default {
           publish({
             datasetId: model.id,
             versionNote: model.versionNote || '',
+            ofRecord: model.ofRecord,
           });
           setTimeout(() => {
             this.crud.toQuery();
@@ -996,7 +1065,7 @@ export default {
           // 启动自动标注轮询
           this.poll(row, 'AUTO_ANNOTATING');
         })
-        .catch(e => {
+        .catch((e) => {
           row.pollIng = false;
           this.$message({
             message: e.message || '重新自动标注任务失败',
@@ -1017,7 +1086,7 @@ export default {
           // 启动目标跟踪轮询
           this.poll(row, 'TRACKING');
         })
-        .catch(e => {
+        .catch((e) => {
           row.pollIng = false;
           this.$message({
             message: e.message || messageText2,
@@ -1029,18 +1098,20 @@ export default {
       Object.assign(this.actionModal, {
         showOkLoading: true,
       });
-      return postDataEnhance(model.id, model.types).then(() => {
-        // 启动数据集增强
-        this.$set(row, 'status', enhanceCode);
-        this.$set(row, 'pollIng', true);
-        this.poll(row, 'ENHANCING');
-      }).finally(() => {
-        // 重置 actionModal
-        this.resetActionModal();
-      });
+      return postDataEnhance(model.id, model.types)
+        .then(() => {
+          // 启动数据集增强
+          this.$set(row, 'status', enhanceCode);
+          this.$set(row, 'pollIng', true);
+          this.poll(row, 'ENHANCING');
+        })
+        .finally(() => {
+          // 重置 actionModal
+          this.resetActionModal();
+        });
     },
     topDataset(row) {
-      return topDataset(row).then(() => { this.onResetFresh(); });
+      return topDataset(row).then(this.onResetFresh);
     },
     handleEditDataset(data, row) {
       Object.assign(this.actionModal, {
@@ -1059,8 +1130,8 @@ export default {
       return editDataset(editForm)
         .then(() => {
           this.$message({
-          message: '数据集修改成功',
-          type: 'success',
+            message: '数据集修改成功',
+            type: 'success',
           });
         })
         .finally(() => {

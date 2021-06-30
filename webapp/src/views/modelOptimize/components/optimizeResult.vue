@@ -1,61 +1,47 @@
 /** Copyright 2020 Tianshu AI Platform. All Rights Reserved.
-*
-* Licensed under the Apache License, Version 2.0 (the "License");
-* you may not use this file except in compliance with the License.
-* You may obtain a copy of the License at
-*
-*     http://www.apache.org/licenses/LICENSE-2.0
-*
-* Unless required by applicable law or agreed to in writing, software
-* distributed under the License is distributed on an "AS IS" BASIS,
-* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-* See the License for the specific language governing permissions and
-* limitations under the License.
-* =============================================================
-*/
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ * =============================================================
+ */
 
 <template>
   <div class="result-wrapper">
     <p v-if="!result || !result.length">该模型实例目前没有优化结果。</p>
     <div v-else>
-      <el-table
-        :data="result"
-        stripe
-      >
-        <el-table-column
-          label=""
-          align="right"
-          width="100px"
-        >
+      <el-table :data="result" stripe>
+        <el-table-column label="" align="right" width="100px">
           <template slot-scope="scope">
             <span>{{ RESULT_NAME_MAP[scope.row.name] }}</span>
           </template>
         </el-table-column>
-        <el-table-column
-          label="整体性能"
-        >
+        <el-table-column label="整体性能">
           <template slot-scope="scope">
             <span :class="getDiffClass(scope.row)">{{ getDiff(scope.row) }}</span>
           </template>
         </el-table-column>
-        <el-table-column
-          label="优化前"
-        >
+        <el-table-column label="优化前">
           <template slot-scope="scope">
             <span>{{ Math.round(scope.row.before) + scope.row.unit }}</span>
           </template>
         </el-table-column>
-        <el-table-column
-          label="优化后"
-        >
+        <el-table-column label="优化后">
           <template slot-scope="scope">
             <span>{{ Math.round(scope.row.after) + scope.row.unit }}</span>
           </template>
         </el-table-column>
       </el-table>
       <div class="sample-wrapper">
-        <span class="sample promoteSample" />提升
-        <span class="sample declineSample" />下降
+        <span class="sample promoteSample" />提升 <span class="sample declineSample" />下降
       </div>
     </div>
   </div>
@@ -69,7 +55,7 @@ export default {
   props: {
     result: {
       type: Array,
-      default: () => ([]),
+      default: () => [],
     },
   },
   data() {

@@ -1,18 +1,18 @@
 /** Copyright 2020 Tianshu AI Platform. All Rights Reserved.
-*
-* Licensed under the Apache License, Version 2.0 (the "License");
-* you may not use this file except in compliance with the License.
-* You may obtain a copy of the License at
-*
-*     http://www.apache.org/licenses/LICENSE-2.0
-*
-* Unless required by applicable law or agreed to in writing, software
-* distributed under the License is distributed on an "AS IS" BASIS,
-* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-* See the License for the specific language governing permissions and
-* limitations under the License.
-* =============================================================
-*/
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ * =============================================================
+ */
 
 import cx from 'classnames';
 import Vue from 'vue';
@@ -53,7 +53,7 @@ export default {
     },
   },
 
-  setup(props){
+  setup(props) {
     const { onBrushStart, onBrushMove, left, top, onChange, onBrushEnd, transformZoom } = props;
     const state = reactive({
       start: { x: 0, y: 0 },
@@ -86,10 +86,10 @@ export default {
     const update = (updater, callback) => {
       Object.assign(state, updater(state));
       Vue.nextTick(() => {
-        if(callback) {
+        if (callback) {
           callback(state);
         }
-        if(onChange) {
+        if (onChange) {
           onChange(state);
         }
       });
@@ -104,7 +104,7 @@ export default {
         onBrushStart(start, event);
       }
 
-      update(prevBrush => ({
+      update((prevBrush) => ({
         ...prevBrush,
         start,
         end: undefined,
@@ -123,28 +123,33 @@ export default {
       const end = transformZoom({
         x: draw.x + draw.dx - left,
         y: draw.y + draw.dy - top,
-      });      
-
-      update(prevBrush => {
-        const { start } = prevBrush;
-        const extent = getExtent(start, end);
-        return {
-          ...prevBrush,
-          end,
-          extent,
-        };
-      }, (nextState) => {
-        // 回调
-      typeof onBrushMove === 'function' && onBrushMove(nextState, event);
       });
+
+      update(
+        (prevBrush) => {
+          const { start } = prevBrush;
+          const extent = getExtent(start, end);
+          return {
+            ...prevBrush,
+            end,
+            extent,
+          };
+        },
+        (nextState) => {
+          // 回调
+          typeof onBrushMove === 'function' && onBrushMove(nextState, event);
+        }
+      );
     };
 
-
     const handleDragEnd = (draw, event, options = {}) => {
-      update(prevBrush => ({
-        ...prevBrush,
-        isBrushing: false,
-      }), state => onBrushEnd(state, event, options));
+      update(
+        (prevBrush) => ({
+          ...prevBrush,
+          isBrushing: false,
+        }),
+        (state) => onBrushEnd(state, event, options)
+      );
     };
 
     return {
@@ -159,7 +164,7 @@ export default {
     };
   },
 
-  render(h) {
+  render() {
     const { stageWidth, stageHeight, className, left, top, brushSelectionStyle } = this;
     const { start, end, isBrushing } = this.state;
 
@@ -181,22 +186,20 @@ export default {
       <Group className={cx('db-brush', className)} left={left} top={top}>
         {/* overlay */}
         <Drag {...dragProps}>
-          {
-            (drag) => (
-              <rect
-                className='brush-overlay'
-                fill='transparent'
-                x={0}
-                y={0}
-                width={stageWidth}
-                height={stageHeight}
-                style={{ cursor: 'crosshair' }}
-                onMousedown={drag.dragStart}
-                onMousemove={drag.dragMove}
-                onMouseup={drag.dragEnd}
-              />
-            )
-          }
+          {(drag) => (
+            <rect
+              className="brush-overlay"
+              fill="transparent"
+              x={0}
+              y={0}
+              width={stageWidth}
+              height={stageHeight}
+              style={{ cursor: 'crosshair' }}
+              onMousedown={drag.dragStart}
+              onMousemove={drag.dragMove}
+              onMouseup={drag.dragEnd}
+            />
+          )}
         </Drag>
         {start && end && !!isBrushing && (
           <g>

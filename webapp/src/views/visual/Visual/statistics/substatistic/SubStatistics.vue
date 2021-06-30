@@ -1,25 +1,27 @@
 /** Copyright 2020 Tianshu AI Platform. All Rights Reserved.
-*
-* Licensed under the Apache License, Version 2.0 (the "License");
-* you may not use this file except in compliance with the License.
-* You may obtain a copy of the License at
-*
-*     http://www.apache.org/licenses/LICENSE-2.0
-*
-* Unless required by applicable law or agreed to in writing, software
-* distributed under the License is distributed on an "AS IS" BASIS,
-* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-* See the License for the specific language governing permissions and
-* limitations under the License.
-* =============================================================
-*/
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ * =============================================================
+ */
 
 <template>
   <div class="statistics-container">
     <div class="statistics-title" @click="showContent()">
-      <div :class="[showFlag?'sub1':'sub']">
+      <div :class="[showFlag ? 'sub1' : 'sub']">
         <div class="my-label">
-          <div class="my-text"><span>{{ categoryName }}</span></div>
+          <div class="my-text">
+            <span>{{ categoryName }}</span>
+          </div>
           <div class="circle-father"><div class="circle" /></div>
           <div class="triangle-father">
             <div class="triangle" />
@@ -27,12 +29,18 @@
         </div>
       </div>
       <div class="line1" />
-      <div :class="['line2', showFlag?'':'linestyle']" />
+      <div :class="['line2', showFlag ? '' : 'linestyle']" />
     </div>
-    <div :class="[showFlag?'':'showClass']">
+    <div :class="[showFlag ? '' : 'showClass']">
       <div>
         <div v-for="(oneRunData, runIdx) in runData" :key="runIdx" :class="['statistics-content']">
-          <div v-for="(item, index) in oneRunData" v-show="getDataSetsState[item[0]]" :id="[idArray[item[4]]]" :key="index" class="allStatisticContainer">
+          <div
+            v-for="(item, index) in oneRunData"
+            v-show="getDataSetsState[item[0]]"
+            :id="[idArray[item[4]]]"
+            :key="index"
+            class="allStatisticContainer"
+          >
             <statisticContainer
               :data="item[2]"
               :ttlabel="item[0]"
@@ -93,9 +101,7 @@ export default {
       'getHistShow',
       'getDistShow',
     ]),
-    ...mapLayoutStates([
-      'userSelectRunFile',
-    ]),
+    ...mapLayoutStates(['userSelectRunFile']),
   },
   watch: {
     getMode(curMode) {
@@ -116,8 +122,8 @@ export default {
       if (this.categoryInfo === 'histogram') {
         this.allData = data;
         this.idArray = [];
-        for (let i = 0; i < this.allData.length; i+=1) {
-          this.idArray.push(`myHistogramScale${  i}`);
+        for (let i = 0; i < this.allData.length; i += 1) {
+          this.idArray.push(`myHistogramScale${i}`);
         }
         this.setRunData();
       }
@@ -126,8 +132,8 @@ export default {
       if (this.categoryInfo === 'distribution') {
         this.allData = data;
         this.idArray = [];
-        for (let i = 0; i < this.allData.length; i+=1) {
-          this.idArray.push(`myDistributionScale${  i}`);
+        for (let i = 0; i < this.allData.length; i += 1) {
+          this.idArray.push(`myDistributionScale${i}`);
         }
         this.setRunData();
       }
@@ -203,8 +209,8 @@ export default {
       // 有数据
       this.allData = this.getHistData;
       this.idArray = [];
-      for (let i = 0; i < this.allData.length; i+=1) {
-        this.idArray.push(`myHistogramScale${  i}`);
+      for (let i = 0; i < this.allData.length; i += 1) {
+        this.idArray.push(`myHistogramScale${i}`);
       }
       this.setRunData();
     },
@@ -216,14 +222,17 @@ export default {
       }
       this.allData = this.getDistData;
       this.idArray = [];
-      for (let i = 0; i < this.allData.length; i+=1) {
-        this.idArray.push(`myDistributionScale${  i}`);
+      for (let i = 0; i < this.allData.length; i += 1) {
+        this.idArray.push(`myDistributionScale${i}`);
       }
       this.setRunData();
     },
-    handleScroll() { // 页面滑动过程中修改histDist标志，高亮右侧控制面板
+    handleScroll() {
+      // 页面滑动过程中修改histDist标志，高亮右侧控制面板
       if (document.getElementsByClassName('statistics-container')[1] !== undefined) {
-        const curDistHeight = document.getElementsByClassName('statistics-container')[1].getBoundingClientRect().top;
+        const curDistHeight = document
+          .getElementsByClassName('statistics-container')[1]
+          .getBoundingClientRect().top;
         if (curDistHeight < window.innerHeight * 0.7) {
           this.setDistShow(true);
         } else if (curDistHeight > window.innerHeight) {
@@ -233,25 +242,26 @@ export default {
     },
     setDatasetsShow() {
       const stateTemp = [];
-      for (let i = 0; i < this.getDataSets.length; i+=1) {
+      for (let i = 0; i < this.getDataSets.length; i += 1) {
         stateTemp[this.getDataSets[i]] = false;
       }
-      for (let i = 0; i < this.userSelectRunFile.length; i+=1) {
+      for (let i = 0; i < this.userSelectRunFile.length; i += 1) {
         stateTemp[this.userSelectRunFile[i]] = true;
       }
       // userselectRunFiles没有保存状态，statistic保存run状态
       this.setDataSetsState(stateTemp);
     },
-    setRunData() { // 按run对得到的数据再处理一下
+    setRunData() {
+      // 按run对得到的数据再处理一下
       if (this.allData.length === 0) {
         this.runData = [];
         return;
       }
       let count = 0;
       const runDataTemp = [[this.allData[0]]];
-      for (let i = 1; i < this.allData.length; i+=1) {
+      for (let i = 1; i < this.allData.length; i += 1) {
         if (this.allData[i][0] !== this.allData[i - 1][0]) {
-          count+=1;
+          count += 1;
           runDataTemp.push([]);
         }
         runDataTemp[count].push(this.allData[i]);
@@ -262,7 +272,7 @@ export default {
 };
 </script>
 
-<style lang='less' scoped>
+<style lang="less" scoped>
 .statistics-container {
   margin-bottom: 0.5%;
   background-color: #fff;
@@ -316,8 +326,8 @@ export default {
     width: 0;
     height: 0;
     overflow: hidden;
-    border-color: transparent transparent   transparent #7f7cc1;
-    border-style: dashed  dashed  dashed solid;
+    border-color: transparent transparent transparent #7f7cc1;
+    border-style: dashed dashed dashed solid;
     border-top-width: 15px;
     border-right-width: 18px;
     border-bottom-width: 15px;
@@ -362,7 +372,7 @@ export default {
 }
 
 .sub .triangle {
-  border-color: transparent transparent   transparent #b8c6ff;
+  border-color: transparent transparent transparent #b8c6ff;
 }
 
 .sub .circle-father {

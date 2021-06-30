@@ -1,48 +1,43 @@
 /** Copyright 2020 Tianshu AI Platform. All Rights Reserved.
-*
-* Licensed under the Apache License, Version 2.0 (the "License");
-* you may not use this file except in compliance with the License.
-* You may obtain a copy of the License at
-*
-*     http://www.apache.org/licenses/LICENSE-2.0
-*
-* Unless required by applicable law or agreed to in writing, software
-* distributed under the License is distributed on an "AS IS" BASIS,
-* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-* See the License for the specific language governing permissions and
-* limitations under the License.
-* =============================================================
-*/
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ * =============================================================
+ */
 
 <template>
   <div v-click-outside="onClickOutside" class="feedback-outside">
     <div ref="triggerRef" class="feedback" @click="handleOpen">
       我要反馈
     </div>
-    <el-card v-show="tooltipData.visible" class="feed-content box-card" :style="contentStyle">
+    <el-card v-show="tooltipData.visible" class="feed-content box-card g6" :style="contentStyle">
       <div slot="header" class="clearfix">
         我要反馈
       </div>
       <el-row :gutter="20">
         <el-col :span="12">
-          <a class="feed-action" target="_blank" :href="Community">
+          <a class="feed-action g6" target="_blank" :href="Community">
             <i class="el-icon-edit-outline" />
             <div>在线社区</div>
           </a>
         </el-col>
         <el-col :span="12">
-
-          <el-popover
-            placement="bottom"
-            trigger="click"
-          >
-            <img src="../../../assets/images/dingtalk.jpg" width="200" alt="">
+          <el-popover placement="bottom" trigger="click">
+            <img src="../../../assets/images/dingtalk.jpg" width="200" alt="" />
             <div slot="reference" class="feed-action">
               <i class="el-icon-chat-dot-square" />
               <div>钉钉交流群</div>
             </div>
           </el-popover>
-        
         </el-col>
       </el-row>
       <div class="f12 g6 mt-10">您的意见对于我们很重要，我们将尽快回复，谢谢</div>
@@ -75,10 +70,11 @@ export default {
     const handleOpen = (event) => {
       showTooltip({}, event, {
         position: setPosition,
+        el: triggerRef.value,
       });
     };
 
-    const onClickOutside = event => {
+    const onClickOutside = (event) => {
       if (!event.target.closest('.feedback-outside') && !!tooltipData.visible) {
         hideTooltip();
       }
@@ -103,7 +99,7 @@ export default {
 </script>
 
 <style lang="scss">
-@import "~@/assets/styles/variables.scss";
+@import '~@/assets/styles/variables.scss';
 
 .feedback {
   margin-right: 20px;

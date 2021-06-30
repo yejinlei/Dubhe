@@ -1,31 +1,25 @@
 /** Copyright 2020 Tianshu AI Platform. All Rights Reserved.
-*
-* Licensed under the Apache License, Version 2.0 (the "License");
-* you may not use this file except in compliance with the License.
-* You may obtain a copy of the License at
-*
-*     http://www.apache.org/licenses/LICENSE-2.0
-*
-* Unless required by applicable law or agreed to in writing, software
-* distributed under the License is distributed on an "AS IS" BASIS,
-* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-* See the License for the specific language governing permissions and
-* limitations under the License.
-* =============================================================
-*/
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ * =============================================================
+ */
 
 <template>
   <div id="measure-container" class="app-container">
     <!--工具栏-->
     <div class="head-container">
-      <cdOperation
-        linkType="custom"
-        @to-add="toAdd"
-      >
-        <span
-          slot="right"
-          class="flex flex-end flex-wrap"
-        >
+      <cdOperation linkType="custom" @to-add="toAdd">
+        <span slot="right" class="flex flex-end flex-wrap">
           <el-input
             v-model="localQuery.nameOrId"
             clearable
@@ -39,64 +33,63 @@
       </cdOperation>
     </div>
     <!--表格渲染-->
-    <el-table
-      ref="table"
-      :data="crud.data"
-      highlight-current-row
-      @sort-change="crud.sortChange"
-    >
-      <el-table-column
-        prop="id"
-        label="ID"
-        sortable="custom"
-        width="80px"
-        fixed
-      />
-      <el-table-column
-        prop="name"
-        label="度量名称"
-        min-width="120px"
-        show-overflow-tooltip
-        fixed
-      />
+    <el-table ref="table" :data="crud.data" highlight-current-row @sort-change="crud.sortChange">
+      <el-table-column prop="id" label="ID" sortable="custom" width="80px" fixed />
+      <el-table-column prop="name" label="度量名称" min-width="120px" show-overflow-tooltip fixed />
       <el-table-column
         prop="description"
         label="度量描述"
         min-width="180px"
         show-overflow-tooltip
       />
-      <el-table-column
-        prop="createTime"
-        label="创建时间"
-        sortable="custom"
-        min-width="160px"
-      >
+      <el-table-column prop="measureStatus" label="状态" min-width="120px">
+        <template #header>
+          <dropdown-header
+            title="状态"
+            :list="measureStatusList"
+            :filtered="Boolean(localQuery.measureStatus)"
+            @command="(cmd) => filter('measureStatus', cmd)"
+          />
+        </template>
+        <template slot-scope="scope">
+          <el-tag :type="statusTagMap[scope.row.measureStatus]" effect="plain">{{
+            statusNameMap[scope.row.measureStatus] || '--'
+          }}</el-tag>
+        </template>
+      </el-table-column>
+      <el-table-column prop="createTime" label="创建时间" sortable="custom" min-width="160px">
         <template slot-scope="scope">
           <span>{{ parseTime(scope.row.createTime) }}</span>
         </template>
       </el-table-column>
-      <el-table-column
-        label="操作"
-        min-width="200"
-        fixed="right"
-      >
+      <el-table-column label="操作" min-width="200" fixed="right">
         <template slot-scope="scope">
           <el-button
+            v-if="hasPermission('atlas:measure:edit')"
             type="text"
+            :disabled="isMeasureMaking(scope.row.measureStatus)"
             @click.stop="doEdit(scope.row)"
-          >编辑</el-button>
+            >编辑</el-button
+          >
           <el-button
             type="text"
+            :disabled="!isMeasureSuccess(scope.row.measureStatus)"
             @click.stop="doDownload(scope.row)"
-          >下载</el-button>
+            >下载</el-button
+          >
           <el-button
             type="text"
+            :disabled="!isMeasureSuccess(scope.row.measureStatus)"
             @click.stop="goVisial(scope.row.name)"
-          >可视化</el-button>
+            >可视化</el-button
+          >
           <el-button
+            v-if="hasPermission('atlas:measure:delete')"
             type="text"
+            :disabled="isMeasureMaking(scope.row.measureStatus)"
             @click.stop="doDelete(scope.row.id)"
-          >删除</el-button>
+            >删除</el-button
+          >
         </template>
       </el-table-column>
     </el-table>
@@ -105,78 +98,37 @@
     <!-- 表单 -->
     <BaseModal
       :title="formTitle"
-      :visible="formVisible"
+      :visible.sync="formVisible"
       :loading="formLoading"
       okText="提交"
-      @open="onFormOpen"
       @ok="onFormSubmit"
       @cancel="formVisible = false"
       @close="onFormClose"
     >
-      <el-form
-        ref="form"
-        :rules="formRule"
-        :model="form"
-        label-width="100px"
-      >
-        <el-form-item label="度量名称" prop="name">
-          <el-input
-            ref="nameInput"
-            v-model.trim="form.name"
-            maxlength="32"
-            show-word-limit
-          />
-        </el-form-item>
-        <el-form-item label="度量描述" prop="description">
-          <el-input
-            v-model="form.description"
-            type="textarea"
-            :rows="4"
-            maxlength="200"
-            show-word-limit
-          />
-        </el-form-item>
-        <el-form-item ref="url" label="度量图文件" prop="url">
-          <upload-inline
-            ref="upload"
-            action="fakeApi"
-            accept=".json"
-            :acceptSize="atlasConfig.uploadFileAcceptSize"
-            :acceptSizeFormat="uploadSizeFomatter"
-            list-type="text"
-            :show-file-count="false"
-            :params="uploadParams"
-            :auto-upload="true"
-            :filters="uploadFilters"
-            :hash="false"
-            :limit="1"
-            :on-remove="onFileRemove"
-            @uploadStart="onUploadStart"
-            @uploadSuccess="onUploadSuccess"
-            @uploadError="onUploadError"
-          />
-        </el-form-item>
-      </el-form>
+      <MeasureForm ref="measureForm" />
     </BaseModal>
   </div>
 </template>
 
 <script>
+// eslint-disable-next-line import/no-extraneous-dependencies
+import { debounce } from 'throttle-debounce';
+
 import { list, add, edit, del } from '@/api/atlas';
 import CRUD, { presenter, header, crud } from '@crud/crud';
 import rrOperation from '@crud/RR.operation';
 import cdOperation from '@crud/CD.operation';
 import pagination from '@crud/Pagination';
 import BaseModal from '@/components/BaseModal';
-import UploadInline from '@/components/UploadForm/inline';
-import { getUniqueId, uploadSizeFomatter, validateNameWithHyphen, Constant, downloadFileAsStream, minioBaseUrl, invalidFileNameChar } from '@/utils';
-import { atlasConfig } from '@/config';
+import DropdownHeader from '@/components/DropdownHeader';
+import { Constant, downloadFileAsStream, minioBaseUrl, generateMap, hasPermission } from '@/utils';
 
-const defaultForm = {
-  id: null,
-  name: '',
-  description: '',
-  url: undefined,
+import MeasureForm from './components/measureForm';
+import { MEASURE_STATUS_ENUM, MEASURE_STATUS_MAP } from './util';
+
+const defaultQuery = {
+  nameOrId: null,
+  measureStatus: null,
 };
 
 export default {
@@ -185,14 +137,16 @@ export default {
     pagination,
     rrOperation,
     cdOperation,
+    DropdownHeader,
     BaseModal,
-    UploadInline,
+    MeasureForm,
   },
   cruds() {
     return CRUD({
       title: 'Measure',
       crudMethod: { list },
       optShow: {
+        add: hasPermission('atlas:measure:create'),
         del: false,
       },
       props: {
@@ -206,100 +160,63 @@ export default {
   mixins: [presenter(), header(), crud()],
   data() {
     return {
-      localQuery: {
-        nameOrId: null,
-      },
+      localQuery: { ...defaultQuery },
       // 表单数据
       formType: 'add',
-      formVisible: false,
-      formLoading: false,
-      formRule: {
-        name: [
-          {
-            required: true,
-            message: '请输入度量名称',
-            trigger: ['blur', 'change'],
-          },
-          {
-            max: 32,
-            message: '长度在 32 个字符以内',
-            trigger: ['blur', 'change'],
-          },
-          {
-            validator: validateNameWithHyphen,
-            trigger: ['blur', 'change'],
-          },
-        ],
-        url: [
-          {
-            required: true,
-            message: '请上传度量图文件',
-            trigger: 'manual',
-          },
-        ],
-      },
-      form: { ...defaultForm },
-      uploadParams: {
-        objectPath: null,
-      },
-      uploading: false,
-      uploadFilters: [invalidFileNameChar],
+      formVisible: false, // 表单可见状态
+      formLoading: false, // 表单提交状态
 
-      atlasConfig,
+      keepPoll: true, // 中间状态轮询标识
     };
   },
   computed: {
+    statusNameMap() {
+      return generateMap(MEASURE_STATUS_MAP, 'name');
+    },
+    statusTagMap() {
+      return generateMap(MEASURE_STATUS_MAP, 'tagMap');
+    },
+    measureStatusList() {
+      const list = [{ label: '全部', value: null }];
+      Object.keys(this.statusNameMap).forEach((status) => {
+        list.push({ label: this.statusNameMap[status], value: status });
+      });
+      return list;
+    },
     formTitle() {
       return `${Constant.FORM_TYPE_MAP[this.formType]}度量`;
     },
-    user() {
-      return this.$store.getters.user;
-    },
+  },
+  created() {
+    this.refetch = debounce(1000, this.crud.refresh);
+  },
+  beforeDestroy() {
+    this.keepPoll = false;
   },
   methods: {
+    hasPermission,
+
     toAdd() {
       this.formType = 'add';
       this.formVisible = true;
+      this.$nextTick(() => this.$refs.measureForm.initForm());
     },
     onResetQuery() {
-      this.localQuery = { ...this.defaultQuery};
-    },
-    onFormOpen() {
-      this.updateObjectPath();
+      this.localQuery = { ...defaultQuery };
     },
     onFormSubmit() {
-      this.$refs.form.validate(async valid => {
-        if (valid) {
-          this.formLoading = true;
-          const func = this.formType === 'add' ? add : edit;
-          await func(this.form).finally(() => { this.formLoading = false; });
-          this.formVisible = false;
-          this.crud.refresh();
-        }
+      this.$refs.measureForm.validate(async (form) => {
+        this.formLoading = true;
+        const func = this.formType === 'add' ? add : edit;
+        await func(form).finally(() => {
+          this.formLoading = false;
+        });
+        this.formVisible = false;
+        this.crud.refresh();
       });
     },
     onFormClose() {
-      this.formVisible = false;
-      setTimeout(() => {
-        this.form = { ...defaultForm };
-        this.$refs.upload.formRef.reset();
-        this.$nextTick(() => { this.$refs.form.clearValidate(); });
-      }, 100); // 延迟清空表单，避免用户在弹窗被关闭时看到清空表单导致的表单验证
-    },
-    onFileRemove() {
-      this.$refs.url.validate('manual');
-    },
-    onUploadStart() {
-      this.uploading = true;
-    },
-    onUploadSuccess(res) {
-      this.uploading = false;
-      this.form.url = res[0].data.objectName;
-      this.$refs.url.validate('manual');
-    },
-    onUploadError() {
-      this.uploading = false;
-      this.$refs.url.validate('manual');
+      this.$refs.measureForm.resetForm();
     },
 
     goVisial(measureName) {
@@ -309,10 +226,9 @@ export default {
       });
     },
     doEdit(measure) {
-      Reflect.ownKeys(this.form)
-        .forEach(key => { this.form[key] = measure[key]; });
       this.formType = 'edit';
       this.formVisible = true;
+      this.$nextTick(() => this.$refs.measureForm.initForm(measure));
     },
     doDownload(measure) {
       const { name, url } = measure;
@@ -325,14 +241,27 @@ export default {
       });
     },
 
-    updateObjectPath() {
-      this.uploadParams.objectPath = `upload-temp/${this.user.id}/${getUniqueId()}`;
-    },
-
-    uploadSizeFomatter,
-
     [CRUD.HOOK.beforeRefresh]() {
       this.crud.query = { ...this.localQuery };
+    },
+    [CRUD.HOOK.afterRefresh]() {
+      if (
+        this.keepPoll &&
+        this.crud.data.some((measure) => this.isMeasureMaking(measure.measureStatus))
+      ) {
+        this.refetch();
+      }
+    },
+
+    filter(column, value) {
+      this.localQuery[column] = value;
+      this.crud.toQuery();
+    },
+    isMeasureMaking(measureStatus) {
+      return measureStatus === MEASURE_STATUS_ENUM.MAKING;
+    },
+    isMeasureSuccess(measureStatus) {
+      return measureStatus === MEASURE_STATUS_ENUM.SUCCESS;
     },
   },
 };

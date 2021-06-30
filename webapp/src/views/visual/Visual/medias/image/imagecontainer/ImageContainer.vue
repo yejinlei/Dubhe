@@ -1,146 +1,146 @@
 /** Copyright 2020 Tianshu AI Platform. All Rights Reserved.
-*
-* Licensed under the Apache License, Version 2.0 (the "License");
-* you may not use this file except in compliance with the License.
-* You may obtain a copy of the License at
-*
-*     http://www.apache.org/licenses/LICENSE-2.0
-*
-* Unless required by applicable law or agreed to in writing, software
-* distributed under the License is distributed on an "AS IS" BASIS,
-* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-* See the License for the specific language governing permissions and
-* limitations under the License.
-* =============================================================
-*/
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ * =============================================================
+ */
 
 <style lang="less" scoped>
-    /deep/ .el-icon-circle-close {
-      color: white;
-    }
+/deep/ .el-icon-circle-close {
+  color: white;
+}
 
-    .el-col {
-      margin-bottom: 20px;
-    }
+.el-col {
+  margin-bottom: 20px;
+}
 
-    .imagecontainer {
-      width: 100%;
-      height: 100%;
-      background-color: rgb(255, 255, 255);
+.imagecontainer {
+  width: 100%;
+  height: 100%;
+  background-color: rgb(255, 255, 255);
 
-      /deep/ .el-slider__runway {
-        width: 95%;
-        margin: 16px auto;
-      }
+  /deep/ .el-slider__runway {
+    width: 95%;
+    margin: 16px auto;
+  }
 
-      /deep/ .el-slider__button {
-        border-color: #625eb3;
-      }
+  /deep/ .el-slider__button {
+    border-color: #625eb3;
+  }
 
-      /deep/ .el-slider__bar {
-        background-color: #625eb3;
-      }
-    }
+  /deep/ .el-slider__bar {
+    background-color: #625eb3;
+  }
+}
 
-    .imagecontent {
-      width: 100%;
-      height: auto;
-    }
+.imagecontent {
+  width: 100%;
+  height: auto;
+}
 
-    .scroll {
-      width: 100%;
-      height: auto;
-    }
+.scroll {
+  width: 100%;
+  height: auto;
+}
 
-    /deep/ .el-image {
-      width: 100%;
-      height: auto;
-    }
+/deep/ .el-image {
+  width: 100%;
+  height: auto;
+}
 
-    /deep/ .el-image__preview {
-      width: 100%;
-      height: 400px;
-    }
+/deep/ .el-image__preview {
+  width: 100%;
+  height: 400px;
+}
 
-    /deep/ .el-image-viewer__img {
-      height: 100%;
-    }
+/deep/ .el-image-viewer__img {
+  height: 100%;
+}
 
-    .titleRight {
-      right: 1%;
-      float: right;
+.titleRight {
+  right: 1%;
+  float: right;
 
-      .iconfont {
-        font-size: 12px;
-      }
-    }
+  .iconfont {
+    font-size: 12px;
+  }
+}
 
-    .leftItem {
-      margin-right: 1%;
-      margin-left: auto;
+.leftItem {
+  margin-right: 1%;
+  margin-left: auto;
 
-      /deep/ .checked {
-        width: 20px;
-        height: 20px;
-      }
+  /deep/ .checked {
+    width: 20px;
+    height: 20px;
+  }
 
-      /deep/ .el-checkbox__inner {
-        font-size: 20px;
-      }
+  /deep/ .el-checkbox__inner {
+    font-size: 20px;
+  }
 
-      /deep/ .el-checkbox__inner:hover {
-        border-color: #8f8bd9;
-      }
+  /deep/ .el-checkbox__inner:hover {
+    border-color: #8f8bd9;
+  }
 
-      /deep/ .el-checkbox {
-        font-size: 20px;
-      }
+  /deep/ .el-checkbox {
+    font-size: 20px;
+  }
 
-      /deep/ .el-checkbox__input.is-checked .el-checkbox__inner {
-        background-color: #8f8bd9;
-        border-color: #8f8bd9;
-      }
+  /deep/ .el-checkbox__input.is-checked .el-checkbox__inner {
+    background-color: #8f8bd9;
+    border-color: #8f8bd9;
+  }
 
-      /deep/ .el-checkbox__input.is-focus .el-checkbox__inner {
-        border-color: gray;
-      }
-    }
+  /deep/ .el-checkbox__input.is-focus .el-checkbox__inner {
+    border-color: gray;
+  }
+}
 
-    input {
-      width: 100%;
-      height: auto;
-    }
+input {
+  width: 100%;
+  height: auto;
+}
 
-    .temp {
-      padding: 2%;
-      background-color: #8f8bd8;
-    }
+.temp {
+  padding: 2%;
+  background-color: #8f8bd8;
+}
 
-    .image-container-title {
-      width: 100%;
-      height: auto;
-      font-size: 12px;
-      color: white;
-      background-color: #8f8bd8;
+.image-container-title {
+  width: 100%;
+  height: auto;
+  font-size: 12px;
+  color: white;
+  background-color: #8f8bd8;
 
-      /deep/ .el-col {
-        margin-bottom: 10px;
-      }
-    }
+  /deep/ .el-col {
+    margin-bottom: 10px;
+  }
+}
 
-    .imagetext {
-      margin-left: 1%;
-      text-align: left;
-    }
+.imagetext {
+  margin-left: 1%;
+  text-align: left;
+}
 
-    p {
-      font-size: 10px;
-    }
+p {
+  font-size: 10px;
+}
 
-    .checkedBox {
-      cursor: pointer;
-    }
-  </style>
+.checkedBox {
+  cursor: pointer;
+}
+</style>
 <template>
   <div class="imagecontainer">
     <el-col :xs="24" :sm="24" :md="12" :lg="12" :xl="8">
@@ -154,17 +154,39 @@
             </el-col>
             <el-col :span="12">
               <div class="titleRight">
-                <el-tooltip class="item" effect="dark" content="勾选后，点击定制按钮会跳转到用户定制界面" placement="top">
-                  <span v-if="parentComponent" v-show="!checked" class="checkedBox" @click="ischeckedLocal()">
+                <el-tooltip
+                  class="item"
+                  effect="dark"
+                  content="勾选后，点击定制按钮会跳转到用户定制界面"
+                  placement="top"
+                >
+                  <span
+                    v-if="parentComponent"
+                    v-show="!checked"
+                    class="checkedBox"
+                    @click="ischeckedLocal()"
+                  >
                     <i class="iconfont icon-weixuanzhong1" />
                   </span>
                 </el-tooltip>
-                <el-tooltip class="item" effect="dark" content="勾选后，点击定制按钮会跳转到用户定制界面" placement="top">
-                  <span v-if="parentComponent" v-show="checked" class="checkedBox" @click="ischeckedLocal()">
+                <el-tooltip
+                  class="item"
+                  effect="dark"
+                  content="勾选后，点击定制按钮会跳转到用户定制界面"
+                  placement="top"
+                >
+                  <span
+                    v-if="parentComponent"
+                    v-show="checked"
+                    class="checkedBox"
+                    @click="ischeckedLocal()"
+                  >
                     <i class="iconfont icon-xuanzhong1" />
                   </span>
                 </el-tooltip>
-                <span v-if="!parentComponent" class="checkedBox" @click="ischecked()"><i class="close-i el-icon-circle-close" /></span>
+                <span v-if="!parentComponent" class="checkedBox" @click="ischecked()"
+                  ><i class="close-i el-icon-circle-close"
+                /></span>
               </div>
             </el-col>
           </el-row>
@@ -186,15 +208,12 @@
       </div>
       <div class="imagecontent">
         <!-- <img :src="imgurl"> -->
-        <el-image
-          :src="imgurl"
-          :preview-src-list="[imgurl]"
-        />
+        <el-image :src="imgurl" :preview-src-list="[imgurl]" />
       </div>
       <el-slider
         v-model="scrollvalue"
         :max="imagecontent.length - 1"
-        :disabled="imagecontent.length - 1===0"
+        :disabled="imagecontent.length - 1 === 0"
         class="slider"
       />
     </el-col>
@@ -205,14 +224,11 @@ import 'element-ui/lib/theme-chalk/display.css';
 import { createNamespacedHelpers } from 'vuex';
 import { getImageRaw } from '@/api/visual';
 
-const {
-  mapMutations: mapCustomMutations,
-  mapGetters: mapCustomGetters,
-} = createNamespacedHelpers('Visual/custom');
+const { mapMutations: mapCustomMutations, mapGetters: mapCustomGetters } = createNamespacedHelpers(
+  'Visual/custom'
+);
 const { mapGetters: mapLayoutGetters } = createNamespacedHelpers('Visual/layout');
-const {
-  mapMutations: mapMediaMutations,
-} = createNamespacedHelpers('Visual/media');
+const { mapMutations: mapMediaMutations } = createNamespacedHelpers('Visual/media');
 export default {
   props: {
     content: Object,
@@ -240,10 +256,9 @@ export default {
         tag: Object.keys(this.content.value)[0],
         trainJobName: this.getParams.trainJobName,
       };
-      await getImageRaw(params)
-        .then(res => {
-          this.imgurl = res;
-        });
+      await getImageRaw(params).then((res) => {
+        this.imgurl = res;
+      });
     },
   },
   async created() {
@@ -254,14 +269,13 @@ export default {
       tag: Object.keys(this.content.value)[0],
       trainJobName: this.getParams.trainJobName,
     };
-    await getImageRaw(params)
-      .then(res => {
-        this.imgurl = res;
-      });
+    await getImageRaw(params).then((res) => {
+      this.imgurl = res;
+    });
   },
   mounted() {
-    const paramStringIndex = `${this.content.run  }/${  Object.keys(this.content.value)[0]}`;
-    for (let i = 0; i < this.getImage.length; i+=1) {
+    const paramStringIndex = `${this.content.run}/${Object.keys(this.content.value)[0]}`;
+    for (let i = 0; i < this.getImage.length; i += 1) {
       if (paramStringIndex === this.getImage[i].stringIndex) {
         this.checked = true;
         break;
@@ -295,6 +309,5 @@ export default {
       this.scaleLargeSmall = false;
     },
   },
-
 };
 </script>

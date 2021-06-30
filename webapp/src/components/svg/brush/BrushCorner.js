@@ -1,21 +1,22 @@
 /** Copyright 2020 Tianshu AI Platform. All Rights Reserved.
-*
-* Licensed under the Apache License, Version 2.0 (the "License");
-* you may not use this file except in compliance with the License.
-* You may obtain a copy of the License at
-*
-*     http://www.apache.org/licenses/LICENSE-2.0
-*
-* Unless required by applicable law or agreed to in writing, software
-* distributed under the License is distributed on an "AS IS" BASIS,
-* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-* See the License for the specific language governing permissions and
-* limitations under the License.
-* =============================================================
-*/
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ * =============================================================
+ */
 
 import Drag from '@/components/Drag';
 import { chroma } from '@/utils';
+import { defaultFill } from '@/views/dataset/util';
 
 export default {
   name: 'BrushCorner',
@@ -45,7 +46,7 @@ export default {
 
     const handleDragStart = (drag, event) => {
       // 开始拖拽是选中当前标注
-      if(handleBrushStart) {
+      if (handleBrushStart) {
         handleBrushStart(drag, event);
       }
     };
@@ -53,7 +54,7 @@ export default {
     const handleDragMove = (drag) => {
       if (!drag.isDragging) return;
       const { zoom } = getZoom();
-      updateBrush(prevBrush => {
+      updateBrush((prevBrush) => {
         const { start, end } = prevBrush;
         let nextState = {};
 
@@ -130,7 +131,7 @@ export default {
                 y1: Math.min(Math.max(moveY, start.y), prevBrush.bounds.y1),
               },
             };
-          break;
+            break;
           default:
             break;
         }
@@ -139,7 +140,7 @@ export default {
     };
 
     const handleDragEnd = () => {
-      updateBrushEnd(prevBrush => {
+      updateBrushEnd((prevBrush) => {
         const { start, end, extent } = { ...prevBrush };
         start.x = Math.min(extent.x0, extent.x1);
         start.y = Math.min(extent.y0, extent.y0);
@@ -169,19 +170,29 @@ export default {
     };
   },
 
-  render(h) {
-    const { annotate, transformer, currentAnnotationId, stageWidth, stageHeight, type, x, y, width, height } = this;
+  render() {
+    const {
+      annotate,
+      transformer,
+      currentAnnotationId,
+      stageWidth,
+      stageHeight,
+      type,
+      x,
+      y,
+      width,
+      height,
+    } = this;
 
     const cursor = type === 'topLeft' || type === 'bottomRight' ? 'nwse-resize' : 'nesw-resize';
 
     let transform = null;
-    if(annotate.id === transformer.id) {
+    if (annotate.id === transformer.id) {
       transform = `translate(${transformer.dx}, ${transformer.dy})`;
     }
 
     const { data = {} } = annotate;
     const { color } = data;
-    const defaultFill = 'rgba(102, 181, 245, 0.1)';
     const bgColor = color || defaultFill;
     const isActive = currentAnnotationId === annotate.id;
     const colorAlpha = isActive ? 1 : 0;
@@ -204,23 +215,21 @@ export default {
 
     return (
       <Drag {...dragProps}>
-        {
-          (drag) => (
-            <rect
-              x={x}
-              y={y}
-              width={width}
-              height={height}
-              transform={transform}
-              fill={fillColor}
-              class={`brush-corner-${type}`}
-              onMousedown={drag.dragStart}
-              onMousemove={drag.dragMove}
-              onMouseup={drag.dragEnd}
-              style={style}
-            />
-          )
-        }
+        {(drag) => (
+          <rect
+            x={x}
+            y={y}
+            width={width}
+            height={height}
+            transform={transform}
+            fill={fillColor}
+            class={`brush-corner-${type}`}
+            onMousedown={drag.dragStart}
+            onMousemove={drag.dragMove}
+            onMouseup={drag.dragEnd}
+            style={style}
+          />
+        )}
       </Drag>
     );
   },

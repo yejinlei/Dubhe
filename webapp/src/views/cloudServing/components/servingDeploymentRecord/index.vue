@@ -1,18 +1,18 @@
 /** Copyright 2020 Tianshu AI Platform. All Rights Reserved.
-*
-* Licensed under the Apache License, Version 2.0 (the "License");
-* you may not use this file except in compliance with the License.
-* You may obtain a copy of the License at
-*
-*     http://www.apache.org/licenses/LICENSE-2.0
-*
-* Unless required by applicable law or agreed to in writing, software
-* distributed under the License is distributed on an "AS IS" BASIS,
-* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-* See the License for the specific language governing permissions and
-* limitations under the License.
-* =============================================================
-*/
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ * =============================================================
+ */
 
 <template>
   <div class="serving-deploy-wrapper">
@@ -22,55 +22,27 @@
       shadow="always"
       class="mb-10"
     >
-      <el-table
-        ref="table"
-        :data="rollbackInfo.data"
-      >
-        <el-table-column
-          prop="createTime"
-          label="部署时间"
-          fixed
-        >
+      <el-table ref="table" :data="rollbackInfo.data">
+        <el-table-column prop="createTime" label="部署时间" fixed>
           <template slot-scope="scope">
             <span>{{ parseTime(scope.row.createTime) }}</span>
           </template>
         </el-table-column>
-        <el-table-column
-          prop="modelName"
-          label="模型名称"
-          fixed
-        >
+        <el-table-column prop="modelName" label="模型名称" fixed>
           <template slot-scope="scope">
-            {{scope.row.modelName || '--'}}
+            {{ scope.row.modelName || '--' }}
           </template>
         </el-table-column>
-        <el-table-column
-          prop="frameType"
-          label="模型框架"
-          fixed
-        >
+        <el-table-column prop="frameType" label="模型框架" fixed>
           <template slot-scope="scope">
-            {{dict.label.frame_type[scope.row.frameType]}}
+            {{ dict.label.frame_type[scope.row.frameType] }}
           </template>
         </el-table-column>
-        <el-table-column
-          prop="releaseRate"
-          label="灰度分流发布率"
-          min-width="120px"
-          fixed
-        />
-        <el-table-column
-          prop="resourcesPoolSpecs"
-          label="节点规格"
-          min-width="120px"
-          fixed
-        />
-        <el-table-column
-          prop="resourcesPoolType"
-          label="节点类型"
-        >
+        <el-table-column prop="releaseRate" label="灰度分流发布率" min-width="120px" fixed />
+        <el-table-column prop="resourcesPoolSpecs" label="节点规格" min-width="120px" fixed />
+        <el-table-column prop="resourcesPoolType" label="节点类型">
           <template slot-scope="scope">
-            {{scope.row.resourcesPoolType === 0 ? 'CPU' : 'GPU'}}
+            {{ scope.row.resourcesPoolType === 0 ? 'CPU' : 'GPU' }}
           </template>
         </el-table-column>
       </el-table>
@@ -105,7 +77,7 @@ import { parseTime } from '@/utils/index';
 export default {
   name: 'ServingDeploymentRecord',
   dicts: ['frame_type'],
-  props:{
+  props: {
     serviceId: {
       type: Number,
       required: true,
@@ -123,7 +95,7 @@ export default {
       default: false,
     },
   },
-  data(){
+  data() {
     return {
       originData: {},
     };
@@ -135,7 +107,7 @@ export default {
       Object.keys(this.originData)
         .sort()
         .reverse()
-        .forEach(key => {
+        .forEach((key) => {
           rollbackList.push({
             key,
             data: this.originData[key],
@@ -145,7 +117,9 @@ export default {
     },
   },
   mounted() {
-    if (this.refresh) { return; } // 处理 进入页面之前进行刷新操作后请求两次的问题
+    if (this.refresh) {
+      return;
+    } // 处理 进入页面之前进行刷新操作后请求两次的问题
     this.getOriginData();
   },
   activated() {
@@ -161,7 +135,7 @@ export default {
       rollbackDetailClone.modelConfigList = this.originData[key];
 
       this.$confirm('是否要回滚该记录？', '请确认').then(() => {
-        rollbackServing(rollbackDetailClone).then(() =>{
+        rollbackServing(rollbackDetailClone).then(() => {
           this.$message.success('回滚成功');
           this.$router.push({ name: 'CloudServing' });
         });

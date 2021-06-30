@@ -1,18 +1,18 @@
 /** Copyright 2020 Tianshu AI Platform. All Rights Reserved.
-*
-* Licensed under the Apache License, Version 2.0 (the "License");
-* you may not use this file except in compliance with the License.
-* You may obtain a copy of the License at
-*
-*     http://www.apache.org/licenses/LICENSE-2.0
-*
-* Unless required by applicable law or agreed to in writing, software
-* distributed under the License is distributed on an "AS IS" BASIS,
-* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-* See the License for the specific language governing permissions and
-* limitations under the License.
-* =============================================================
-*/
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ * =============================================================
+ */
 
 <template>
   <div style="width: 100%; height: 100%;">
@@ -21,11 +21,11 @@
       <el-table
         :data="data"
         :fit="choice"
-        :default-sort="{prop:'accuracy', order:'descending'}"
-        :header-cell-style="{background:'rgb(224, 231, 250)',color:'#606266'}"
+        :default-sort="{ prop: 'accuracy', order: 'descending' }"
+        :header-cell-style="{ background: 'rgb(224, 231, 250)', color: '#606266' }"
         :row-class-name="tableRowClassName"
-        :row-style="{height:'10px'}"
-        :cell-style="{padding:'8px 0'}"
+        :row-style="{ height: '10px' }"
+        :cell-style="{ padding: '8px 0' }"
         style="font-size: 12px;"
         @cell-mouse-enter="highlight"
         @cell-mouse-leave="unhighlight"
@@ -49,7 +49,10 @@ import 'element-ui/lib/theme-chalk/index.css';
 import * as d3 from 'd3';
 import { createNamespacedHelpers } from 'vuex';
 
-const { mapMutations: mapHyperparmMutations, mapGetters: mapHyperparmGatters } = createNamespacedHelpers('Visual/hyperparm');
+const {
+  mapMutations: mapHyperparmMutations,
+  mapGetters: mapHyperparmGatters,
+} = createNamespacedHelpers('Visual/hyperparm');
 export default {
   name: 'HyperPara',
   data() {
@@ -66,7 +69,16 @@ export default {
     };
   },
   computed: {
-    ...mapHyperparmGatters(['getAllData', 'getGlobalChange', 'getKey', 'getSelected', 'getAxisType', 'getGlobalSelectedDatas', 'getHypEmpty', 'getMainParams']),
+    ...mapHyperparmGatters([
+      'getAllData',
+      'getGlobalChange',
+      'getKey',
+      'getSelected',
+      'getAxisType',
+      'getGlobalSelectedDatas',
+      'getHypEmpty',
+      'getMainParams',
+    ]),
   },
   watch: {
     getHypEmpty(val) {
@@ -122,10 +134,12 @@ export default {
   methods: {
     ...mapHyperparmMutations(['setFocusData', 'setGlobalSelectedDatas', 'setHypEmpty']),
     drawPara(colorItem) {
-      d3.select('#hp').selectAll('svg').remove();
+      d3.select('#hp')
+        .selectAll('svg')
+        .remove();
       if (this.data.length === 0) return;
       this.setGlobalSelectedDatas(this.getAllData);
-      const {data} = this;
+      const { data } = this;
       const margin = {
         top: 20,
         right: 20,
@@ -136,71 +150,85 @@ export default {
       const width = 600 - margin.left - margin.right;
       const height = 200 - margin.top - margin.bottom;
 
-      const x = d3.scalePoint().rangeRound([0, width]).padding(1);
+      const x = d3
+        .scalePoint()
+        .rangeRound([0, width])
+        .padding(1);
       const y = {};
       const dragging = {};
       const line = d3.line().curve(d3.curveMonotoneX);
-      const container = d3.select('#hp')
-        .attr('class', 'parcoords');
+      const container = d3.select('#hp').attr('class', 'parcoords');
 
-      const svg = container.append('svg')
+      const svg = container
+        .append('svg')
         .attr('class', 'my_svg')
         .attr('width', '100%')
         .attr('height', '100%')
         .attr('preserveAspectRatio', 'xMidYMid meet')
-        .attr('viewBox', `0 0 ${  width  } 200`)
+        .attr('viewBox', `0 0 ${width} 200`)
         .append('g')
-        .attr('transform', `translate(${  -margin.left  },${  margin.top  })`);
+        .attr('transform', `translate(${-margin.left},${margin.top})`);
 
       function quantP(v) {
-        return (parseFloat(v) === v) || (v === '');
-      };
-      
-      const maxData = d3.max(data, (d) => { return +d[colorItem]; });
-      const minData = d3.min(data, (d) => { return +d[colorItem]; });
+        return parseFloat(v) === v || v === '';
+      }
+
+      const maxData = d3.max(data, (d) => {
+        return +d[colorItem];
+      });
+      const minData = d3.min(data, (d) => {
+        return +d[colorItem];
+      });
       const dimensions = d3.keys(data[0]);
       x.domain(dimensions);
-      dimensions.forEach( (d) => {
-        const vals = data.map( (p) => {
+      dimensions.forEach((d) => {
+        const vals = data.map((p) => {
           return p[d];
         });
         if (vals.every(quantP)) {
-          const tmp = d3.extent(data, (p)=>{
+          const tmp = d3.extent(data, (p) => {
             return +p[d];
           });
           if (_this.localAxisType[d] === 'log') {
             if (tmp[0] === tmp[1]) {
-              y[d] = d3.scaleLog()
+              y[d] = d3
+                .scaleLog()
                 .domain([tmp[0] * 0.9, tmp[1] * 1.1])
                 .range([height - 0.5, 0])
                 .nice();
             } else {
-              y[d] = d3.scaleLog()
+              y[d] = d3
+                .scaleLog()
                 .domain(tmp)
                 .range([height - 0.5, 0])
                 .nice();
             }
           } else if (tmp[0] === tmp[1]) {
-              y[d] = d3.scaleLinear()
-                .domain([tmp[0] - 1, tmp[1] + 1])
-                .range([height, 0])
-                .nice();
-            } else {
-              y[d] = d3.scaleLinear()
-                .domain(tmp)
-                .range([height, 0])
-                .nice();
-            }
+            y[d] = d3
+              .scaleLinear()
+              .domain([tmp[0] - 1, tmp[1] + 1])
+              .range([height, 0])
+              .nice();
+          } else {
+            y[d] = d3
+              .scaleLinear()
+              .domain(tmp)
+              .range([height, 0])
+              .nice();
+          }
         } else {
           vals.sort();
-          y[d] = d3.scalePoint()
-            .domain(vals.filter( (v, i) => {
-              return vals.indexOf(v) === i;
-            }))
+          y[d] = d3
+            .scalePoint()
+            .domain(
+              vals.filter((v, i) => {
+                return vals.indexOf(v) === i;
+              })
+            )
             .range([height, 0], 1);
         }
       });
-      const extents = dimensions.map( () => {
+      const extents = dimensions.map(() => {
         return [0, 0];
       });
       function position(d) {
@@ -214,32 +242,43 @@ export default {
 
       // Returns the path for a given data point.
       function path(d) {
-        return line(dimensions.map( (p) => {
-          return [position(p), y[p](d[p])];
-        }));
+        return line(
+          dimensions.map((p) => {
+            return [position(p), y[p](d[p])];
+          })
+        );
       }
-       // Add grey background lines for context.
-      const background = svg.append('g')
+      // Add grey background lines for context.
+      const background = svg
+        .append('g')
         .attr('class', 'background')
         .selectAll('path')
         .data(data)
-        .enter().append('path')
+        .enter()
+        .append('path')
         .attr('d', path)
         .attr('fill', 'none');
 
-      const linear = d3.scaleLinear().domain([0, 50]).range([maxData, minData]);
-      const colorMap = d3.scaleSequential()
+      const linear = d3
+        .scaleLinear()
+        .domain([0, 50])
+        .range([maxData, minData]);
+      const colorMap = d3
+        .scaleSequential()
         .domain([maxData, minData])
         .interpolator(d3.interpolateSpectral);
-      const foreground = svg.append('g')
+      const foreground = svg
+        .append('g')
         .attr('class', 'foreground')
         .selectAll('path')
         .data(data)
-        .enter().append('path')
+        .enter()
+        .append('path')
         .attr('d', path)
         .attr('stroke', (d) => {
           return colorMap(d[colorItem]);
-        }).attr('fill', 'none')
+        })
+        .attr('fill', 'none')
         .on('mouseover', function _nonName(d) {
           this.parentNode.appendChild(this);
           d3.select(this)
@@ -261,8 +300,8 @@ export default {
 
       function localSelectedData() {
         const tempData = [];
-        foreground.each( (d) => {
-          const isTrue = dimensions.every( (p, i) => {
+        foreground.each((d) => {
+          const isTrue = dimensions.every((p, i) => {
             if (extents[i][0] === 0 && extents[i][0] === 0) {
               return true;
             }
@@ -281,13 +320,15 @@ export default {
 
         extents[dimensionsIndex] = [0, 0];
 
-        foreground.style('display',  (d) => {
-          return dimensions.every( (p, i) => {
+        foreground.style('display', (d) => {
+          return dimensions.every((p, i) => {
             if (extents[i][0] === 0 && extents[i][0] === 0) {
               return true;
             }
             return extents[i][1] <= d[p] && d[p] <= extents[i][0];
-          }) ? null : 'none';
+          })
+            ? null
+            : 'none';
         });
         localSelectedData();
       }
@@ -299,13 +340,15 @@ export default {
             extents[i] = d3.event.selection.map(y[dimensions[i]].invert, y[dimensions[i]]);
           }
         }
-        foreground.style('display',  (d) => {
-          return dimensions.every( (p, i) => {
+        foreground.style('display', (d) => {
+          return dimensions.every((p, i) => {
             if (extents[i][0] === 0 && extents[i][0] === 0) {
               return true;
             }
             return extents[i][1] <= d[p] && d[p] <= extents[i][0];
-          }) ? null : 'none';
+          })
+            ? null
+            : 'none';
         });
         localSelectedData();
       }
@@ -316,7 +359,9 @@ export default {
         for (let i = 0; i < dimensions.length; i += 1) {
           if (d3.event.target === y[dimensions[i]].brush) {
             extents[i] = d3.event.selection.map(y[dimensions[i]].invert, y[dimensions[i]]);
-            d3.select(this).transition().call(d3.event.target.move, extents[i].map(y[dimensions[i]]));
+            d3.select(this)
+              .transition()
+              .call(d3.event.target.move, extents[i].map(y[dimensions[i]]));
           }
         }
         localSelectedData();
@@ -326,21 +371,23 @@ export default {
         for (let i = 0; i < dimensions.length; i += 1) {
           if (d3.event.target === y[dimensions[i]].brush) {
             const yScale = y[dimensions[i]];
-            const selected = yScale.domain().filter( (d) => {
+            const selected = yScale.domain().filter((d) => {
               const s = d3.event.selection;
-              return (s[0] <= yScale(d)) && (yScale(d) <= s[1]);
+              return s[0] <= yScale(d) && yScale(d) <= s[1];
             });
             const temp = selected.sort();
             extents[i] = [temp[temp.length - 1], temp[0]];
           }
         }
-        foreground.style('display',  (d) => {
-          return dimensions.every( (p, i) =>  {
+        foreground.style('display', (d) => {
+          return dimensions.every((p, i) => {
             if (extents[i][0] === 0 && extents[i][0] === 0) {
               return true;
             }
             return extents[i][1] <= d[p] && d[p] <= extents[i][0];
-          }) ? null : 'none';
+          })
+            ? null
+            : 'none';
         });
       }
       function brushEndOrdinal() {
@@ -349,27 +396,38 @@ export default {
         for (let i = 0; i < dimensions.length; i += 1) {
           if (d3.event.target === y[dimensions[i]].brush) {
             const yScale = y[dimensions[i]];
-            const selected = yScale.domain().filter( (d) => {
+            const selected = yScale.domain().filter((d) => {
               const s = d3.event.selection;
-              return (s[0] <= yScale(d)) && (yScale(d) <= s[1]);
+              return s[0] <= yScale(d) && yScale(d) <= s[1];
             });
             const temp = selected.sort();
             extents[i] = [temp[temp.length - 1], temp[0]];
             if (selected.length > 1) {
-              d3.select(this).transition().call(d3.event.target.move, extents[i].map(y[dimensions[i]]));
+              d3.select(this)
+                .transition()
+                .call(d3.event.target.move, extents[i].map(y[dimensions[i]]));
             }
           }
         }
         localSelectedData();
       }
 
-     
       // draw legned
       const minMaxFormat = d3.format('.2f');
-      const legendBox = svg.append('g')
+      const legendBox = svg
+        .append('g')
         .attr('class', 'legend')
-        .attr('transform', `translate(${  x(dimensions[this.keys.length - 1]) + 40  },${  height + margin.top + margin.bottom - 130  })`);
-      legendBox.selectAll('rect').data(d3.range(50)).enter()
+        .attr(
+          'transform',
+          `translate(${x(dimensions[this.keys.length - 1]) + 40},${height +
+            margin.top +
+            margin.bottom -
+            130})`
+        );
+      legendBox
+        .selectAll('rect')
+        .data(d3.range(50))
+        .enter()
         .append('rect')
         .attr('x', '10px')
         .attr('y', (d, i) => i)
@@ -395,45 +453,50 @@ export default {
         .attr('x', '8px')
         .attr('y', '-3px');
       // Add a group element for each dimension.
-      const g = svg.selectAll('.dimension')
+      const g = svg
+        .selectAll('.dimension')
         .data(dimensions)
-        .enter().append('g')
+        .enter()
+        .append('g')
         .attr('class', 'dimension')
         .attr('transform', (d) => {
-          return `translate(${  x(d)  })`;
+          return `translate(${x(d)})`;
         })
-        .call(d3.drag()
-          .subject( (d) => {
-            return {
-              x: x(d),
-            };
-          })
-          .on('start', (d) => {
-            dragging[d] = x(d);
-            background.attr('visibility', 'hidden');
-          })
-          .on('drag', (d) => {
-            dragging[d] = Math.min(width, Math.max(0, d3.event.x));
-            foreground.attr('d', path);
-            dimensions.sort( (a, b) => {
-              return position(a) - position(b);
-            });
-            x.domain(dimensions);
-            g.attr('transform', (d) => {
-              return `translate(${  position(d)  })`;
-            });
-          })
-          .on('end', function _nonName(d) {
-            delete dragging[d];
-            transition(d3.select(this)).attr('transform', `translate(${  x(d)  })`);
-            transition(foreground).attr('d', path);
-            background
-              .attr('d', path)
-              .transition()
-              .delay(500)
-              .duration(0)
-              .attr('visibility', null);
-          }));
+        .call(
+          d3
+            .drag()
+            .subject((d) => {
+              return {
+                x: x(d),
+              };
+            })
+            .on('start', (d) => {
+              dragging[d] = x(d);
+              background.attr('visibility', 'hidden');
+            })
+            .on('drag', (d) => {
+              dragging[d] = Math.min(width, Math.max(0, d3.event.x));
+              foreground.attr('d', path);
+              dimensions.sort((a, b) => {
+                return position(a) - position(b);
+              });
+              x.domain(dimensions);
+              g.attr('transform', (d) => {
+                return `translate(${position(d)})`;
+              });
+            })
+            .on('end', function _nonName(d) {
+              delete dragging[d];
+              transition(d3.select(this)).attr('transform', `translate(${x(d)})`);
+              transition(foreground).attr('d', path);
+              background
+                .attr('d', path)
+                .transition()
+                .delay(500)
+                .duration(0)
+                .attr('visibility', null);
+            })
+        );
       // Add an axis and title.
       const g2 = svg.selectAll('.dimension');
       g2.append('g')
@@ -447,46 +510,65 @@ export default {
         .attr('fill', 'white')
         .style('text-anchor', 'middle')
         .attr('y', height + 18)
-        .text( (d) => {
+        .text((d) => {
           return d;
         });
-      d3.selectAll('.dimension')
-        .each( function _nonName(d) {
-          const t = d3.select(this).select('text.axisText').node().getBBox();
-          d3.select(this).append('rect')
-            .attr('class', 'backgroundRect')
-            .attr('x', () => {
-              return -(t.width + 10) / 2;
-            })
-            .attr('y', height + 10)
-            .attr('height', t.height + 6)
-            .attr('width', t.width + 9)
-            .attr('rx', 3)
-            .attr('ry', 3);
-          d3.select(this).append('text')
-            .attr('class', 'backgroundText')
-            .attr('fill', 'rgb(44, 99, 155)')
-            .attr('font-size', '6px')
-            .style('text-anchor', 'middle')
-            .attr('y', height + 18)
-            .text(d);
-        });
+      d3.selectAll('.dimension').each(function _nonName(d) {
+        const t = d3
+          .select(this)
+          .select('text.axisText')
+          .node()
+          .getBBox();
+        d3.select(this)
+          .append('rect')
+          .attr('class', 'backgroundRect')
+          .attr('x', () => {
+            return -(t.width + 10) / 2;
+          })
+          .attr('y', height + 10)
+          .attr('height', t.height + 6)
+          .attr('width', t.width + 9)
+          .attr('rx', 3)
+          .attr('ry', 3);
+        d3.select(this)
+          .append('text')
+          .attr('class', 'backgroundText')
+          .attr('fill', 'rgb(44, 99, 155)')
+          .attr('font-size', '6px')
+          .style('text-anchor', 'middle')
+          .attr('y', height + 18)
+          .text(d);
+      });
       // Add and store a brush for each axis.
       g2.append('g')
         .attr('class', 'brush')
-        .each( function _nonName(d) {
+        .each(function _nonName(d) {
           if (_this.items.indexOf(d) <= -1) {
-            d3.select(this).call(y[d].brush = d3.brushY().extent([
-              [-4, 0],
-              [4, height],
-            ]).on('brush start', brushStart).on('brush', goBrush).on('brush',
-              brushParallel).on('end', brushEndOrdinal));
+            d3.select(this).call(
+              (y[d].brush = d3
+                .brushY()
+                .extent([
+                  [-4, 0],
+                  [4, height],
+                ])
+                .on('brush start', brushStart)
+                .on('brush', goBrush)
+                .on('brush', brushParallel)
+                .on('end', brushEndOrdinal))
+            );
           } else {
-            d3.select(this).call(y[d].brush = d3.brushY().extent([
-              [-4, 0],
-              [4, height],
-            ]).on('brush start', brushStart).on('brush', goBrush).on('brush',
-              brushParallelChart).on('end', brushEnd));
+            d3.select(this).call(
+              (y[d].brush = d3
+                .brushY()
+                .extent([
+                  [-4, 0],
+                  [4, height],
+                ])
+                .on('brush start', brushStart)
+                .on('brush', goBrush)
+                .on('brush', brushParallelChart)
+                .on('end', brushEnd))
+            );
           }
         })
         .selectAll('rect')
@@ -500,18 +582,19 @@ export default {
     unhighlight(d) {
       d3.select('.foreground')
         .selectAll('path')
-        .each( function _nonName(s){
+        .each(function _nonName(s) {
           let orderedD = {};
           let orderedS = {};
-          Object.keys(d).sort().forEach( (key) => {
-            orderedD[key] = d[key];
-            orderedS[key] = s[key];
-          });
+          Object.keys(d)
+            .sort()
+            .forEach((key) => {
+              orderedD[key] = d[key];
+              orderedS[key] = s[key];
+            });
           orderedS = JSON.stringify(orderedS);
           orderedD = JSON.stringify(orderedD);
           if (orderedS === orderedD) {
-            d3.select(this)
-              .attr('stroke-width', '1px');
+            d3.select(this).attr('stroke-width', '1px');
           }
         });
     },
@@ -519,19 +602,20 @@ export default {
       this.setFocusData(JSON.parse(JSON.stringify(d)));
       d3.select('.foreground')
         .selectAll('path')
-        .each( function _nonName(s) {
+        .each(function _nonName(s) {
           let orderedD = {};
           let orderedS = {};
-          Object.keys(d).sort().forEach( (key) => {
-            orderedD[key] = d[key];
-            orderedS[key] = s[key];
-          });
+          Object.keys(d)
+            .sort()
+            .forEach((key) => {
+              orderedD[key] = d[key];
+              orderedS[key] = s[key];
+            });
           orderedS = JSON.stringify(orderedS);
           orderedD = JSON.stringify(orderedD);
           if (orderedS === orderedD) {
             this.parentNode.appendChild(this);
-            d3.select(this)
-              .attr('stroke-width', '2px');
+            d3.select(this).attr('stroke-width', '2px');
           }
         });
     },
@@ -547,19 +631,17 @@ export default {
       return '';
     },
     leftTransform(leftDim, dimensions) {
-      d3.selectAll('.dimension')
-        .each( function _nonName(d) {
-          if (dimensions[0] === d) {
-            d3.select(this)
-              .attr('transform', `translate(${  leftDim  })`);
-          }
-        });
+      d3.selectAll('.dimension').each(function _nonName(d) {
+        if (dimensions[0] === d) {
+          d3.select(this).attr('transform', `translate(${leftDim})`);
+        }
+      });
     },
   },
 };
 </script>
 
-<style lang='less' scroped>
+<style lang="less" scroped>
 svg {
   font: sans-serif;
 }

@@ -1,52 +1,61 @@
 /** Copyright 2020 Tianshu AI Platform. All Rights Reserved.
-*
-* Licensed under the Apache License, Version 2.0 (the "License");
-* you may not use this file except in compliance with the License.
-* You may obtain a copy of the License at
-*
-*     http://www.apache.org/licenses/LICENSE-2.0
-*
-* Unless required by applicable law or agreed to in writing, software
-* distributed under the License is distributed on an "AS IS" BASIS,
-* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-* See the License for the specific language governing permissions and
-* limitations under the License.
-* =============================================================
-*/
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ * =============================================================
+ */
 
 <template>
   <div class="app-container">
     <div class="head-container">
-      <cdOperation :addProps="operationProps" :delProps="operationProps">
-        <el-button 
-          slot="left" 
-          class="filter-item" 
+      <cdOperation :addProps="operationProps">
+        <el-button
+          slot="left"
+          class="filter-item"
           type="primary"
           icon="el-icon-plus"
-          round 
+          round
           @click="doCreate"
         >
           创建标签组
         </el-button>
         <span slot="right">
-          <el-input 
-            v-model="query.name" 
-            placeholder="输入名称或ID查询标签组" 
+          <el-input
+            v-model="query.name"
+            placeholder="输入名称或ID查询标签组"
             style="width: 200px;"
             class="filter-item"
-            @keyup.enter.native="crud.toQuery" 
+            @keyup.enter.native="crud.toQuery"
           />
           <rrOperation @resetQuery="onResetQuery" />
         </span>
       </cdOperation>
     </div>
     <div class="mb-10 flex flex-between">
-      <el-tabs :value="activePanelLabelGroup" class="eltabs-inlineblock" @tab-click="handlePanelClick">
+      <el-tabs
+        :value="activePanelLabelGroup"
+        class="eltabs-inlineblock"
+        @tab-click="handlePanelClick"
+      >
         <el-tab-pane label="我的标签组" name="0" />
         <el-tab-pane label="预置标签组" name="1" />
       </el-tabs>
       <div>
-        <el-button class="filter-item with-border" style="padding: 8px;" icon="el-icon-refresh" @click="onResetFresh"/>
+        <el-button
+          class="filter-item with-border"
+          style="padding: 8px;"
+          icon="el-icon-refresh"
+          @click="onResetFresh"
+        />
       </div>
     </div>
     <!--表格渲染-->
@@ -65,35 +74,32 @@
         show-overflow-tooltip
         prop="name"
         label="名称"
-        min-width="160"
+        min-width="148"
         align="left"
         class-name="dataset-name-col"
       >
         <template slot-scope="scope">
-          <el-link class="mr-10 name-col" @click="goDetail(scope.row)">{{ scope.row.name }}</el-link>
+          <el-link class="mr-10 name-col" type="primary" @click="goDetail(scope.row)">{{
+            scope.row.name
+          }}</el-link>
         </template>
       </el-table-column>
       <el-table-column
         prop="labelGroupType"
         :formatter="parseLabelGroupType"
         min-width="80"
-        align='left'
+        align="left"
       >
         <template slot="header">
           <dropdown-header
             title="类型"
             :list="labelGroupTypeList"
             :filtered="!isNil(labelGroupType)"
-            @command="cmd => filter('labelGroupType', cmd)"
+            @command="(cmd) => filter('labelGroupType', cmd)"
           />
         </template>
-      </el-table-column>  
-      <el-table-column
-        prop="count"
-        min-width="80"
-        label="标签数量"
-        align="left"
-      />
+      </el-table-column>
+      <el-table-column prop="count" min-width="80" label="标签数量" align="left" />
       <el-table-column
         prop="updateTime"
         min-width="160"
@@ -124,8 +130,9 @@
         :goDetail="goDetail"
         :doEdit="doEdit"
         :doFork="showFork"
+        :doConvert="doConvert"
       />
-    </el-table>    
+    </el-table>
     <!--分页组件-->
     <el-pagination
       :page-size.sync="crud.page.size"
@@ -149,11 +156,8 @@
         <el-form-item label="名称" prop="name">
           <el-input v-model="forkForm.name" placeholder="标签组名称不能超过50字" maxlength="50" />
         </el-form-item>
-        <el-form-item label="类型" prop="labelGroupType" >
-          <el-input
-            v-model="labelGroupTypeMap[forkForm.labelGroupType]"
-            disabled
-          />
+        <el-form-item label="类型" prop="labelGroupType">
+          <el-input v-model="forkLabelGroupType" disabled />
         </el-form-item>
         <el-form-item label="描述" prop="remark">
           <el-input
@@ -183,7 +187,11 @@
 import { isNil } from 'lodash';
 import { mapState } from 'vuex';
 
-import crudLabelGroup, { copy as LabelGroupFork, getLabelGroupDetail } from '@/api/preparation/labelGroup';
+import crudLabelGroup, {
+  copy as LabelGroupFork,
+  getLabelGroupDetail,
+  convertPreset,
+} from '@/api/preparation/labelGroup';
 import CRUD, { presenter, header, form, crud } from '@crud/crud';
 import rrOperation from '@crud/RR.operation';
 import cdOperation from '@crud/CD.operation';
@@ -191,12 +199,12 @@ import cdOperation from '@crud/CD.operation';
 import { formatDateTime } from '@/utils';
 import { validateName } from '@/utils/validate';
 import store from '@/store';
+import { labelGroupTypeMap } from '@/views/dataset/util';
 
 import DropdownHeader from '@/components/DropdownHeader';
 import BaseModal from '@/components/BaseModal';
-import { labelGroupTypeMap } from './util';
 import LabelGroupAction from './labelGroupAction';
-import "@/views/dataset/style/list.scss";
+import '@/views/dataset/style/list.scss';
 
 const defaultForm = {
   id: null,
@@ -215,6 +223,7 @@ export default {
     LabelGroupAction,
     DropdownHeader,
   },
+
   cruds() {
     return CRUD({
       title: '标签组管理',
@@ -225,7 +234,9 @@ export default {
       queryOnPresenterCreated: false,
     });
   },
+
   mixins: [presenter(), header(), form(defaultForm), crud()],
+
   data() {
     return {
       forkVisible: false, // fork对话框
@@ -236,7 +247,7 @@ export default {
         showOkLoading: false,
         type: null,
       },
-      forkForm : {
+      forkForm: {
         id: null,
         name: null,
         labels: null,
@@ -250,24 +261,24 @@ export default {
           { validator: validateName, trigger: ['change', 'blur'] },
         ],
         labelGroupType: [
-          {required: true, message: '请选择标签组类型', trigger: ['change', 'blur'] },
+          { required: true, message: '请选择标签组类型', trigger: ['change', 'blur'] },
         ],
-        remark: [
-          { required: false, message: '请输入标签组描述信息', trigger: 'blur' },
-        ],
+        remark: [{ required: false, message: '请输入标签组描述信息', trigger: 'blur' }],
       },
-      labelGroupTypeMap,
     };
   },
+
   computed: {
     ...mapState({
-      activePanelLabelGroup: state => {
+      activePanelLabelGroup: (state) => {
         return String(state.dataset.activePanelLabelGroup);
       },
     }),
+
     isNil() {
       return isNil;
     },
+
     localQuery() {
       return {
         type: this.activePanelLabelGroup || 0,
@@ -275,21 +286,23 @@ export default {
     },
 
     labelGroupTypeList() {
-      const rawLabelGroupTypeList = Object.keys(labelGroupTypeMap).map(d => ({
-        label: labelGroupTypeMap[d],
-        value: Number(d),
-      }));
-      return [{ label: '全部', value: null }].concat(rawLabelGroupTypeList);
+      return [{ label: '全部', value: null }].concat(Object.values(labelGroupTypeMap));
     },
 
     // 区分预置标签组和普通便签组操作权限
     operationProps() {
       return Number(this.activePanelLabelGroup) === 1 ? { disabled: true } : undefined;
     },
+
+    forkLabelGroupType() {
+      return this.getLabelGroupLabel(this.forkForm.labelGroupType);
+    },
   },
+
   created() {
     this.crud.toQuery();
   },
+
   mounted() {
     if (this.$route.params.type === 'add') {
       setTimeout(() => {
@@ -300,8 +313,14 @@ export default {
 
   methods: {
     [CRUD.HOOK.beforeRefresh]() {
-      this.crud.query = { ...this.query, ...this.localQuery};
+      this.crud.query = { ...this.query, ...this.localQuery };
     },
+
+    // 根据值获取标签值
+    getLabelGroupLabel(value) {
+      return (Object.values(labelGroupTypeMap).find((d) => d.value === value) || {}).label;
+    },
+
     onResetQuery() {
       // 重置查询条件
       this.query = {};
@@ -313,10 +332,12 @@ export default {
       // 重置表格的排序和筛选条件
       this.$refs.table.clearSort();
     },
+
     onResetFresh() {
       this.onResetQuery();
       this.crud.refresh();
     },
+
     handlePanelClick(tab) {
       this.onResetQuery();
       store.dispatch('dataset/togglePanelLabelGroup', Number(tab.name));
@@ -326,15 +347,16 @@ export default {
       this.crud.refresh();
     },
     formatDate(row, column, cellValue) {
-      if(isNil(cellValue)){
+      if (isNil(cellValue)) {
         return cellValue;
       }
       return formatDateTime(cellValue);
     },
 
     parseLabelGroupType(row, column, cellValue = 0) {
-      return labelGroupTypeMap[cellValue];
+      return this.getLabelGroupLabel(cellValue);
     },
+
     filter(column, value) {
       this[column] = value;
       this.crud.params[column] = value;
@@ -346,7 +368,8 @@ export default {
       this.$router.push({
         path: `/data/labelgroup/create`,
       });
-    }, 
+    },
+
     // 查看标签组详情
     goDetail(row) {
       this.$router.push({
@@ -356,6 +379,7 @@ export default {
         },
       });
     },
+
     // 编辑标签组
     doEdit(row) {
       this.$router.push({
@@ -365,10 +389,31 @@ export default {
         },
       });
     },
+
+    // 转为预置标签组
+    doConvert(row) {
+      convertPreset({ labelGroupId: row.id })
+        .then(() => {
+          this.$message({
+            message: '成功转为预置标签组',
+            type: 'success',
+          });
+        })
+        .catch((e) => {
+          this.$message({
+            message: e.message || '转为预置标签组失败',
+            type: 'error',
+          });
+        });
+      setTimeout(() => {
+        this.onResetFresh();
+      }, 500);
+    },
+
     // 显示fork对话框
     showFork(row) {
       this.showActionModal(row, 'fork');
-      getLabelGroupDetail(row.id).then(res => {
+      getLabelGroupDetail(row.id).then((res) => {
         Object.assign(this.forkForm, {
           name: res.name,
           remark: res.remark,
@@ -379,9 +424,11 @@ export default {
         });
       });
     },
+
     handleCancel() {
       this.resetActionModal();
     },
+
     handleFork() {
       LabelGroupFork(this.forkForm);
       this.resetActionModal();
@@ -398,6 +445,7 @@ export default {
         type,
       };
     },
+
     resetActionModal() {
       this.actionModal = {
         show: false,

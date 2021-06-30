@@ -1,18 +1,18 @@
 /** Copyright 2020 Tianshu AI Platform. All Rights Reserved.
-*
-* Licensed under the Apache License, Version 2.0 (the "License");
-* you may not use this file except in compliance with the License.
-* You may obtain a copy of the License at
-*
-*     http://www.apache.org/licenses/LICENSE-2.0
-*
-* Unless required by applicable law or agreed to in writing, software
-* distributed under the License is distributed on an "AS IS" BASIS,
-* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-* See the License for the specific language governing permissions and
-* limitations under the License.
-* =============================================================
-*/
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ * =============================================================
+ */
 
 import { getHistogram, getDistribution } from '@/api/visual';
 /* eslint-disable no-await-in-loop */
@@ -37,7 +37,19 @@ const state = {
   histCheckedArray: [], // 用户定制选中
   distCheckedArray: [],
   // 不同run不同颜色
-  statisticColor: ['#9FA5FA', '#6dd2f0', '#c06f98', '#f07c82', '#57c3c2', '#9359b1', '#8cc269', '#ffa60f', '#de5991', '#EA7E53', '#cc95c0'], // #6464FF
+  statisticColor: [
+    '#9FA5FA',
+    '#6dd2f0',
+    '#c06f98',
+    '#f07c82',
+    '#57c3c2',
+    '#9359b1',
+    '#8cc269',
+    '#ffa60f',
+    '#de5991',
+    '#EA7E53',
+    '#cc95c0',
+  ], // #6464FF
   // 控制面板信息
   statisticInfo: [],
   errorMessage: '',
@@ -90,11 +102,20 @@ const actions = {
     for (let k = 0; k < context.state.dataSets.length; k += 1) {
       for (let i = 0; i < context.state.histTags[k].length; i += 1) {
         await getDistribution({ run: context.state.dataSets[k], tag: context.state.histTags[k][i] })
-          .then(res => {
-            context.commit('storeDistData', [context.state.dataSets[k], context.state.histTags[k][i], res[context.state.histTags[k][i]], k]);
+          .then((res) => {
+            context.commit('storeDistData', [
+              context.state.dataSets[k],
+              context.state.histTags[k][i],
+              res[context.state.histTags[k][i]],
+              k,
+            ]);
             context.commit('manageDistData');
-          }).catch((e) => {
-            context.commit('setErrorMessage', `${context.state.dataSets[k]  },${  context.state.histTags[k][i]  },${  e}`);
+          })
+          .catch((e) => {
+            context.commit(
+              'setErrorMessage',
+              `${context.state.dataSets[k]},${context.state.histTags[k][i]},${e}`
+            );
           });
       }
     }
@@ -105,22 +126,33 @@ const actions = {
     context.commit('setDrawAllSvgFinished', false);
     for (let k = 0; k < context.state.dataSets.length; k += 1) {
       for (let i = 0; i < context.state.histTags[k].length; i += 1) {
-        await getHistogram(
-          { run: context.state.dataSets[k], tag: context.state.histTags[k][i] })
-          .then(res => {
+        await getHistogram({ run: context.state.dataSets[k], tag: context.state.histTags[k][i] })
+          .then((res) => {
             // 根据数据step个数确定显示比例
             const dataLen = res[context.state.histTags[k][i]].length;
-            if ((dataLen > 50) && (5000.0 / dataLen < context.state.showNumber)) {
+            if (dataLen > 50 && 5000.0 / dataLen < context.state.showNumber) {
               context.commit('changeShownumber', Math.round(5000.0 / dataLen));
             }
             // 根据上面也可以确定桶个数的最大值
-            if (k === context.state.dataSets.length - 1 && i === context.state.histTags[k].length - 1) {
+            if (
+              k === context.state.dataSets.length - 1 &&
+              i === context.state.histTags[k].length - 1
+            ) {
               context.commit('setFeatchDataFinished', true);
             }
-            context.commit('storeHistData', [context.state.dataSets[k], context.state.histTags[k][i], res[context.state.histTags[k][i]], k]);
+            context.commit('storeHistData', [
+              context.state.dataSets[k],
+              context.state.histTags[k][i],
+              res[context.state.histTags[k][i]],
+              k,
+            ]);
             context.commit('manageHistData', false);
-          }).catch((e) => {
-            context.commit('setErrorMessage', `${context.state.dataSets[k]  },${  context.state.histTags[k][i]  },${  e}`);
+          })
+          .catch((e) => {
+            context.commit(
+              'setErrorMessage',
+              `${context.state.dataSets[k]},${context.state.histTags[k][i]},${e}`
+            );
           });
       }
     }
@@ -191,7 +223,13 @@ const mutations = {
         newData[i][j].push(newData[i - 1][j][1]);
       }
     }
-    state.distData.push([state.oldDistData[k][0], state.oldDistData[k][1], newData, state.oldDistData[k][3], k]);
+    state.distData.push([
+      state.oldDistData[k][0],
+      state.oldDistData[k][1],
+      newData,
+      state.oldDistData[k][3],
+      k,
+    ]);
     state.distCheckedArray.push(false);
   },
   clearData: (state) => {
@@ -224,7 +262,8 @@ const mutations = {
         if (max < data[i][3]) max = data[i][3];
       }
       const binWidth = (max - min) / state.binNum;
-      for (let i = 0; i < data.length; i += 1) { // 遍历step
+      for (let i = 0; i < data.length; i += 1) {
+        // 遍历step
         const onedata = data[i][4];
         // 处理一下首尾
         onedata[0][0] = onedata[0][1] - binWidth / 2;
@@ -244,21 +283,30 @@ const mutations = {
             const maxleft = Math.max(binleft, onedata[curbucket][0]);
             const curBinWidth = onedata[curbucket][1] - onedata[curbucket][0];
             if (binright <= onedata[curbucket][1]) {
-              if (curBinWidth !== 0) count += (binright - maxleft) / curBinWidth * onedata[curbucket][2];
+              if (curBinWidth !== 0)
+                count += ((binright - maxleft) / curBinWidth) * onedata[curbucket][2];
               break;
-            } else if (curBinWidth !== 0) count += (onedata[curbucket][1] - maxleft) / curBinWidth * onedata[curbucket][2];
+            } else if (curBinWidth !== 0)
+              count += ((onedata[curbucket][1] - maxleft) / curBinWidth) * onedata[curbucket][2];
           }
           newOneData.push([(binleft + binright) / 2, count, data[i][1]]);
         }
         newOneData.push([max + binWidth / 2, 0, data[i][1]]);
         newdata.push(newOneData);
       }
-      histDataTemp.push([state.oldHistData[k][0], state.oldHistData[k][1], newdata, state.oldHistData[k][3], k]);
+      histDataTemp.push([
+        state.oldHistData[k][0],
+        state.oldHistData[k][1],
+        newdata,
+        state.oldHistData[k][3],
+        k,
+      ]);
     }
     if (!param) {
       state.histData.push(histDataTemp[0]);
       state.histCheckedArray.push(false);
-    } else { // 修改桶数
+    } else {
+      // 修改桶数
       state.histData = histDataTemp;
     }
   },

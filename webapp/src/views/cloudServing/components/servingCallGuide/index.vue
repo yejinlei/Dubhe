@@ -1,39 +1,27 @@
 /** Copyright 2020 Tianshu AI Platform. All Rights Reserved.
-*
-* Licensed under the Apache License, Version 2.0 (the "License");
-* you may not use this file except in compliance with the License.
-* You may obtain a copy of the License at
-*
-*     http://www.apache.org/licenses/LICENSE-2.0
-*
-* Unless required by applicable law or agreed to in writing, software
-* distributed under the License is distributed on an "AS IS" BASIS,
-* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-* See the License for the specific language governing permissions and
-* limitations under the License.
-* =============================================================
-*/
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ * =============================================================
+ */
 
 <template>
   <div id="serving-call-guide-wrapper">
-    <el-form
-      label-width="100px"
-      label-position="left"
-    >
-      <el-form-item
-        label="接口地址："
-      >
-        <el-input
-          id="apiAddress"
-          v-model="apiAddress"
-          class="api-input"
-          readonly
-        />
-        <el-button
-          id="copy-btn"
-          data-clipboard-target="#apiAddress"
-          @click="onCopy"
-        >Copy</el-button>
+    <el-form label-width="100px" label-position="left">
+      <el-form-item label="接口地址：">
+        <el-input id="apiAddress" v-model="apiAddress" class="api-input" readonly />
+        <el-button id="copy-btn" data-clipboard-target="#apiAddress" @click="onCopy"
+          >Copy</el-button
+        >
       </el-form-item>
     </el-form>
     <p>参数配置</p>
@@ -50,7 +38,14 @@
 </template>
 
 <script>
-import { ref, computed, toRefs, onMounted, onBeforeUnmount, onActivated } from '@vue/composition-api';
+import {
+  ref,
+  computed,
+  toRefs,
+  onMounted,
+  onBeforeUnmount,
+  onActivated,
+} from '@vue/composition-api';
 import Clipboard from 'clipboard';
 import { Message } from 'element-ui';
 
@@ -74,9 +69,9 @@ export default {
   setup(props, ctx) {
     // clipboard
     const clipboard = ref(null);
-    const initClipboard  = () => {
+    const initClipboard = () => {
       clipboard.value = new Clipboard('#copy-btn');
-      clipboard.value.on('success', e => {
+      clipboard.value.on('success', (e) => {
         e.clearSelection();
       });
     };
@@ -96,7 +91,7 @@ export default {
       const { other: otherObj } = predictParam.value;
       const other = [];
       if (otherObj) {
-        Object.keys(otherObj).forEach(key => {
+        Object.keys(otherObj).forEach((key) => {
           other.push({
             name: key,
             data: map2Array(otherObj[key]),

@@ -1,18 +1,18 @@
 /** Copyright 2020 Tianshu AI Platform. All Rights Reserved.
-*
-* Licensed under the Apache License, Version 2.0 (the "License");
-* you may not use this file except in compliance with the License.
-* You may obtain a copy of the License at
-*
-*     http://www.apache.org/licenses/LICENSE-2.0
-*
-* Unless required by applicable law or agreed to in writing, software
-* distributed under the License is distributed on an "AS IS" BASIS,
-* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-* See the License for the specific language governing permissions and
-* limitations under the License.
-* =============================================================
-*/
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ * =============================================================
+ */
 
 <template>
   <div class="temp">
@@ -27,7 +27,12 @@
             <div class="hypPanelSelect">
               <span>主参数：</span>
               <el-select v-model="selected" placeholder="请选择">
-                <el-option v-for="(item, index) in getMainParams" :key="index" :label="item" :value="item" />
+                <el-option
+                  v-for="(item, index) in getMainParams"
+                  :key="index"
+                  :label="item"
+                  :value="item"
+                />
               </el-select>
             </div>
             <div>
@@ -35,11 +40,31 @@
               <el-row>
                 <div v-for="(item, index) in getAxisParms" :key="index">
                   <div class="hypScale">
-                    <el-col :span="8"><div>{{ item }}:</div></el-col>
-                    <el-col :span="8"><div><el-radio v-model="getAxisType[item]" label="linear" @change="changeData('linear', item)">Linear</el-radio></div></el-col>
-                    <el-col :span="8"><div><el-radio v-model="getAxisType[item]" label="log" @change="changeData('log', item)">Log</el-radio></div></el-col>
+                    <el-col :span="8"
+                      ><div>{{ item }}:</div></el-col
+                    >
+                    <el-col :span="8"
+                      ><div>
+                        <el-radio
+                          v-model="getAxisType[item]"
+                          label="linear"
+                          @change="changeData('linear', item)"
+                          >Linear</el-radio
+                        >
+                      </div></el-col
+                    >
+                    <el-col :span="8"
+                      ><div>
+                        <el-radio
+                          v-model="getAxisType[item]"
+                          label="log"
+                          @change="changeData('log', item)"
+                          >Log</el-radio
+                        >
+                      </div></el-col
+                    >
                   </div>
-                  <br>
+                  <br />
                 </div>
               </el-row>
             </div>
@@ -54,7 +79,7 @@
         </div>
         <div v-show="!panelShow" class="infoContent infoItem">暂无信息</div>
         <div v-show="panelShow" class="infoContent hypTable">
-          <el-table :data="localSelectedDatas" :header-cell-style="{color:'rgb(96, 97, 174)'}">
+          <el-table :data="localSelectedDatas" :header-cell-style="{ color: 'rgb(96, 97, 174)' }">
             <el-table-column
               v-for="(item, index) in localKeys"
               :key="index"
@@ -93,7 +118,10 @@
 import { createNamespacedHelpers } from 'vuex';
 import * as d3 from 'd3';
 
-const { mapMutations: mapHyperparmMutations, mapGetters: mapHyperparmGatters } = createNamespacedHelpers('Visual/hyperparm');
+const {
+  mapMutations: mapHyperparmMutations,
+  mapGetters: mapHyperparmGatters,
+} = createNamespacedHelpers('Visual/hyperparm');
 export default {
   data() {
     return {
@@ -110,7 +138,17 @@ export default {
     };
   },
   computed: {
-    ...mapHyperparmGatters(['getAllData', 'getSelected', 'getFocusData', 'getGlobalSelectedDatas', 'getAxisType', 'getHypEmpty', 'getKey', 'getAxisParms', 'getMainParams']),
+    ...mapHyperparmGatters([
+      'getAllData',
+      'getSelected',
+      'getFocusData',
+      'getGlobalSelectedDatas',
+      'getAxisType',
+      'getHypEmpty',
+      'getKey',
+      'getAxisParms',
+      'getMainParams',
+    ]),
   },
   watch: {
     getHypEmpty(val) {
@@ -155,15 +193,21 @@ export default {
       const calcItems = this.getMainParams;
       const format = d3.format('.2f');
       let res = [];
-      calcItems.forEach( (d) => {
-        const maxData = d3.max(data, (i) => { return +i[d]; });
-        const minData = d3.min(data, (i) => { return +i[d]; });
-        const meanData = d3.mean(data, (i) => { return +i[d]; });
+      calcItems.forEach((d) => {
+        const maxData = d3.max(data, (i) => {
+          return +i[d];
+        });
+        const minData = d3.min(data, (i) => {
+          return +i[d];
+        });
+        const meanData = d3.mean(data, (i) => {
+          return +i[d];
+        });
         const temp = {
-          'Items': d,
-          'Min': format(minData),
-          'Mean': format(meanData),
-          'Max': format(maxData),
+          Items: d,
+          Min: format(minData),
+          Mean: format(meanData),
+          Max: format(maxData),
         };
         res.push(temp);
       });
@@ -301,9 +345,8 @@ export default {
   color: #9492cb;
 }
 
-/deep/ .information [class*=" el-icon-"],
-[class^=el-icon-] {
+/deep/ .information [class*=' el-icon-'],
+[class^='el-icon-'] {
   font-weight: 900;
 }
-
 </style>

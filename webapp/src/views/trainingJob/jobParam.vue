@@ -1,18 +1,18 @@
 /** Copyright 2020 Tianshu AI Platform. All Rights Reserved.
-*
-* Licensed under the Apache License, Version 2.0 (the "License");
-* you may not use this file except in compliance with the License.
-* You may obtain a copy of the License at
-*
-*     http://www.apache.org/licenses/LICENSE-2.0
-*
-* Unless required by applicable law or agreed to in writing, software
-* distributed under the License is distributed on an "AS IS" BASIS,
-* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-* See the License for the specific language governing permissions and
-* limitations under the License.
-* =============================================================
-*/
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ * =============================================================
+ */
 
 <template>
   <div>
@@ -36,7 +36,7 @@
             title="节点类型"
             :list="resourcesPoolTypeList"
             :filtered="Boolean(filterParams.resourcesPoolType)"
-            @command="cmd => filter('resourcesPoolType', cmd)"
+            @command="(cmd) => filter('resourcesPoolType', cmd)"
           />
         </template>
         <template slot-scope="scope">
@@ -45,9 +45,21 @@
       </el-table-column>
       <el-table-column label="操作" width="200" fixed="right">
         <template slot-scope="scope">
-          <el-button :id="`goTraining_`+scope.$index" type="text" @click.stop="goTraining(scope.row)">创建训练任务</el-button>
-          <el-button :id="`doEdit_`+scope.$index" type="text" @click.stop="doEdit(scope.row)">编辑</el-button>
-          <el-button :id="`doDelete_`+scope.$index" type="text" @click.stop="doDelete(scope.row.id)">删除</el-button>
+          <el-button
+            :id="`goTraining_` + scope.$index"
+            type="text"
+            @click.stop="goTraining(scope.row)"
+            >创建训练任务</el-button
+          >
+          <el-button :id="`doEdit_` + scope.$index" type="text" @click.stop="doEdit(scope.row)"
+            >编辑</el-button
+          >
+          <el-button
+            :id="`doDelete_` + scope.$index"
+            type="text"
+            @click.stop="doDelete(scope.row.id)"
+            >删除</el-button
+          >
         </template>
       </el-table-column>
     </el-table>
@@ -60,14 +72,14 @@
       :title="crud.status.title"
       :loading="loading"
       width="50%"
-      @cancel="showDialog=false"
+      @cancel="showDialog = false"
       @ok="toEdit"
     >
-      <job-form 
+      <job-form
         v-if="reFresh"
         ref="form"
         :widthPercent="100"
-        type="paramEdit"
+        type="paramsEdit"
         @getForm="getForm"
       />
     </BaseModal>
@@ -146,7 +158,7 @@ export default {
   },
   methods: {
     toQuery(params) {
-      this.crud.query = { ...params};
+      this.crud.query = { ...params };
       this.crud.toQuery();
     },
     filter(column, value) {
@@ -177,7 +189,7 @@ export default {
       this.$refs.form.save();
     },
     async getForm(form) {
-      const params = { ...form};
+      const params = { ...form };
       this.loading = true;
       await editParams(params).finally(() => {
         this.loading = false;
@@ -192,7 +204,7 @@ export default {
     // op
     doEdit(paramsDataObj) {
       this.reFresh = false;
-      this.$nextTick(async() => {
+      this.$nextTick(async () => {
         this.showDialog = true;
         this.$nextTick(() => {
           this.$refs.form.initForm(paramsDataObj);
@@ -201,7 +213,7 @@ export default {
       });
     },
     async doDelete(id) {
-      this.$confirm('此操作将永久删除该任务模板配置, 是否继续?', '请确认').then(async() => {
+      this.$confirm('此操作将永久删除该任务模板配置, 是否继续?', '请确认').then(async () => {
         await deleteParams({ ids: [id] });
         this.$message({
           message: '删除成功',

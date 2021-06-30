@@ -1,24 +1,30 @@
 /** Copyright 2020 Tianshu AI Platform. All Rights Reserved.
-*
-* Licensed under the Apache License, Version 2.0 (the "License");
-* you may not use this file except in compliance with the License.
-* You may obtain a copy of the License at
-*
-*     http://www.apache.org/licenses/LICENSE-2.0
-*
-* Unless required by applicable law or agreed to in writing, software
-* distributed under the License is distributed on an "AS IS" BASIS,
-* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-* See the License for the specific language governing permissions and
-* limitations under the License.
-* =============================================================
-*/
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ * =============================================================
+ */
 
 <template>
   <div>
     <div class="scalars">
       <div class="display-panel">
-        <subScalars v-for="(value, name, index) in totaltag" :key="name" :subname="name" :value="value" :index="index" />
+        <subScalars
+          v-for="(value, name, index) in totaltag"
+          :key="name"
+          :subname="name"
+          :value="value"
+          :index="index"
+        />
       </div>
     </div>
   </div>
@@ -27,7 +33,11 @@
 import { createNamespacedHelpers } from 'vuex';
 import { subScalars } from './subscalar';
 
-const { mapGetters: mapScalarGetters, mapMutations: mapScalarMutations, mapActions: mapScalarActions } = createNamespacedHelpers('Visual/scalar');
+const {
+  mapGetters: mapScalarGetters,
+  mapMutations: mapScalarMutations,
+  mapActions: mapScalarActions,
+} = createNamespacedHelpers('Visual/scalar');
 export default {
   components: {
     subScalars,
@@ -40,9 +50,7 @@ export default {
     };
   },
   computed: {
-    ...mapScalarGetters([
-      'categoryInfo', 'getTotaltag', 'getErrorMessage', 'getFreshInfo',
-    ]),
+    ...mapScalarGetters(['categoryInfo', 'getTotaltag', 'getErrorMessage', 'getFreshInfo']),
   },
   watch: {
     categoryInfo() {
@@ -62,16 +70,10 @@ export default {
       this.settotaltag();
     }
   },
-  mounted() {
-
-  },
+  mounted() {},
   methods: {
-    ...mapScalarMutations([
-      'setTotaltag',
-    ]),
-    ...mapScalarActions([
-      'getData',
-    ]),
+    ...mapScalarMutations(['setTotaltag']),
+    ...mapScalarActions(['getData']),
     settotaltag() {
       if (this.categoryInfo === '') {
         return;
@@ -79,9 +81,9 @@ export default {
       this.data = [].concat(JSON.parse(JSON.stringify(this.categoryInfo)));
       this.totaltag = {};
       let param = {};
-      for (let i = 0; i < this.data[1].length; i+=1) {
+      for (let i = 0; i < this.data[1].length; i += 1) {
         param = JSON.parse(JSON.stringify(this.data[1][i]));
-        for (let j = 0; j < Object.keys(param).length; j+=1) {
+        for (let j = 0; j < Object.keys(param).length; j += 1) {
           if (this.totaltag[Object.keys(param)[j]] === undefined) {
             this.totaltag[Object.keys(param)[j]] = [];
           }
@@ -102,19 +104,19 @@ export default {
 </script>
 
 <style lang="less" scoped>
-    .scalars {
-      width: 100%;
-      height: 100%;
-      overflow-y: auto;
-      background-color: white;
-    }
+.scalars {
+  width: 100%;
+  height: 100%;
+  overflow-y: auto;
+  background-color: white;
+}
 
-    .display-panel {
-      height: 97.5%;
-      margin: 1% 1% 0 1%;
-      overflow-y: auto;
-      background-color: white;
-      border-radius: 5px 5px 0 0;
-      box-shadow: rgba(0, 0, 0, 0.3) 0 0 10px;
-    }
+.display-panel {
+  height: 97.5%;
+  margin: 1% 1% 0 1%;
+  overflow-y: auto;
+  background-color: white;
+  border-radius: 5px 5px 0 0;
+  box-shadow: rgba(0, 0, 0, 0.3) 0 0 10px;
+}
 </style>

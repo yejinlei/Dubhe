@@ -1,18 +1,18 @@
 /** Copyright 2020 Tianshu AI Platform. All Rights Reserved.
-*
-* Licensed under the Apache License, Version 2.0 (the "License");
-* you may not use this file except in compliance with the License.
-* You may obtain a copy of the License at
-*
-*     http://www.apache.org/licenses/LICENSE-2.0
-*
-* Unless required by applicable law or agreed to in writing, software
-* distributed under the License is distributed on an "AS IS" BASIS,
-* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-* See the License for the specific language governing permissions and
-* limitations under the License.
-* =============================================================
-*/
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ * =============================================================
+ */
 
 <template>
   <BaseModal
@@ -88,7 +88,7 @@ export default {
     // element fieldValue 取自 model
     // ??? 好奇怪的设计
     const buildModel = (record, options) => {
-      return { ...record, ...options};
+      return { ...record, ...options };
     };
 
     const state = reactive({
@@ -106,7 +106,7 @@ export default {
     };
 
     const handleDataEnhance = () => {
-      formRef.value.validate(valid => {
+      formRef.value.validate((valid) => {
         if (!valid) {
           return false;
         }
@@ -115,33 +115,39 @@ export default {
       });
     };
 
-    onMounted(async() => {
+    onMounted(async () => {
       const result = await queryDataEnhanceList();
       const { dictDetails = [] } = result || {};
-      const enhanceList = dictDetails.map(d => ({
+      const enhanceList = dictDetails.map((d) => ({
         label: d.label,
-        value: Number(d.value),
+        value: d.value,
       }));
       Object.assign(state, {
         enhanceList,
       });
     });
 
-    watch(() => props.row, (next) => {
-      Object.assign(state, {
-        model: { ...state.model, ...next },
-      });
-    });
-
-    watch(() => props.visible, (next) => {
-      if (next) {
-        getOriginFileCount(props.row.id).then(res => {
-          Object.assign(state, {
-            fileCount: res,
-          });
+    watch(
+      () => props.row,
+      (next) => {
+        Object.assign(state, {
+          model: { ...state.model, ...next },
         });
       }
-    });
+    );
+
+    watch(
+      () => props.visible,
+      (next) => {
+        if (next) {
+          getOriginFileCount(props.row.id).then((res) => {
+            Object.assign(state, {
+              fileCount: res,
+            });
+          });
+        }
+      }
+    );
 
     return {
       rules,

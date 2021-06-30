@@ -1,18 +1,18 @@
 /** Copyright 2020 Tianshu AI Platform. All Rights Reserved.
-*
-* Licensed under the Apache License, Version 2.0 (the "License");
-* you may not use this file except in compliance with the License.
-* You may obtain a copy of the License at
-*
-*     http://www.apache.org/licenses/LICENSE-2.0
-*
-* Unless required by applicable law or agreed to in writing, software
-* distributed under the License is distributed on an "AS IS" BASIS,
-* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-* See the License for the specific language governing permissions and
-* limitations under the License.
-* =============================================================
-*/
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ * =============================================================
+ */
 
 <template>
   <div>
@@ -21,6 +21,7 @@
         v-model="form.modelId"
         placeholder="请选择模型"
         clearable
+        filterable
         @change="onModelChange"
       >
         <el-option
@@ -34,12 +35,13 @@
         v-model="form.modelAddress"
         placeholder="请选择模型版本"
         clearable
+        filterable
         @change="onModelVersionChange"
       >
         <el-option
           v-for="item in modelVersionList"
           :key="item.id"
-          :label="item.versionNum"
+          :label="item.version"
           :value="item.modelAddress"
         />
       </el-select>
@@ -62,12 +64,7 @@
         clearable
         @change="onDatasetChange"
       >
-        <el-option
-          v-for="item in datasetList"
-          :key="item.id"
-          :value="item"
-          :label="item.name"
-        />
+        <el-option v-for="item in datasetList" :key="item.id" :value="item" :label="item.name" />
       </el-select>
       <QuickUploadPopover
         form-label="数据集名称"
@@ -76,20 +73,9 @@
       />
     </el-form-item>
     <el-form-item label="算法来源" class="is-required">
-      <el-radio-group
-        v-model="isBuiltInAlgorithm"
-        @change="onBuiltInAlgorithmChange"
-      >
-        <el-radio
-          border
-          :label="false"
-          class="mr-0 w-200"
-        >我的算法</el-radio>
-        <el-radio
-          border
-          :label="true"
-          class="w-200"
-        >内置算法</el-radio>
+      <el-radio-group v-model="isBuiltInAlgorithm" @change="onBuiltInAlgorithmChange">
+        <el-radio border :label="false" class="mr-0 w-200">我的算法</el-radio>
+        <el-radio border :label="true" class="w-200">内置算法</el-radio>
       </el-radio-group>
     </el-form-item>
     <el-form-item ref="algorithmPath" label="优化算法" prop="algorithmPath">
@@ -97,6 +83,7 @@
         v-model="selectedAlgorithm"
         value-key="algorithmName"
         clearable
+        filterable
         placeholder="请选择您使用的算法代码"
         @change="onAlgorithmChange"
       >
@@ -107,15 +94,10 @@
           :label="item.algorithmName"
         />
       </el-select>
-      <el-checkbox
-        v-model="form.editAlgorithm"
-      >编辑算法</el-checkbox>
+      <el-checkbox v-model="form.editAlgorithm">编辑算法</el-checkbox>
     </el-form-item>
     <el-form-item ref="command" label="运行命令" prop="command">
-      <el-input
-        v-model="form.command"
-        placeholder="例如：python run.py 或 bash run.sh"
-      />
+      <el-input v-model="form.command" placeholder="例如：python run.py 或 bash run.sh" />
     </el-form-item>
     <!--运行参数-->
     <run-param-form
@@ -137,22 +119,25 @@
 <script>
 import { isNil } from 'lodash';
 
-import { getModelByResource } from '@/api/model/model';
+import { getModelByResource, addOptimizeModel as addCustomizeModel } from '@/api/model/model';
 import { list as getAlgorithms } from '@/api/algorithm/algorithm';
 import { list as getModelVersions } from '@/api/model/modelVersion';
-import { getOptimizeAlgorithms, getCustomizeDatasets, addCustomizeDatasets, addCustomizeModel } from '@/api/modelOptimize/optimize';
+import {
+  getOptimizeAlgorithms,
+  getCustomizeDatasets,
+  addCustomizeDatasets,
+} from '@/api/modelOptimize/optimize';
 
 import RunParamForm from '@/components/Training/runParamForm';
 import QuickUploadPopover from './quickUploadPopover';
 
-import {
-  OPTIIMZE_ALGORITHM_USAGE_NAME,
-} from '../util';
+import { OPTIIMZE_ALGORITHM_USAGE_NAME } from '../util';
 
 const defaultForm = {
   // 我的优化使用 modelId 和 modelAddress 来记录模型和版本
   modelId: null, // 用于标记模型
   modelAddress: null, // 用于标记模型版本
+  modelBranchId: null, // 模型版本 ID
   datasetId: null, // 我的优化使用 datasetId 作为数据主键
   datasetName: null, // 数据集名
   datasetPath: null, // 数据集路径
@@ -181,10 +166,10 @@ export default {
     return {
       customizeModelList: [],
       modelVersionList: [],
-      
+
       datasetList: [],
       selectedDataset: null,
-      
+
       isBuiltInAlgorithm: false,
       algorithmList: [],
       selectedAlgorithm: null,
@@ -197,7 +182,7 @@ export default {
   computed: {
     preview() {
       let str = this.form.command;
-      for(const key of Object.keys(this.paramsObj)) {
+      for (const key of Object.keys(this.paramsObj)) {
         str += ` --${key}=${this.paramsObj[key]}`;
       }
       if (this.form.modelAddress) {
@@ -222,7 +207,9 @@ export default {
   },
   methods: {
     init(form, matchData) {
-      Object.keys(this.form).forEach(key => { !isNil(form[key]) && (this.form[key] = form[key]); });
+      Object.keys(this.form).forEach((key) => {
+        !isNil(form[key]) && (this.form[key] = form[key]);
+      });
 
       // 如果没有算法 ID，但是有算法路径，说明使用了内置算法
       this.isBuiltInAlgorithm = isNil(this.form.algorithmId) && !isNil(this.form.algorithmPath);
@@ -236,7 +223,7 @@ export default {
       this.modelVersionList = [];
       this.paramsObj = {};
       this.isBuiltInAlgorithm = false;
-      
+
       this.getCustomizeModels();
       this.getDatasets();
       this.getAlgorithms(this.isBuiltInAlgorithm);
@@ -265,10 +252,9 @@ export default {
       this.customizeModelList = await getModelByResource(0);
 
       if (matchData) {
-
-        if (!this.customizeModelList.find(model => model.id === this.form.modelId)) {
+        if (!this.customizeModelList.find((model) => model.id === this.form.modelId)) {
           this.$message.warning('原模型不存在，请重新选择');
-          this.form.modelId = this.form.modelAddress = null;
+          this.form.modelId = this.form.modelAddress = this.form.modelBranchId = null;
           return;
         }
         this.getModelVersions(this.form.modelId, matchData);
@@ -277,16 +263,21 @@ export default {
     async getModelVersions(modelId, matchData) {
       this.modelVersionList = (await getModelVersions({ parentId: modelId })).result;
 
-      if (matchData && !this.modelVersionList.find(model => model.modelAddress === this.form.modelAddress)) {
+      if (
+        matchData &&
+        !this.modelVersionList.find((model) => model.modelAddress === this.form.modelAddress)
+      ) {
         this.$message.warning('原模型版本不存在，请重新选择');
-        this.form.modelAddress = null;
+        this.form.modelAddress = this.form.modelBranchId = null;
       }
     },
     async getDatasets(matchData) {
       this.datasetList = await getCustomizeDatasets();
 
       if (matchData) {
-        this.selectedDataset = this.datasetList.find(dataset => dataset.id === this.form.datasetId);
+        this.selectedDataset = this.datasetList.find(
+          (dataset) => dataset.id === this.form.datasetId
+        );
         if (!this.selectedDataset) {
           this.$message.warning('原内置数据集不存在，请重新选择');
           this.form.datasetId = this.form.datasetName = this.form.datasetPath = null;
@@ -302,7 +293,7 @@ export default {
     },
     async getBuiltInAlgorithms(matchData) {
       // 获取数据后进行统一化操作
-      this.algorithmList = (await getOptimizeAlgorithms()).map(algorithm => {
+      this.algorithmList = (await getOptimizeAlgorithms()).map((algorithm) => {
         return {
           type: algorithm.type,
           algorithmName: algorithm.algorithm,
@@ -311,7 +302,9 @@ export default {
       });
 
       if (matchData) {
-        this.selectedAlgorithm = this.algorithmList.find(algorithm => algorithm.algorithmName === this.form.algorithmName);
+        this.selectedAlgorithm = this.algorithmList.find(
+          (algorithm) => algorithm.algorithmName === this.form.algorithmName
+        );
         if (!this.selectedAlgorithm) {
           this.$message.warning('原内置优化算法不存在，请重新选择');
           this.form.algorithmName = this.form.algorithmPath = null;
@@ -319,24 +312,28 @@ export default {
       }
     },
     async getCustomizeAlgorithms(matchData) {
-      this.algorithmList = (await getAlgorithms({
-        current: 1,
-        size: 1000,
-        algorithmSource: 1, // 我的算法
-        algorithmUsage: OPTIIMZE_ALGORITHM_USAGE_NAME,
-      })).result;
+      this.algorithmList = (
+        await getAlgorithms({
+          current: 1,
+          size: 1000,
+          algorithmSource: 1, // 我的算法
+          algorithmUsage: OPTIIMZE_ALGORITHM_USAGE_NAME,
+        })
+      ).result;
 
       if (matchData) {
-        this.selectedAlgorithm =  this.algorithmList.find(algorithm => algorithm.id === this.form.algorithmId);
+        this.selectedAlgorithm = this.algorithmList.find(
+          (algorithm) => algorithm.id === this.form.algorithmId
+        );
         if (!this.selectedAlgorithm) {
           this.$message.warning('原优化算法不存在，请重新选择');
           this.form.algorithmId = this.form.algorithmName = this.form.algorithmPath = null;
         }
       }
     },
-    
+
     async onModelChange(modelId) {
-      this.form.modelAddress = null;
+      this.form.modelAddress = this.modelBranchId = null;
       // 删除模型时不请求版本列表
       if (modelId) {
         await this.getModelVersions(modelId);
@@ -344,7 +341,9 @@ export default {
         this.modelVersionList = [];
       }
     },
-    onModelVersionChange() {
+    onModelVersionChange(modelAddress) {
+      const model = this.modelVersionList.find((model) => model.modelAddress === modelAddress);
+      model && (this.form.modelBranchId = model.id);
       this.$nextTick(() => this.validateField('modelAddress'));
     },
     onDatasetChange(dataset) {
@@ -389,8 +388,9 @@ export default {
       this.customizeModelList.unshift(data);
       this.form.modelId = data.id;
       await this.onModelChange(this.form.modelId);
-      if(this.modelVersionList.length > 0) {
+      if (this.modelVersionList.length > 0) {
         this.form.modelAddress = this.modelVersionList[0].modelAddress;
+        this.form.modelBranchId = this.modelVersionList[0].id;
         this.onModelVersionChange();
       }
     },

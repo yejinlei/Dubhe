@@ -1,33 +1,50 @@
 /** Copyright 2020 Tianshu AI Platform. All Rights Reserved.
-*
-* Licensed under the Apache License, Version 2.0 (the "License");
-* you may not use this file except in compliance with the License.
-* You may obtain a copy of the License at
-*
-*     http://www.apache.org/licenses/LICENSE-2.0
-*
-* Unless required by applicable law or agreed to in writing, software
-* distributed under the License is distributed on an "AS IS" BASIS,
-* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-* See the License for the specific language governing permissions and
-* limitations under the License.
-* =============================================================
-*/
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ * =============================================================
+ */
 
 <template>
   <div class="statisticContainer">
     <el-card>
-      <div :class="[scaleLargeSmall?'statisticContainerTitleLarge':'statisticContainerTitle']" :style="{'background-color':runColor}">
+      <div
+        :class="[scaleLargeSmall ? 'statisticContainerTitleLarge' : 'statisticContainerTitle']"
+        :style="{ 'background-color': runColor }"
+      >
         <div>
           <span style="font-weight: 600;">{{ ttlabel }}</span>
           <span class="tagShow">{{ newTag }}</span>
         </div>
         <div class="titleRight">
-          <span class="scale" @click="scaleLarge()"><i class="iconfont icon-fangda" /></span>
-          <span class="scale" @click="scaleSmall()"><i class="iconfont icon-suoxiao1" /></span>
-          <span v-if="!parentComponent" class="checkedBox" @click="setRightTopShow()"><i class="close-i el-icon-circle-close" /></span>
-          <span v-if="parentComponent" v-show="!rightTopShow" class="checkedBox" @click="setRightTopShow()"><i class="iconfont icon-weixuanzhong1" /></span>
-          <span v-if="parentComponent" v-show="rightTopShow" class="checkedBox" @click="setRightTopShow()"><i class="iconfont icon-xuanzhong1" /></span>
+          <span class="scale" @click="scaleLarge()"><i class="iconfont icon-fangda"/></span>
+          <span class="scale" @click="scaleSmall()"><i class="iconfont icon-suoxiao1"/></span>
+          <span v-if="!parentComponent" class="checkedBox" @click="setRightTopShow()"
+            ><i class="close-i el-icon-circle-close"
+          /></span>
+          <span
+            v-if="parentComponent"
+            v-show="!rightTopShow"
+            class="checkedBox"
+            @click="setRightTopShow()"
+            ><i class="iconfont icon-weixuanzhong1"
+          /></span>
+          <span
+            v-if="parentComponent"
+            v-show="rightTopShow"
+            class="checkedBox"
+            @click="setRightTopShow()"
+            ><i class="iconfont icon-xuanzhong1"
+          /></span>
         </div>
       </div>
       <component
@@ -39,7 +56,7 @@
         :className="className"
         :runColor="runColor"
       />
-    <!--添加一个缩放flag，告诉子组件坐标文字的大小应该选取多少，:scaleFlag='scaleLargeSmall'-->
+      <!--添加一个缩放flag，告诉子组件坐标文字的大小应该选取多少，:scaleFlag='scaleLargeSmall'-->
     </el-card>
   </div>
 </template>
@@ -50,8 +67,13 @@ import threed from './HisThreeD';
 import orthographic from './HisOrtho';
 import overlook from './HisOverlook';
 
-const { mapGetters: mapStatisticGetters, mapMutations: mapStatisticMutations } = createNamespacedHelpers('Visual/statistic');
-const { mapMutations: mapCustomMutations, mapGetters: mapCustomGetters } = createNamespacedHelpers('Visual/custom');
+const {
+  mapGetters: mapStatisticGetters,
+  mapMutations: mapStatisticMutations,
+} = createNamespacedHelpers('Visual/statistic');
+const { mapMutations: mapCustomMutations, mapGetters: mapCustomGetters } = createNamespacedHelpers(
+  'Visual/custom'
+);
 const { mapGetters: mapLayoutGetters } = createNamespacedHelpers('Visual/layout');
 export default {
   components: {
@@ -92,7 +114,8 @@ export default {
     getShowNumber() {
       this.setRangeNumber();
     },
-    getStatisticShowNumber() { // 用户定制控制面板
+    getStatisticShowNumber() {
+      // 用户定制控制面板
       this.setRangeNumber();
     },
     data() {
@@ -112,7 +135,7 @@ export default {
     }
     let idx = this.itemp;
     if (this.itemp >= 1000) idx -= 1000; // 这是用户定制的itemp
-    if (this.tag.length > 20) this.newTag = `${this.tag.slice(0, 20)  }...`; // 省略显示字符
+    if (this.tag.length > 20) this.newTag = `${this.tag.slice(0, 20)}...`; // 省略显示字符
     if (this.componentName === 'threed' || this.componentName === 'orthographic') {
       this.rightTopShow = this.getHistCheckedArray[idx];
     } else {
@@ -125,14 +148,14 @@ export default {
     ...mapCustomMutations(['setStatisticData']),
     scaleLarge() {
       this.scaleLargeSmall = true;
-      d3.select(`#${  this.divId}`).style('width', '63.5%');
-      if (this.tag.length > 40) this.newTag = `${this.tag.slice(0, 40)  }...`;
+      d3.select(`#${this.divId}`).style('width', '63.5%');
+      if (this.tag.length > 40) this.newTag = `${this.tag.slice(0, 40)}...`;
       else this.newTag = this.tag;
     },
     scaleSmall() {
       this.scaleLargeSmall = false;
-      d3.select(`#${  this.divId}`).style('width', '31%');
-      if (this.tag.length > 20) this.newTag = `${this.tag.slice(0, 20)  }...`;
+      d3.select(`#${this.divId}`).style('width', '31%');
+      if (this.tag.length > 20) this.newTag = `${this.tag.slice(0, 20)}...`;
     },
     setRightTopShow() {
       if (this.rightTopShow || this.parentComponent) {
@@ -152,33 +175,42 @@ export default {
       // custom中的×点击直接操作在statisticData上
       let componentNameTemp = this.componentName;
       if (componentNameTemp === 'orthographic') componentNameTemp = 'threed';
-      const param = { componentName: componentNameTemp, ttlabel: this.ttlabel, tag: this.tag, data: this.data, runColor: this.runColor, itemp: this.itemp, divId: '', delete: false }; // delete表示不直接删除statisticData中的, checked: this.rightTopShow,
+      const param = {
+        componentName: componentNameTemp,
+        ttlabel: this.ttlabel,
+        tag: this.tag,
+        data: this.data,
+        runColor: this.runColor,
+        itemp: this.itemp,
+        divId: '',
+        delete: false,
+      }; // delete表示不直接删除statisticData中的, checked: this.rightTopShow,
       if (!this.parentComponent) param.delete = true;
       this.setStatisticData(param);
       // 复选框复用，下载按钮
       // 不用考虑用户定制里的
       if (this.itemp > 1000) return;
-      let idTemp = `#dist${  this.itemp}`;
+      let idTemp = `#dist${this.itemp}`;
       if (this.componentName === 'threed') {
-        idTemp = `#offset${  this.itemp}`;
+        idTemp = `#offset${this.itemp}`;
       } else if (this.componentName === 'orthographic') {
-        idTemp = `#overlay${  this.itemp}`;
+        idTemp = `#overlay${this.itemp}`;
       }
       this.setDownLoadArray([this.rightTopShow, idTemp]);
       this.setDownloadSvgClass.statistic = this.getDownLoadArray;
     },
     setRangeNumber() {
-      if(this.componentName==='overlook'){
-        this.rateData=this.data;
+      if (this.componentName === 'overlook') {
+        this.rateData = this.data;
         return;
       }
       let newNumber = this.getShowNumber;
       if (!this.parentComponent) newNumber = this.getStatisticShowNumber;
       const datalen = this.data.length;
-      const count = Math.ceil(newNumber / 100.0 * datalen);
+      const count = Math.ceil((newNumber / 100.0) * datalen);
       const stepspace = datalen / count;
       this.rateData = [];
-      for (let j = 0; j < count; j+=1) {
+      for (let j = 0; j < count; j += 1) {
         const step = Math.floor(stepspace * j);
         this.rateData.push(this.data[step]);
       }
@@ -187,7 +219,7 @@ export default {
 };
 </script>
 
-<style lang='less' scoped>
+<style lang="less" scoped>
 .statisticContainer {
   width: 100%;
   height: 100%;

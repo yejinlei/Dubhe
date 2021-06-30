@@ -1,18 +1,18 @@
 /*
-* Copyright 2019-2020 Zheng Jie
-*
-* Licensed under the Apache License, Version 2.0 (the "License");
-* you may not use this file except in compliance with the License.
-* You may obtain a copy of the License at
-*
-* http://www.apache.org/licenses/LICENSE-2.0
-*
-* Unless required by applicable law or agreed to in writing, software
-* distributed under the License is distributed on an "AS IS" BASIS,
-* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-* See the License for the specific language governing permissions and
-* limitations under the License.
-*/
+ * Copyright 2019-2020 Zheng Jie
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 
 /**
  * utils, 通用方法
@@ -23,6 +23,7 @@ import { Message } from 'element-ui';
 import Config from '@/settings';
 
 import FileFilter from '@/components/UploadForm/FileFilter';
+import { isNil } from 'lodash';
 
 /**
  * Parse the time to string
@@ -38,17 +39,21 @@ export function parseTime(time, cFormat) {
   let date;
   if (typeof time === 'undefined' || time === null || time === 'null') {
     return '';
-  } if (typeof time === 'object') {
+  }
+  if (time === '-') {
+    return '-';
+  }
+  if (typeof time === 'object') {
     date = time;
   } else {
-    if ((typeof time === 'string')) {
-      if ((/^[0-9]+$/.test(time))) {
+    if (typeof time === 'string') {
+      if (/^[0-9]+$/.test(time)) {
         time = parseInt(time, 10);
       } else {
-        time = time.replace(/ /g, "T");
+        time = time.replace(/ /g, 'T');
       }
     }
-    if ((typeof time === 'number') && (time.toString().length === 10)) {
+    if (typeof time === 'number' && time.toString().length === 10) {
       time *= 1000;
     }
     date = new Date(time);
@@ -66,7 +71,9 @@ export function parseTime(time, cFormat) {
   const time_str = format.replace(/{(y|m|d|h|i|s|a|S)+}/g, (result, key) => {
     let value = formatObj[key];
     // Note: getDay() returns 0 on Sunday
-    if (key === 'a') { return ['日', '一', '二', '三', '四', '五', '六'][value]; }
+    if (key === 'a') {
+      return ['日', '一', '二', '三', '四', '五', '六'][value];
+    }
     if (result.length > 0 && value < 10) {
       value = `0${value}`;
     }
@@ -86,7 +93,7 @@ export function byteLength(str) {
     const code = str.charCodeAt(i);
     if (code > 0x7f && code <= 0x7ff) s += 1;
     else if (code > 0x7ff && code <= 0xffff) s += 2;
-    if (code >= 0xDC00 && code <= 0xDFFF) i -= 1;
+    if (code >= 0xdc00 && code <= 0xdfff) i -= 1;
   }
   return s;
 }
@@ -101,13 +108,11 @@ export function param2Obj(url) {
     return {};
   }
   return JSON.parse(
-    `{"${
-    decodeURIComponent(search)
+    `{"${decodeURIComponent(search)
       .replace(/"/g, '\\"')
       .replace(/&/g, '","')
       .replace(/=/g, '":"')
-      .replace(/\+/g, ' ')
-    }"}`,
+      .replace(/\+/g, ' ')}"}`
   );
 }
 
@@ -118,7 +123,11 @@ export function param2Obj(url) {
  * @return {*}
  */
 export function debounce(func, wait, immediate) {
-  let timeout; let args; let context; let timestamp; let result;
+  let timeout;
+  let args;
+  let context;
+  let timestamp;
+  let result;
 
   const later = () => {
     // 据上一次触发时间间隔
@@ -138,7 +147,7 @@ export function debounce(func, wait, immediate) {
   };
 
   // eslint-disable-next-line func-names
-  return function (...args) {
+  return function(...args) {
     context = this;
     timestamp = +new Date();
     const callNow = immediate && !timeout;
@@ -177,7 +186,7 @@ export function scientificNotation(num, fix) {
   const absd = Math.abs(num);
   if (absd > 10000) {
     const numLen = absd.toString().length - 1;
-    num = `${num / Math.pow(10, numLen)}e+${numLen}`;
+    num = `${num / 10 ** numLen}e+${numLen}`;
   } else if (absd < 0.01 && absd !== 0) {
     const dString = absd.toString();
     let i = 3;
@@ -186,7 +195,7 @@ export function scientificNotation(num, fix) {
         break;
       }
     }
-    num = `${(num * Math.pow(10, i - 1)).toFixed(fix)}e-${i - 1}`;
+    num = `${(num * 10 ** i - 1).toFixed(fix)}e-${i - 1}`;
   } else {
     num = num.toFixed(fix);
   }
@@ -243,7 +252,7 @@ export function convertMapToList(map, key = 'key', value = 'value') {
   const list = [];
   map = map || {};
   const mapKeyList = Object.keys(map);
-  mapKeyList.forEach(mapKey => {
+  mapKeyList.forEach((mapKey) => {
     const obj = {};
     obj[key] = mapKey;
     obj[value] = map[mapKey];
@@ -260,20 +269,19 @@ export function stringIsValidPythonVariable(str) {
   return pattern.test(str);
 }
 
-
 const _toTree = (data) => {
   const result = [];
   if (!Array.isArray(data)) {
     return result;
   }
-  data.forEach(item => {
+  data.forEach((item) => {
     delete item.children;
   });
   const map = {};
-  data.forEach(item => {
+  data.forEach((item) => {
     map[item.id] = item;
   });
-  data.forEach(item => {
+  data.forEach((item) => {
     const parent = map[item.pid];
     if (parent) {
       (parent.children || (parent.children = [])).push(item);
@@ -286,7 +294,7 @@ const _toTree = (data) => {
 
 /**
  * minio数据转成树形结构
- * @param {string} filepath minio的路径 
+ * @param {string} filepath minio的路径
  * @returns {list} [treeList, expandedKeys] 树形结构，和默认展开的元素
  */
 export const getTreeListFromFilepath = async (filepath) => {
@@ -296,25 +304,25 @@ export const getTreeListFromFilepath = async (filepath) => {
   }
   // 1，获取minio的数据
   const tmp = await window.minioClient.listObjects(filepath);
-  if(!tmp || !tmp.length){
+  if (!tmp || !tmp.length) {
     return [[], []];
   }
   const minioList = [];
   for (const item of tmp) {
-    minioList.push(item.name.replace(filepath, ""));
+    minioList.push(item.name.replace(filepath, ''));
   }
   // 2 转成平级数据
   const dataList = [];
   const keyList = []; // 去重用
   for (const filename of minioList) {
-    const list = filename.split("/");
+    const list = filename.split('/');
     list.forEach((item, index) => {
       const p = {
         pid: index === 0 ? 9999 : `${index - 1}_${list[index - 1]}`,
         id: `${index}_${item}`,
         name: item,
-        originPath: filepath + list.slice(0,index+1).join('/'),
-        isFile: index === list.length-1,
+        originPath: filepath + list.slice(0, index + 1).join('/'),
+        isFile: index === list.length - 1,
       };
       const key = `${p.pid}_${p.id}`;
       if (keyList.indexOf(key) === -1) {
@@ -325,7 +333,7 @@ export const getTreeListFromFilepath = async (filepath) => {
   }
   // 2.1 最外层单独封装一层
   const tmp2 = filepath.split('/');
-  const wrapperNodeName = tmp2[tmp2.length-2];
+  const wrapperNodeName = tmp2[tmp2.length - 2];
   const wrapperNode = {
     pid: 0,
     id: 9999,
@@ -339,9 +347,9 @@ export const getTreeListFromFilepath = async (filepath) => {
   // 4 显示默认展开的层级，默认二级
   const expandedKeys = [];
   for (const item of treeList) {
-    expandedKeys.push(item.id);
-    for(const item2 of item.children){
-      expandedKeys.push(item2.id);
+    expandedKeys.push(item.originPath);
+    for (const item2 of item.children) {
+      expandedKeys.push(item2.originPath);
     }
   }
   // 返回数据
@@ -366,7 +374,9 @@ export function getQueueMessage() {
   let msgInstance = null;
 
   const callMsg = () => {
-    if (msgInstance || !msgQueue.length) { return; }
+    if (msgInstance || !msgQueue.length) {
+      return;
+    }
 
     const msgOption = msgQueue.shift();
     msgInstance = Message({
@@ -380,7 +390,7 @@ export function getQueueMessage() {
       },
     });
   };
-  return async msgOption => {
+  return async (msgOption) => {
     msgQueue.push(msgOption);
     callMsg();
   };
@@ -388,6 +398,20 @@ export function getQueueMessage() {
 
 export function updateTitle(title) {
   document.title = title ? `${title} - ${Config.title}` : Config.title;
+}
+
+/**
+ * 从一个 Key-Object 的对象中，取 Object[field] 字段返回一个新的 Key-Object[field] 的对象
+ * @param {Object} originMap value 为 Object 的一个对象
+ * @param {String} field value 对象中的某一个 Key
+ * @returns {Object} 结构为 Key-Object[field] 的对象
+ */
+export function generateMap(originMap, field) {
+  const map = Object.create(null);
+  Object.keys(originMap).forEach((key) => {
+    map[key] = originMap[key][field];
+  });
+  return map;
 }
 
 // 筛选部分会导致 minio 上传错误的字符
@@ -402,4 +426,138 @@ const invalidFileNameCharJudge = (file) => {
   return false;
 };
 
-export const invalidFileNameChar = new FileFilter(invalidFileNameCharJudge, `文件名包含不合法字符: ${invalidChars.join('、')}`);
+export const invalidFileNameChar = new FileFilter(
+  invalidFileNameCharJudge,
+  `文件名包含不合法字符: ${invalidChars.join('、')}`
+);
+
+// CPU 使用量计算
+export function cpuPercentage(used, usedUnit, total, totalUnit) {
+  const _transition = (num, unit) => {
+    switch (unit) {
+      case '':
+        num *= 1e9;
+        break;
+      case 'm':
+        num *= 1e6;
+        break;
+      // no default
+    }
+    return num;
+  };
+  return Math.round((_transition(used, usedUnit) / _transition(total, totalUnit)) * 10000) / 100;
+}
+
+// 内存单位归一化，目前支持单位为 Ki/Mi/Gi
+export function memNormalize(num, fromUnit, toUnit = 'Gi') {
+  const memUnitList = ['Ki', 'Mi', 'Gi']; // 内存单位数组，按顺序排列
+
+  let fromIndex = memUnitList.indexOf(fromUnit);
+  const toIndex = memUnitList.indexOf(toUnit);
+
+  // 如果 fromUnit 或 toUnit 不在单位列表中，或者单位已经一致，则直接返回
+  if (fromIndex === -1 || toIndex === -1 || fromIndex === toIndex) {
+    return num;
+  }
+
+  // fromUnit 比较大时
+  if (fromIndex > toIndex) {
+    while (fromIndex !== toIndex) {
+      num *= 1024;
+      fromIndex -= 1;
+    }
+    return num;
+  }
+  // fromUnit 比较小时
+  while (fromIndex !== toIndex) {
+    num /= 1024;
+    fromIndex += 1;
+  }
+  return num;
+}
+
+// 内存使用量计算
+export function memPercentage(used, usedUnit, total, totalUnit) {
+  const _transition = (num, unit) => {
+    switch (unit) {
+      case 'Gi':
+        num *= 2 ** 20;
+        break;
+      case 'Mi':
+        num *= 2 ** 10;
+        break;
+      // no default
+    }
+    return num;
+  };
+  return Math.round((_transition(used, usedUnit) / _transition(total, totalUnit)) * 10000) / 100;
+}
+
+export function toUnixTimestamp(time) {
+  return Math.round(time / 1000);
+}
+
+/**
+ * 返回一个函数，函数的入参为 null 或 undefined 或空字符串时，展示指定的空白内容
+ * @param {String} emptyText
+ * @returns {Function}
+ */
+export function getEmptyFormatter(emptyText = '--') {
+  return function emptyFormatter(value) {
+    if (isNil(value) || value === '') {
+      return emptyText;
+    }
+    return value;
+  };
+}
+
+// 文件大小格式化
+export function fileSizeFormatter(fileSize) {
+  // eslint-disable-next-line no-restricted-globals
+  if (isNaN(fileSize)) return '-';
+  if (fileSize === 0) return '0Bytes';
+  const unitArr = ['Bytes', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'];
+  const index = Math.floor(Math.log(fileSize) / Math.log(1024));
+  const size = fileSize / 1024 ** index;
+  return size.toFixed(2) + unitArr[index];
+}
+
+/**
+ * 根据树结构获取叶节点列表
+ * @param {Array} nodes 父节点列表
+ * @param {Array} target 引用数组，用于存储叶节点
+ * @returns {Array} 返回 target 对象
+ */
+export function checkLeafNode(nodes, target) {
+  nodes.forEach((node) => {
+    if (node.children) {
+      checkLeafNode(node.children, target);
+    } else {
+      target.push(node);
+    }
+  });
+  return target;
+}
+
+// 用于防止回调函数未定义
+export const runFunc = (func, ...args) => {
+  if (typeof func === 'function') {
+    func(...args);
+  }
+};
+
+// 格式化时长
+export function durationTrans(time) {
+  let duration = '';
+  let h = parseInt(time / 3600, 10);
+  let m = parseInt((time % 3600) / 60, 10);
+  let s = parseInt((time % 3600) % 60, 10);
+  if (h > 0) {
+    h = h < 10 ? `0${h}` : h;
+    duration += `${h}:`;
+  }
+  m = m < 10 ? `0${m}` : m;
+  s = s < 10 ? `0${s}` : s;
+  duration += `${m}:${s}`;
+  return duration;
+}

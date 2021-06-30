@@ -1,18 +1,18 @@
 /** Copyright 2020 Tianshu AI Platform. All Rights Reserved.
-*
-* Licensed under the Apache License, Version 2.0 (the "License");
-* you may not use this file except in compliance with the License.
-* You may obtain a copy of the License at
-*
-*     http://www.apache.org/licenses/LICENSE-2.0
-*
-* Unless required by applicable law or agreed to in writing, software
-* distributed under the License is distributed on an "AS IS" BASIS,
-* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-* See the License for the specific language governing permissions and
-* limitations under the License.
-* =============================================================
-*/
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ * =============================================================
+ */
 
 import FileSaver from 'file-saver';
 
@@ -30,9 +30,9 @@ const covertSVG2Image = (node, name, width, height, type = 'png') => {
    * @return: 'img'
    */
   const serializer = new XMLSerializer();
-  const source = `<?xml version="1.0" standalone="no"?>\r\n${  serializer.serializeToString(node)}`;
+  const source = `<?xml version="1.0" standalone="no"?>\r\n${serializer.serializeToString(node)}`;
   const image = new Image();
-  image.src = `data:image/svg+xml;charset=utf-8,${  encodeURIComponent(source)}`;
+  image.src = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(source)}`;
   const canvas = document.createElement('canvas');
   canvas.width = width;
   canvas.height = height;
@@ -51,7 +51,7 @@ const covertSVG2Image = (node, name, width, height, type = 'png') => {
 const downloadJSON2CSV = (data, filename = 'test.csv') => {
   const parser = new Json2csvParser();
   const csvData = parser.parse(data);
-  const blob = new Blob([`\uFEFF${  csvData}`], { type: 'text/plain;charset=utf-8;' });
+  const blob = new Blob([`\uFEFF${csvData}`], { type: 'text/plain;charset=utf-8;' });
   FileSaver.saveAs(blob, filename);
 };
 

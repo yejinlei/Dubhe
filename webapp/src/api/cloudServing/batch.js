@@ -1,24 +1,25 @@
 /** Copyright 2020 Tianshu AI Platform. All Rights Reserved.
-*
-* Licensed under the Apache License, Version 2.0 (the "License");
-* you may not use this file except in compliance with the License.
-* You may obtain a copy of the License at
-*
-*     http://www.apache.org/licenses/LICENSE-2.0
-*
-* Unless required by applicable law or agreed to in writing, software
-* distributed under the License is distributed on an "AS IS" BASIS,
-* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-* See the License for the specific language governing permissions and
-* limitations under the License.
-* =============================================================
-*/
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ * =============================================================
+ */
 
 import request from '@/utils/request';
+import { API_MODULE_NAME } from '@/config';
 
 export function list(params) {
   return request({
-    url: 'api/batchServing',
+    url: `/${API_MODULE_NAME.BATCH_SERVING}/batchServices`,
     method: 'get',
     params,
   });
@@ -26,7 +27,7 @@ export function list(params) {
 
 export function add(data) {
   return request({
-    url: 'api/batchServing',
+    url: `/${API_MODULE_NAME.BATCH_SERVING}/batchServices`,
     method: 'post',
     data,
   });
@@ -34,7 +35,7 @@ export function add(data) {
 
 export function edit(data) {
   return request({
-    url: 'api/batchServing',
+    url: `/${API_MODULE_NAME.BATCH_SERVING}/batchServices`,
     method: 'put',
     data,
   });
@@ -42,7 +43,7 @@ export function edit(data) {
 
 export function del(id) {
   return request({
-    url: `api/batchServing`,
+    url: `/${API_MODULE_NAME.BATCH_SERVING}/batchServices`,
     method: 'delete',
     data: { id },
   });
@@ -50,7 +51,7 @@ export function del(id) {
 
 export function detail(id) {
   return request({
-    url: `api/batchServing/detail`,
+    url: `/${API_MODULE_NAME.BATCH_SERVING}/batchServices/detail`,
     method: 'get',
     params: { id },
   });
@@ -58,7 +59,7 @@ export function detail(id) {
 
 export function start(id) {
   return request({
-    url: `api/batchServing/start`,
+    url: `/${API_MODULE_NAME.BATCH_SERVING}/batchServices/start`,
     method: 'post',
     data: { id },
   });
@@ -66,7 +67,7 @@ export function start(id) {
 
 export function stop(id) {
   return request({
-    url: `api/batchServing/stop`,
+    url: `/${API_MODULE_NAME.BATCH_SERVING}/batchServices/stop`,
     method: 'post',
     data: { id },
   });
@@ -74,14 +75,14 @@ export function stop(id) {
 
 export function getBatchServingPods(id) {
   return request({
-    url: `api/batchServing/pod/${id}`,
+    url: `/${API_MODULE_NAME.BATCH_SERVING}/batchServices/pod/${id}`,
     method: 'get',
   });
 }
 
 export function getServiceProgress(id) {
   return request({
-    url: `api/batchServing/queryById/${id}`,
+    url: `/${API_MODULE_NAME.BATCH_SERVING}/batchServices/queryById/${id}`,
     method: 'get',
   });
 }

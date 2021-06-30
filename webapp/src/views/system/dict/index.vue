@@ -1,18 +1,9 @@
-/*
-* Copyright 2019-2020 Zheng Jie
-*
-* Licensed under the Apache License, Version 2.0 (the "License");
-* you may not use this file except in compliance with the License.
-* You may obtain a copy of the License at
-*
-* http://www.apache.org/licenses/LICENSE-2.0
-*
-* Unless required by applicable law or agreed to in writing, software
-* distributed under the License is distributed on an "AS IS" BASIS,
-* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-* See the License for the specific language governing permissions and
-* limitations under the License.
-*/
+/* * Copyright 2019-2020 Zheng Jie * * Licensed under the Apache License, Version 2.0 (the
+"License"); * you may not use this file except in compliance with the License. * You may obtain a
+copy of the License at * * http://www.apache.org/licenses/LICENSE-2.0 * * Unless required by
+applicable law or agreed to in writing, software * distributed under the License is distributed on
+an "AS IS" BASIS, * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. * See
+the License for the specific language governing permissions and * limitations under the License. */
 
 <template>
   <div class="app-container">
@@ -44,7 +35,14 @@
             <cdOperation>
               <span slot="right">
                 <!-- 搜索 -->
-                <el-input v-model="query.blurry" clearable placeholder="输入关键词搜索" style="width: 150px;" class="filter-item" @change="crud.toQuery" />
+                <el-input
+                  v-model="query.blurry"
+                  clearable
+                  placeholder="输入关键词搜索"
+                  style="width: 150px;"
+                  class="filter-item"
+                  @change="crud.toQuery"
+                />
                 <rrOperation />
               </span>
             </cdOperation>
@@ -67,8 +65,17 @@
             </el-table-column>
             <el-table-column label="操作" width="200" fixed="right">
               <template slot-scope="scope">
-                <udOperation :data="scope.row" />
-                <el-button type="text" style="margin-left: 10px;" @click="handleCurrentChange(scope.row, scope.$index)">查看详情</el-button>
+                <udOperation
+                  :data="scope.row"
+                  :show-edit="hasPermission('system:dict:edit')"
+                  :show-delete="hasPermission('system:dict:delete')"
+                />
+                <el-button
+                  type="text"
+                  style="margin-left: 10px;"
+                  @click="handleCurrentChange(scope.row, scope.$index)"
+                  >查看详情</el-button
+                >
               </template>
             </el-table-column>
           </el-table>
@@ -82,11 +89,13 @@
           <div slot="header" class="clearfix">
             <span>字典详情</span>
             <el-button
+              v-if="hasPermission('system:dictDetail:create')"
               style="float: right; padding: 4px 10px;"
               type="primary"
               icon="el-icon-plus"
               @click="$refs.dictDetail && $refs.dictDetail.crud.toAdd()"
-            >添加</el-button>
+              >添加</el-button
+            >
           </div>
           <dictDetail ref="dictDetail" />
         </el-card>
@@ -101,7 +110,7 @@ import pagination from '@crud/Pagination';
 import rrOperation from '@crud/RR.operation';
 import cdOperation from '@crud/CD.operation';
 import udOperation from '@crud/UD.operation';
-import { validateNameWithHyphen } from '@/utils/validate';
+import { validateNameWithHyphen, hasPermission } from '@/utils';
 import crudDict from '@/api/system/dict';
 import BaseModal from '@/components/BaseModal';
 import dictDetail from './dictDetail';
@@ -113,7 +122,14 @@ export default {
   components: { BaseModal, pagination, cdOperation, rrOperation, udOperation, dictDetail },
   cruds() {
     return [
-      CRUD({ title: '字典', crudMethod: { ...crudDict }}),
+      CRUD({
+        title: '字典',
+        crudMethod: { ...crudDict },
+        optShow: {
+          add: hasPermission('system:dict:create'),
+          del: hasPermission('system:dict:delete'),
+        },
+      }),
     ];
   },
   mixins: [presenter(), header(), form(defaultForm)],
@@ -129,13 +145,13 @@ export default {
           { required: true, message: '请输入字典名称', trigger: 'blur' },
           { validator: validateNameWithHyphen, trigger: 'change' },
         ],
-        remark: [
-          { validator: validateNameWithHyphen, trigger: 'change' },
-        ],
+        remark: [{ validator: validateNameWithHyphen, trigger: 'change' }],
       },
     };
   },
   methods: {
+    hasPermission,
+
     // 获取数据前设置好接口地址
     [CRUD.HOOK.beforeRefresh]() {
       if (this.$refs.dictDetail) {
@@ -160,4 +176,3 @@ export default {
   },
 };
 </script>
-

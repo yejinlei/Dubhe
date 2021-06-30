@@ -1,18 +1,18 @@
 /** Copyright 2020 Tianshu AI Platform. All Rights Reserved.
-*
-* Licensed under the Apache License, Version 2.0 (the "License");
-* you may not use this file except in compliance with the License.
-* You may obtain a copy of the License at
-*
-*     http://www.apache.org/licenses/LICENSE-2.0
-*
-* Unless required by applicable law or agreed to in writing, software
-* distributed under the License is distributed on an "AS IS" BASIS,
-* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-* See the License for the specific language governing permissions and
-* limitations under the License.
-* =============================================================
-*/
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ * =============================================================
+ */
 
 import { isNil } from 'lodash';
 import { reactive, watch, ref } from '@vue/composition-api';
@@ -74,19 +74,20 @@ const BaseModal = {
       ctx.emit('ok', e);
     };
 
-    const handleClose = e => {
+    const handleClose = (e) => {
       // 这里只针对状态变更进行控制，只转发 element close 事件
       ctx.emit('close', e);
       ctx.emit('change', false);
     };
 
-    watch(() => props.visible, (next) => {
-      Object.assign(state, {
-        sVisible: next,
-      });
-    }, {
-      lazy: true,
-    });
+    watch(
+      () => props.visible,
+      (next) => {
+        Object.assign(state, {
+          sVisible: next,
+        });
+      }
+    );
 
     return {
       state,
@@ -99,15 +100,23 @@ const BaseModal = {
   render() {
     const renderFooter = () => {
       return (
-        <div class='modal-footer'>
-          { this.showCancel && (
-            <el-button id="cancel" onClick={this.handleCancel}>{this.cancelText}</el-button>
-          )
-          }
-          { this.showOk && (
-            <el-button id="ok" type='primary' disabled={this.disabled} onClick={this.handleOk} loading={this.loading}>{this.okText}</el-button>
-          )
-          }
+        <div class="modal-footer">
+          {this.showCancel && (
+            <el-button id="cancel" onClick={this.handleCancel}>
+              {this.cancelText}
+            </el-button>
+          )}
+          {this.showOk && (
+            <el-button
+              id="ok"
+              type="primary"
+              disabled={this.disabled}
+              onClick={this.handleOk}
+              loading={this.loading}
+            >
+              {this.okText}
+            </el-button>
+          )}
         </div>
       );
     };
@@ -130,9 +139,9 @@ const BaseModal = {
     };
 
     return (
-      <el-dialog {...dialogProps} ref='dialogRef'>
+      <el-dialog {...dialogProps} ref="dialogRef">
         {this.$slots.default}
-        <div slot='footer'>{footer}</div>
+        <div slot="footer">{footer}</div>
       </el-dialog>
     );
   },

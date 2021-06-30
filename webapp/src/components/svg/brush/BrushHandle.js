@@ -1,18 +1,18 @@
 /** Copyright 2020 Tianshu AI Platform. All Rights Reserved.
-*
-* Licensed under the Apache License, Version 2.0 (the "License");
-* you may not use this file except in compliance with the License.
-* You may obtain a copy of the License at
-*
-*     http://www.apache.org/licenses/LICENSE-2.0
-*
-* Unless required by applicable law or agreed to in writing, software
-* distributed under the License is distributed on an "AS IS" BASIS,
-* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-* See the License for the specific language governing permissions and
-* limitations under the License.
-* =============================================================
-*/
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ * =============================================================
+ */
 
 import Drag from '@/components/Drag';
 
@@ -42,7 +42,7 @@ export default {
 
     const handleDragStart = (drag, event) => {
       // 开始拖拽是选中当前标注
-      if(handleBrushStart) {
+      if (handleBrushStart) {
         handleBrushStart(drag, event);
       }
     };
@@ -50,7 +50,7 @@ export default {
     const handleDragMove = (drag) => {
       if (!drag.isDragging) return;
       const { zoom } = getZoom();
-      updateBrush(prevBrush => {
+      updateBrush((prevBrush) => {
         const { start, end } = prevBrush;
         let nextState = {};
         let move = 0;
@@ -109,7 +109,7 @@ export default {
                 y1: Math.max(move, start.y),
               },
             };
-          break;
+            break;
           default:
             break;
         }
@@ -118,7 +118,7 @@ export default {
     };
 
     const handleDragEnd = () => {
-      updateBrushEnd(prevBrush => {
+      updateBrushEnd((prevBrush) => {
         const { start, end, extent } = { ...prevBrush };
         start.x = Math.min(extent.x0, extent.x1);
         start.y = Math.min(extent.y0, extent.y0);
@@ -148,7 +148,7 @@ export default {
     };
   },
 
-  render(h) {
+  render() {
     const { stageWidth, stageHeight, handle, type } = this;
     const { x, y, width, height } = handle;
 
@@ -171,22 +171,20 @@ export default {
 
     return (
       <Drag {...dragProps}>
-        {
-          (drag) => (
-            <rect
-              x={x}
-              y={y}
-              width={width}
-              height={height}
-              fill='transparent'
-              class={`brush-handle-${type}`}
-              onMousedown={drag.dragStart}
-              onMousemove={drag.dragMove}
-              onMouseup={drag.dragEnd}
-              style={style}
-            />
-          )
-        }
+        {(drag) => (
+          <rect
+            x={x}
+            y={y}
+            width={width}
+            height={height}
+            fill="transparent"
+            class={`brush-handle-${type}`}
+            onMousedown={drag.dragStart}
+            onMousemove={drag.dragMove}
+            onMouseup={drag.dragEnd}
+            style={style}
+          />
+        )}
       </Drag>
     );
   },

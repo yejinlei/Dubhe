@@ -20,6 +20,15 @@
 //main-container全局样式
 .app-container {
   padding: 10px 20px 70px 20px;
+
+  .wrapper.fixed {
+    width: 1080px;
+    min-width: 60vw;
+    max-width: calc(100vw - 80px);
+    max-height: 100%;
+    padding: 20px 0 0;
+    margin: 0 auto;
+  }
 }
 
 .head-container {
@@ -69,20 +78,16 @@
   margin-left: auto;
 }
 
-.my-code {
-  position: relative;
-  padding: 15px;
-  font-family: Courier New, serif;
-  font-size: 12px;
-  line-height: 20px;
-  color: #333;
-  border-left: 5px solid #ddd;
-}
-
 // 自定义search-bar样式
 .search-bar {
   float: right;
   margin-top: 8px;
+}
+
+.disabled {
+  color: $infoColor;
+  pointer-events: none;
+  cursor: not-allowed;
 }
 
 // 自定义drawer样式
@@ -249,4 +254,40 @@ pre {
   color: rgb(204, 204, 204);
   background: rgb(30, 30, 30);
   border-radius: 5px;
+}
+
+.field-extra {
+  font-size: 14px;
+  line-height: 1.5;
+  color: $infoColor;
+}
+
+.app-result-content {
+  padding: 24px 40px;
+  margin-top: 24px;
+  text-align: left;
+  background-color: #fafafa;
+}
+
+.app-result-title {
+  font-size: 24px;
+  line-height: 1.8;
+  color: rgba(0, 0, 0, 0.85);
+  text-align: center;
+}
+
+.app-result-subtitle {
+  font-size: 14px;
+  line-height: 1.6;
+  color: rgba(0, 0, 0, 0.45);
+  text-align: center;
+}
+
+.rotate {
+  @include rotate(3s);
+}
+
+.ts-tip {
+  color: $tipColor;
+  background-color: $tipBgColor;
 }

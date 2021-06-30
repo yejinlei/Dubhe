@@ -1,36 +1,42 @@
 /** Copyright 2020 Tianshu AI Platform. All Rights Reserved.
-*
-* Licensed under the Apache License, Version 2.0 (the "License");
-* you may not use this file except in compliance with the License.
-* You may obtain a copy of the License at
-*
-*     http://www.apache.org/licenses/LICENSE-2.0
-*
-* Unless required by applicable law or agreed to in writing, software
-* distributed under the License is distributed on an "AS IS" BASIS,
-* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-* See the License for the specific language governing permissions and
-* limitations under the License.
-* =============================================================
-*/
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ * =============================================================
+ */
 
 <template>
   <div class="index-content">
     <div class="index-header">
       <div class="index-logo">
-        <img src="@/assets/images/dubhe-logo.svg" width="60" alt="logo">
+        <img src="@/assets/images/dubhe-logo.svg" width="60" alt="logo" />
       </div>
       <div class="index-avatar">
-        <img :src="user.avatar" :alt="user.nickName" :title="user.nickName" class="user-avatar">
+        <img :src="user.avatar" :alt="user.nickName" :title="user.nickName" class="user-avatar" />
       </div>
     </div>
     <div class="index-plate">
       <div class="index-posi">
-        <img src="@/assets/images/home/bg-quan.png" style="position: absolute; top: 20%; left: 12%; width: 3vw;">
-        <img src="@/assets/images/home/bg-quan.png" style="position: absolute; top: 0; right: 7%; width: 3vw;">
-        <img src="@/assets/images/home/circle.png" class="plate">
+        <img
+          src="@/assets/images/home/bg-quan.png"
+          style="position: absolute; top: 20%; left: 12%; width: 3vw;"
+        />
+        <img
+          src="@/assets/images/home/bg-quan.png"
+          style="position: absolute; top: 0; right: 7%; width: 3vw;"
+        />
+        <img src="@/assets/images/home/circle.png" class="plate" />
         <image-public
-          v-for="(item,index) in imageList"
+          v-for="(item, index) in imageList"
           :key="index"
           class="yuanshi"
           :class="transition ? item.class : ''"
@@ -43,18 +49,20 @@
             placement="top"
             content="炼知平台是由模型知识驱动的深度学习定制平台。平台内置了丰富的预训练模型库和多属性模型关系图谱，覆盖分类、分割、深度估计等常见视觉任务，并通过灵活可配的知识重组技术为用户提供简单易用的模型定制能力。"
             width="240"
-            trigger="hover">
-            <img slot="reference" src="@/assets/images/home/icon-model.png">
+            trigger="hover"
+          >
+            <img slot="reference" src="@/assets/images/home/icon-model.png" />
           </el-popover>
           <span class="title">模型炼知框架</span>
         </div>
         <div class="image-model yuanshi" :class="transition ? 'image-depth' : ''" @click="openDL">
           <el-popover
             placement="top"
-            content="深度学习平台面向AI模型生产的生命周期，提供了包括数据处理(数据集管理、智能标注和数据增强)、模型开发、模型训练和模型管理等功能，方便用户一站式构建AI算法。"
+            content="深度学习平台面向AI模型生产的生命周期，提供了包括数据处理(数据集管理、智能标注和数据增强)、算法开发、模型训练和模型管理等功能，方便用户一站式构建AI算法。"
             width="240"
-            trigger="hover">
-            <img slot="reference" src="@/assets/images/home/icon-deep.png">
+            trigger="hover"
+          >
+            <img slot="reference" src="@/assets/images/home/icon-deep.png" />
           </el-popover>
           <span class="title">深度学习框架</span>
         </div>
@@ -63,7 +71,7 @@
         <div style="width: 100%; height: 100%; background: #fff; opacity: 0.8;"></div>
       </div>
       <div class="plate-center">
-        <img src="@/assets/images/home/zhongjian .png">
+        <img src="@/assets/images/home/zhongjian .png" />
       </div>
     </div>
   </div>
@@ -126,14 +134,12 @@ export default {
     };
   },
   computed: {
-    ...mapGetters([
-      'user',
-    ]),
+    ...mapGetters(['user']),
   },
   mounted() {
     this.timer = setTimeout(() => {
       this.transition = true;
-    },500);
+    }, 500);
     this.$once('hook:beforeDestroy', () => {
       clearTimeout(this.timer);
       this.timer = null;
@@ -327,7 +333,12 @@ export default {
 }
 
 @keyframes yuanpan {
-  from { transform: rotate(180deg); }
-  to { transform: rotate(360deg); }
+  from {
+    transform: rotate(180deg);
+  }
+
+  to {
+    transform: rotate(360deg);
+  }
 }
 </style>

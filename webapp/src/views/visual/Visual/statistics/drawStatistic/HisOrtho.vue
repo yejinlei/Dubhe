@@ -1,18 +1,18 @@
 /** Copyright 2020 Tianshu AI Platform. All Rights Reserved.
-*
-* Licensed under the Apache License, Version 2.0 (the "License");
-* you may not use this file except in compliance with the License.
-* You may obtain a copy of the License at
-*
-*     http://www.apache.org/licenses/LICENSE-2.0
-*
-* Unless required by applicable law or agreed to in writing, software
-* distributed under the License is distributed on an "AS IS" BASIS,
-* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-* See the License for the specific language governing permissions and
-* limitations under the License.
-* =============================================================
-*/
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ * =============================================================
+ */
 
 <template>
   <div :class="className" />
@@ -21,7 +21,10 @@
 import { createNamespacedHelpers } from 'vuex';
 import * as d3 from 'd3';
 
-const { mapGetters: mapStatisticGetters, mapMutations: mapStatisticMutations } = createNamespacedHelpers('Visual/statistic');
+const {
+  mapGetters: mapStatisticGetters,
+  mapMutations: mapStatisticMutations,
+} = createNamespacedHelpers('Visual/statistic');
 export default {
   name: 'Oneorthographic',
   props: {
@@ -34,7 +37,7 @@ export default {
   },
   data() {
     return {
-      id: `overlay${  this.itemp}`,
+      id: `overlay${this.itemp}`,
     };
   },
   computed: {
@@ -62,15 +65,15 @@ export default {
     drawOverlay() {
       // label是这组数据的标签，ttlabel是这组数据属于哪个集合
       const label = this.id;
-      const {data} = this;
-      const className = `.${  this.className}`;
+      const { data } = this;
+      const className = `.${this.className}`;
       const that = this;
       // 先找到value和number的最大值和最小值
       let numberMin = 10000;
       let numberMax = 0;
-      for (let i = 0; i < data.length; i+=1) {
-        for (let j = 0; j < data[i].length; j+=1) {
-          const pixel= data[i][j][1];
+      for (let i = 0; i < data.length; i += 1) {
+        for (let j = 0; j < data[i].length; j += 1) {
+          const pixel = data[i][j][1];
           if (numberMin > pixel) numberMin = pixel;
           if (numberMax < pixel) numberMax = pixel;
         }
@@ -86,7 +89,7 @@ export default {
       const div = d3
         .select(className)
         .append('div')
-        .attr('id', `${label  }div`);
+        .attr('id', `${label}div`);
       const outersvg = div
         .append('svg')
         .attr('id', label) // 在放大缩小时有用
@@ -110,23 +113,20 @@ export default {
       svg
         .append('g')
         .attr('class', 'axis')
-        .attr(
-          'transform',
-          `translate(${  padding.left  },${  padding.top + height  })`,
-        )
+        .attr('transform', `translate(${padding.left},${padding.top + height})`)
         .call(
           d3
             .axisBottom()
             .scale(xscale)
             .ticks(5)
             .tickSize(-height)
-            .tickFormat(d => {
+            .tickFormat((d) => {
               if (d > 10000) {
                 const numLen = d.toString().length - 1;
-                return `${d / (10 ** numLen)  }e+${  numLen}`;
+                return `${d / 10 ** numLen}e+${numLen}`;
               }
               return d;
-            }),
+            })
         );
       const yscale = d3
         .scaleLinear()
@@ -136,34 +136,34 @@ export default {
       svg
         .append('g')
         .attr('class', 'axis')
-        .attr(
-          'transform',
-          `translate(${  padding.left + width  },${  padding.top  })`,
-        )
+        .attr('transform', `translate(${padding.left + width},${padding.top})`)
         .call(
           d3
             .axisRight()
             .scale(yscale)
-            .tickFormat(d => {
+            .tickFormat((d) => {
               if (d > 10000) {
                 const numLen = d.toString().length - 1;
-                return `${d / (10 ** numLen)  }e+${  numLen}`;
-              } if (d < 0.001) {
+                return `${d / 10 ** numLen}e+${numLen}`;
+              }
+              if (d < 0.001) {
                 if (d === 0) return d;
                 const dString = d.toString();
                 let i = 3;
-                for (; i < dString.length; i+=1) {
+                for (; i < dString.length; i += 1) {
                   if (dString[i] !== '0') {
                     break;
                   }
                 }
-                return `${(d * (10 ** (i - 1))).toFixed(1)  }e-${  i - 1}`;
+                return `${(d * 10 ** (i - 1)).toFixed(1)}e-${i - 1}`;
               }
               return d;
             })
-            .tickSize(-width),
+            .tickSize(-width)
         );
-      svg.append('g').append('text')
+      svg
+        .append('g')
+        .append('text')
         .attr('transform', 'rotate(90)')
         .attr('y', -(svgWidth - 13))
         .attr('x', svgHeight / 2)
@@ -268,10 +268,7 @@ export default {
         if (ytext > 10000) {
           ytext = Math.ceil(ytext);
           const numLen = ytext.toString().length - 1;
-          ytext =
-            `${Math.ceil((ytext / (10 ** numLen)) * 100) / 100 
-            }e+${ 
-            numLen}`;
+          ytext = `${Math.ceil((ytext / 10 ** numLen) * 100) / 100}e+${numLen}`;
         }
         svg
           .select('.ycoord')
@@ -286,7 +283,7 @@ export default {
         svg
           .select('.textbox')
           .attr('visibility', 'visible')
-          .text(`step:${  myData[0][2]}`)
+          .text(`step:${myData[0][2]}`)
           .attr('x', curX + 5)
           .attr('y', curY - 10);
 
@@ -311,13 +308,18 @@ export default {
           return d[1];
         });
         let curCountMax = 0;
-        for (let it = 0; it < myData.length; it+=1) {
+        for (let it = 0; it < myData.length; it += 1) {
           const pixel = myData[it][1];
           if (curCountMax < pixel) {
             curCountMax = pixel;
           }
         }
-        that.setStatisticInfo([myData[0][2], Math.ceil(curDataCountSum), curCountMin, curCountMax.toFixed(2)]);
+        that.setStatisticInfo([
+          myData[0][2],
+          Math.ceil(curDataCountSum),
+          curCountMin,
+          curCountMax.toFixed(2),
+        ]);
       }
       pathg
         .selectAll('path')
@@ -325,21 +327,17 @@ export default {
         .enter()
         .append('g')
         .append('path')
-        .attr(
-          'transform',
-          `translate(${  padding.left  },${  padding.top  })`,
-        )
+        .attr('transform', `translate(${padding.left},${padding.top})`)
         .attr('fill', 'none')
         .attr('d', function _nonName(d) {
           return lineFunction(d);
         })
         .attr('stroke', function _nonName(d, i) {
           if (i % 2 === 0) return 'white';
-          
-            const redcolor = 255 - i * dc;
-            const bluecolor = i * dc;
-            return `rgb(${  redcolor  },0,${  bluecolor  })`;
-          
+
+          const redcolor = 255 - i * dc;
+          const bluecolor = i * dc;
+          return `rgb(${redcolor},0,${bluecolor})`;
         })
         .attr('stroke-width', function _nonName(d, i) {
           if (i % 2 === 0) return 0.8;
@@ -351,7 +349,7 @@ export default {
         })
         .attr('id', function _nonName(d, i) {
           // 白线也要给id，方便隐藏
-          return `${label  }step${  i}`;
+          return `${label}step${i}`;
         })
         .attr('class', function _nonName(d, i) {
           return i;
@@ -363,10 +361,7 @@ export default {
             .select('.lastline')
             .attr('visibility', 'visible')
             .attr('d', lineFunction(d))
-            .attr(
-              'transform',
-              `translate(${  padding.left  },${  padding.top  })`,
-            )
+            .attr('transform', `translate(${padding.left},${padding.top})`)
             .on('mousemove', function _nonName() {
               mouseMoveFunc(lastLineData);
             });

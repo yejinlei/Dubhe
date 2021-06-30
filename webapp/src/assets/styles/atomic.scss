@@ -24,6 +24,10 @@
   display: block;
 }
 
+.di {
+  display: inline;
+}
+
 .dib {
   display: inline-block;
 }
@@ -113,6 +117,10 @@
   padding-right: 5px;
 }
 
+.pr-20 {
+  padding-right: 20px;
+}
+
 .pl-0 {
   padding-left: 0;
 }
@@ -127,6 +135,21 @@
 
 .pb-10 {
   padding-bottom: 10px;
+}
+
+.py-4 {
+  padding-top: 4px;
+  padding-bottom: 4px;
+}
+
+.py-10 {
+  padding-top: 10px;
+  padding-bottom: 10px;
+}
+
+.px-20 {
+  padding-right: 20px;
+  padding-left: 20px;
 }
 
 .mt-0 {
@@ -169,6 +192,10 @@
   margin-left: 40px;
 }
 
+.ml-auto {
+  margin-left: auto;
+}
+
 .mb-50 {
   margin-bottom: 50px;
 }
@@ -190,6 +217,11 @@
   margin-left: 10px;
 }
 
+.my-5 {
+  margin-top: 5px;
+  margin-bottom: 5px;
+}
+
 .my-10 {
   margin-top: 10px;
   margin-bottom: 10px;
@@ -205,6 +237,10 @@
   margin-bottom: auto;
 }
 
+.w-100 {
+  width: 100px;
+}
+
 .w-150 {
   width: 150px;
 }
@@ -213,12 +249,32 @@
   width: 200px;
 }
 
+.w-300 {
+  width: 300px;
+}
+
+.w-500 {
+  width: 500px;
+}
+
+.h-100 {
+  height: 100px;
+}
+
 .lh-1 {
   line-height: 1;
 }
 
+.lh-20 {
+  line-height: 20px;
+}
+
 .bold {
   font-weight: bold;
+}
+
+.normal {
+  font-weight: normal;
 }
 
 img.responsive {
@@ -290,6 +346,10 @@ img.responsive {
   border-color: $borderColor;
 }
 
+.no-border {
+  border: none;
+}
+
 .g3 {
   color: #333;
 }
@@ -316,6 +376,10 @@ img.responsive {
 
 .f18 {
   font-size: 18px;
+}
+
+.f22 {
+  font-size: 22px;
 }
 
 .ellipsis {

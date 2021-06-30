@@ -1,18 +1,18 @@
 /** Copyright 2020 Tianshu AI Platform. All Rights Reserved.
-*
-* Licensed under the Apache License, Version 2.0 (the "License");
-* you may not use this file except in compliance with the License.
-* You may obtain a copy of the License at
-*
-*     http://www.apache.org/licenses/LICENSE-2.0
-*
-* Unless required by applicable law or agreed to in writing, software
-* distributed under the License is distributed on an "AS IS" BASIS,
-* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-* See the License for the specific language governing permissions and
-* limitations under the License.
-* =============================================================
-*/
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ * =============================================================
+ */
 
 <script>
 import { onMounted, ref, toRefs, reactive, watch } from '@vue/composition-api';
@@ -22,9 +22,7 @@ import { isFunction, isEqual } from 'lodash';
 
 function zoomTransformFromProps(props) {
   const { zoom, zoomX, zoomY } = props;
-  return zoomIdentity
-    .translate(zoomX || 0, zoomY || 0)
-    .scale(zoom || 1);
+  return zoomIdentity.translate(zoomX || 0, zoomY || 0).scale(zoom || 1);
 }
 
 export default {
@@ -122,30 +120,31 @@ export default {
       });
     });
 
-    watch(() => [props.zoom, props.zoomX, props.zoomY], (nextProps, prevProps) => {
-      const hasChangedZoom = !isEqual(nextProps, prevProps);
+    watch(
+      () => [props.zoom, props.zoomX, props.zoomY],
+      (nextProps, prevProps) => {
+        const hasChangedZoom = !isEqual(nextProps, prevProps);
 
-      const nextZoomProps = {
-        zoom: nextProps[0],
-        zoomX: nextProps[1],
-        zoomY: nextProps[2],
-      };
+        const nextZoomProps = {
+          zoom: nextProps[0],
+          zoomX: nextProps[1],
+          zoomY: nextProps[2],
+        };
 
-      if (hasChangedZoom) {
-        zoomInstance.on('zoom', null);
-        const nextZoomTransform = zoomTransformFromProps(nextZoomProps);
-        zoomInstance.transform(state.selection, nextZoomTransform);
-        zoomInstance.on('zoom', handleZoom);
+        if (hasChangedZoom) {
+          zoomInstance.on('zoom', null);
+          const nextZoomTransform = zoomTransformFromProps(nextZoomProps);
+          zoomInstance.transform(state.selection, nextZoomTransform);
+          zoomInstance.on('zoom', handleZoom);
 
-        state.lastZoomTransform = nextZoomTransform;
-        // 需要强制刷新，vue sucks
-        state.zoomKey = Math.random();
+          state.lastZoomTransform = nextZoomTransform;
+          // 需要强制刷新，vue sucks
+          state.zoomKey = Math.random();
+        }
+
+        _updateZoomProps();
       }
-
-      _updateZoomProps();
-    }, {
-      lazy: true,
-    });
+    );
 
     return {
       wrapperRef,
@@ -153,9 +152,7 @@ export default {
     };
   },
   render() {
-    const zoomTransform = this.wrapperRef
-      ? d3ZoomTransform(this.wrapperRef)
-      : {};
+    const zoomTransform = this.wrapperRef ? d3ZoomTransform(this.wrapperRef) : {};
 
     const { x, y, k } = zoomTransform;
 
@@ -164,12 +161,9 @@ export default {
     };
 
     return (
-      <div ref='wrapperRef' class='zoom-wrapper'>
-        <span class='dn'>{this.zoomKey}</span>
-        <div
-          class='zoom-inner'
-          style={innerStyle}
-        >
+      <div ref="wrapperRef" class="zoom-wrapper">
+        <span class="dn">{this.zoomKey}</span>
+        <div class="zoom-inner" style={innerStyle}>
           {this.$slots.default}
         </div>
       </div>

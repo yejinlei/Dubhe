@@ -1,20 +1,20 @@
 /** Copyright 2020 Tianshu AI Platform. All Rights Reserved.
-*
-* Licensed under the Apache License, Version 2.0 (the "License");
-* you may not use this file except in compliance with the License.
-* You may obtain a copy of the License at
-*
-*     http://www.apache.org/licenses/LICENSE-2.0
-*
-* Unless required by applicable law or agreed to in writing, software
-* distributed under the License is distributed on an "AS IS" BASIS,
-* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-* See the License for the specific language governing permissions and
-* limitations under the License.
-* =============================================================
-*/
- 
-import { statusCodeMap } from '../util';
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ * =============================================================
+ */
+
+import { isStatus, isPresetDataset } from '../util';
 import { medicalAnnotationCodeMap } from './constant';
 
 export default {
@@ -34,9 +34,9 @@ export default {
           return (
             <span>
               <span>操作</span>
-              <el-tooltip effect='dark' placement='top' style={{ marginLeft: '10px' }}>		
-                <div slot='content'>自动标注仅支持肺部CT影像</div>		
-                <i class='el-icon-question'/>		
+              <el-tooltip effect="dark" placement="top" style={{ marginLeft: '10px' }}>
+                <div slot="content">自动标注仅支持肺部CT影像</div>
+                <i class="el-icon-question" />
               </el-tooltip>
             </span>
           );
@@ -53,8 +53,8 @@ export default {
             },
           };
 
-          // 查看标注按钮在自动标注中时不显示 
-          let showCheckButton = !(statusCodeMap[row.status] === 'AUTO_ANNOTATING');
+          // 查看标注按钮在自动标注中时不显示
+          let showCheckButton = !isStatus(row, 'AUTO_ANNOTATING');
           // 查阅影像按钮
           const checkButton = (
             <el-button {...btnProps} onClick={() => goDetail(row)}>
@@ -63,10 +63,11 @@ export default {
           );
 
           // 自动标注按钮只在未标注且目前算法支持的情形下显示
-          let showAutoButton = ['UNANNOTATED'].includes(statusCodeMap[row.status])
-            && row.bodyPartExamined === "LUNG"
-            && row.modality === "CT"
-            && row.annotateType === medicalAnnotationCodeMap.OrganSegmentation;
+          let showAutoButton =
+            isStatus(row, 'UNANNOTATED') &&
+            row.bodyPartExamined === 'LUNG' &&
+            row.modality === 'CT' &&
+            row.annotateType === medicalAnnotationCodeMap.OrganSegmentation;
           // 自动标注按钮
           const autoButton = (
             <el-button {...btnProps} onClick={() => autoAnnotate(row)}>
@@ -83,11 +84,11 @@ export default {
           );
 
           // 预置数据集只具备查阅影像功能
-          if (row.type === 2) {
+          if (isPresetDataset(row.type)) {
             showCheckButton = true;
             showAutoButton = false;
             showEditButton = false;
-          };        
+          }
 
           return (
             <span>

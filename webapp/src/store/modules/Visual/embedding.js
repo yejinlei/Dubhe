@@ -1,18 +1,18 @@
 /** Copyright 2020 Tianshu AI Platform. All Rights Reserved.
-*
-* Licensed under the Apache License, Version 2.0 (the "License");
-* you may not use this file except in compliance with the License.
-* You may obtain a copy of the License at
-*
-*     http://www.apache.org/licenses/LICENSE-2.0
-*
-* Unless required by applicable law or agreed to in writing, software
-* distributed under the License is distributed on an "AS IS" BASIS,
-* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-* See the License for the specific language governing permissions and
-* limitations under the License.
-* =============================================================
-*/
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ * =============================================================
+ */
 
 import http from '@/utils/VisualUtils/request';
 import port from '@/utils/VisualUtils/api';
@@ -41,10 +41,12 @@ const state = {
     initFlag: false, // 是否是初始化页面
     received: false, // 当所有的信息填充之后改变
   },
-  questionInfo: { // 请求每个点需要存储的数据结构
+  questionInfo: {
+    // 请求每个点需要存储的数据结构
     received: false, // 当所有的信息填充之后改变
   },
-  curInfo: { // 当前所处于的信息节点
+  curInfo: {
+    // 当前所处于的信息节点
     curTag: '',
     curStep: 0,
     curMapStep: 0,
@@ -65,7 +67,8 @@ const state = {
   receivedQuestionInfo: false, // 作为别的部分的监听信息
   receivedCurInfo: false, // 作为别的部分的监听信息
   receivedCurData: false,
-  legendColor: [ // 颜色条因为很多地方都会用到直接放在这里
+  legendColor: [
+    // 颜色条因为很多地方都会用到直接放在这里
     '#EF6F38',
     '#EFDD79',
     '#C5507A',
@@ -113,63 +116,65 @@ const actions = {
       context.dispatch('fetchAllStep');
     }
   },
-  async fetchAllStep(context) { // 数据链的第一步
+  async fetchAllStep(context) {
+    // 数据链的第一步
     const allStepTemp = [];
     // console.log('[context.state.categoryInfo]', context.state.categoryInfo)
-    for (let i = 0; i < context.state.categoryInfo.curRuns.length; i+=1) {
+    for (let i = 0; i < context.state.categoryInfo.curRuns.length; i += 1) {
       const oneRunStep = [];
-      for (let j = 0; j < context.state.categoryInfo.curTags[i].length; j+=1) {
-        const param = { run: context.state.categoryInfo.curRuns[i], tag: context.state.categoryInfo.curTags[i][j] };
+      for (let j = 0; j < context.state.categoryInfo.curTags[i].length; j += 1) {
+        const param = {
+          run: context.state.categoryInfo.curRuns[i],
+          tag: context.state.categoryInfo.curTags[i][j],
+        };
         // eslint-disable-next-line no-await-in-loop
-        await http.useGet(port.category.projector, param)
-          .then(res => {
-            if (+res.data.code !== 200) {
-              context.commit('setErrorMessage', `${res.data.msg  }_${  new Date().getTime()}`);
-              return;
-            }
-            const res1 = res.data.data[context.state.categoryInfo.curTags[i][j]];
-            const res2 = res.data.data.shape;
-            const res3 = res.data.data.sample;
-            const res4 = res.data.data.sample_type;
-            oneRunStep.push([res1, res2, res3, res4]);
-          });
+        await http.useGet(port.category.projector, param).then((res) => {
+          if (+res.data.code !== 200) {
+            context.commit('setErrorMessage', `${res.data.msg}_${new Date().getTime()}`);
+            return;
+          }
+          const res1 = res.data.data[context.state.categoryInfo.curTags[i][j]];
+          const res2 = res.data.data.shape;
+          const res3 = res.data.data.sample;
+          const res4 = res.data.data.sample_type;
+          oneRunStep.push([res1, res2, res3, res4]);
+        });
       }
       allStepTemp.push(oneRunStep);
     }
     context.commit('setAllStep', allStepTemp);
   },
   async featchData(context, param) {
-    await http.useGet(port.category.projector_data, param)
-      .then(res => {
-        if (+res.data.code !== 200) {
-          context.commit('setErrorMessage', `${res.data.msg  }_${  new Date().getTime()}`);
-          return;
-        }
-        context.commit('setCurData', res.data.data[param.step]);
-        context.commit('setCurInfo', ['received', true]);
-      });
+    await http.useGet(port.category.projector_data, param).then((res) => {
+      if (+res.data.code !== 200) {
+        context.commit('setErrorMessage', `${res.data.msg}_${new Date().getTime()}`);
+        return;
+      }
+      context.commit('setCurData', res.data.data[param.step]);
+      context.commit('setCurInfo', ['received', true]);
+    });
   },
   async fetchSampleData(context, param) {
     param = param2Obj(param);
-    await http.useGet(port.category.projector_sample, param)
-      .then(res => {
-        if (+res.data.code !== 200) {
-          context.commit('setErrorMessage', `${res.data.msg  }_${  new Date().getTime()}`);
-          return;
-        }
-        context.commit('setPanelSampleData', ['sampData', res.data.data]);
-      });
+    await http.useGet(port.category.projector_sample, param).then((res) => {
+      if (+res.data.code !== 200) {
+        context.commit('setErrorMessage', `${res.data.msg}_${new Date().getTime()}`);
+        return;
+      }
+      context.commit('setPanelSampleData', ['sampData', res.data.data]);
+    });
   },
 };
 
 const mutations = {
-  setSelfCategoryInfo: (state, param) => { // 处理分类
+  setSelfCategoryInfo: (state, param) => {
+    // 处理分类
     state.categoryInfo.curRuns = param[0].slice(0);
     state.categoryInfo.curTags = param[1].slice(0); // 实现深度拷贝[][]
     state.categoryInfo.initFlag = param[2].initStateFlag;
-    for (let i = 0; i < state.categoryInfo.curRuns.length; i+=1) {
+    for (let i = 0; i < state.categoryInfo.curRuns.length; i += 1) {
       state.questionInfo[state.categoryInfo.curRuns[i]] = {};
-      for (let j = 0; j < state.categoryInfo.curTags[i].length; j+=1) {
+      for (let j = 0; j < state.categoryInfo.curTags[i].length; j += 1) {
         state.questionInfo[state.categoryInfo.curRuns[i]][state.categoryInfo.curTags[i][j]] = {};
       }
     }
@@ -188,15 +193,23 @@ const mutations = {
     const firstIndex = 1;
     const secondIndex = 2;
     const thirdIndex = 3;
-    for (let i = 0; i < state.categoryInfo.curRuns.length; i+=1) {
-      for (let j = 0; j < state.categoryInfo.curTags[i].length; j+=1) {
+    for (let i = 0; i < state.categoryInfo.curRuns.length; i += 1) {
+      for (let j = 0; j < state.categoryInfo.curTags[i].length; j += 1) {
         state.questionInfo[state.categoryInfo.curRuns[i]][state.categoryInfo.curTags[i][j]] = {};
-        state.questionInfo[state.categoryInfo.curRuns[i]][state.categoryInfo.curTags[i][j]].allSteps = param[i][j][someIndex];
-        state.questionInfo[state.categoryInfo.curRuns[i]][state.categoryInfo.curTags[i][j]].curMin = param[i][j][someIndex][someIndex];
-        state.questionInfo[state.categoryInfo.curRuns[i]][state.categoryInfo.curTags[i][j]].curMax = param[i][j][someIndex].length - 1;
-        state.questionInfo[state.categoryInfo.curRuns[i]][state.categoryInfo.curTags[i][j]].shape = param[i][j][firstIndex][firstIndex];
-        state.questionInfo[state.categoryInfo.curRuns[i]][state.categoryInfo.curTags[i][j]].sample = param[i][j][secondIndex];
-        state.questionInfo[state.categoryInfo.curRuns[i]][state.categoryInfo.curTags[i][j]].sample_type = param[i][j][thirdIndex];
+        state.questionInfo[state.categoryInfo.curRuns[i]][
+          state.categoryInfo.curTags[i][j]
+        ].allSteps = param[i][j][someIndex];
+        state.questionInfo[state.categoryInfo.curRuns[i]][state.categoryInfo.curTags[i][j]].curMin =
+          param[i][j][someIndex][someIndex];
+        state.questionInfo[state.categoryInfo.curRuns[i]][state.categoryInfo.curTags[i][j]].curMax =
+          param[i][j][someIndex].length - 1;
+        state.questionInfo[state.categoryInfo.curRuns[i]][state.categoryInfo.curTags[i][j]].shape =
+          param[i][j][firstIndex][firstIndex];
+        state.questionInfo[state.categoryInfo.curRuns[i]][state.categoryInfo.curTags[i][j]].sample =
+          param[i][j][secondIndex];
+        state.questionInfo[state.categoryInfo.curRuns[i]][
+          state.categoryInfo.curTags[i][j]
+        ].sample_type = param[i][j][thirdIndex];
       }
     }
     state.questionInfo.received = true; // 当需要请求信息的时候所有的数据已经完备
@@ -235,24 +248,24 @@ const mutations = {
       if (m > n) return 1;
       return 0;
     });
-    for (let i = 0; i < arr.length && i < 10; i+=1) {
-      state.curData.labelType.push(`${arr[i]  }`);
+    for (let i = 0; i < arr.length && i < 10; i += 1) {
+      state.curData.labelType.push(`${arr[i]}`);
     }
     if (arr.length > 10) {
       state.curData.labelType[9] = '其他';
     }
-    for (let i = 0; i < state.curData.labelType.length; i+=1) {
+    for (let i = 0; i < state.curData.labelType.length; i += 1) {
       state.curData.labelTypeColor[state.curData.labelType[i]] = state.legendColor[i];
     }
-    for (let i = 0; i < state.curData.labelType.length; i+=1) {
+    for (let i = 0; i < state.curData.labelType.length; i += 1) {
       state.curData.echaLabelNumber[state.curData.labelType[i]] = 0;
     }
     // 统计每个labelType的个数
-    for (let i = 0; i < param[1].length; i+=1) {
+    for (let i = 0; i < param[1].length; i += 1) {
       if (state.curData.labelType.indexOf(param[1][i].toString()) !== -1) {
-        state.curData.echaLabelNumber[param[1][i].toString()]+=1;
+        state.curData.echaLabelNumber[param[1][i].toString()] += 1;
       } else {
-        state.curData.echaLabelNumber[state.curData.labelType[9]]+=1;
+        state.curData.echaLabelNumber[state.curData.labelType[9]] += 1;
       }
     }
     state.receivedCurData = !state.receivedCurData;

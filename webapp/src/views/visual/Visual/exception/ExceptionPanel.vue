@@ -1,18 +1,18 @@
 /** Copyright 2020 Tianshu AI Platform. All Rights Reserved.
-*
-* Licensed under the Apache License, Version 2.0 (the "License");
-* you may not use this file except in compliance with the License.
-* You may obtain a copy of the License at
-*
-*     http://www.apache.org/licenses/LICENSE-2.0
-*
-* Unless required by applicable law or agreed to in writing, software
-* distributed under the License is distributed on an "AS IS" BASIS,
-* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-* See the License for the specific language governing permissions and
-* limitations under the License.
-* =============================================================
-*/
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ * =============================================================
+ */
 
 <template>
   <div class="temp">
@@ -38,15 +38,22 @@
             <div v-if="!dq0Show">
               <el-row class="item">
                 <el-col :span="colSpan0[0]">联动&nbsp;：</el-col>
-                <el-col :span="colSpan0[1]"><el-checkbox v-model="myLinkChecked" /></el-col>
+                <el-col :span="colSpan0[1]"><el-checkbox v-model="myLinkChecked"/></el-col>
               </el-row>
               <el-row class="item excepPanelSelect">
                 <el-col :span="colSpan1[0]">上四分位距倍数&nbsp;：</el-col>
-                <el-col :span="colSpan1[1]"><el-input v-model="curBoxInfo.upTimes" type="number" @change="changeUpTimes()" /></el-col>
+                <el-col :span="colSpan1[1]"
+                  ><el-input v-model="curBoxInfo.upTimes" type="number" @change="changeUpTimes()"
+                /></el-col>
               </el-row>
               <el-row class="item excepPanelSelect">
                 <el-col :span="colSpan1[0]">下四分位距倍数&nbsp;：</el-col>
-                <el-col :span="colSpan1[1]"><el-input v-model="curBoxInfo.downTimes" type="number" @change="changeDownTimes()" /></el-col>
+                <el-col :span="colSpan1[1]"
+                  ><el-input
+                    v-model="curBoxInfo.downTimes"
+                    type="number"
+                    @change="changeDownTimes()"
+                /></el-col>
               </el-row>
               <div class="item subButtonDiv">
                 <el-button class="subButton" @click="submitBoxInfo()">确定</el-button>
@@ -77,7 +84,9 @@
       </el-card>
       <el-card>
         <!-- 对应颜色矩阵中的行列数值 -->
-        <div class="infoTitle"><i class="el-icon-chat-dot-round dot" />颜色矩阵像素点相关信息：</div>
+        <div class="infoTitle">
+          <i class="el-icon-chat-dot-round dot" />颜色矩阵像素点相关信息：
+        </div>
         <div v-show="!rectInfoShowFlag" class="infoContent">暂无信息</div>
         <div v-show="rectInfoShowFlag" class="infoContent">
           <div v-for="(item, index) in curRectInfoHead" :key="index">
@@ -94,7 +103,10 @@
 <script>
 import { createNamespacedHelpers } from 'vuex';
 
-const { mapGetters: mapExceptionGetters, mapMutations: mapExceptionMutations } = createNamespacedHelpers('Visual/exception');
+const {
+  mapGetters: mapExceptionGetters,
+  mapMutations: mapExceptionMutations,
+} = createNamespacedHelpers('Visual/exception');
 export default {
   data() {
     return {
@@ -143,7 +155,13 @@ export default {
         return;
       }
       this.boxInfoShowFlag = true;
-      [this.curBoxInfo.run, this.curBoxInfo.tag, this.curBoxInfo.step, this.curBoxInfo.upTimes, this.curBoxInfo.downTimes] = val;
+      [
+        this.curBoxInfo.run,
+        this.curBoxInfo.tag,
+        this.curBoxInfo.step,
+        this.curBoxInfo.upTimes,
+        this.curBoxInfo.downTimes,
+      ] = val;
       this.runSeletChange();
       this.tagSeletChange();
     },
@@ -168,7 +186,13 @@ export default {
   methods: {
     ...mapExceptionMutations(['setCurIqrTimes', 'setLinkChecked', 'setRectCurInfo']),
     mySetCurIqrTimes() {
-      this.setCurIqrTimes([this.curBoxInfo.run, this.curBoxInfo.tag, this.curBoxInfo.step, this.curBoxInfo.upTimes, this.curBoxInfo.downTimes]);
+      this.setCurIqrTimes([
+        this.curBoxInfo.run,
+        this.curBoxInfo.tag,
+        this.curBoxInfo.step,
+        this.curBoxInfo.upTimes,
+        this.curBoxInfo.downTimes,
+      ]);
     },
     runSeletChange() {
       for (let i = 0; i < this.getRun.length; i += 1) {
@@ -180,7 +204,10 @@ export default {
     },
     tagSeletChange() {
       for (let i = 0; i < this.getAllStep.length; i += 1) {
-        if (this.getAllStep[i][0] === this.curBoxInfo.run && this.getAllStep[i][1] === this.curBoxInfo.tag) {
+        if (
+          this.getAllStep[i][0] === this.curBoxInfo.run &&
+          this.getAllStep[i][1] === this.curBoxInfo.tag
+        ) {
           this.curRunTagStep = this.getAllStep[i][2].step;
           break;
         }
@@ -189,7 +216,10 @@ export default {
     computeMaxTimes() {
       let curStepBox = [];
       for (let i = 0; i < this.getAllStep.length; i += 1) {
-        if (this.getAllStep[i][0] === this.curBoxInfo.run && this.getAllStep[i][1] === this.curBoxInfo.tag) {
+        if (
+          this.getAllStep[i][0] === this.curBoxInfo.run &&
+          this.getAllStep[i][1] === this.curBoxInfo.tag
+        ) {
           let k = 0;
           for (let j = 0; j < this.curRunTagStep.length; j += 1) {
             if (this.curRunTagStep[j] === this.curBoxInfo.step) {
@@ -218,7 +248,7 @@ export default {
       const [maxDownTimes, maxUpTimes] = this.computeMaxTimes();
       if (this.curBoxInfo.upTimes > maxUpTimes) {
         this.$message({
-          message: `上四分位距的倍数最大只能为：${  maxUpTimes}`,
+          message: `上四分位距的倍数最大只能为：${maxUpTimes}`,
           type: 'warning',
         });
         this.curBoxInfo.upTimes = maxUpTimes;
@@ -228,7 +258,7 @@ export default {
         let downTimesTemp = this.curBoxInfo.upTimes;
         if (maxDownTimes < downTimesTemp) {
           this.$message({
-            message: `下四分位距的倍数最大只能为：${  maxDownTimes}`,
+            message: `下四分位距的倍数最大只能为：${maxDownTimes}`,
             type: 'warning',
           });
           downTimesTemp = maxDownTimes;
@@ -250,7 +280,7 @@ export default {
       const [maxDownTimes, maxUpTimes] = this.computeMaxTimes();
       if (this.curBoxInfo.downTimes > maxDownTimes) {
         this.$message({
-          message: `下四分位距的倍数最大只能为：${  maxDownTimes}`,
+          message: `下四分位距的倍数最大只能为：${maxDownTimes}`,
           type: 'warning',
         });
         this.curBoxInfo.downTimes = maxDownTimes;
@@ -260,7 +290,7 @@ export default {
         let upTimesTemp = this.curBoxInfo.downTimes;
         if (maxUpTimes < upTimesTemp) {
           this.$message({
-            message: `上四分位距的倍数最大只能为：${  maxUpTimes}`,
+            message: `上四分位距的倍数最大只能为：${maxUpTimes}`,
             type: 'warning',
           });
           upTimesTemp = maxUpTimes;
@@ -273,7 +303,10 @@ export default {
     submitBoxInfo() {
       // 需要先判断一下再存进去，数据没变也不提交
       // 都不为空，以及倍数不能为负数
-      if (Number(this.curBoxInfo.upTimes) !== Number(this.curBoxInfo.downTimes) && this.myLinkChecked) {
+      if (
+        Number(this.curBoxInfo.upTimes) !== Number(this.curBoxInfo.downTimes) &&
+        this.myLinkChecked
+      ) {
         if (this.downUpChange === 'downUp') {
           this.changeDownTimes();
         } else {
@@ -281,7 +314,11 @@ export default {
         }
       }
       // 如果没有变化就不提交
-      if (Number(this.curBoxInfo.upTimes) === this.getCurIqrTimes[3] && Number(this.curBoxInfo.downTimes) === this.getCurIqrTimes[4]) return;
+      if (
+        Number(this.curBoxInfo.upTimes) === this.getCurIqrTimes[3] &&
+        Number(this.curBoxInfo.downTimes) === this.getCurIqrTimes[4]
+      )
+        return;
       if (Number(this.curBoxInfo.upTimes) < 0 || Number(this.curBoxInfo.downTimes) < 0) {
         this.$message({
           message: '倍数不能为负数',
@@ -289,7 +326,13 @@ export default {
         });
         return;
       }
-      this.setCurIqrTimes([this.curBoxInfo.run, this.curBoxInfo.tag, this.curBoxInfo.step, Number(this.curBoxInfo.upTimes), Number(this.curBoxInfo.downTimes)]);
+      this.setCurIqrTimes([
+        this.curBoxInfo.run,
+        this.curBoxInfo.tag,
+        this.curBoxInfo.step,
+        Number(this.curBoxInfo.upTimes),
+        Number(this.curBoxInfo.downTimes),
+      ]);
     },
   },
 };
@@ -394,7 +437,8 @@ export default {
   border-color: #625eb3;
 }
 
-/deep/ .excepPanel .el-checkbox__input.is-checked .el-checkbox__inner .excepPanel .el-checkbox__input.is-indeterminate .el-checkbox__inner {
+/deep/
+.excepPanel .el-checkbox__input.is-checked .el-checkbox__inner .excepPanel .el-checkbox__input.is-indeterminate .el-checkbox__inner {
   background-color: #625eb3;
   border-color: #625eb3;
 }

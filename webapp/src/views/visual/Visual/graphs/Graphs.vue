@@ -1,18 +1,18 @@
 /** Copyright 2020 Tianshu AI Platform. All Rights Reserved.
-*
-* Licensed under the Apache License, Version 2.0 (the "License");
-* you may not use this file except in compliance with the License.
-* You may obtain a copy of the License at
-*
-*     http://www.apache.org/licenses/LICENSE-2.0
-*
-* Unless required by applicable law or agreed to in writing, software
-* distributed under the License is distributed on an "AS IS" BASIS,
-* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-* See the License for the specific language governing permissions and
-* limitations under the License.
-* =============================================================
-*/
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ * =============================================================
+ */
 
 <template>
   <div>
@@ -29,17 +29,17 @@
               refX="10"
               refY="10"
             >
-              <circle
-                cx="10"
-                cy="10"
-                r="4"
-                style="fill: black;"
-              />
+              <circle cx="10" cy="10" r="4" style="fill: black;" />
             </marker>
           </defs>
           <g id="draw" />
         </svg>
-        <div v-show="showTag" id="assist" class="assist" style="right: 0%; display: flex; flex-direction: column; width: 20%; height: 100%; background-color: white;">
+        <div
+          v-show="showTag"
+          id="assist"
+          class="assist"
+          style="right: 0%; display: flex; flex-direction: column; width: 20%; height: 100%; background-color: white;"
+        >
           <div style="height: 20px;"><span>删除节点</span></div>
           <div style="height: calc(100% - 20px);"><svg /></div>
         </div>
@@ -57,9 +57,9 @@ import 'jquery-contextmenu/dist/jquery.contextMenu.css';
 import { createNamespacedHelpers } from 'vuex';
 
 let expandNode = [];
-let delStageNode = []; 
-let reserverStageNode = []; 
-let clickDel = []; 
+let delStageNode = [];
+let reserverStageNode = [];
+let clickDel = [];
 let changeTag = 0;
 let tmp = [];
 const {
@@ -116,12 +116,12 @@ export default {
       this.graphData = val;
       this.nodeInfo.splice(0, this.nodeInfo.length);
       expandNode = [];
-      delStageNode = []; 
-      reserverStageNode = []; 
-      clickDel = []; 
+      delStageNode = [];
+      reserverStageNode = [];
+      clickDel = [];
       changeTag = 0;
       tmp = [];
-      this.getNodeInfo(JSON.stringify({ 'info': 'init' }));
+      this.getNodeInfo(JSON.stringify({ info: 'init' }));
       this.drawGraph();
       this.setRunChangeTag(false);
       this.setIsDrawing(false);
@@ -157,7 +157,7 @@ export default {
       const param = { run: val, tag: this.getCurTag };
       this.getFullData(param);
     },
-    getCurTag(val) { 
+    getCurTag(val) {
       if (!this.getRunChangeTag) {
         if (!this.getIsDrawing) {
           this.setIsDrawing(true);
@@ -172,7 +172,7 @@ export default {
     this.retList = this.getRetList;
     this.initDraw += 1;
     this.regularEx('');
-    for(let i = 0; i<reserverStageNode.length; i += 1) {
+    for (let i = 0; i < reserverStageNode.length; i += 1) {
       reserverStageNode[i].sign = 1;
     }
     if (this.getGraphData.length === 0) {
@@ -204,29 +204,28 @@ export default {
     ]),
     drawGraph() {
       const self = this;
-      const {drawCircleTag,getDelNodeInfo,getModifyClick,drawAssist,nodeInfo} = this;
+      const { drawCircleTag, getDelNodeInfo, getModifyClick, drawAssist, nodeInfo } = this;
       const getInfo = this.getNodeInfo;
       const data = this.graphData;
       if (data === undefined) {
         return;
       }
-      const color = d3.scaleOrdinal()
-        .range([
-          '#e8c5df', // Convolution
-          '#daf4cc', // Normalization
-          '#d7dafb', // Math&Activation&Pooling
-          '#b1cbe8', // Sparse Tensors&Tensor Transformations
-          '#cdf6e8', // ControlFlow
-          '#feedd3', // Losses&Metrics
-          '#d2f5f9', // InputsandReaders
-          '#dcdcdc', // default
-          '#dcdcdc', // empty
-          '#dcdcdc', // backup
-          '#dcdcdc', // backup
-        ]);
+      const color = d3.scaleOrdinal().range([
+        '#e8c5df', // Convolution
+        '#daf4cc', // Normalization
+        '#d7dafb', // Math&Activation&Pooling
+        '#b1cbe8', // Sparse Tensors&Tensor Transformations
+        '#cdf6e8', // ControlFlow
+        '#feedd3', // Losses&Metrics
+        '#d2f5f9', // InputsandReaders
+        '#dcdcdc', // default
+        '#dcdcdc', // empty
+        '#dcdcdc', // backup
+        '#dcdcdc', // backup
+      ]);
       const isDashed = {};
       const isLines = {};
-      const titleHeight = 40; 
+      const titleHeight = 40;
       const cornerR = 5;
       const lineWidth = 1;
       const opdata = {};
@@ -245,8 +244,8 @@ export default {
       // 绘制  补上edge的虚节点
       function DrawVirtualNodes(graph) {
         d3.selectAll(`.nodes .node`)
-        // 1:卷积层,2:全连接层,3:池化层,4:归一化
-        // eslint-disable-next-line
+          // 1:卷积层,2:全连接层,3:池化层,4:归一化
+          // eslint-disable-next-line
           .attr('temp', function(uid) {
             if (!nodedata[uid] || !IsVirtualNode(nodedata[uid])) {
               return '';
@@ -255,7 +254,11 @@ export default {
             if (!node) {
               return '';
             }
-            d3.select(this).select('rect').style('stroke-dasharray', '5,3').style('stroke', '#696969').style('stroke-width', '1.5px');
+            d3.select(this)
+              .select('rect')
+              .style('stroke-dasharray', '5,3')
+              .style('stroke', '#696969')
+              .style('stroke-width', '1.5px');
           });
       }
       // 判断是否为计算图特殊节点
@@ -291,9 +294,9 @@ export default {
       // 绘制计算图特殊节点
       function DrawSpecialNodes(graph) {
         d3.selectAll(`.nodes .node`)
-        // eslint-disable-next-line
+          // eslint-disable-next-line
           .attr('temp', function(uid) {
-            const rectColor = {1:"#e8c5df", 2:"#b7d4ae", 3:"#d7dafb", 4:"#daf4cc"};
+            const rectColor = { 1: '#e8c5df', 2: '#b7d4ae', 3: '#d7dafb', 4: '#daf4cc' };
             if (!nodedata[uid]) {
               return '';
             }
@@ -302,7 +305,9 @@ export default {
             if (!node || !(nodeType in rectColor)) {
               return '';
             }
-            d3.select(this).select('rect').style('fill', rectColor[nodeType]);
+            d3.select(this)
+              .select('rect')
+              .style('fill', rectColor[nodeType]);
           });
       }
       // 判断结构图是否要双层节点 或者 特殊颜色
@@ -328,7 +333,7 @@ export default {
       // 绘制特殊节点,绘制结构图双层节点
       function DrawDoubleNodes(graph) {
         d3.selectAll(`.nodes .node`)
-        // eslint-disable-next-line
+          // eslint-disable-next-line
           .attr('temp', function(uid) {
             if (!nodedata[uid] || !IsDoubleNode(nodedata[uid])) {
               return '';
@@ -340,15 +345,20 @@ export default {
             const width = node.width + 20;
             const height = node.height + 30;
             if (IsDoubleNode(nodedata[uid]) !== 4) {
-            // 分层的下层背景
-              d3.select(this).select('.label').attr('transform', `translate(0,-${  height / 4  })`);
-              d3.select(this).selectAll('.special-layer-2').data([0])
+              // 分层的下层背景
+              d3.select(this)
+                .select('.label')
+                .attr('transform', `translate(0,-${height / 4})`);
+              d3.select(this)
+                .selectAll('.special-layer-2')
+                .data([0])
                 .enter()
                 .append('rect')
                 .attr('class', 'special-layer-2')
                 .style('fill', '#ffffff');
               // 下层空白
-              d3.select(this).selectAll('.special-layer-2')
+              d3.select(this)
+                .selectAll('.special-layer-2')
                 .attr('x', -width / 2 + lineWidth)
                 .attr('y', -titleHeight + titleHeight / 2 - lineWidth + 20)
                 .attr('rx', cornerR + 6)
@@ -358,12 +368,15 @@ export default {
                 .style('fill', '#fff')
                 .style('opacity', 1)
                 .style('stroke-width', 0);
-              d3.select(this).selectAll('.special-layer-1').data([0])
+              d3.select(this)
+                .selectAll('.special-layer-1')
+                .data([0])
                 .enter()
                 .append('rect')
                 .attr('class', 'special-layer-1')
                 .style('fill', '#fff');
-              d3.select(this).selectAll('.special-layer-1')
+              d3.select(this)
+                .selectAll('.special-layer-1')
                 .attr('x', -width / 2 + lineWidth)
                 .attr('y', -5)
                 .attr('width', width - lineWidth * 2)
@@ -371,26 +384,33 @@ export default {
                 .style('opacity', 1)
                 .style('fill', '#fff')
                 .style('stroke-width', 0);
-              const text1 = {1:"kernel_size", 2:"units", 3:"pool_size"};
-              const text2 = {1:"strides", 2:"activation", 3:"strides"};
+              const text1 = { 1: 'kernel_size', 2: 'units', 3: 'pool_size' };
+              const text2 = { 1: 'strides', 2: 'activation', 3: 'strides' };
               const nodeType = IsDoubleNode(nodedata[uid]);
               if (nodeType in text1) {
                 const ATTR = nodedata[uid].attrs;
-                d3.select(this).selectAll('.special-layer-text1').data([0])
-                    .enter()
-                    .append('text')
-                    .attr('class', 'special-layer-text')
-                    .attr('x', -width / 2 + 15)
-                    .attr('y', 8);
-                d3.select(this).selectAll('.special-layer-text').html(`● ${text1[nodeType]}: ${JSON.stringify(ATTR[text1[nodeType]])}`).style('font-size', '12px');
-                d3.select(this).selectAll('.special-layer-text2').data([0])
-                    .enter()
-                    .append('text')
-                    .attr('class', 'special-layer-text')
-                    .attr('x', -width / 2 + 15)
-                    .attr('y', 25)
-                    .html(`● ${text2[nodeType]}: : ${JSON.stringify(ATTR[text2[nodeType]])}`)
-                    .style('font-size', '12px');
+                d3.select(this)
+                  .selectAll('.special-layer-text1')
+                  .data([0])
+                  .enter()
+                  .append('text')
+                  .attr('class', 'special-layer-text')
+                  .attr('x', -width / 2 + 15)
+                  .attr('y', 8);
+                d3.select(this)
+                  .selectAll('.special-layer-text')
+                  .html(`● ${text1[nodeType]}: ${JSON.stringify(ATTR[text1[nodeType]])}`)
+                  .style('font-size', '12px');
+                d3.select(this)
+                  .selectAll('.special-layer-text2')
+                  .data([0])
+                  .enter()
+                  .append('text')
+                  .attr('class', 'special-layer-text')
+                  .attr('x', -width / 2 + 15)
+                  .attr('y', 25)
+                  .html(`● ${text2[nodeType]}: : ${JSON.stringify(ATTR[text2[nodeType]])}`)
+                  .style('font-size', '12px');
               }
             }
           });
@@ -407,16 +427,16 @@ export default {
       }
       function GetColorByNode(g, node) {
         let op = '';
-        const {uid} = node;
+        const { uid } = node;
         if (nodedata[uid]) {
           op = nodedata[uid].op;
-        } else { 
+        } else {
           if (g.node(uid)) {
             op = g.node(uid).op;
             nodedata[uid] = g.node(uid);
           }
           if (g.node.sub_net) {
-            const index = g.node.sub_net.findIndex(e => e.uid === uid);
+            const index = g.node.sub_net.findIndex((e) => e.uid === uid);
             if (index >= 0) {
               op = g.node.sub_net[index].op;
               nodedata[uid] = g.node.sub_net[index];
@@ -432,16 +452,22 @@ export default {
       retlist.forEach((d) => {
         d.list.forEach((tk) => {
           opdata[tk] = {
-            op: tk, parent: d.op,
+            op: tk,
+            parent: d.op,
           };
           if (tk.indexOf('_') >= 0) {
             opdata[tk] = {
-              op: tk.replace(/_/g, ''), parent: d.op,
+              op: tk.replace(/_/g, ''),
+              parent: d.op,
             };
           }
         });
       });
-      color.domain(retlist.map((d) => { return d.op; }));
+      color.domain(
+        retlist.map((d) => {
+          return d.op;
+        })
+      );
       // 判断该节点是否可用
       const find = (id) => {
         const names = id.split('/');
@@ -453,25 +479,25 @@ export default {
             }
           }
           return true;
-        } 
-          let sign = 0;
-          const pre = names.slice(0, namesLength - 1).join('/');
-          for (let i = 0; i < expandNode.length; i += 1) {
-            if (pre === expandNode[i].uid) {
-              sign = 1;
-              break;
-            }
+        }
+        let sign = 0;
+        const pre = names.slice(0, namesLength - 1).join('/');
+        for (let i = 0; i < expandNode.length; i += 1) {
+          if (pre === expandNode[i].uid) {
+            sign = 1;
+            break;
           }
-          for (let i = 0; i < expandNode.length; i += 1) {
-            if (id === expandNode[i].uid) {
-              sign = 0;
-              break;
-            }
+        }
+        for (let i = 0; i < expandNode.length; i += 1) {
+          if (id === expandNode[i].uid) {
+            sign = 0;
+            break;
           }
-          if (sign) {
-            return true;
-          } 
-            return false;
+        }
+        if (sign) {
+          return true;
+        }
+        return false;
       };
       // 保存节点及相关边,sign标记保存入边(0)或出边(1)
       const nodeHold = (nodeUid, edgeUid, srcNode, sign, op, attrs) => {
@@ -484,7 +510,7 @@ export default {
               if (srcNode) {
                 nodeInfo[i].outNode.push(srcNode);
               }
-              if (attrs && (JSON.stringify(attrs) !== '{}')) {
+              if (attrs && JSON.stringify(attrs) !== '{}') {
                 nodeInfo[i].attr = attrs;
               }
               nodeInfo[i].op = op;
@@ -492,20 +518,20 @@ export default {
               if (srcNode) {
                 nodeInfo[i].inNode.push(srcNode);
               }
-              if (attrs && (JSON.stringify(attrs) !== '{}')) {
+              if (attrs && JSON.stringify(attrs) !== '{}') {
                 nodeInfo[i].attr = attrs;
               }
             }
             return true;
           }
         }
-        const node = { 'uid': nodeUid, 'inNode': [], 'outNode': [], 'op': '' };
+        const node = { uid: nodeUid, inNode: [], outNode: [], op: '' };
         if (sign) {
           if (srcNode) {
             node.outNode.push(srcNode);
           }
           node.op = op;
-          if (attrs && (JSON.stringify(attrs) !== '{}')) {
+          if (attrs && JSON.stringify(attrs) !== '{}') {
             node.attr = attrs;
           }
           nodeInfo.push(node);
@@ -513,7 +539,7 @@ export default {
           if (srcNode) {
             node.inNode.push(srcNode);
           }
-          if (attrs && (JSON.stringify(attrs) !== '{}')) {
+          if (attrs && JSON.stringify(attrs) !== '{}') {
             node.attr = attrs;
           }
           nodeInfo.push(node);
@@ -525,7 +551,10 @@ export default {
         self.lastClick = '';
         self.lastAssistClick = '';
         nodeInfo.splice(0, nodeInfo.length);
-        d3.select('#svg-canvas').select('g').selectAll('g').remove();
+        d3.select('#svg-canvas')
+          .select('g')
+          .selectAll('g')
+          .remove();
         const g = new dagreD3.graphlib.Graph({ compound: true })
           .setGraph({})
           .setDefaultEdgeLabel(() => {
@@ -541,7 +570,10 @@ export default {
               }
               v.label = v.name;
               let label = `${v.label.slice(0, 13)}\n`;
-              label += v.label.length > 26 ? `...${v.label.substring(v.label.length - 13)}` : `${v.label.substring(13, v.label.length)}`;
+              label +=
+                v.label.length > 26
+                  ? `...${v.label.substring(v.label.length - 13)}`
+                  : `${v.label.substring(13, v.label.length)}`;
               v.label = label;
             }
           }
@@ -549,8 +581,8 @@ export default {
             g.setNode(v.uid, v);
             v.targets.forEach((u) => {
               if (find(u.id)) {
-                const edgeLabel = `${v.uid  }__${  u.id}`;
-                g.setEdge(v.uid, u.id, { 'id': edgeLabel, 'label': u.info, curve: d3.curveBasis });
+                const edgeLabel = `${v.uid}__${u.id}`;
+                g.setEdge(v.uid, u.id, { id: edgeLabel, label: u.info, curve: d3.curveBasis });
                 isDashed[edgeLabel] = u.control;
                 isLines[edgeLabel] = u.num;
                 nodeHold(v.uid, edgeLabel, u.id, 1, v.op, v.attrs);
@@ -560,7 +592,7 @@ export default {
             nodeHold(v.uid, '', '', 1, v.op, v.attrs);
           } else {
             v.clusterLabelPos = 'top';
-            if( v.name ) {
+            if (v.name) {
               v.label = v.name;
             }
             g.setNode(v.uid, v);
@@ -578,7 +610,10 @@ export default {
                 }
                 v.label = v.name;
                 let label = `${v.label.slice(0, 13)}\n`;
-                label += v.label.length > 26 ? `...${v.label.substring(v.label.length - 13)}` : `${v.label.substring(13, v.label.length)}`;
+                label +=
+                  v.label.length > 26
+                    ? `...${v.label.substring(v.label.length - 13)}`
+                    : `${v.label.substring(13, v.label.length)}`;
                 v.label = label;
               }
             }
@@ -587,8 +622,8 @@ export default {
               g.setNode(v.uid, v);
               v.targets.forEach((u) => {
                 if (find(u.id)) {
-                  const edgeLabel = `${v.uid  }__${  u.id}`;
-                  g.setEdge(v.uid, u.id, { 'id': edgeLabel, 'label': u.info, curve: d3.curveBasis });
+                  const edgeLabel = `${v.uid}__${u.id}`;
+                  g.setEdge(v.uid, u.id, { id: edgeLabel, label: u.info, curve: d3.curveBasis });
                   isDashed[edgeLabel] = u.control;
                   isLines[edgeLabel] = u.num;
                   nodeHold(v.uid, edgeLabel, u.id, 1, v.op, v.attrs);
@@ -598,7 +633,7 @@ export default {
               nodeHold(v.uid, '', '', 1, v.op, v.attrs);
             } else {
               v.clusterLabelPos = 'top';
-              if( v.name ) {
+              if (v.name) {
                 v.label = v.name;
               }
               g.setNode(v.uid, v);
@@ -610,14 +645,14 @@ export default {
           const node = g.node(v);
           if (node !== undefined) {
             let fill = GetColorByNode(g, v);
-            const expand = expandNode.find(item => item.uid === v);
+            const expand = expandNode.find((item) => item.uid === v);
             if (expand !== undefined) {
               fill = expand.fill || fill;
             }
-            node.rx = node.ry = 10; 
-            node.width = 125; 
-            node.height = 20; 
-            node.style = `fill:${  fill  };rx:12.5px;ry:12.5px;stroke-width:1px;stroke:#696969`;
+            node.rx = node.ry = 10;
+            node.width = 125;
+            node.height = 20;
+            node.style = `fill:${fill};rx:12.5px;ry:12.5px;stroke-width:1px;stroke:#696969`;
             if (IsDoubleNode(node) && IsDoubleNode(node) !== 4 && self.getCurTag !== 'c_graph') {
               node.height = 50;
             }
@@ -635,10 +670,12 @@ export default {
         const render = new dagreD3.render();
         const svg = d3.select('#svg-canvas');
         render(d3.select('#svg-canvas g'), g);
-        d3.select('#svg-canvas').attr('width', '100%').attr('height', '100%');
+        d3.select('#svg-canvas')
+          .attr('width', '100%')
+          .attr('height', '100%');
         self.srcData = data;
         if (!reserverStageNode.length) {
-          const tmp1 = { 'sign': 1 };
+          const tmp1 = { sign: 1 };
           tmp1.nodeInfo = JSON.parse(JSON.stringify(nodeInfo));
           reserverStageNode.push(tmp1);
           const nnodeInfo = reserverStageNode[0].nodeInfo;
@@ -648,8 +685,8 @@ export default {
               if (nnodeInfo[j].uid === tmpItem.nodeId) {
                 nnodeInfo.splice(j, 1);
               } else {
-                const {inNode} = nnodeInfo[j];
-                const {outNode} = nnodeInfo[j];
+                const { inNode } = nnodeInfo[j];
+                const { outNode } = nnodeInfo[j];
                 for (let z = 0; z <= inNode.length; z += 1) {
                   if (inNode[z] === tmpItem.nodeId) {
                     inNode.splice(z, 1);
@@ -673,14 +710,25 @@ export default {
           init = false;
           const canvas = d3.select('#svg-canvas')._groups[0][0];
           const canvasHeight = canvas.scrollHeight;
-          const canvasWidth = canvas.scrollWidth;        
+          const canvasWidth = canvas.scrollWidth;
           const graph = d3.select('#svg-canvas g')._groups[0][0];
           const graphHeight = graph.getBBox().height;
           const graphWidth = graph.getBBox().width;
-          const index = Math.min((canvasHeight / graphHeight), (canvasWidth / graphWidth), 1);
+          const index = Math.min(canvasHeight / graphHeight, canvasWidth / graphWidth, 1);
           const scale = `scale(${index})`;
-          d3.select('#svg-canvas g').attr('transform', ` translate(${  (canvasWidth - graphWidth*index) / 2  },${  (canvasHeight - graphHeight*index) / 2  }) ${scale}`);
-          const transform = d3.zoomTransform(0).translate((canvasWidth - graphWidth*index) / 2, (canvasHeight - graphHeight*index) / 2).scale(index);
+          d3.select('#svg-canvas g').attr(
+            'transform',
+            ` translate(${(canvasWidth - graphWidth * index) / 2},${(canvasHeight -
+              graphHeight * index) /
+              2}) ${scale}`
+          );
+          const transform = d3
+            .zoomTransform(0)
+            .translate(
+              (canvasWidth - graphWidth * index) / 2,
+              (canvasHeight - graphHeight * index) / 2
+            )
+            .scale(index);
           d3.zoom().transform(svg, transform);
         }
         drawAssist('white');
@@ -690,18 +738,24 @@ export default {
         svg.call(zoom).on('dblclick.zoom', null);
         // 自动调节节点位置
         function PosAdaption(itemnode) {
-            if (itemnode) {
-              const str = d3.select('#svg-canvas g').attr('transform');
-              let [xCoor, yCoor] = str.substring(str.indexOf('(') + 1, str.indexOf(')')).split(',');
-              const { x: xCurrent, y: yCurrent } = itemnode;
-              const svgWidth = d3.select('#svg-canvas').style('width').replace('px', '');
-              const svgHeight = d3.select('#svg-canvas').style('height').replace('px', '');
-              xCoor = Number(svgWidth) / 2 - xCurrent;
-              yCoor = Number(svgHeight) / 2 - yCurrent;
-              d3.select('#svg-canvas g').attr('transform', `translate(${xCoor}, ${yCoor})`);
-              const transform = d3.zoomTransform(0).translate(xCoor, yCoor);
-              d3.zoom().transform(svg, transform);
-            }
+          if (itemnode) {
+            const str = d3.select('#svg-canvas g').attr('transform');
+            let [xCoor, yCoor] = str.substring(str.indexOf('(') + 1, str.indexOf(')')).split(',');
+            const { x: xCurrent, y: yCurrent } = itemnode;
+            const svgWidth = d3
+              .select('#svg-canvas')
+              .style('width')
+              .replace('px', '');
+            const svgHeight = d3
+              .select('#svg-canvas')
+              .style('height')
+              .replace('px', '');
+            xCoor = Number(svgWidth) / 2 - xCurrent;
+            yCoor = Number(svgHeight) / 2 - yCurrent;
+            d3.select('#svg-canvas g').attr('transform', `translate(${xCoor}, ${yCoor})`);
+            const transform = d3.zoomTransform(0).translate(xCoor, yCoor);
+            d3.zoom().transform(svg, transform);
+          }
         }
         // 确定所有节点对应颜色
         d3.selectAll('.node rect')
@@ -716,7 +770,7 @@ export default {
                 nodedata[uid] = JSON.parse(JSON.stringify(g.node(uid)));
               }
               if (g.node.sub_net && g.node.sub_net.length) {
-                const index = g.node.sub_net.findIndex(e => e.uid === uid);
+                const index = g.node.sub_net.findIndex((e) => e.uid === uid);
                 if (index !== -1) {
                   op = g.node.sub_net[index].op;
                   nodedata[uid] = JSON.parse(JSON.stringify(g.node.sub_net[index]));
@@ -738,18 +792,25 @@ export default {
           DrawDoubleNodes(g, data);
         }
         self.glitter(self.restoreNode);
-        d3.selectAll('.path').style('fill-opacity', 1).style('stroke', 'black').style('stroke-opacity', 1).attr('marker-start', 'url(#dot)');
+        d3.selectAll('.path')
+          .style('fill-opacity', 1)
+          .style('stroke', 'black')
+          .style('stroke-opacity', 1)
+          .attr('marker-start', 'url(#dot)');
         // 子节点动作：双击展开，自动调整位置，边框标红
         d3.selectAll('.node').on('dblclick', (v) => {
           if (g.node(v).sub_net.length !== 0) {
             const names = v.split('/');
             const layer = names.length;
-            const fillCurrent = d3.select(`[id="${v}"]`).select('rect').style('fill');
+            const fillCurrent = d3
+              .select(`[id="${v}"]`)
+              .select('rect')
+              .style('fill');
             expandNode.push({
-              'uid': v,
-              'layer': layer,
-              'sub_net': g.node(v).sub_net,
-              'label': g.node(v).label,
+              uid: v,
+              layer,
+              sub_net: g.node(v).sub_net,
+              label: g.node(v).label,
               fill: fillCurrent,
             });
             nodeInfo.splice(0, nodeInfo.length);
@@ -757,15 +818,22 @@ export default {
             delStageNode = [];
             draw(data, init);
             self.lastClick = '';
-            d3.select(`[id="${v}"]`).select('rect').style('stroke-width', '2.5').style('stroke', 'red').style('fill', fillCurrent).style('opacity', '0.8');
+            d3.select(`[id="${v}"]`)
+              .select('rect')
+              .style('stroke-width', '2.5')
+              .style('stroke', 'red')
+              .style('fill', fillCurrent)
+              .style('opacity', '0.8');
             setTimeout(() => {
-              d3.select(`[id="${v}"]`).select('rect').style('stroke-width', '1').style('stroke', '#696969');
+              d3.select(`[id="${v}"]`)
+                .select('rect')
+                .style('stroke-width', '1')
+                .style('stroke', '#696969');
             }, 1000);
-            let currentNode = data.find(item => item.uid === v);
+            let currentNode = data.find((item) => item.uid === v);
             if (!currentNode && expandNode && expandNode.length) {
               // eslint-disable-next-line no-labels
-              loopExpandNode:
-              for (const expand of expandNode) {
+              loopExpandNode: for (const expand of expandNode) {
                 for (const sub of expand.sub_net) {
                   if (sub.uid === v) {
                     currentNode = sub;
@@ -779,141 +847,281 @@ export default {
           }
         });
         // 父节点动作：双击缩小，自动调整位置，边框标红
-        d3.selectAll('.cluster').style('fill-opacity', '0.55').attr('font-weight', '600').on('dblclick', (v) => {
-          const indexRecord = [];
-          const names = v.split('/');
-          const namesLength = names.length;
-          for (let i = expandNode.length - 1; i >= 0; i -= 1) {
-            const {uid} = expandNode[i];
-            const uids = uid.split('/');
-            const uidLength = uids.length;
-            if (uidLength >= namesLength) {
-              if (uids.slice(0, namesLength).join('/') === v) {
-                indexRecord.push(i);
+        d3.selectAll('.cluster')
+          .style('fill-opacity', '0.55')
+          .attr('font-weight', '600')
+          .on('dblclick', (v) => {
+            const indexRecord = [];
+            const names = v.split('/');
+            const namesLength = names.length;
+            for (let i = expandNode.length - 1; i >= 0; i -= 1) {
+              const { uid } = expandNode[i];
+              const uids = uid.split('/');
+              const uidLength = uids.length;
+              if (uidLength >= namesLength) {
+                if (uids.slice(0, namesLength).join('/') === v) {
+                  indexRecord.push(i);
+                }
+              }
+              for (let j = 0; j < indexRecord.length; j += 1) {
+                expandNode.splice(indexRecord[j], 1);
               }
             }
-            for (let j = 0; j < indexRecord.length; j += 1) {
-              expandNode.splice(indexRecord[j], 1);
-            }
-          }
-          nodeInfo.splice(0, nodeInfo.length);
-          reserverStageNode = [];
-          delStageNode = [];
-          draw(data, init);
-          self.lastClick = '';
-          d3.select(`[id="${v}"]`).select('rect').style('stroke-width', '1.5').style('stroke', 'red');
-          setTimeout(() => {
-            d3.select(`[id="${v}"]`).select('rect').style('stroke-width', '1.5').style('stroke', '#696969');
-          }, 1000);
-          // 获取当前点击节点信息, 如果节点是最外层节点, 在 data 中查找, 否则在扩展节点中的 sub_net 中查找
-          let currentNode = data.find(item => item.uid === v);
-          if (!currentNode && expandNode && expandNode.length) {
-            // eslint-disable-next-line no-labels
-            loopExpandNode:
-            for (const expand of expandNode) {
-              for (const sub of expand.sub_net) {
-                if (sub.uid === v) {
-                  currentNode = sub;
-                  // eslint-disable-next-line no-labels
-                  break loopExpandNode;
+            nodeInfo.splice(0, nodeInfo.length);
+            reserverStageNode = [];
+            delStageNode = [];
+            draw(data, init);
+            self.lastClick = '';
+            d3.select(`[id="${v}"]`)
+              .select('rect')
+              .style('stroke-width', '1.5')
+              .style('stroke', 'red');
+            setTimeout(() => {
+              d3.select(`[id="${v}"]`)
+                .select('rect')
+                .style('stroke-width', '1.5')
+                .style('stroke', '#696969');
+            }, 1000);
+            // 获取当前点击节点信息, 如果节点是最外层节点, 在 data 中查找, 否则在扩展节点中的 sub_net 中查找
+            let currentNode = data.find((item) => item.uid === v);
+            if (!currentNode && expandNode && expandNode.length) {
+              // eslint-disable-next-line no-labels
+              loopExpandNode: for (const expand of expandNode) {
+                for (const sub of expand.sub_net) {
+                  if (sub.uid === v) {
+                    currentNode = sub;
+                    // eslint-disable-next-line no-labels
+                    break loopExpandNode;
+                  }
                 }
               }
             }
-          }
             PosAdaption(currentNode);
-        });
+          });
         // eslint-disable-next-line
         d3.select('#assist').select('svg').selectAll('g').on('dblclick', function() {
-          const nodeId = this.id.split('__')[1];
-          self.restoreNode = nodeId;
-          const index = tmp.findIndex(item => item.nodeId === nodeId);
-          drawAssist('white');
-          tmp.splice(index, 1);
-          getModifyClick(nodeId);
-          draw(data, init);
-          // eslint-disable-next-line
+            const nodeId = this.id.split('__')[1];
+            self.restoreNode = nodeId;
+            const index = tmp.findIndex((item) => item.nodeId === nodeId);
+            drawAssist('white');
+            tmp.splice(index, 1);
+            getModifyClick(nodeId);
+            draw(data, init);
+            // eslint-disable-next-line
         }).on('click', function() {
-          const nodeId = this.id.split('__')[1];
-          let info = getDelNodeInfo(nodeId, nodeInfo);
-          if (self.lastClick) {
-            self.restoreLastClick();
-          }
-          if (self.lastAssistClick && self.lastAssistClick !== this.id) {
-            self.restoreLastClickRight();
-          }
-          if (!info) {
-            info = { 'info': '无信息' };
-          } else {
-            const {inNode, outNode} = info;
-            for (let i = 0; i < inNode.length; i += 1) {
-              const nodeId = `#${  inNode[i].replace(/\//g, '\\/').replace(/\(/g, '\\(').replace(/\)/g, '\\)')}`;
-              if (!d3.select(nodeId).select('rect').attr('tag')) {
-                const old = d3.select(nodeId).select('rect').style('fill');
-                d3.select(nodeId).select('rect').attr('tag', old);
-                d3.select(nodeId).select('rect').style('fill', 'blue');
-                drawCircleTag(nodeId, 'out', 1);
-              } else {
-                const old = d3.select(nodeId).select('rect').attr('tag');
-                d3.select(nodeId).select('rect').style('fill', old);
-                d3.select(nodeId).select('rect').attr('tag', null);
-                drawCircleTag(nodeId, 'out', 0);
-              }
+            const nodeId = this.id.split('__')[1];
+            let info = getDelNodeInfo(nodeId, nodeInfo);
+            if (self.lastClick) {
+              self.restoreLastClick();
             }
-            if (self.lastAssistClick === this.id) {
-              self.lastAssistClick = '';
+            if (self.lastAssistClick && self.lastAssistClick !== this.id) {
+              self.restoreLastClickRight();
+            }
+            if (!info) {
+              info = { info: '无信息' };
             } else {
-              self.lastAssistClick = this.id;
-            }
-            for (let i = 0; i < outNode.length; i += 1) {
-              const nodeId = `#${  outNode[i].replace(/\//g, '\\/').replace(/\(/g, '\\(').replace(/\)/g, '\\)')}`;
-              if (!d3.select(nodeId).select('rect').attr('tag')) {
-                const old = d3.select(nodeId).select('rect').style('fill');
-                d3.select(nodeId).select('rect').attr('tag', old);
-                d3.select(nodeId).select('rect').style('fill', 'red');
-                drawCircleTag(nodeId, 'in', 1);
+              const { inNode, outNode } = info;
+              for (let i = 0; i < inNode.length; i += 1) {
+                const nodeId = `#${inNode[i]
+                  .replace(/\//g, '\\/')
+                  .replace(/\(/g, '\\(')
+                  .replace(/\)/g, '\\)')}`;
+                if (
+                  !d3
+                    .select(nodeId)
+                    .select('rect')
+                    .attr('tag')
+                ) {
+                  const old = d3
+                    .select(nodeId)
+                    .select('rect')
+                    .style('fill');
+                  d3.select(nodeId)
+                    .select('rect')
+                    .attr('tag', old);
+                  d3.select(nodeId)
+                    .select('rect')
+                    .style('fill', 'blue');
+                  drawCircleTag(nodeId, 'out', 1);
+                } else {
+                  const old = d3
+                    .select(nodeId)
+                    .select('rect')
+                    .attr('tag');
+                  d3.select(nodeId)
+                    .select('rect')
+                    .style('fill', old);
+                  d3.select(nodeId)
+                    .select('rect')
+                    .attr('tag', null);
+                  drawCircleTag(nodeId, 'out', 0);
+                }
+              }
+              if (self.lastAssistClick === this.id) {
+                self.lastAssistClick = '';
               } else {
-                const old = d3.select(nodeId).select('rect').attr('tag');
-                d3.select(nodeId).select('rect').style('fill', old);
-                d3.select(nodeId).select('rect').attr('tag', null);
-                drawCircleTag(nodeId, 'in', 0);
+                self.lastAssistClick = this.id;
               }
-            }
-            let initInfo;
-            for (let i = 0; i < nodeInfo.length; i += 1) {
-              if (nodeInfo[i].uid === info.uid) {
-                initInfo = nodeInfo[i];
-                break;
-              }
-            }
-            for (let i = 0; i < tmp.length; i += 1) {
-              if (initInfo.inNode.indexOf(tmp[i].nodeId) >= 0) {
-                info.inNode.push(tmp[i].nodeId);
-                const oldfill = d3.select(`#del__${  tmp[i].nodeId.replace(/\//g, '\\/').replace(/\(/g, '\\(').replace(/\)/g, '\\)')}`).select('rect').attr('oldfill');
-                if (oldfill) {
-                  d3.select(`#del__${  tmp[i].nodeId.replace(/\//g, '\\/').replace(/\(/g, '\\(').replace(/\)/g, '\\)')}`).select('rect').style('fill', oldfill);
-                  d3.select(`#del__${  tmp[i].nodeId.replace(/\//g, '\\/').replace(/\(/g, '\\(').replace(/\)/g, '\\)')}`).select('rect').attr('oldfill', undefined);
+              for (let i = 0; i < outNode.length; i += 1) {
+                const nodeId = `#${outNode[i]
+                  .replace(/\//g, '\\/')
+                  .replace(/\(/g, '\\(')
+                  .replace(/\)/g, '\\)')}`;
+                if (
+                  !d3
+                    .select(nodeId)
+                    .select('rect')
+                    .attr('tag')
+                ) {
+                  const old = d3
+                    .select(nodeId)
+                    .select('rect')
+                    .style('fill');
+                  d3.select(nodeId)
+                    .select('rect')
+                    .attr('tag', old);
+                  d3.select(nodeId)
+                    .select('rect')
+                    .style('fill', 'red');
+                  drawCircleTag(nodeId, 'in', 1);
                 } else {
-                  const fill = d3.select(`#del__${  tmp[i].nodeId.replace(/\//g, '\\/').replace(/\(/g, '\\(').replace(/\)/g, '\\)')}`).select('rect').attr('fill');
-                  d3.select(`#del__${  tmp[i].nodeId.replace(/\//g, '\\/').replace(/\(/g, '\\(').replace(/\)/g, '\\)')}`).select('rect').style('fill', 'blue');
-                  d3.select(`#del__${  tmp[i].nodeId.replace(/\//g, '\\/').replace(/\(/g, '\\(').replace(/\)/g, '\\)')}`).select('rect').attr('oldfill', fill);
+                  const old = d3
+                    .select(nodeId)
+                    .select('rect')
+                    .attr('tag');
+                  d3.select(nodeId)
+                    .select('rect')
+                    .style('fill', old);
+                  d3.select(nodeId)
+                    .select('rect')
+                    .attr('tag', null);
+                  drawCircleTag(nodeId, 'in', 0);
                 }
               }
-              if (initInfo.outNode.indexOf(tmp[i].nodeId) >= 0) {
-                info.outNode.push(tmp[i].nodeId);
-                const oldfill = d3.select(`#del__${  tmp[i].nodeId.replace(/\//g, '\\/').replace(/\(/g, '\\(').replace(/\)/g, '\\)')}`).select('rect').attr('oldfill');
-                if (oldfill) {
-                  d3.select(`#del__${  tmp[i].nodeId.replace(/\//g, '\\/').replace(/\(/g, '\\(').replace(/\)/g, '\\)')}`).select('rect').style('fill', oldfill);
-                  d3.select(`#del__${  tmp[i].nodeId.replace(/\//g, '\\/').replace(/\(/g, '\\(').replace(/\)/g, '\\)')}`).select('rect').attr('oldfill', undefined);
-                } else {
-                  const fill = d3.select(`#del__${  tmp[i].nodeId.replace(/\//g, '\\/').replace(/\(/g, '\\(').replace(/\)/g, '\\)')}`).select('rect').attr('fill');
-                  d3.select(`#del__${  tmp[i].nodeId.replace(/\//g, '\\/').replace(/\(/g, '\\(').replace(/\)/g, '\\)')}`).select('rect').style('fill', 'red');
-                  d3.select(`#del__${  tmp[i].nodeId.replace(/\//g, '\\/').replace(/\(/g, '\\(').replace(/\)/g, '\\)')}`).select('rect').attr('oldfill', fill);
+              let initInfo;
+              for (let i = 0; i < nodeInfo.length; i += 1) {
+                if (nodeInfo[i].uid === info.uid) {
+                  initInfo = nodeInfo[i];
+                  break;
+                }
+              }
+              for (let i = 0; i < tmp.length; i += 1) {
+                if (initInfo.inNode.indexOf(tmp[i].nodeId) >= 0) {
+                  info.inNode.push(tmp[i].nodeId);
+                  const oldfill = d3
+                    .select(
+                      `#del__${tmp[i].nodeId
+                        .replace(/\//g, '\\/')
+                        .replace(/\(/g, '\\(')
+                        .replace(/\)/g, '\\)')}`
+                    )
+                    .select('rect')
+                    .attr('oldfill');
+                  if (oldfill) {
+                    d3.select(
+                      `#del__${tmp[i].nodeId
+                        .replace(/\//g, '\\/')
+                        .replace(/\(/g, '\\(')
+                        .replace(/\)/g, '\\)')}`
+                    )
+                      .select('rect')
+                      .style('fill', oldfill);
+                    d3.select(
+                      `#del__${tmp[i].nodeId
+                        .replace(/\//g, '\\/')
+                        .replace(/\(/g, '\\(')
+                        .replace(/\)/g, '\\)')}`
+                    )
+                      .select('rect')
+                      .attr('oldfill', undefined);
+                  } else {
+                    const fill = d3
+                      .select(
+                        `#del__${tmp[i].nodeId
+                          .replace(/\//g, '\\/')
+                          .replace(/\(/g, '\\(')
+                          .replace(/\)/g, '\\)')}`
+                      )
+                      .select('rect')
+                      .attr('fill');
+                    d3.select(
+                      `#del__${tmp[i].nodeId
+                        .replace(/\//g, '\\/')
+                        .replace(/\(/g, '\\(')
+                        .replace(/\)/g, '\\)')}`
+                    )
+                      .select('rect')
+                      .style('fill', 'blue');
+                    d3.select(
+                      `#del__${tmp[i].nodeId
+                        .replace(/\//g, '\\/')
+                        .replace(/\(/g, '\\(')
+                        .replace(/\)/g, '\\)')}`
+                    )
+                      .select('rect')
+                      .attr('oldfill', fill);
+                  }
+                }
+                if (initInfo.outNode.indexOf(tmp[i].nodeId) >= 0) {
+                  info.outNode.push(tmp[i].nodeId);
+                  const oldfill = d3
+                    .select(
+                      `#del__${tmp[i].nodeId
+                        .replace(/\//g, '\\/')
+                        .replace(/\(/g, '\\(')
+                        .replace(/\)/g, '\\)')}`
+                    )
+                    .select('rect')
+                    .attr('oldfill');
+                  if (oldfill) {
+                    d3.select(
+                      `#del__${tmp[i].nodeId
+                        .replace(/\//g, '\\/')
+                        .replace(/\(/g, '\\(')
+                        .replace(/\)/g, '\\)')}`
+                    )
+                      .select('rect')
+                      .style('fill', oldfill);
+                    d3.select(
+                      `#del__${tmp[i].nodeId
+                        .replace(/\//g, '\\/')
+                        .replace(/\(/g, '\\(')
+                        .replace(/\)/g, '\\)')}`
+                    )
+                      .select('rect')
+                      .attr('oldfill', undefined);
+                  } else {
+                    const fill = d3
+                      .select(
+                        `#del__${tmp[i].nodeId
+                          .replace(/\//g, '\\/')
+                          .replace(/\(/g, '\\(')
+                          .replace(/\)/g, '\\)')}`
+                      )
+                      .select('rect')
+                      .attr('fill');
+                    d3.select(
+                      `#del__${tmp[i].nodeId
+                        .replace(/\//g, '\\/')
+                        .replace(/\(/g, '\\(')
+                        .replace(/\)/g, '\\)')}`
+                    )
+                      .select('rect')
+                      .style('fill', 'red');
+                    d3.select(
+                      `#del__${tmp[i].nodeId
+                        .replace(/\//g, '\\/')
+                        .replace(/\(/g, '\\(')
+                        .replace(/\)/g, '\\)')}`
+                    )
+                      .select('rect')
+                      .attr('oldfill', fill);
+                  }
                 }
               }
             }
-          }
-          getInfo(JSON.stringify(info));
-        });
+            getInfo(JSON.stringify(info));
+          });
         // 功能：为每个节点添加动画
         svg.selectAll('.node')._groups[0].forEach((nodeKey) => {
           let nodeName = nodeKey.id;
@@ -922,15 +1130,30 @@ export default {
           nodeName = nodeName.split('/');
           nodeName = nodeName[nodeName.length - 1];
           nodeName = nodeName.slice(0, nodeName.length);
-          const nodeId = nodeKey.id.replace(/\//g, '\\/').replace(/\(/g, '\\(').replace(/\)/g, '\\)');
+          const nodeId = nodeKey.id
+            .replace(/\//g, '\\/')
+            .replace(/\(/g, '\\(')
+            .replace(/\)/g, '\\)');
           const nodeThis = d3.select(nodeKey);
           let currName = '';
           let nodeFromID = '';
           let nodeToID = '';
           nodeThis.append('text');
           nodeThis.style('cursor', 'context-menu');
-          const width = parseInt(d3.select(`#${  nodeId}`).select('rect').style('width'),10);
-          const height = parseInt(d3.select(`#${  nodeId}`).select('rect').style('height'),10);
+          const width = parseInt(
+            d3
+              .select(`#${nodeId}`)
+              .select('rect')
+              .style('width'),
+            10
+          );
+          const height = parseInt(
+            d3
+              .select(`#${nodeId}`)
+              .select('rect')
+              .style('height'),
+            10
+          );
           if (nodes.sub_net.length > 0) {
             let isexpand = false;
             for (let i = 0; i < expandNode.length; i += 1) {
@@ -938,32 +1161,62 @@ export default {
                 isexpand = true;
               }
             }
-            const size = d3.select(`#${  nodeId}`).selectAll('text.expand').size();
+            const size = d3
+              .select(`#${nodeId}`)
+              .selectAll('text.expand')
+              .size();
             if (size <= 0) {
-              d3.select(`#${  nodeId}`).append('text').attr('class', 'expand') .attr('x', width / 2 - 15).attr('y', -height / 2 + 12).style('font-size', '14px').style('fill', 'white').attr('font-weight', 'bold');
+              d3.select(`#${nodeId}`)
+                .append('text')
+                .attr('class', 'expand')
+                .attr('x', width / 2 - 15)
+                .attr('y', -height / 2 + 12)
+                .style('font-size', '14px')
+                .style('fill', 'white')
+                .attr('font-weight', 'bold');
             }
             if (!isexpand) {
-              d3.select(`#${  nodeId}`)
+              d3.select(`#${nodeId}`)
                 .selectAll('text.expand')
                 .text('+');
             }
           }
           nodeThis.on('mouseover', () => {
-            const tag = Number(d3.select(`#${  nodeId}`).attr('flag'));
+            const tag = Number(d3.select(`#${nodeId}`).attr('flag'));
             if (tag) {
               return;
             }
             // 快速预览悬浮窗
-            d3.select(`#${  nodeId}`).attr('flag', 1);
-            const oldLength = d3.select(`#${  nodeId}`).select('.label').select('g').select('text').select('tspan')._groups[0][0].textLength.baseVal.value;
-            const newLength = d3.select(`#${  nodeId}`).select('.label').select('g').select('text').select('tspan')._groups[0][0].textLength.baseVal.value;
+            d3.select(`#${nodeId}`).attr('flag', 1);
+            const oldLength = d3
+              .select(`#${nodeId}`)
+              .select('.label')
+              .select('g')
+              .select('text')
+              .select('tspan')._groups[0][0].textLength.baseVal.value;
+            const newLength = d3
+              .select(`#${nodeId}`)
+              .select('.label')
+              .select('g')
+              .select('text')
+              .select('tspan')._groups[0][0].textLength.baseVal.value;
             const gap = (newLength - oldLength) / 2;
-            const nodeTransform = d3.select(`#${  nodeId}`).attr('transform');
-            const messageBox = d3.select('.nodes').append('g').attr('id', 'messageBox').attr('transform', nodeTransform);
+            const nodeTransform = d3.select(`#${nodeId}`).attr('transform');
+            const messageBox = d3
+              .select('.nodes')
+              .append('g')
+              .attr('id', 'messageBox')
+              .attr('transform', nodeTransform);
             const boxComponent = messageBox.append('g').attr('id', 'boxComponent');
-            const nodeWidth = d3.select(`#${  nodeId}`).attr('width');
-            const nodeHeight = d3.select(`#${  nodeId}`).attr('height');
-            const nodeheight = parseInt(d3.select(`#${  nodeId}`).select('rect').style('height'),10);
+            const nodeWidth = d3.select(`#${nodeId}`).attr('width');
+            const nodeHeight = d3.select(`#${nodeId}`).attr('height');
+            const nodeheight = parseInt(
+              d3
+                .select(`#${nodeId}`)
+                .select('rect')
+                .style('height'),
+              10
+            );
             let obj;
             for (let i = 0; i < nodeInfo.length; i += 1) {
               if (nodeInfo[i].uid === nodeKey.id) {
@@ -978,19 +1231,28 @@ export default {
             if (obj.op) {
               info['NODE PROPERTIES'].op = obj.op;
             }
-            const TEXT = boxComponent.append('text').attr('font-size', '14px').attr('fill', 'white');
+            const TEXT = boxComponent
+              .append('text')
+              .attr('font-size', '14px')
+              .attr('fill', 'white');
             let count = 0;
             let maxLength = 0;
             let Count = 0;
             for (const i in info) {
-              const length = TEXT.append('tspan').attr('x', '0').attr('y', count * 14 + Count * 10).text(i)._groups[0][0].textLength.baseVal.value;
+              const length = TEXT.append('tspan')
+                .attr('x', '0')
+                .attr('y', count * 14 + Count * 10)
+                .text(i)._groups[0][0].textLength.baseVal.value;
               if (length > maxLength) {
                 maxLength = length;
               }
               count += 1;
               for (const j in info[i]) {
-                const message = `● ${  j  }:${  info[i][j]}`;
-                const length = TEXT.append('tspan').attr('x', '0').attr('y', count * 20 + Count * 10).text(message)._groups[0][0].textLength.baseVal.value;
+                const message = `● ${j}:${info[i][j]}`;
+                const length = TEXT.append('tspan')
+                  .attr('x', '0')
+                  .attr('y', count * 20 + Count * 10)
+                  .text(message)._groups[0][0].textLength.baseVal.value;
                 if (length > maxLength) {
                   maxLength = length;
                 }
@@ -998,57 +1260,132 @@ export default {
               }
               Count += 1;
             }
-            boxComponent.insert('rect', 'text').attr('height', count * 20 + 15 + Count * 10)
-              .attr('width', maxLength + 50).attr('fill', 'white')
-              .attr('transform', 'translate(-25,-24)').attr('rx', 3)
-              .attr('ry', 3).attr('fill', '#004986').style('opacity', '0.40');
+            boxComponent
+              .insert('rect', 'text')
+              .attr('height', count * 20 + 15 + Count * 10)
+              .attr('width', maxLength + 50)
+              .attr('fill', 'white')
+              .attr('transform', 'translate(-25,-24)')
+              .attr('rx', 3)
+              .attr('ry', 3)
+              .attr('fill', '#004986')
+              .style('opacity', '0.40');
             const boxComponentX = nodeWidth / 2;
             let boxComponentY = -nodeHeight / 2 - (count * 14 + 20 + Count * 10) - 15;
             if (nodeheight === 70) {
               boxComponentY = -nodeHeight / 2 - (count * 14 + 20 + Count * 10) - 30;
             }
-            boxComponent.attr('transform', `translate(${  boxComponentX  },${  boxComponentY  })`);
-            d3.select(`#${  nodeId}`).select('.label').select('g').select('text').attr('transform', `translate(${  -gap  },0)`);
-            if (d3.select(`#${  nodeId}`).select('rect').style('fill') === 'rgb(102, 102, 102)') {
-              d3.select(`#${  nodeId}`).select('rect').style('fill', 'rgb(102, 102, 102)');
-            } else { 
-              d3.select(`#${  nodeId}`).select('rect').style('opacity', '1');
-            }
-            if (d3.select(`#${  nodeId}`).select('rect').style('stroke') === 'red') {
-              d3.select(`#${  nodeId}`).select('rect').style('stroke-width', '2.5').style('stroke', 'red');
+            boxComponent.attr('transform', `translate(${boxComponentX},${boxComponentY})`);
+            d3.select(`#${nodeId}`)
+              .select('.label')
+              .select('g')
+              .select('text')
+              .attr('transform', `translate(${-gap},0)`);
+            if (
+              d3
+                .select(`#${nodeId}`)
+                .select('rect')
+                .style('fill') === 'rgb(102, 102, 102)'
+            ) {
+              d3.select(`#${nodeId}`)
+                .select('rect')
+                .style('fill', 'rgb(102, 102, 102)');
             } else {
-              d3.select(`#${  nodeId}`).select('rect').style('stroke-width', '2.5').style('stroke', '#e4007f');
+              d3.select(`#${nodeId}`)
+                .select('rect')
+                .style('opacity', '1');
+            }
+            if (
+              d3
+                .select(`#${nodeId}`)
+                .select('rect')
+                .style('stroke') === 'red'
+            ) {
+              d3.select(`#${nodeId}`)
+                .select('rect')
+                .style('stroke-width', '2.5')
+                .style('stroke', 'red');
+            } else {
+              d3.select(`#${nodeId}`)
+                .select('rect')
+                .style('stroke-width', '2.5')
+                .style('stroke', '#e4007f');
             }
           });
           nodeThis.on('mouseleave', () => {
             if (nodeName.length > 12) {
-              currName = `${nodeName.slice(0, 12)  }...`;
+              currName = `${nodeName.slice(0, 12)}...`;
             } else {
               currName = nodeName;
             }
-            d3.select(`#${  nodeId}`).attr('flag', 0);
-            d3.select(`#${  nodeId}`).select('.label').select('g').select('text').select('tspan').text(currName);
-            d3.select(`#${  nodeId}`).select('.label').select('g').select('text').attr('transform', 'translate(0,0)');
+            d3.select(`#${nodeId}`).attr('flag', 0);
+            d3.select(`#${nodeId}`)
+              .select('.label')
+              .select('g')
+              .select('text')
+              .select('tspan')
+              .text(currName);
+            d3.select(`#${nodeId}`)
+              .select('.label')
+              .select('g')
+              .select('text')
+              .attr('transform', 'translate(0,0)');
             d3.select('#messageBox').remove();
-            if (d3.select(`#${  nodeId}`).select('rect').style('fill') === 'rgb(102, 102, 102)') {
-              d3.select(`#${  nodeId}`).select('rect').style('fill', 'rgb(102, 102, 102)');
-            } else if (d3.select(`#${  nodeId}`).select('rect').style('fill') === 'blue') {
-              d3.select(`#${  nodeId}`).select('rect').style('fill', 'blue');
-            } else if (d3.select(`#${  nodeId}`).select('rect').style('fill') === 'red') {
-              d3.select(`#${  nodeId}`).select('rect').style('fill', 'red');
+            if (
+              d3
+                .select(`#${nodeId}`)
+                .select('rect')
+                .style('fill') === 'rgb(102, 102, 102)'
+            ) {
+              d3.select(`#${nodeId}`)
+                .select('rect')
+                .style('fill', 'rgb(102, 102, 102)');
+            } else if (
+              d3
+                .select(`#${nodeId}`)
+                .select('rect')
+                .style('fill') === 'blue'
+            ) {
+              d3.select(`#${nodeId}`)
+                .select('rect')
+                .style('fill', 'blue');
+            } else if (
+              d3
+                .select(`#${nodeId}`)
+                .select('rect')
+                .style('fill') === 'red'
+            ) {
+              d3.select(`#${nodeId}`)
+                .select('rect')
+                .style('fill', 'red');
             } else {
-              d3.select(`#${  nodeId}`).select('rect').style('fill', GetColorByNode(g, nodes));
+              d3.select(`#${nodeId}`)
+                .select('rect')
+                .style('fill', GetColorByNode(g, nodes));
               // 1:卷积层,2:全连接层，3：池化层，4：归一化
-              const nodeColor = {1:"#e8c5df",2:"#b7d4ae",3:"#d7dafb",4:"#daf4cc"};
-              const nodeType = IsSpecialNode(nodes)||IsDoubleNode(nodes);
+              const nodeColor = { 1: '#e8c5df', 2: '#b7d4ae', 3: '#d7dafb', 4: '#daf4cc' };
+              const nodeType = IsSpecialNode(nodes) || IsDoubleNode(nodes);
               if (nodeType in nodeColor) {
-                d3.select(`#${  nodeId}`).select('rect').style('fill', nodeColor[nodeType]);
+                d3.select(`#${nodeId}`)
+                  .select('rect')
+                  .style('fill', nodeColor[nodeType]);
               }
             }
-            if ((d3.select(`#${  nodeId}`).select('rect').style('stroke')) === 'red') {
-              d3.select(`#${  nodeId}`).select('rect').style('stroke-width', '1').style('stroke', 'red');
+            if (
+              d3
+                .select(`#${nodeId}`)
+                .select('rect')
+                .style('stroke') === 'red'
+            ) {
+              d3.select(`#${nodeId}`)
+                .select('rect')
+                .style('stroke-width', '1')
+                .style('stroke', 'red');
             } else {
-              d3.select(`#${  nodeId}`).select('rect').style('stroke-width', '1').style('stroke', '#696969');
+              d3.select(`#${nodeId}`)
+                .select('rect')
+                .style('stroke-width', '1')
+                .style('stroke', '#696969');
             }
           });
           nodeThis.on('click', () => {
@@ -1064,7 +1401,7 @@ export default {
               self.lastClick = nodeKey.id;
               g.node(nodeKey.id).clicked = true;
               edges.forEach((v) => {
-                const edgeID = `${v.v  }__${  v.w}`;
+                const edgeID = `${v.v}__${v.w}`;
                 const edgeGroup = Array.from(d3.selectAll('.edgePath')._groups[0]);
                 const edgeLabelGroup = d3.selectAll('.edgeLabel')._groups[0];
                 let index;
@@ -1074,15 +1411,41 @@ export default {
                     break;
                   }
                 }
-                const dEdgeID = (`#${  edgeID}`).replace(/\//g, '\\/').replace(/\(/g, '\\(').replace(/\)/g, '\\)');
-                d3.select(dEdgeID).select('.path').style('stroke', 'red').style('stroke-width', '1.5');
-                d3.select(edgeLabelGroup[index]).select('g').select('text').attr('fill', 'red');
-                nodeFromID = `#${  v.v.replace(/\//g, '\\/').replace(/\(/g, '\\(').replace(/\)/g, '\\)')}`;
-                nodeToID = `#${  v.w.replace(/\//g, '\\/').replace(/\(/g, '\\(').replace(/\)/g, '\\)')}`;
-                d3.select(nodeFromID).select('rect').style('stroke', 'red');
-                d3.select(nodeToID).select('rect').style('stroke', 'red');
+                const dEdgeID = `#${edgeID}`
+                  .replace(/\//g, '\\/')
+                  .replace(/\(/g, '\\(')
+                  .replace(/\)/g, '\\)');
+                d3.select(dEdgeID)
+                  .select('.path')
+                  .style('stroke', 'red')
+                  .style('stroke-width', '1.5');
+                d3.select(edgeLabelGroup[index])
+                  .select('g')
+                  .select('text')
+                  .attr('fill', 'red');
+                nodeFromID = `#${v.v
+                  .replace(/\//g, '\\/')
+                  .replace(/\(/g, '\\(')
+                  .replace(/\)/g, '\\)')}`;
+                nodeToID = `#${v.w
+                  .replace(/\//g, '\\/')
+                  .replace(/\(/g, '\\(')
+                  .replace(/\)/g, '\\)')}`;
+                d3.select(nodeFromID)
+                  .select('rect')
+                  .style('stroke', 'red');
+                d3.select(nodeToID)
+                  .select('rect')
+                  .style('stroke', 'red');
               });
-              d3.select((`#${  nodeKey.id}`).replace(/\//g, '\\/').replace(/\(/g, '\\(').replace(/\)/g, '\\)')).select('rect').style('stroke', 'red');
+              d3.select(
+                `#${nodeKey.id}`
+                  .replace(/\//g, '\\/')
+                  .replace(/\(/g, '\\(')
+                  .replace(/\)/g, '\\)')
+              )
+                .select('rect')
+                .style('stroke', 'red');
               let info;
               if (reserverStageNode.length) {
                 const cur = reserverStageNode[reserverStageNode.length - 1];
@@ -1104,26 +1467,114 @@ export default {
               for (let i = 0; i < tmp.length; i += 1) {
                 if (initInfo.inNode.indexOf(tmp[i].nodeId) >= 0) {
                   info.inNode.push(tmp[i].nodeId);
-                  const oldfill = d3.select(`#del__${  tmp[i].nodeId.replace(/\//g, '\\/').replace(/\(/g, '\\(').replace(/\)/g, '\\)')}`).select('rect').attr('oldfill');
+                  const oldfill = d3
+                    .select(
+                      `#del__${tmp[i].nodeId
+                        .replace(/\//g, '\\/')
+                        .replace(/\(/g, '\\(')
+                        .replace(/\)/g, '\\)')}`
+                    )
+                    .select('rect')
+                    .attr('oldfill');
                   if (oldfill) {
-                    d3.select(`#del__${  tmp[i].nodeId.replace(/\//g, '\\/').replace(/\(/g, '\\(').replace(/\)/g, '\\)')}`).select('rect').style('fill', oldfill);
-                    d3.select(`#del__${  tmp[i].nodeId.replace(/\//g, '\\/').replace(/\(/g, '\\(').replace(/\)/g, '\\)')}`).select('rect').attr('oldfill', undefined);
+                    d3.select(
+                      `#del__${tmp[i].nodeId
+                        .replace(/\//g, '\\/')
+                        .replace(/\(/g, '\\(')
+                        .replace(/\)/g, '\\)')}`
+                    )
+                      .select('rect')
+                      .style('fill', oldfill);
+                    d3.select(
+                      `#del__${tmp[i].nodeId
+                        .replace(/\//g, '\\/')
+                        .replace(/\(/g, '\\(')
+                        .replace(/\)/g, '\\)')}`
+                    )
+                      .select('rect')
+                      .attr('oldfill', undefined);
                   } else {
-                    const fill = d3.select(`#del__${  tmp[i].nodeId.replace(/\//g, '\\/').replace(/\(/g, '\\(').replace(/\)/g, '\\)')}`).select('rect').attr('fill');
-                    d3.select(`#del__${  tmp[i].nodeId.replace(/\//g, '\\/').replace(/\(/g, '\\(').replace(/\)/g, '\\)')}`).select('rect').style('fill', 'blue');
-                    d3.select(`#del__${  tmp[i].nodeId.replace(/\//g, '\\/').replace(/\(/g, '\\(').replace(/\)/g, '\\)')}`).select('rect').attr('oldfill', fill);
+                    const fill = d3
+                      .select(
+                        `#del__${tmp[i].nodeId
+                          .replace(/\//g, '\\/')
+                          .replace(/\(/g, '\\(')
+                          .replace(/\)/g, '\\)')}`
+                      )
+                      .select('rect')
+                      .attr('fill');
+                    d3.select(
+                      `#del__${tmp[i].nodeId
+                        .replace(/\//g, '\\/')
+                        .replace(/\(/g, '\\(')
+                        .replace(/\)/g, '\\)')}`
+                    )
+                      .select('rect')
+                      .style('fill', 'blue');
+                    d3.select(
+                      `#del__${tmp[i].nodeId
+                        .replace(/\//g, '\\/')
+                        .replace(/\(/g, '\\(')
+                        .replace(/\)/g, '\\)')}`
+                    )
+                      .select('rect')
+                      .attr('oldfill', fill);
                   }
                 }
                 if (initInfo.outNode.indexOf(tmp[i].nodeId) >= 0) {
                   info.outNode.push(tmp[i].nodeId);
-                  const oldfill = d3.select(`#del__${  tmp[i].nodeId.replace(/\//g, '\\/').replace(/\(/g, '\\(').replace(/\)/g, '\\)')}`).select('rect').attr('oldfill');
+                  const oldfill = d3
+                    .select(
+                      `#del__${tmp[i].nodeId
+                        .replace(/\//g, '\\/')
+                        .replace(/\(/g, '\\(')
+                        .replace(/\)/g, '\\)')}`
+                    )
+                    .select('rect')
+                    .attr('oldfill');
                   if (oldfill) {
-                    d3.select(`#del__${  tmp[i].nodeId.replace(/\//g, '\\/').replace(/\(/g, '\\(').replace(/\)/g, '\\)')}`).select('rect').style('fill', oldfill);
-                    d3.select(`#del__${  tmp[i].nodeId.replace(/\//g, '\\/').replace(/\(/g, '\\(').replace(/\)/g, '\\)')}`).select('rect').attr('oldfill', undefined);
+                    d3.select(
+                      `#del__${tmp[i].nodeId
+                        .replace(/\//g, '\\/')
+                        .replace(/\(/g, '\\(')
+                        .replace(/\)/g, '\\)')}`
+                    )
+                      .select('rect')
+                      .style('fill', oldfill);
+                    d3.select(
+                      `#del__${tmp[i].nodeId
+                        .replace(/\//g, '\\/')
+                        .replace(/\(/g, '\\(')
+                        .replace(/\)/g, '\\)')}`
+                    )
+                      .select('rect')
+                      .attr('oldfill', undefined);
                   } else {
-                    const fill = d3.select(`#del__${  tmp[i].nodeId.replace(/\//g, '\\/').replace(/\(/g, '\\(').replace(/\)/g, '\\)')}`).select('rect').attr('fill');
-                    d3.select(`#del__${  tmp[i].nodeId.replace(/\//g, '\\/').replace(/\(/g, '\\(').replace(/\)/g, '\\)')}`).select('rect').style('fill', 'red');
-                    d3.select(`#del__${  tmp[i].nodeId.replace(/\//g, '\\/').replace(/\(/g, '\\(').replace(/\)/g, '\\)')}`).select('rect').attr('oldfill', fill);
+                    const fill = d3
+                      .select(
+                        `#del__${tmp[i].nodeId
+                          .replace(/\//g, '\\/')
+                          .replace(/\(/g, '\\(')
+                          .replace(/\)/g, '\\)')}`
+                      )
+                      .select('rect')
+                      .attr('fill');
+                    d3.select(
+                      `#del__${tmp[i].nodeId
+                        .replace(/\//g, '\\/')
+                        .replace(/\(/g, '\\(')
+                        .replace(/\)/g, '\\)')}`
+                    )
+                      .select('rect')
+                      .style('fill', 'red');
+                    d3.select(
+                      `#del__${tmp[i].nodeId
+                        .replace(/\//g, '\\/')
+                        .replace(/\(/g, '\\(')
+                        .replace(/\)/g, '\\)')}`
+                    )
+                      .select('rect')
+                      .attr('oldfill', fill);
                   }
                 }
               }
@@ -1135,14 +1586,33 @@ export default {
           });
         });
         svg.selectAll('.cluster')._groups[0].forEach((nodeKey) => {
-          const nodeId = nodeKey.id.replace(/\//g, '\\/').replace(/\(/g, '\\(').replace(/\)/g, '\\)');
+          const nodeId = nodeKey.id
+            .replace(/\//g, '\\/')
+            .replace(/\(/g, '\\(')
+            .replace(/\)/g, '\\)');
           const nodeThis = d3.select(nodeKey);
           nodeThis.append('text');
-          const width = parseInt(d3.select(`#${  nodeId}`).select('rect').style('width'),10);
-          const height = parseInt(d3.select(`#${  nodeId}`).select('rect').style('height'),10);
-          const size = d3.select(`#${  nodeId}`).selectAll('text.expand').size();
+          const width = parseInt(
+            d3
+              .select(`#${nodeId}`)
+              .select('rect')
+              .style('width'),
+            10
+          );
+          const height = parseInt(
+            d3
+              .select(`#${nodeId}`)
+              .select('rect')
+              .style('height'),
+            10
+          );
+          const size = d3
+            .select(`#${nodeId}`)
+            .selectAll('text.expand')
+            .size();
           if (size <= 0) {
-            d3.select(`#${  nodeId}`).append('text')
+            d3.select(`#${nodeId}`)
+              .append('text')
               .attr('class', 'expand')
               .attr('x', width / 2 - 35)
               .attr('y', -height / 2 + 30)
@@ -1150,121 +1620,163 @@ export default {
               .style('font-size', '50px')
               .style('fill', 'white');
           }
-          d3.select(`#${  nodeId}`).selectAll('text.expand').text('-');
+          d3.select(`#${nodeId}`)
+            .selectAll('text.expand')
+            .text('-');
         });
         // 为控制边添加虚线
         g.edges().forEach((v) => {
-          const edgeID = `${v.v  }__${  v.w}`;
-          const dEdgeID = `#${  edgeID.replace(/\//g, '\\/').replace(/\(/g, '\\(').replace(/\)/g, '\\)')}`;
+          const edgeID = `${v.v}__${v.w}`;
+          const dEdgeID = `#${edgeID
+            .replace(/\//g, '\\/')
+            .replace(/\(/g, '\\(')
+            .replace(/\)/g, '\\)')}`;
           if (isDashed[edgeID] === 'true') {
-            d3.select(dEdgeID).select('.path').style('stroke-dasharray', '5,3');
+            d3.select(dEdgeID)
+              .select('.path')
+              .style('stroke-dasharray', '5,3');
           }
           if (Number(isLines[edgeID]) > 1) {
-            d3.select(dEdgeID).select('.path').style('stroke-width', '2');
+            d3.select(dEdgeID)
+              .select('.path')
+              .style('stroke-width', '2');
           }
         });
-          $("#draw").contextMenu({
-            selector: '.node',
-            items: {
-              'invisible': {
-                name: '隐藏相关边',
-                icon: 'edit',
-                callback() {
-                  const nodeId = this[0].id;
-                  const edges = self.curg.nodeEdges(nodeId);
-                  const oldfill = d3.select(`[id='${  nodeId  }']`).select('rect').style('fill');
-                  if (d3.select(`[id='${  nodeId  }']`).select('rect').attr('oldfill')) {
-                    return;
-                  }
-                  d3.select(`[id='${  nodeId  }']`).select('rect').attr('oldfill', oldfill);
-                  d3.select(`[id='${  nodeId  }']`).select('rect').style('fill', 'rgb(102, 102, 102)');
-                  const edgeGroup = Array.from(d3.selectAll('.edgePath')._groups[0]);
-                  const edgeLabelGroup = d3.selectAll('.edgeLabel')._groups[0];
-                  edges.forEach((v) => {
-                    const edgeId = `#${  (`${v.v  }__${  v.w}`).replace(/\//g, '\\/').replace(/\(/g, '\\(').replace(/\)/g, '\\)')}`;
-                    d3.select(edgeId).select('.path').style('stroke', 'black').style('visibility', 'hidden');
-                    const edgeDom = document.getElementById(`${v.v  }__${  v.w}`);
-                    const index = edgeGroup.indexOf(edgeDom);
-                    edgeLabelGroup[index].attributes.style.value = 'opacity: 1;visibility:hidden';
-                  });
-                },
+        $('#draw').contextMenu({
+          selector: '.node',
+          items: {
+            invisible: {
+              name: '隐藏相关边',
+              icon: 'edit',
+              callback() {
+                const nodeId = this[0].id;
+                const edges = self.curg.nodeEdges(nodeId);
+                const oldfill = d3
+                  .select(`[id='${nodeId}']`)
+                  .select('rect')
+                  .style('fill');
+                if (
+                  d3
+                    .select(`[id='${nodeId}']`)
+                    .select('rect')
+                    .attr('oldfill')
+                ) {
+                  return;
+                }
+                d3.select(`[id='${nodeId}']`)
+                  .select('rect')
+                  .attr('oldfill', oldfill);
+                d3.select(`[id='${nodeId}']`)
+                  .select('rect')
+                  .style('fill', 'rgb(102, 102, 102)');
+                const edgeGroup = Array.from(d3.selectAll('.edgePath')._groups[0]);
+                const edgeLabelGroup = d3.selectAll('.edgeLabel')._groups[0];
+                edges.forEach((v) => {
+                  const edgeId = `#${`${v.v}__${v.w}`
+                    .replace(/\//g, '\\/')
+                    .replace(/\(/g, '\\(')
+                    .replace(/\)/g, '\\)')}`;
+                  d3.select(edgeId)
+                    .select('.path')
+                    .style('stroke', 'black')
+                    .style('visibility', 'hidden');
+                  const edgeDom = document.getElementById(`${v.v}__${v.w}`);
+                  const index = edgeGroup.indexOf(edgeDom);
+                  edgeLabelGroup[index].attributes.style.value = 'opacity: 1;visibility:hidden';
+                });
               },
-              'visible': {
-                name: '显示相关边',
-                icon: 'cut',
-                callback() {
-                  const nodeId = this[0].id;
-                  const edges = self.curg.nodeEdges(nodeId);
-                  const oldfill = d3.select(`[id='${  nodeId  }']`).select('rect').attr('oldfill');
-                  if (!oldfill) {
-                    return;
-                  }
-                  d3.select(`[id='${  nodeId  }']`).select('rect').attr('oldfill', null);
-                  d3.select(`[id='${  nodeId  }']`).select('rect').style('fill', oldfill);
-                  const edgeGroup = Array.from(d3.selectAll('.edgePath')._groups[0]);
-                  const edgeLabelGroup = d3.selectAll('.edgeLabel')._groups[0];
-                  edges.forEach((v) => {
-                    const edgeId = `#${  (`${v.v  }__${  v.w}`).replace(/\//g, '\\/').replace(/\(/g, '\\(').replace(/\)/g, '\\)')}`;
-                    d3.select(edgeId).select('.path').style('visibility', 'visible');
-                    const edgeDom = document.getElementById(`${v.v  }__${  v.w}`);
-                    const index = edgeGroup.indexOf(edgeDom);
-                    edgeLabelGroup[index].attributes.style.value = 'opacity: 1;visibility:visible';
-                  });
-                },
+            },
+            visible: {
+              name: '显示相关边',
+              icon: 'cut',
+              callback() {
+                const nodeId = this[0].id;
+                const edges = self.curg.nodeEdges(nodeId);
+                const oldfill = d3
+                  .select(`[id='${nodeId}']`)
+                  .select('rect')
+                  .attr('oldfill');
+                if (!oldfill) {
+                  return;
+                }
+                d3.select(`[id='${nodeId}']`)
+                  .select('rect')
+                  .attr('oldfill', null);
+                d3.select(`[id='${nodeId}']`)
+                  .select('rect')
+                  .style('fill', oldfill);
+                const edgeGroup = Array.from(d3.selectAll('.edgePath')._groups[0]);
+                const edgeLabelGroup = d3.selectAll('.edgeLabel')._groups[0];
+                edges.forEach((v) => {
+                  const edgeId = `#${`${v.v}__${v.w}`
+                    .replace(/\//g, '\\/')
+                    .replace(/\(/g, '\\(')
+                    .replace(/\)/g, '\\)')}`;
+                  d3.select(edgeId)
+                    .select('.path')
+                    .style('visibility', 'visible');
+                  const edgeDom = document.getElementById(`${v.v}__${v.w}`);
+                  const index = edgeGroup.indexOf(edgeDom);
+                  edgeLabelGroup[index].attributes.style.value = 'opacity: 1;visibility:visible';
+                });
               },
-              'delete': {
-                name: '隐藏节点',
-                icon: 'delete',
-                callback() {
-                  const {nodeInfo} = self;
-                  // eslint-disable-next-line no-unused-vars
-                  const g = self.curg;
-                  // eslint-disable-next-line no-unused-vars
-                  let delNode = [];
-                  for (let i = 0; i < nodeInfo.length; i += 1) {
-                    if (nodeInfo[i].uid === this[0].id) {
-                      delNode = nodeInfo[i];
-                    }
+            },
+            delete: {
+              name: '隐藏节点',
+              icon: 'delete',
+              callback() {
+                const { nodeInfo } = self;
+                // eslint-disable-next-line no-unused-vars
+                const g = self.curg;
+                // eslint-disable-next-line no-unused-vars
+                let delNode = [];
+                for (let i = 0; i < nodeInfo.length; i += 1) {
+                  if (nodeInfo[i].uid === this[0].id) {
+                    delNode = nodeInfo[i];
                   }
-                  const nodeId = this[0].id;
-                  const reserverStageNode = self.reserve;
-                  if (self.lastClick) {
-                    self.restoreLastClick();
-                  }
-                  if (self.lastAssistClick) {
-                    self.restoreLastClickRight();
-                  }
-                  self.lastClick = '';
-                  self.lastAssistClick = '';
-                  const oldfill = d3.select(`[id='${  nodeId  }']`).select('rect').style('fill');
-                  for (let i = 0; i < reserverStageNode.length; i += 1) {
-                    const curNodeInfo = reserverStageNode[i].nodeInfo;
-                    for (let j = curNodeInfo.length - 1; j >= 0; j -= 1) {
-                      if (curNodeInfo[j].uid === nodeId) {
-                        curNodeInfo.splice(j, 1);
-                      } else {
-                        const {inNode,outNode} = curNodeInfo[j];
-                        for (let k = 0; k < inNode.length; k += 1) {
-                          if (inNode[k] === nodeId) {
-                            inNode.splice(k, 1);
-                            break;
-                          }
+                }
+                const nodeId = this[0].id;
+                const reserverStageNode = self.reserve;
+                if (self.lastClick) {
+                  self.restoreLastClick();
+                }
+                if (self.lastAssistClick) {
+                  self.restoreLastClickRight();
+                }
+                self.lastClick = '';
+                self.lastAssistClick = '';
+                const oldfill = d3
+                  .select(`[id='${nodeId}']`)
+                  .select('rect')
+                  .style('fill');
+                for (let i = 0; i < reserverStageNode.length; i += 1) {
+                  const curNodeInfo = reserverStageNode[i].nodeInfo;
+                  for (let j = curNodeInfo.length - 1; j >= 0; j -= 1) {
+                    if (curNodeInfo[j].uid === nodeId) {
+                      curNodeInfo.splice(j, 1);
+                    } else {
+                      const { inNode, outNode } = curNodeInfo[j];
+                      for (let k = 0; k < inNode.length; k += 1) {
+                        if (inNode[k] === nodeId) {
+                          inNode.splice(k, 1);
+                          break;
                         }
-                        for (let k = 0; k < outNode.length; k += 1) {
-                          if (outNode[k] === nodeId) {
-                            outNode.splice(k, 1);
-                            break;
-                          }
+                      }
+                      for (let k = 0; k < outNode.length; k += 1) {
+                        if (outNode[k] === nodeId) {
+                          outNode.splice(k, 1);
+                          break;
                         }
                       }
                     }
                   }
-                  tmp.push({ nodeId, color: oldfill });
-                  drawAssist(oldfill);
-                  // eslint-disable-next-line
+                }
+                tmp.push({ nodeId, color: oldfill });
+                drawAssist(oldfill);
+                // eslint-disable-next-line
                   d3.select('#assist').select('svg').selectAll('g').on('dblclick', function() {
                     const nodeId = this.id.split('__')[1];
-                    const index = tmp.findIndex(item => item.nodeId === nodeId);
+                    const index = tmp.findIndex((item) => item.nodeId === nodeId);
                     self.restoreNode = nodeId;
                     tmp.splice(index, 1);
                     drawAssist(oldfill);
@@ -1287,34 +1799,78 @@ export default {
                     }
                     let info = getDelNodeInfo(nodeId, nodeInfo);
                     if (!info) {
-                      info = { 'info': '无信息' };
+                      info = { info: '无信息' };
                     } else {
-                      const {inNode,outNode} = info;
+                      const { inNode, outNode } = info;
                       for (let i = 0; i < inNode.length; i += 1) {
-                        const nodeId = `#${  inNode[i].replace(/\//g, '\\/').replace(/\(/g, '\\(').replace(/\)/g, '\\)')}`;
-                        if (!d3.select(nodeId).select('rect').attr('tag')) {
-                          const old = d3.select(nodeId).select('rect').style('fill');
-                          d3.select(nodeId).select('rect').attr('tag', old);
-                          d3.select(nodeId).select('rect').style('fill', 'blue');
+                        const nodeId = `#${inNode[i]
+                          .replace(/\//g, '\\/')
+                          .replace(/\(/g, '\\(')
+                          .replace(/\)/g, '\\)')}`;
+                        if (
+                          !d3
+                            .select(nodeId)
+                            .select('rect')
+                            .attr('tag')
+                        ) {
+                          const old = d3
+                            .select(nodeId)
+                            .select('rect')
+                            .style('fill');
+                          d3.select(nodeId)
+                            .select('rect')
+                            .attr('tag', old);
+                          d3.select(nodeId)
+                            .select('rect')
+                            .style('fill', 'blue');
                           drawCircleTag(nodeId, 'out', 1);
                         } else {
-                          const old = d3.select(nodeId).select('rect').attr('tag');
-                          d3.select(nodeId).select('rect').style('fill', old);
-                          d3.select(nodeId).select('rect').attr('tag', null);
+                          const old = d3
+                            .select(nodeId)
+                            .select('rect')
+                            .attr('tag');
+                          d3.select(nodeId)
+                            .select('rect')
+                            .style('fill', old);
+                          d3.select(nodeId)
+                            .select('rect')
+                            .attr('tag', null);
                           drawCircleTag(nodeId, 'out', 0);
                         }
                       }
                       for (let i = 0; i < outNode.length; i += 1) {
-                        const nodeId = `#${  outNode[i].replace(/\//g, '\\/').replace(/\(/g, '\\(').replace(/\)/g, '\\)')}`;
-                        if (!d3.select(nodeId).select('rect').attr('tag')) {
-                          const old = d3.select(nodeId).select('rect').style('fill');
-                          d3.select(nodeId).select('rect').attr('tag', old);
-                          d3.select(nodeId).select('rect').style('fill', 'red');
+                        const nodeId = `#${outNode[i]
+                          .replace(/\//g, '\\/')
+                          .replace(/\(/g, '\\(')
+                          .replace(/\)/g, '\\)')}`;
+                        if (
+                          !d3
+                            .select(nodeId)
+                            .select('rect')
+                            .attr('tag')
+                        ) {
+                          const old = d3
+                            .select(nodeId)
+                            .select('rect')
+                            .style('fill');
+                          d3.select(nodeId)
+                            .select('rect')
+                            .attr('tag', old);
+                          d3.select(nodeId)
+                            .select('rect')
+                            .style('fill', 'red');
                           drawCircleTag(nodeId, 'in', 1);
                         } else {
-                          const old = d3.select(nodeId).select('rect').attr('tag');
-                          d3.select(nodeId).select('rect').style('fill', old);
-                          d3.select(nodeId).select('rect').attr('tag', null);
+                          const old = d3
+                            .select(nodeId)
+                            .select('rect')
+                            .attr('tag');
+                          d3.select(nodeId)
+                            .select('rect')
+                            .style('fill', old);
+                          d3.select(nodeId)
+                            .select('rect')
+                            .attr('tag', null);
                           drawCircleTag(nodeId, 'in', 0);
                         }
                       }
@@ -1328,52 +1884,145 @@ export default {
                       for (let i = 0; i < tmp.length; i += 1) {
                         if (initInfo.inNode.indexOf(tmp[i].nodeId) >= 0) {
                           info.inNode.push(tmp[i].nodeId);
-                          const oldfill = d3.select(`#del__${  tmp[i].nodeId.replace(/\//g, '\\/').replace(/\(/g, '\\(').replace(/\)/g, '\\)')}`).select('rect').attr('oldfill');
+                          const oldfill = d3
+                            .select(
+                              `#del__${tmp[i].nodeId
+                                .replace(/\//g, '\\/')
+                                .replace(/\(/g, '\\(')
+                                .replace(/\)/g, '\\)')}`
+                            )
+                            .select('rect')
+                            .attr('oldfill');
                           if (oldfill) {
-                            d3.select(`#del__${  tmp[i].nodeId.replace(/\//g, '\\/').replace(/\(/g, '\\(').replace(/\)/g, '\\)')}`).select('rect').style('fill', oldfill);
-                            d3.select(`#del__${  tmp[i].nodeId.replace(/\//g, '\\/').replace(/\(/g, '\\(').replace(/\)/g, '\\)')}`).select('rect').attr('oldfill', undefined);
+                            d3.select(
+                              `#del__${tmp[i].nodeId
+                                .replace(/\//g, '\\/')
+                                .replace(/\(/g, '\\(')
+                                .replace(/\)/g, '\\)')}`
+                            )
+                              .select('rect')
+                              .style('fill', oldfill);
+                            d3.select(
+                              `#del__${tmp[i].nodeId
+                                .replace(/\//g, '\\/')
+                                .replace(/\(/g, '\\(')
+                                .replace(/\)/g, '\\)')}`
+                            )
+                              .select('rect')
+                              .attr('oldfill', undefined);
                           } else {
-                            const fill = d3.select(`#del__${  tmp[i].nodeId.replace(/\//g, '\\/').replace(/\(/g, '\\(').replace(/\)/g, '\\)')}`).select('rect').attr('fill');
-                            d3.select(`#del__${  tmp[i].nodeId.replace(/\//g, '\\/').replace(/\(/g, '\\(').replace(/\)/g, '\\)')}`).select('rect').style('fill', 'blue');
-                            d3.select(`#del__${  tmp[i].nodeId.replace(/\//g, '\\/').replace(/\(/g, '\\(').replace(/\)/g, '\\)')}`).select('rect').attr('oldfill', fill);
+                            const fill = d3
+                              .select(
+                                `#del__${tmp[i].nodeId
+                                  .replace(/\//g, '\\/')
+                                  .replace(/\(/g, '\\(')
+                                  .replace(/\)/g, '\\)')}`
+                              )
+                              .select('rect')
+                              .attr('fill');
+                            d3.select(
+                              `#del__${tmp[i].nodeId
+                                .replace(/\//g, '\\/')
+                                .replace(/\(/g, '\\(')
+                                .replace(/\)/g, '\\)')}`
+                            )
+                              .select('rect')
+                              .style('fill', 'blue');
+                            d3.select(
+                              `#del__${tmp[i].nodeId
+                                .replace(/\//g, '\\/')
+                                .replace(/\(/g, '\\(')
+                                .replace(/\)/g, '\\)')}`
+                            )
+                              .select('rect')
+                              .attr('oldfill', fill);
                           }
                         }
                         if (initInfo.outNode.indexOf(tmp[i].nodeId) >= 0) {
                           info.outNode.push(tmp[i].nodeId);
-                          const oldfill = d3.select(`#del__${  tmp[i].nodeId.replace(/\//g, '\\/').replace(/\(/g, '\\(').replace(/\)/g, '\\)')}`).select('rect').attr('oldfill');
+                          const oldfill = d3
+                            .select(
+                              `#del__${tmp[i].nodeId
+                                .replace(/\//g, '\\/')
+                                .replace(/\(/g, '\\(')
+                                .replace(/\)/g, '\\)')}`
+                            )
+                            .select('rect')
+                            .attr('oldfill');
                           if (oldfill) {
-                            d3.select(`#del__${  tmp[i].nodeId.replace(/\//g, '\\/').replace(/\(/g, '\\(').replace(/\)/g, '\\)')}`).select('rect').style('fill', oldfill);
-                            d3.select(`#del__${  tmp[i].nodeId.replace(/\//g, '\\/').replace(/\(/g, '\\(').replace(/\)/g, '\\)')}`).select('rect').attr('oldfill', undefined);
+                            d3.select(
+                              `#del__${tmp[i].nodeId
+                                .replace(/\//g, '\\/')
+                                .replace(/\(/g, '\\(')
+                                .replace(/\)/g, '\\)')}`
+                            )
+                              .select('rect')
+                              .style('fill', oldfill);
+                            d3.select(
+                              `#del__${tmp[i].nodeId
+                                .replace(/\//g, '\\/')
+                                .replace(/\(/g, '\\(')
+                                .replace(/\)/g, '\\)')}`
+                            )
+                              .select('rect')
+                              .attr('oldfill', undefined);
                           } else {
-                            const fill = d3.select(`#del__${  tmp[i].nodeId.replace(/\//g, '\\/').replace(/\(/g, '\\(').replace(/\)/g, '\\)')}`).select('rect').attr('fill');
-                            d3.select(`#del__${  tmp[i].nodeId.replace(/\//g, '\\/').replace(/\(/g, '\\(').replace(/\)/g, '\\)')}`).select('rect').style('fill', 'red');
-                            d3.select(`#del__${  tmp[i].nodeId.replace(/\//g, '\\/').replace(/\(/g, '\\(').replace(/\)/g, '\\)')}`).select('rect').attr('oldfill', fill);
+                            const fill = d3
+                              .select(
+                                `#del__${tmp[i].nodeId
+                                  .replace(/\//g, '\\/')
+                                  .replace(/\(/g, '\\(')
+                                  .replace(/\)/g, '\\)')}`
+                              )
+                              .select('rect')
+                              .attr('fill');
+                            d3.select(
+                              `#del__${tmp[i].nodeId
+                                .replace(/\//g, '\\/')
+                                .replace(/\(/g, '\\(')
+                                .replace(/\)/g, '\\)')}`
+                            )
+                              .select('rect')
+                              .style('fill', 'red');
+                            d3.select(
+                              `#del__${tmp[i].nodeId
+                                .replace(/\//g, '\\/')
+                                .replace(/\(/g, '\\(')
+                                .replace(/\)/g, '\\)')}`
+                            )
+                              .select('rect')
+                              .attr('oldfill', fill);
                           }
                         }
                       }
                     }
                     getInfo(JSON.stringify(info));
                   });
-                  const edges = d3.selectAll('.edgePath')._groups[0];
-                  const edgeLabel = d3.selectAll('.edgeLabel')._groups[0];
-                  for (let i = 0; i < edges.length; i += 1) {
-                    const v2w = edges[i].id.split('__');
-                    if (v2w[0] === nodeId) {
-                      edgeLabel[i].getElementsByTagName('g')[0].style.opacity = '0';
-                      edges[i].children[0].style = 'opacity: 1;visibility:hidden';
-                    }
-                    if (v2w[1] === nodeId) {
-                      edgeLabel[i].getElementsByTagName('g')[0].style.opacity = '0';
-                      edges[i].children[0].style = 'opacity: 1;visibility:hidden';
-                    }
+                const edges = d3.selectAll('.edgePath')._groups[0];
+                const edgeLabel = d3.selectAll('.edgeLabel')._groups[0];
+                for (let i = 0; i < edges.length; i += 1) {
+                  const v2w = edges[i].id.split('__');
+                  if (v2w[0] === nodeId) {
+                    edgeLabel[i].getElementsByTagName('g')[0].style.opacity = '0';
+                    edges[i].children[0].style = 'opacity: 1;visibility:hidden';
                   }
-                  d3.select(`#${  nodeId.replace(/\//g, '\\/').replace(/\(/g, '\\(').replace(/\)/g, '\\)')}`).style('visibility', 'hidden');
-                  changeTag = 1;
-                  self.curg.removeNode(nodeId);
-                },
+                  if (v2w[1] === nodeId) {
+                    edgeLabel[i].getElementsByTagName('g')[0].style.opacity = '0';
+                    edges[i].children[0].style = 'opacity: 1;visibility:hidden';
+                  }
+                }
+                d3.select(
+                  `#${nodeId
+                    .replace(/\//g, '\\/')
+                    .replace(/\(/g, '\\(')
+                    .replace(/\)/g, '\\)')}`
+                ).style('visibility', 'hidden');
+                changeTag = 1;
+                self.curg.removeNode(nodeId);
               },
             },
-          });
+          },
+        });
       };
       const init = true;
       draw(data, init);
@@ -1391,8 +2040,8 @@ export default {
         return subset;
       }
       const reserverStageNode = this.reserve;
-      const {nodeInfo} = this;
-      const {length} = nodeInfo;
+      const { nodeInfo } = this;
+      const { length } = nodeInfo;
       let node;
       for (let i = 0; i < length; i += 1) {
         if (nodeInfo[i].uid === nodeID) {
@@ -1403,7 +2052,7 @@ export default {
       if (!node) {
         return;
       }
-      const {inNode,outNode} = node;
+      const { inNode, outNode } = node;
       const lastStageNode = reserverStageNode[reserverStageNode.length - 1].nodeInfo;
       const curNodes = [];
       lastStageNode.forEach((v) => {
@@ -1422,7 +2071,10 @@ export default {
         d3.select('#assist').style('display', 'none');
         return;
       }
-      d3.select('#assist').select('svg').selectAll('g').remove();
+      d3.select('#assist')
+        .select('svg')
+        .selectAll('g')
+        .remove();
       let maxlength = 0;
       for (let i = 0; i < tmp.length; i += 1) {
         const item = tmp[i];
@@ -1434,15 +2086,34 @@ export default {
         if (rectWidth > maxlength) {
           maxlength = rectWidth;
         }
-        const g = d3.select('#assist').select('svg').append('g').attr('transform', `translate(${  0  },${  50 * i + 20  })`).attr('id', `del__${  item.nodeId}`);
-        g.append('rect').attr('width', rectWidth).attr('height', 25).attr('fill', item.color).attr('stroke-width', '0.5px').attr('rx', 12.5).attr('ry', 12.5).attr('stroke', '#696969');
-        g.append('text').text(nodeName).attr('dy', '1em').attr('text-anchor', 'middle').attr('transform', `translate(${  rectWidth / 2  },0)`);
+        const g = d3
+          .select('#assist')
+          .select('svg')
+          .append('g')
+          .attr('transform', `translate(${0},${50 * i + 20})`)
+          .attr('id', `del__${item.nodeId}`);
+        g.append('rect')
+          .attr('width', rectWidth)
+          .attr('height', 25)
+          .attr('fill', item.color)
+          .attr('stroke-width', '0.5px')
+          .attr('rx', 12.5)
+          .attr('ry', 12.5)
+          .attr('stroke', '#696969');
+        g.append('text')
+          .text(nodeName)
+          .attr('dy', '1em')
+          .attr('text-anchor', 'middle')
+          .attr('transform', `translate(${rectWidth / 2},0)`);
       }
-      d3.select('#assist').select('svg').attr('width', maxlength).attr('height', 50 * tmp.length + 50);
+      d3.select('#assist')
+        .select('svg')
+        .attr('width', maxlength)
+        .attr('height', 50 * tmp.length + 50);
     },
     getModifyClick(val) {
       let ob;
-      const {nodeInfo} = this;
+      const { nodeInfo } = this;
       let obsec;
       for (let i = 0; i < nodeInfo.length; i += 1) {
         if (nodeInfo[i].uid === val) {
@@ -1454,7 +2125,7 @@ export default {
         return;
       }
       const reserverStageNode = this.reserve;
-      const {inNode, outNode} = ob;
+      const { inNode, outNode } = ob;
       for (let i = reserverStageNode.length - 1; i >= 0; i -= 1) {
         if (reserverStageNode[i].sign === 1) {
           reserverStageNode.splice(i + 1, reserverStageNode.length - i - 1);
@@ -1493,7 +2164,10 @@ export default {
       if (!val) {
         return;
       }
-      const nodeId = `#${  val.replace(/\//g, '\\/').replace(/\(/g, '\\(').replace(/\)/g, '\\)')}`;
+      const nodeId = `#${val
+        .replace(/\//g, '\\/')
+        .replace(/\(/g, '\\(')
+        .replace(/\)/g, '\\)')}`;
       const node = d3.select(nodeId);
       // eslint-disable-next-line
       if(!node["_groups"][0][0]) {
@@ -1503,10 +2177,19 @@ export default {
       this.restoreNode = '';
       if (node) {
         let old = '';
-        old = d3.select(nodeId).select('rect').style('fill');
-        d3.select(nodeId).select('rect').style('fill', 'red');
+        old = d3
+          .select(nodeId)
+          .select('rect')
+          .style('fill');
+        d3.select(nodeId)
+          .select('rect')
+          .style('fill', 'red');
         setTimeout(() => {
-          old && d3.select(nodeId).select('rect').style('fill', old);
+          old &&
+            d3
+              .select(nodeId)
+              .select('rect')
+              .style('fill', old);
         }, 1000);
       }
     },
@@ -1518,9 +2201,19 @@ export default {
         let cy = nodeRect._groups[0][0].attributes.height.value;
         cy = Number(cy) / 2;
         if (dir === 'out') {
-          node.append('circle').attr('cx', cx).attr('cy', cy).attr('r', 4).attr('fill', 'blue');
+          node
+            .append('circle')
+            .attr('cx', cx)
+            .attr('cy', cy)
+            .attr('r', 4)
+            .attr('fill', 'blue');
         } else if (dir === 'in') {
-          node.append('circle').attr('cx', cx).attr('cy', -cy).attr('r', 4).attr('fill', 'red');
+          node
+            .append('circle')
+            .attr('cx', cx)
+            .attr('cy', -cy)
+            .attr('r', 4)
+            .attr('fill', 'red');
         }
       } else {
         node.select('circle').remove();
@@ -1532,16 +2225,16 @@ export default {
       let curStage;
       const waiting = [];
       if (stages === 0) {
-        curStage = { 'sign': 0 };
+        curStage = { sign: 0 };
         curStage.nodeInfo = JSON.parse(JSON.stringify(this.nodeInfo));
       } else if (reserverStageNode[stages - 1].sign === 0) {
-          this.pre();
-          curStage = JSON.parse(JSON.stringify(reserverStageNode[stages - 2]));
-          curStage.sign = 0;
-        } else {
-          curStage = JSON.parse(JSON.stringify(reserverStageNode[stages - 1]));
-          curStage.sign = 0;
-        }
+        this.pre();
+        curStage = JSON.parse(JSON.stringify(reserverStageNode[stages - 2]));
+        curStage.sign = 0;
+      } else {
+        curStage = JSON.parse(JSON.stringify(reserverStageNode[stages - 1]));
+        curStage.sign = 0;
+      }
       const cNodeInfo = curStage.nodeInfo;
       for (let i = 0; i < cNodeInfo.length; i += 1) {
         // eslint-disable-next-line
@@ -1556,21 +2249,23 @@ export default {
       }
       if (waiting.length === 0) {
         return;
-      } 
-        const edgeGroup = Array.from(d3.selectAll('.edgePath')._groups[0]);
-        const edgeLabelGroup = d3.selectAll('.edgeLabel')._groups[0];
-        for (let i = 0; i < waiting.length; i += 1) {
-          const edges = this.curg.nodeEdges(waiting[i]);
-          edges.forEach((v) => {
-            const edgeId = `#${  (`${v.v  }__${  v.w}`).replace(/\//g, '\\/')}`;
-            d3.select(edgeId).select('.path').style('visibility', 'hidden');
-            const edgeDom = document.getElementById(`${v.v  }__${  v.w}`);
-            const index = edgeGroup.indexOf(edgeDom);
-            edgeLabelGroup[index].attributes.style.value = 'opacity: 1;visibility:hidden';
-          });
-          const nodeId = `#${  waiting[i].replace(/\//g, '\\/')}`;
-          d3.select(nodeId).style('visibility', 'hidden');
-        }
+      }
+      const edgeGroup = Array.from(d3.selectAll('.edgePath')._groups[0]);
+      const edgeLabelGroup = d3.selectAll('.edgeLabel')._groups[0];
+      for (let i = 0; i < waiting.length; i += 1) {
+        const edges = this.curg.nodeEdges(waiting[i]);
+        edges.forEach((v) => {
+          const edgeId = `#${`${v.v}__${v.w}`.replace(/\//g, '\\/')}`;
+          d3.select(edgeId)
+            .select('.path')
+            .style('visibility', 'hidden');
+          const edgeDom = document.getElementById(`${v.v}__${v.w}`);
+          const index = edgeGroup.indexOf(edgeDom);
+          edgeLabelGroup[index].attributes.style.value = 'opacity: 1;visibility:hidden';
+        });
+        const nodeId = `#${waiting[i].replace(/\//g, '\\/')}`;
+        d3.select(nodeId).style('visibility', 'hidden');
+      }
       for (let i = cNodeInfo.length - 1; i >= 0; i -= 1) {
         let tag = 1;
         for (let j = 0; j < waiting.length; j += 1) {
@@ -1581,7 +2276,7 @@ export default {
           }
         }
         if (tag) {
-          const {inNode,outNode} = cNodeInfo[i];
+          const { inNode, outNode } = cNodeInfo[i];
           for (let j = outNode.length - 1; j >= 0; j -= 1) {
             for (let k = 0; k < waiting.length; k += 1) {
               if (outNode[j] === waiting[k]) {
@@ -1604,7 +2299,7 @@ export default {
     run() {
       const stages = reserverStageNode.length;
       const curStage = JSON.parse(JSON.stringify(reserverStageNode[stages - 1]));
-        curStage.sign = 1;
+      curStage.sign = 1;
       let hiddenLayer = 0;
       let tag = 1;
       for (let i = stages - 1; i >= 0; i -= 1) {
@@ -1634,7 +2329,7 @@ export default {
       this.drawGraph();
     },
     pre() {
-      const {length} = reserverStageNode;
+      const { length } = reserverStageNode;
       let lastSign = -1;
       if (length === 1) {
         return;
@@ -1656,17 +2351,22 @@ export default {
           const tNodeInfo = this.getDelNodeInfo(waiting[i]);
           const edges = [];
           for (let j = 0; j < tNodeInfo.inNode.length; j += 1) {
-            edges.push(`${tNodeInfo.inNode[j]  }__${  waiting[i]}`);
+            edges.push(`${tNodeInfo.inNode[j]}__${waiting[i]}`);
           }
           for (let j = 0; j < tNodeInfo.outNode.length; j += 1) {
-            edges.push(`${waiting[i]  }__${  tNodeInfo.outNode[j]}`);
+            edges.push(`${waiting[i]}__${tNodeInfo.outNode[j]}`);
           }
-          d3.select(`#${  waiting[i].replace(/\//, '\\/')}`).style('visibility', 'visible');
+          d3.select(`#${waiting[i].replace(/\//, '\\/')}`).style('visibility', 'visible');
           const edgeGroup = Array.from(d3.selectAll('.edgePath')._groups[0]);
           const edgeLabelGroup = d3.selectAll('.edgeLabel')._groups[0];
           edges.forEach((v) => {
-            const edgeId = `#${  v.replace(/\//g, '\\/').replace(/\(/g, '\\(').replace(/\)/g, '\\)')}`;
-            d3.select(edgeId).select('.path').style('visibility', 'visible');
+            const edgeId = `#${v
+              .replace(/\//g, '\\/')
+              .replace(/\(/g, '\\(')
+              .replace(/\)/g, '\\)')}`;
+            d3.select(edgeId)
+              .select('.path')
+              .style('visibility', 'visible');
             const edgeDom = document.getElementById(v);
             const index = edgeGroup.indexOf(edgeDom);
             edgeLabelGroup[index].attributes.style.value = 'opacity: 1;visibility:visible';
@@ -1675,12 +2375,12 @@ export default {
       }
     },
     restoreLastClick() {
-      const {nodeInfo} = this;
+      const { nodeInfo } = this;
       const g = this.curg;
       g.node(this.lastClick).clicked = false;
       const lastEdges = g.nodeEdges(this.lastClick);
       lastEdges.forEach((v) => {
-        const edgeID = `${v.v  }__${  v.w}`;
+        const edgeID = `${v.v}__${v.w}`;
         const edgeGroup = Array.from(d3.selectAll('.edgePath')._groups[0]);
         const edgeLabelGroup = d3.selectAll('.edgeLabel')._groups[0];
         let index;
@@ -1690,16 +2390,45 @@ export default {
             break;
           }
         }
-        const dEdgeID = (`#${  edgeID}`).replace(/\//g, '\\/').replace(/\(/g, '\\(').replace(/\)/g, '\\)');
-        d3.select(dEdgeID).select('.path').style('stroke', 'black').style('stroke-width', '1');
-        d3.select(edgeLabelGroup[index]).select('g').select('text').attr('fill', 'black');
-        const nodeFromID = `#${  v.v.replace(/\//g, '\\/').replace(/\(/g, '\\(').replace(/\)/g, '\\)')}`;
-        const nodeToID = `#${  v.w.replace(/\//g, '\\/').replace(/\(/g, '\\(').replace(/\)/g, '\\)')}`;
-        d3.select(nodeFromID).select('rect').style('stroke', '#696969');
-        d3.select(nodeToID).select('rect').style('stroke', '#696969');
+        const dEdgeID = `#${edgeID}`
+          .replace(/\//g, '\\/')
+          .replace(/\(/g, '\\(')
+          .replace(/\)/g, '\\)');
+        d3.select(dEdgeID)
+          .select('.path')
+          .style('stroke', 'black')
+          .style('stroke-width', '1');
+        d3.select(edgeLabelGroup[index])
+          .select('g')
+          .select('text')
+          .attr('fill', 'black');
+        const nodeFromID = `#${v.v
+          .replace(/\//g, '\\/')
+          .replace(/\(/g, '\\(')
+          .replace(/\)/g, '\\)')}`;
+        const nodeToID = `#${v.w
+          .replace(/\//g, '\\/')
+          .replace(/\(/g, '\\(')
+          .replace(/\)/g, '\\)')}`;
+        d3.select(nodeFromID)
+          .select('rect')
+          .style('stroke', '#696969');
+        d3.select(nodeToID)
+          .select('rect')
+          .style('stroke', '#696969');
       });
-      d3.select(`#${  this.lastClick.replace(/\//g, '\\/').replace(/\(/g, '\\(').replace(/\)/g, '\\)')}`).select('rect').style('stroke', '#c9c9c9');
-      d3.select(`[id="${this.lastClick}"]`).select('rect').style('stroke-width', '1').style('stroke', '#696969');
+      d3.select(
+        `#${this.lastClick
+          .replace(/\//g, '\\/')
+          .replace(/\(/g, '\\(')
+          .replace(/\)/g, '\\)')}`
+      )
+        .select('rect')
+        .style('stroke', '#c9c9c9');
+      d3.select(`[id="${this.lastClick}"]`)
+        .select('rect')
+        .style('stroke-width', '1')
+        .style('stroke', '#696969');
       let initInfo;
       for (let i = 0; i < nodeInfo.length; i += 1) {
         if (nodeInfo[i].uid === this.lastClick) {
@@ -1709,35 +2438,99 @@ export default {
       }
       for (let i = 0; i < tmp.length; i += 1) {
         if (initInfo.inNode.indexOf(tmp[i].nodeId) >= 0) {
-          const oldfill = d3.select(`#del__${  tmp[i].nodeId.replace(/\//g, '\\/').replace(/\(/g, '\\(').replace(/\)/g, '\\)')}`).select('rect').attr('oldfill');
-          d3.select(`#del__${  tmp[i].nodeId.replace(/\//g, '\\/').replace(/\(/g, '\\(').replace(/\)/g, '\\)')}`).select('rect').style('fill', oldfill);
-          d3.select(`#del__${  tmp[i].nodeId.replace(/\//g, '\\/').replace(/\(/g, '\\(').replace(/\)/g, '\\)')}`).select('rect').attr('oldfill', undefined);
+          const oldfill = d3
+            .select(
+              `#del__${tmp[i].nodeId
+                .replace(/\//g, '\\/')
+                .replace(/\(/g, '\\(')
+                .replace(/\)/g, '\\)')}`
+            )
+            .select('rect')
+            .attr('oldfill');
+          d3.select(
+            `#del__${tmp[i].nodeId
+              .replace(/\//g, '\\/')
+              .replace(/\(/g, '\\(')
+              .replace(/\)/g, '\\)')}`
+          )
+            .select('rect')
+            .style('fill', oldfill);
+          d3.select(
+            `#del__${tmp[i].nodeId
+              .replace(/\//g, '\\/')
+              .replace(/\(/g, '\\(')
+              .replace(/\)/g, '\\)')}`
+          )
+            .select('rect')
+            .attr('oldfill', undefined);
         }
         if (initInfo.outNode.indexOf(tmp[i].nodeId) >= 0) {
-          const oldfill = d3.select(`#del__${  tmp[i].nodeId.replace(/\//g, '\\/').replace(/\(/g, '\\(').replace(/\)/g, '\\)')}`).select('rect').attr('oldfill');
-          d3.select(`#del__${  tmp[i].nodeId.replace(/\//g, '\\/').replace(/\(/g, '\\(').replace(/\)/g, '\\)')}`).select('rect').style('fill', oldfill);
-          d3.select(`#del__${  tmp[i].nodeId.replace(/\//g, '\\/').replace(/\(/g, '\\(').replace(/\)/g, '\\)')}`).select('rect').attr('oldfill', undefined);
+          const oldfill = d3
+            .select(
+              `#del__${tmp[i].nodeId
+                .replace(/\//g, '\\/')
+                .replace(/\(/g, '\\(')
+                .replace(/\)/g, '\\)')}`
+            )
+            .select('rect')
+            .attr('oldfill');
+          d3.select(
+            `#del__${tmp[i].nodeId
+              .replace(/\//g, '\\/')
+              .replace(/\(/g, '\\(')
+              .replace(/\)/g, '\\)')}`
+          )
+            .select('rect')
+            .style('fill', oldfill);
+          d3.select(
+            `#del__${tmp[i].nodeId
+              .replace(/\//g, '\\/')
+              .replace(/\(/g, '\\(')
+              .replace(/\)/g, '\\)')}`
+          )
+            .select('rect')
+            .attr('oldfill', undefined);
         }
       }
       this.lastClick = '';
     },
     restoreLastClickRight() {
-      const {nodeInfo} = this;
+      const { nodeInfo } = this;
       const nodeId = this.lastAssistClick.split('__')[1];
       const info = this.getDelNodeInfo(nodeId, nodeInfo);
-      const {inNode,outNode} = info;
+      const { inNode, outNode } = info;
       for (let i = 0; i < inNode.length; i += 1) {
-        const nodeId = `#${  inNode[i].replace(/\//g, '\\/').replace(/\(/g, '\\(').replace(/\)/g, '\\)')}`;
-        const old = d3.select(nodeId).select('rect').attr('tag');
-        d3.select(nodeId).select('rect').style('fill', old);
-        d3.select(nodeId).select('rect').attr('tag', null);
+        const nodeId = `#${inNode[i]
+          .replace(/\//g, '\\/')
+          .replace(/\(/g, '\\(')
+          .replace(/\)/g, '\\)')}`;
+        const old = d3
+          .select(nodeId)
+          .select('rect')
+          .attr('tag');
+        d3.select(nodeId)
+          .select('rect')
+          .style('fill', old);
+        d3.select(nodeId)
+          .select('rect')
+          .attr('tag', null);
         this.drawCircleTag(nodeId, 'out', 0);
       }
       for (let i = 0; i < outNode.length; i += 1) {
-        const nodeId = `#${  outNode[i].replace(/\//g, '\\/').replace(/\(/g, '\\(').replace(/\)/g, '\\)')}`;
-        const old = d3.select(nodeId).select('rect').attr('tag');
-        d3.select(nodeId).select('rect').style('fill', old);
-        d3.select(nodeId).select('rect').attr('tag', null);
+        const nodeId = `#${outNode[i]
+          .replace(/\//g, '\\/')
+          .replace(/\(/g, '\\(')
+          .replace(/\)/g, '\\)')}`;
+        const old = d3
+          .select(nodeId)
+          .select('rect')
+          .attr('tag');
+        d3.select(nodeId)
+          .select('rect')
+          .style('fill', old);
+        d3.select(nodeId)
+          .select('rect')
+          .attr('tag', null);
         this.drawCircleTag(nodeId, 'in', 0);
       }
       let initInfo;
@@ -1750,18 +2543,62 @@ export default {
       for (let i = 0; i < tmp.length; i += 1) {
         if (initInfo.inNode.indexOf(tmp[i].nodeId) >= 0) {
           info.inNode.push(tmp[i].nodeId);
-          const oldfill = d3.select(`#del__${  tmp[i].nodeId.replace(/\//g, '\\/').replace(/\(/g, '\\(').replace(/\)/g, '\\)')}`).select('rect').attr('oldfill');
+          const oldfill = d3
+            .select(
+              `#del__${tmp[i].nodeId
+                .replace(/\//g, '\\/')
+                .replace(/\(/g, '\\(')
+                .replace(/\)/g, '\\)')}`
+            )
+            .select('rect')
+            .attr('oldfill');
           if (oldfill) {
-            d3.select(`#del__${  tmp[i].nodeId.replace(/\//g, '\\/').replace(/\(/g, '\\(').replace(/\)/g, '\\)')}`).select('rect').style('fill', oldfill);
-            d3.select(`#del__${  tmp[i].nodeId.replace(/\//g, '\\/').replace(/\(/g, '\\(').replace(/\)/g, '\\)')}`).select('rect').attr('oldfill', undefined);
+            d3.select(
+              `#del__${tmp[i].nodeId
+                .replace(/\//g, '\\/')
+                .replace(/\(/g, '\\(')
+                .replace(/\)/g, '\\)')}`
+            )
+              .select('rect')
+              .style('fill', oldfill);
+            d3.select(
+              `#del__${tmp[i].nodeId
+                .replace(/\//g, '\\/')
+                .replace(/\(/g, '\\(')
+                .replace(/\)/g, '\\)')}`
+            )
+              .select('rect')
+              .attr('oldfill', undefined);
           }
         }
         if (initInfo.outNode.indexOf(tmp[i].nodeId) >= 0) {
           info.outNode.push(tmp[i].nodeId);
-          const oldfill = d3.select(`#del__${  tmp[i].nodeId.replace(/\//g, '\\/').replace(/\(/g, '\\(').replace(/\)/g, '\\)')}`).select('rect').attr('oldfill');
+          const oldfill = d3
+            .select(
+              `#del__${tmp[i].nodeId
+                .replace(/\//g, '\\/')
+                .replace(/\(/g, '\\(')
+                .replace(/\)/g, '\\)')}`
+            )
+            .select('rect')
+            .attr('oldfill');
           if (oldfill) {
-            d3.select(`#del__${  tmp[i].nodeId.replace(/\//g, '\\/').replace(/\(/g, '\\(').replace(/\)/g, '\\)')}`).select('rect').style('fill', oldfill);
-            d3.select(`#del__${  tmp[i].nodeId.replace(/\//g, '\\/').replace(/\(/g, '\\(').replace(/\)/g, '\\)')}`).select('rect').attr('oldfill', undefined);
+            d3.select(
+              `#del__${tmp[i].nodeId
+                .replace(/\//g, '\\/')
+                .replace(/\(/g, '\\(')
+                .replace(/\)/g, '\\)')}`
+            )
+              .select('rect')
+              .style('fill', oldfill);
+            d3.select(
+              `#del__${tmp[i].nodeId
+                .replace(/\//g, '\\/')
+                .replace(/\(/g, '\\(')
+                .replace(/\)/g, '\\)')}`
+            )
+              .select('rect')
+              .attr('oldfill', undefined);
           }
         }
       }
@@ -1771,90 +2608,98 @@ export default {
 };
 </script>
 <style lang="less" scoped>
-    .temp {
-      position: absolute;
-      width: calc(100% - 290px);
-      height: 100%;
-      background-color: white;
-    }
+.temp {
+  position: absolute;
+  width: calc(100% - 290px);
+  height: 100%;
+  background-color: white;
+}
 
-    /deep/ .Graph {
-      position: relative;
-      height: 97.5%;
-      margin: 1% 1% 0 1%;
-      overflow-y: auto;
-      background-color: white;
-      border-radius: 5px 5px 0 0;
-      box-shadow: rgba(0, 0, 0, 0.3) 0 0 10px;
+/deep/ .Graph {
+  position: relative;
+  height: 97.5%;
+  margin: 1% 1% 0 1%;
+  overflow-y: auto;
+  background-color: white;
+  border-radius: 5px 5px 0 0;
+  box-shadow: rgba(0, 0, 0, 0.3) 0 0 10px;
 
-      svg {
-        position: relative;
-      }
-    }
+  svg {
+    position: relative;
+  }
+}
 
-    .assist {
-      position: absolute;
-      width: 100%;
-      height: 100%;
-      margin: 0% 0% 0 1%;
-      overflow-y: auto;
-      box-shadow: #8f8fb4 0 0 10px;
-    }
+.assist {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  margin: 0% 0% 0 1%;
+  overflow-y: auto;
+  box-shadow: #8f8fb4 0 0 10px;
+}
 
-    .clusters rect {
-      opacity: 0.1;
-      fill: #646464;
-      stroke: #fff;
-      stroke-width: 1.5px;
-    }
+.clusters rect {
+  opacity: 0.1;
+  fill: #646464;
+  stroke: #fff;
+  stroke-width: 1.5px;
+}
 
-    .node rect {
-      opacity: 0.85;
-      fill: #fff;
-      stroke: #646464;
-      stroke-width: 2.5px;
-    }
+.node rect {
+  opacity: 0.85;
+  fill: #fff;
+  stroke: #646464;
+  stroke-width: 2.5px;
+}
 
-    g.type-current > rect {
-      fill: #1e9fff;
-    }
+g.type-current > rect {
+  fill: #1e9fff;
+}
 
-    g.type-success > rect {
-      fill: green;
-    }
+g.type-success > rect {
+  fill: green;
+}
 
-    g.type-fail > rect {
-      fill: red;
-    }
+g.type-fail > rect {
+  fill: red;
+}
 
-    text {
-      font-size: 16px;
-      fill: #000;
-    }
+text {
+  font-size: 16px;
+  fill: #000;
+}
 
-    .edgeLabel text {
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe WPC", "Segoe UI", "Ubuntu", "Droid Sans", sans-serif, "PingFang SC";
-      font-size: 1px;
-    }
+.edgeLabel text {
+  font-family:
+    -apple-system,
+    BlinkMacSystemFont,
+    'Segoe WPC',
+    'Segoe UI',
+    'Ubuntu',
+    'Droid Sans',
+    sans-serif,
+    'PingFang SC';
+  font-size: 1px;
+}
 
-    .edgePath path {
-      stroke: #333;
-      stroke-width: 1.5px;
-    }
+.edgePath path {
+  stroke: #333;
+  stroke-width: 1.5px;
+}
 
-    line {
-      stroke: red;
-      stroke-width: 2px;
-    }
+line {
+  stroke: red;
+  stroke-width: 2px;
+}
 
-    .special-layer-1,
-    .special-layer-2 {
-      fill: #fff !important;
-    }
+.special-layer-1,
+.special-layer-2 {
+  fill: #fff !important;
+}
 
-    .icon {
-      font-size: 80px;
-      color: #004986;
-      opacity: 0.4;
-    }
+.icon {
+  font-size: 80px;
+  color: #004986;
+  opacity: 0.4;
+}
 </style>

@@ -1,18 +1,18 @@
 /** Copyright 2020 Tianshu AI Platform. All Rights Reserved.
-*
-* Licensed under the Apache License, Version 2.0 (the "License");
-* you may not use this file except in compliance with the License.
-* You may obtain a copy of the License at
-*
-*     http://www.apache.org/licenses/LICENSE-2.0
-*
-* Unless required by applicable law or agreed to in writing, software
-* distributed under the License is distributed on an "AS IS" BASIS,
-* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-* See the License for the specific language governing permissions and
-* limitations under the License.
-* =============================================================
-*/
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ * =============================================================
+ */
 
 <template>
   <el-popover
@@ -23,12 +23,7 @@
     :width="popoverWidth"
     @hide="onHide"
   >
-    <el-form
-      ref="form"
-      :model="form"
-      :rules="rules"
-      label-width="100px"
-    >
+    <el-form ref="form" :model="form" :rules="rules" label-width="100px">
       <el-form-item :label="formLabel" prop="name">
         <el-input v-model.trim="form.name" type="text" style="width: 250px;" />
       </el-form-item>
@@ -44,7 +39,6 @@
           :params="uploadParams"
           :show-file-count="false"
           :auto-upload="true"
-          :hash="false"
           :filters="uploadFilters"
           :limit="1"
           :on-remove="onFileRemove"
@@ -52,33 +46,40 @@
           @uploadSuccess="uploadSuccess"
           @uploadError="uploadError"
         />
-        <upload-progress 
-          v-if="uploading" 
-          :progress="progress" 
-          :color="customColors" 
-          :status="status" 
-          :size="size" 
+        <upload-progress
+          v-if="uploading"
+          :progress="progress"
+          :color="customColors"
+          :status="status"
+          :size="size"
           @onSetProgress="onSetProgress"
         />
       </el-form-item>
     </el-form>
     <div style="margin: 0; text-align: right;">
       <el-button size="mini" type="text" @click="onCancel">取消</el-button>
-      <el-button type="primary" size="mini" :loading="submitting" @click="onFilesUpload">上传</el-button>
+      <el-button type="primary" size="mini" :loading="submitting" @click="onFilesUpload"
+        >上传</el-button
+      >
     </div>
     <el-button slot="reference">上传</el-button>
   </el-popover>
 </template>
 
 <script>
-import { getUniqueId, validateNameWithHyphen, uploadSizeFomatter, invalidFileNameChar } from '@/utils';
+import {
+  getUniqueId,
+  validateNameWithHyphen,
+  uploadSizeFomatter,
+  invalidFileNameChar,
+} from '@/utils';
 import UploadProgress from '@/components/UploadProgress';
 import UploadInline from '@/components/UploadForm/inline';
 
 export default {
   name: 'QuickUploadPopover',
   components: { UploadInline, UploadProgress },
-  props:{
+  props: {
     formLabel: {
       type: String,
       default: '模型上传',
@@ -117,9 +118,7 @@ export default {
           { max: 32, message: '长度在 32 个字符以内', trigger: 'blur' },
           { validator: validateNameWithHyphen, trigger: ['blur', 'change'] },
         ],
-        path: [
-          { required: true, message: '请输入文件路径', trigger: ['blur', 'manual'] },
-        ],
+        path: [{ required: true, message: '请输入文件路径', trigger: ['blur', 'manual'] }],
       },
 
       uploadParams: {
@@ -128,9 +127,9 @@ export default {
       progress: 0,
       size: 0,
       customColors: [
-        {color: '#909399', percentage: 40},
-        {color: '#e6a23c', percentage: 80},
-        {color: '#67c23a', percentage: 100},
+        { color: '#909399', percentage: 40 },
+        { color: '#e6a23c', percentage: 80 },
+        { color: '#67c23a', percentage: 100 },
       ],
       uploadFilters: [invalidFileNameChar],
       uploading: false,
@@ -157,7 +156,7 @@ export default {
     },
     uploadStart(files) {
       this.updatePath();
-      [ this.uploading, this.size, this.progress ] = [ true, files.size, 0 ];
+      [this.uploading, this.size, this.progress] = [true, files.size, 0];
     },
     onSetProgress(val) {
       this.progress += val;
@@ -181,17 +180,23 @@ export default {
       this.uploadParams.objectPath = `upload-temp/${this.user.id}/${getUniqueId()}`;
     },
 
-    onFilesUpload(){
+    onFilesUpload() {
       // 如果表单已经在提交了，就不做处理
-      if (this.submitting) { return; }
+      if (this.submitting) {
+        return;
+      }
       // 对基础表单进行验证
-      this.$refs.form.validate(valid => {
+      this.$refs.form.validate((valid) => {
         if (valid) {
           this.submitting = true;
-          this.uploadApi(this.form).then((res) => {
-            this.$emit('success', res);
-            this.visible = false;
-          }).finally(() => { this.submitting = false; });
+          this.uploadApi(this.form)
+            .then((res) => {
+              this.$emit('success', res);
+              this.visible = false;
+            })
+            .finally(() => {
+              this.submitting = false;
+            });
         }
       });
     },

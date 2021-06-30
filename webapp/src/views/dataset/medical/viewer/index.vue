@@ -1,22 +1,22 @@
 /** Copyright 2020 Tianshu AI Platform. All Rights Reserved.
-*
-* Licensed under the Apache License, Version 2.0 (the "License");
-* you may not use this file except in compliance with the License.
-* You may obtain a copy of the License at
-*
-*     http://www.apache.org/licenses/LICENSE-2.0
-*
-* Unless required by applicable law or agreed to in writing, software
-* distributed under the License is distributed on an "AS IS" BASIS,
-* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-* See the License for the specific language governing permissions and
-* limitations under the License.
-* =============================================================
-*/
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ * =============================================================
+ */
 
 <template>
   <div class="rel dwv-container">
-    <div id="dwv" v-hotkey="keymap" class='dwv-wrapper viewer rel'>
+    <div id="dwv" v-hotkey="keymap" class="dwv-wrapper viewer rel">
       <div class="dwv-page-header flex flex-between">
         <ToolBar
           :tools="state.actions"
@@ -79,14 +79,28 @@ import { onMounted, reactive, ref, computed, onBeforeUnmount } from '@vue/compos
 import { findIndex, uniq, isNil, max } from 'lodash';
 
 import { toFixed, remove, replace, noop, mergeArrayByKey, generateUuid } from '@/utils';
-import { getCaseInfo, queryAutoResult, queryManualResult, save, saveLesions, queryLesions } from '@/api/preparation/medical';
-import { statusCodeMap } from '@/views/dataset/util';
+import {
+  getCaseInfo,
+  queryAutoResult,
+  queryManualResult,
+  save,
+  saveLesions,
+  queryLesions,
+} from '@/api/preparation/medical';
+import { datasetStatusMap } from '@/views/dataset/util';
 import LesionInfo from './lesionInfo';
 import InfoLayer from './infoLayer';
 import ToolBar from './toolbar';
 import Action from './action';
 import actions, { viewerCommands } from '../lib/actions';
-import { dwc, getImageIdsForSeries, getSOPInstanceUID, genDrawingFromAnnotations, buildWADOUrl, getDrawLayer } from '../lib';
+import {
+  dwc,
+  getImageIdsForSeries,
+  getSOPInstanceUID,
+  genDrawingFromAnnotations,
+  buildWADOUrl,
+  getDrawLayer,
+} from '../lib';
 import { getAnnotateType } from '../constant';
 import '../lib/gui';
 
@@ -98,9 +112,9 @@ export default {
     Action,
     LesionInfo,
   },
-  setup(props, ctx){
+  setup(props, ctx) {
     const { $route, $router } = ctx.root;
-    const { params = {}} = $route;
+    const { params = {} } = $route;
     const canvasRef = ref(null);
 
     // 记录 id
@@ -121,7 +135,8 @@ export default {
       curInstanceID: undefined, // 当前实例 ID
       seriesDicomInfo: {}, // 当前系列 dicom 信息
       showInfo: true, // 是否展示覆盖信息
-      overlayInfo: { // 覆盖层信息
+      overlayInfo: {
+        // 覆盖层信息
         zoom: { scale: 1 },
       },
       stack: {
@@ -140,9 +155,9 @@ export default {
     });
 
     const tools = {
-      Scroll: {}, 
+      Scroll: {},
       ZoomAndPan: {},
-      WindowLevel: {}, 
+      WindowLevel: {},
       Draw: {
         options: ['Roi', 'Rectangle'],
         type: 'factory',
@@ -160,7 +175,7 @@ export default {
     // 根据异步结果更新状态
     const updateState = (params) => {
       // 区分函数式更新和对象更新
-      if(typeof params === 'function') {
+      if (typeof params === 'function') {
         const next = params(state);
         Object.assign(state, next);
         return;
@@ -173,7 +188,7 @@ export default {
       const { data } = event;
       const SOPInstanceUID = getSOPInstanceUID(data);
       // 如果已存在，什么都不做
-      if(state.seriesDicomInfo[SOPInstanceUID]) return;
+      if (state.seriesDicomInfo[SOPInstanceUID]) return;
       const nextInfo = {
         ...state.seriesDicomInfo,
         [SOPInstanceUID]: data,
@@ -191,11 +206,11 @@ export default {
     };
 
     const toggleCanvasListener = (canvas, bool) => {
-      if(bool === false) {
-        canvas.setAttribute("style", "pointer-events: none;");
+      if (bool === false) {
+        canvas.setAttribute('style', 'pointer-events: none;');
       } else {
         // todo: draw layer
-        canvas.setAttribute("style", "pointer-events: auto;");
+        canvas.setAttribute('style', 'pointer-events: auto;');
       }
     };
 
@@ -210,9 +225,9 @@ export default {
 
     // 下拉菜单，draw 需要打开的时候触发
     const handleOpenTool = (isOpen, tool) => {
-      if(isOpen) {
-        if(tool.command === 'Draw') {
-          if (state.shape){
+      if (isOpen) {
+        if (tool.command === 'Draw') {
+          if (state.shape) {
             dwvApp.setTool(tool.command);
             changeShape(state.shape, 'Draw');
             toggleToolEvent(tool, true);
@@ -229,18 +244,19 @@ export default {
         dwvApp.setTool(tool.command);
         if (tool.command === 'Draw') {
           changeShape(tool.value, 'Draw');
-          tool.value && updateState({
-            shape: tool.value,
-          });
+          tool.value &&
+            updateState({
+              shape: tool.value,
+            });
         }
         // 如果从command 切换回来，要重新绑定事件
-        if (!isTool(state.activeTool)){
+        if (!isTool(state.activeTool)) {
           // 非 tool 事件关闭 canvas 事件
           toggleToolEvent(tool, true);
         }
       } else {
         const selectedTool = dwvApp.getToolboxController().getSelectedTool();
-        if(selectedTool) {
+        if (selectedTool) {
           // 非 tool 事件关闭 canvas 事件
           toggleToolEvent(tool, false);
         }
@@ -252,7 +268,7 @@ export default {
     };
 
     const updateOverlayInfo = (info) => {
-      if(typeof info === 'function') {
+      if (typeof info === 'function') {
         const next = info(state.overlayInfo);
         Object.assign(state, {
           overlayInfo: {
@@ -270,15 +286,15 @@ export default {
       });
     };
 
-    const updateWwwc = event => {
+    const updateWwwc = (event) => {
       updateOverlayInfo({
         ww: event.ww,
         wc: event.wc,
       });
     };
 
-    const updateZoom = event => {
-      if(event.type === 'zoom-change') {
+    const updateZoom = (event) => {
+      if (event.type === 'zoom-change') {
         updateOverlayInfo({
           zoom: {
             ...event,
@@ -290,7 +306,7 @@ export default {
 
     // 写入变更过的id
     const addChangedId = (id) => {
-      if(!state.changedDrawId.includes(id)) {
+      if (!state.changedDrawId.includes(id)) {
         state.changedDrawId.push(id);
       }
     };
@@ -315,7 +331,7 @@ export default {
       const saveDrawingPromise = save(drawing);
       const promises = [saveDrawingPromise];
       // 保存病灶信息
-      if(state.showLesionInfo) {
+      if (state.showLesionInfo) {
         const saveLesionPromise = saveLesions(params.medicalId, state.lesions);
         promises.push(saveLesionPromise);
       }
@@ -326,7 +342,7 @@ export default {
     // 更新病灶记录
     const updateLesionCount = () => {
       const counts = state.lesions.reduce((acc, d) => {
-        if(!isNil(d.lesionOrder)) {
+        if (!isNil(d.lesionOrder)) {
           acc.push(d.lesionOrder);
         }
         return acc;
@@ -335,18 +351,25 @@ export default {
       // 更新 count 记录
       // eslint-disable-next-line
       lesionOrderMap.count = counts.length
-        ? (isNil(max(counts)) ? 1 : max(counts)) 
+        ? isNil(max(counts))
+          ? 1
+          : max(counts)
         : state.lesions.length;
     };
 
     // 获取远程数据并渲染应用
     const applyState = async (app) => {
       const { caseInfo } = state;
-      switch(statusCodeMap[caseInfo.status]) {
+      switch (datasetStatusMap[caseInfo.status]?.status) {
         case 'AUTO_ANNOTATED': {
           // 自动标注结果
           const autoResult = await queryAutoResult(caseInfo.id);
-          const { drawings, drawingsDetails, drawingIds, sliceDrawingMap } = genDrawingFromAnnotations(JSON.parse(autoResult.annotations), state.precision);
+          const {
+            drawings,
+            drawingsDetails,
+            drawingIds,
+            sliceDrawingMap,
+          } = genDrawingFromAnnotations(JSON.parse(autoResult.annotations), state.precision);
           Object.assign(state, {
             sliceDrawingMap,
             annotations: autoResult.annotations,
@@ -369,7 +392,7 @@ export default {
         }
         // 未标注  什么都不做
         case 'UNANNOTATED':
-        break;
+          break;
         // 其他状态均不允许查看详情页
         default:
           setTimeout(() => {
@@ -378,12 +401,12 @@ export default {
           throw new Error('当前数据集状态不允许查看');
       }
 
-      if(state.showLesionInfo) {
+      if (state.showLesionInfo) {
         const drawDetails = app.getDrawDisplayDetails();
-        queryLesions(params.medicalId).then(res => {
+        queryLesions(params.medicalId).then((res) => {
           try {
-            const lesions = res.map(d => {
-              const rawList = JSON.parse(d.list).map(d => ({
+            const lesions = res.map((d) => {
+              const rawList = JSON.parse(d.list).map((d) => ({
                 ...d,
                 id: d.drawId,
               }));
@@ -400,7 +423,7 @@ export default {
           } catch (err) {
             console.error(err);
             throw err;
-          }   
+          }
         });
       }
     };
@@ -408,7 +431,7 @@ export default {
     // 移除修改标注记录
     const moveDrawIdBy = (source, findBy) => {
       const changedIndex = findBy(state[source]);
-      if(changedIndex > -1) {
+      if (changedIndex > -1) {
         const updateArr = remove(state[source], changedIndex);
         Object.assign(state, {
           [source]: updateArr,
@@ -416,31 +439,33 @@ export default {
       }
     };
 
-    const deleteLesionInfo = id => {
-      if(state.showLesionInfo && id) {
+    const deleteLesionInfo = (id) => {
+      if (state.showLesionInfo && id) {
         // 如果删除的 drawId 存在于 lesions 则移除
-        moveDrawIdBy('lesions', arr => findIndex(arr, o => {
-          return (o.list || []).map(d => d.drawId).includes(id);
-        }));
+        moveDrawIdBy('lesions', (arr) =>
+          findIndex(arr, (o) => {
+            return (o.list || []).map((d) => d.drawId).includes(id);
+          })
+        );
       }
     };
 
     // 删除 draw 数据
-    const deleteDrawInfo = id => {
-      if(!id) return;
+    const deleteDrawInfo = (id) => {
+      if (!id) return;
       // 如果删除的 drawId 存在于 changedDrawId，则移除
-      moveDrawIdBy('changedDrawId', arr => findIndex(arr, o => o === id));
+      moveDrawIdBy('changedDrawId', (arr) => findIndex(arr, (o) => o === id));
       deleteLesionInfo(id);
     };
 
     // 删除标注形状
-    const deleteDrawShape = id => {
-      if(!id) return;
+    const deleteDrawShape = (id) => {
+      if (!id) return;
       const drawLayer = getDrawLayer(dwvApp);
       const groups = drawLayer.getChildren();
-      for(const group of groups) {
-        const groupToDelete = group.getChildren(node => node.id() === id);
-        if(groupToDelete.length === 1) {
+      for (const group of groups) {
+        const groupToDelete = group.getChildren((node) => node.id() === id);
+        if (groupToDelete.length === 1) {
           dwvApp.getDrawController().deleteDrawGroup(groupToDelete[0], noop, noop);
         }
       }
@@ -449,8 +474,8 @@ export default {
     // 同时删除形状和数据
     const deleteDraw = (row = {}) => {
       // 获取病灶下方
-      const drawIds = (row.list || []).map(d => d.drawId).filter(d => !!d);
-      for(const id of drawIds) {
+      const drawIds = (row.list || []).map((d) => d.drawId).filter((d) => !!d);
+      for (const id of drawIds) {
         deleteDrawShape(id);
         deleteDrawInfo(id);
       }
@@ -462,16 +487,16 @@ export default {
     };
 
     // 跳转到指定slice
-    const setCurrentSlice = k => {
+    const setCurrentSlice = (k) => {
       dwvApp.getViewController().setCurrentSlice(k);
     };
 
     // 更新 draw 颜色
     const updateDrawColor = (drawIds, color) => {
       const drawDetails = dwvApp.getDrawDisplayDetails();
-      drawIds.forEach(drawId => {
-        const drawDetail = drawDetails.find(d => d.id === drawId);
-        if(drawDetail) {
+      drawIds.forEach((drawId) => {
+        const drawDetail = drawDetails.find((d) => d.id === drawId);
+        if (drawDetail) {
           drawDetail.color = color;
           addChangedId(drawId);
           dwvApp.updateDraw(drawDetail);
@@ -481,9 +506,9 @@ export default {
 
     // 编辑病灶 id
     const editLesionOrder = (value, row) => {
-      const index = findIndex(state.lesions, o => o.lesionOrder === Number(value));
+      const index = findIndex(state.lesions, (o) => o.lesionOrder === Number(value));
       // 检查到当前改动已存在 lesionOrder
-      if(index > -1) {
+      if (index > -1) {
         const rawlesion = state.lesions[index];
         const sliceDesc = String(rawlesion.sliceDesc)
           .split(',')
@@ -496,23 +521,25 @@ export default {
 
         let nextLesions = replace(state.lesions, index, {
           ...rawlesion,
-          sliceDesc: uniq(sliceDesc).sort().join(','),
+          sliceDesc: uniq(sliceDesc)
+            .sort()
+            .join(','),
           list: nextList,
         });
 
         // 只删除病灶信息，保留形状
-        const mergedRowIndex = findIndex(nextLesions, o => o.id === row.id);
-        if(mergedRowIndex > -1) {
+        const mergedRowIndex = findIndex(nextLesions, (o) => o.id === row.id);
+        if (mergedRowIndex > -1) {
           nextLesions = remove(nextLesions, mergedRowIndex);
         }
 
         Object.assign(state, {
           lesions: nextLesions,
         });
-        const drawIds = nextList.map(d => d.drawId);
+        const drawIds = nextList.map((d) => d.drawId);
         updateDrawColor(drawIds, rawColor);
       } else {
-        const curIndex = findIndex(state.lesions, o => o.id === row.id);
+        const curIndex = findIndex(state.lesions, (o) => o.id === row.id);
         const nextRow = {
           ...row,
           lesionOrder: Number(value), // lesionOrder 必须为数字
@@ -526,10 +553,11 @@ export default {
       updateLesionCount();
     };
 
+    // eslint-disable-next-line
     const editDrawDetail = (type, value, row) => {
-      switch(type) {
+      switch (type) {
         case 'color': {
-          const drawIds = row.list.map(d => d.drawId);
+          const drawIds = row.list.map((d) => d.drawId);
           updateDrawColor(drawIds, value);
           break;
         }
@@ -540,7 +568,7 @@ export default {
 
     // 编辑病灶信息
     const editLesionItem = (value, row) => {
-      const index = findIndex(state.lesions, o => o.id === row.id);
+      const index = findIndex(state.lesions, (o) => o.id === row.id);
       const nextLesions = replace(state.lesions, index, {
         ...row,
         sliceDesc: value,
@@ -573,7 +601,7 @@ export default {
       const showLesionInfo = getAnnotateType(annotateType) === 1;
 
       const seriesMetadata = await dwc.retrieveSeriesMetadata(caseInfo);
-      if(!seriesMetadata || !seriesMetadata.length) {
+      if (!seriesMetadata || !seriesMetadata.length) {
         throw new Error('找不到数据');
       }
       const imageInstances = getImageIdsForSeries(seriesMetadata);
@@ -593,7 +621,7 @@ export default {
           loading: true,
         });
       });
-      dwvApp.addEventListener('load-progress', event => {
+      dwvApp.addEventListener('load-progress', (event) => {
         Object.assign(state, {
           loadProgress: event.loaded,
         });
@@ -611,7 +639,7 @@ export default {
       dwvApp.addEventListener('load', (event) => {
         const firstObjectId = new URL(imageIds[0]).searchParams.get('objectUID');
         // 返回一个列表
-        if(event.source.length) {
+        if (event.source.length) {
           // 默认第一个为选中索引值
           Object.assign(state, {
             curInstanceID: firstObjectId,
@@ -633,14 +661,14 @@ export default {
         }
         // 初始化 tool
         dwvApp.setTool(state.activeTool);
-        
+
         dwvApp.getViewController().goFirstSlice();
         // 加载数据
         await applyState(dwvApp);
         Object.assign(state, nextState);
       });
-    
-      dwvApp.addEventListener('error', event => {
+
+      dwvApp.addEventListener('error', (event) => {
         console.error('load error', event);
         Object.assign(state, {
           receivedError: state.receivedError + 1,
@@ -655,9 +683,9 @@ export default {
 
       dwvApp.addEventListener('draw-create', ({ id }) => {
         const drawDetails = dwvApp.getDrawDisplayDetails();
-        const drawInfo = drawDetails.find(d => d.id === id) || {};
+        const drawInfo = drawDetails.find((d) => d.id === id) || {};
         // 判断是用户手动创建，还是代码生成
-        if(state.showLesionInfo) {
+        if (state.showLesionInfo) {
           const lesionOrder = (lesionOrderMap.count += 1);
           const sliceIndex = state.stack.currentImageIdIndex + 1;
           // 展示病灶信息
@@ -665,11 +693,13 @@ export default {
             id: generateUuid(),
             lesionOrder,
             sliceDesc: sliceIndex,
-            list: [{
-              drawId: id,
-              sliceNumber: sliceIndex,
-              ...drawInfo,
-            }],
+            list: [
+              {
+                drawId: id,
+                sliceNumber: sliceIndex,
+                ...drawInfo,
+              },
+            ],
           });
         }
       });
@@ -678,7 +708,7 @@ export default {
         deleteDrawInfo(id);
       });
 
-      // todo: 如何获取 ww,wc? 
+      // todo: 如何获取 ww,wc?
       // 监听窗宽、窗高
       dwvApp.addEventListener('wl-width-change', updateWwwc);
       dwvApp.addEventListener('wl-center-change', updateWwwc);
@@ -687,12 +717,12 @@ export default {
       dwvApp.addEventListener('zoom-change', updateZoom);
       dwvApp.addEventListener('slice-change', onSliceChange);
 
-      dwvApp.addEventListener('keydown', event => {
-        if(event.keyCode === 39) {
+      dwvApp.addEventListener('keydown', (event) => {
+        if (event.keyCode === 39) {
           event.preventDefault();
           dwvApp.getViewController().incrementSliceNb();
         }
-        if(event.keyCode === 37) {
+        if (event.keyCode === 37) {
           event.preventDefault();
           dwvApp.getViewController().decrementSliceNb();
         }
@@ -727,10 +757,10 @@ export default {
 };
 </script>
 <style lang="scss">
-  .fullBg {
-    background-color: #fff;
-    opacity: 0.3;
-  }
+.fullBg {
+  background-color: #fff;
+  opacity: 0.3;
+}
 </style>
 <style lang="scss" scoped>
 .dwv-wrapper {
@@ -776,5 +806,4 @@ export default {
   height: calc(100vh - 80px);
   color: #9ccef9;
 }
-
 </style>

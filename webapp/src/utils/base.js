@@ -1,24 +1,37 @@
 /** Copyright 2020 Tianshu AI Platform. All Rights Reserved.
-*
-* Licensed under the Apache License, Version 2.0 (the "License");
-* you may not use this file except in compliance with the License.
-* You may obtain a copy of the License at
-*
-*     http://www.apache.org/licenses/LICENSE-2.0
-*
-* Unless required by applicable law or agreed to in writing, software
-* distributed under the License is distributed on an "AS IS" BASIS,
-* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-* See the License for the specific language governing permissions and
-* limitations under the License.
-* =============================================================
-*/
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ * =============================================================
+ */
 
 import { format, parseISO, isDate } from 'date-fns';
-import { isEqual, isPlainObject, isNil, findIndex, findLastIndex, uniqBy, merge, keyBy, values } from 'lodash';
+import {
+  isEqual,
+  isPlainObject,
+  isNil,
+  findIndex,
+  findLastIndex,
+  uniqBy,
+  merge,
+  keyBy,
+  values,
+  minBy,
+  maxBy,
+} from 'lodash';
 import { nanoid } from 'nanoid';
 
 const chroma = require('chroma-js');
+const assert = require('assert');
 
 export const duplicate = (arr, callback) => {
   const index = findIndex(arr, callback);
@@ -71,20 +84,20 @@ export const add = (arr, ...newData) => {
 // 删除数组中指定索引的字段
 export const remove = (arr, i) => {
   if (i < 0) return arr;
-  return ([
-    ...arr.slice(0, i),
-    ...arr.slice(i + 1),
-  ]);
+  return [...arr.slice(0, i), ...arr.slice(i + 1)];
+};
+
+// remove 回调函数版本
+export const removeBy = (arr, callback) => {
+  assert(typeof callback === 'function', 'callback 只支持函数类型');
+  const index = arr.findIndex(callback);
+  return remove(arr, index);
 };
 
 // 替换数组中指定索引的项
 export const replace = (arr, i, ...newData) => {
   if (!Array.isArray(arr) || typeof i !== 'number') return arr;
-  return ([
-    ...arr.slice(0, i),
-    ...newData,
-    ...arr.slice(i + 1),
-  ]);
+  return [...arr.slice(0, i), ...newData, ...arr.slice(i + 1)];
 };
 
 // 合并两个具有同个属性的数组
@@ -93,20 +106,40 @@ export const mergeArrayByKey = (arr1, arr2, key) => {
   return values(merged);
 };
 
+// 将位置对象转为数组（供算法解析）
+export const pos2Array = (pos) => [pos.x, pos.y];
+// 将数组转为数组
+export const rawArr2Pos = (arr) => ({ x: arr[0], y: arr[1] });
+
+// polygonExtent
+export const getPolygonExtent = (points) => {
+  const { x: x0 } = minBy(points, 'x');
+  const { x: x1 } = maxBy(points, 'x');
+  const { y: y0 } = minBy(points, 'y');
+  const { y: y1 } = maxBy(points, 'y');
+  return {
+    x0,
+    x1,
+    y0,
+    y1,
+  };
+};
+
 // deprecated
 // 每n个取1个值,例：步长为5时,0到20取0,5,10,15,20。leading为true表示即使不足5个，仍取第一个值0
-export const everyNth = (arr, step, leading = false) => arr.filter((e, i) => {
-  if(leading === true) {
-    return i % step === 0;
-  };
-  return (i % step === step - 1);
-});
+export const everyNth = (arr, step, leading = false) =>
+  arr.filter((e, i) => {
+    if (leading === true) {
+      return i % step === 0;
+    }
+    return i % step === step - 1;
+  });
 
 export const everyStep = (arr, step) => {
   // 先根据步长生成一个近似于等差的数组arr2，arr2的值对应arr要取的点的index值
   const arr2 = [];
-  for(let i=0; i<arr.length; i+=step){
-     arr2.push(Math.floor(i));
+  for (let i = 0; i < arr.length; i += step) {
+    arr2.push(Math.floor(i));
   }
   return arr.filter((e, i) => {
     return arr2.includes(i);
@@ -172,11 +205,14 @@ export const AssertError = (message, code) => {
 };
 
 // 返回当前值
-export const identity = d => d;
+export const identity = (d) => d;
 
 // 数组间基于属性对比
 export const isEqualByProp = (arr1, arr2, prop) => {
-  return isEqual(arr1.map(d => d[prop]), arr2.map(d => d[prop]));
+  return isEqual(
+    arr1.map((d) => d[prop]),
+    arr2.map((d) => d[prop])
+  );
 };
 
 // 判断对象数组之间某些值是否一致
@@ -187,9 +223,9 @@ export const isEqualBy = (arr, key) => {
 
 // 根据背景色深浅来设置颜色
 export const colorByLuminance = (color) => {
-  if(isNil(color) || color === '') {
+  if (isNil(color) || color === '') {
     return '#333';
-  } 
+  }
   const colorMap = {
     dark: '#333',
     light: '#fff',
@@ -197,6 +233,17 @@ export const colorByLuminance = (color) => {
   const luminance = chroma(color).luminance();
   const theme = luminance < 0.5 ? 'light' : 'dark';
   return colorMap[theme];
+};
+
+// 判断是否为空值（lodash isEmpty 方法对解析 boolean 和 number 不合理）
+export const isEmptyValue = (value) => {
+  return (
+    value === undefined ||
+    value === null ||
+    Number.isNaN(value) ||
+    (typeof value === 'object' && Object.keys(value).length === 0) ||
+    (typeof value === 'string' && value.trim().length === 0)
+  );
 };
 
 export { chroma };

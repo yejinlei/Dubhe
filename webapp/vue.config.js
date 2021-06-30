@@ -36,7 +36,7 @@ module.exports = {
           delete require.cache[require.resolve(module)];
           return require(module);
         } catch (e) {
-          console.log(`can't load module in ${module}`);
+          // console.log(`can't load module in ${module}`);
           return false
         }
       }
@@ -93,7 +93,6 @@ module.exports = {
           }) > -1
           // 如果匹配到 restApi 走本地 mock
           if(matchRESTApi) return false
-
           // 其他路径
           const mockPath = path.join(__dirname, 'mock', req.path);
           const value = requireUncached(mockPath);

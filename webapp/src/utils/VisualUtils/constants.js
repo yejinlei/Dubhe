@@ -1,22 +1,22 @@
 /** Copyright 2020 Tianshu AI Platform. All Rights Reserved.
-*
-* Licensed under the Apache License, Version 2.0 (the "License");
-* you may not use this file except in compliance with the License.
-* You may obtain a copy of the License at
-*
-*     http://www.apache.org/licenses/LICENSE-2.0
-*
-* Unless required by applicable law or agreed to in writing, software
-* distributed under the License is distributed on an "AS IS" BASIS,
-* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-* See the License for the specific language governing permissions and
-* limitations under the License.
-* =============================================================
-*/
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ * =============================================================
+ */
 
-const HOSTNAME = `${window.location.origin  }/`;
+const HOSTNAME = `${window.location.origin}/`;
 // const IMGURl = HOSTNAME
-const IMGURl = `${process.env.VUE_APP_BASE_API  }/visual`;
+const IMGURl = `${process.env.VUE_APP_BASE_API}/visual`;
 const CATEGORY = [
   ['GRAPH', 'Graphs', 'GraphsPanel', '模型结构', 'icon-moxingjiegou_1'],
   ['SCALAR', 'Scalars', 'ScalarsPanel', '标量数据', 'icon-biaoliangshuju1'],
@@ -29,7 +29,29 @@ const CATEGORY = [
   ['EXCEPTION', 'Exception', 'ExceptionPanel', '异常检测', 'icon-yichang3'],
   ['CUSTOM', 'Customs', 'CustomsPanel', '用户定制', 'icon-yonghudingzhi_1'],
 ];
-const CATEGORYORDER = ['graph', 'scalar', 'media', 'statistic', 'embedding', 'feature', 'roc', 'hyperparm', 'exception', 'custom'];
-const RUNFILESHOWFlAG = { 'graph': 0, 'scalar': 1, 'media': 1, 'statistic': 1, 'embedding': 0, 'feature': 0, 'roc': 1, 'hyperparm': 0, 'exception': 1, 'custom': 2 };
+const CATEGORYORDER = [
+  'graph',
+  'scalar',
+  'media',
+  'statistic',
+  'embedding',
+  'feature',
+  'roc',
+  'hyperparm',
+  'exception',
+  'custom',
+];
+const RUNFILESHOWFlAG = {
+  graph: 0,
+  scalar: 1,
+  media: 1,
+  statistic: 1,
+  embedding: 0,
+  feature: 0,
+  roc: 1,
+  hyperparm: 0,
+  exception: 1,
+  custom: 2,
+};
 
 export default { HOSTNAME, CATEGORY, CATEGORYORDER, RUNFILESHOWFlAG, IMGURl };

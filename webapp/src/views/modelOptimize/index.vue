@@ -1,33 +1,25 @@
 /** Copyright 2020 Tianshu AI Platform. All Rights Reserved.
-*
-* Licensed under the Apache License, Version 2.0 (the "License");
-* you may not use this file except in compliance with the License.
-* You may obtain a copy of the License at
-*
-*     http://www.apache.org/licenses/LICENSE-2.0
-*
-* Unless required by applicable law or agreed to in writing, software
-* distributed under the License is distributed on an "AS IS" BASIS,
-* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-* See the License for the specific language governing permissions and
-* limitations under the License.
-* =============================================================
-*/
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ * =============================================================
+ */
 
 <template>
   <div class="app-container">
     <!--工具栏-->
     <div class="head-container">
-      <cdOperation
-        linkType="custom"
-        @to-add="doAdd"
-      >
-        <el-form
-          slot="right"
-          :inline="true"
-          :model="localQuery"
-          class="flex flex-end flex-wrap"
-        >
+      <cdOperation linkType="custom" @to-add="doAdd">
+        <el-form slot="right" :inline="true" :model="localQuery" class="flex flex-end flex-wrap">
           <el-form-item>
             <el-input
               v-model="localQuery.name"
@@ -63,25 +55,12 @@
       highlight-current-row
       @sort-change="crud.sortChange"
     >
-      <el-table-column
-        prop="id"
-        label="ID"
-        sortable="custom"
-        width="80px"
-        fixed
-      />
-      <el-table-column
-        prop="name"
-        label="任务名称"
-        min-width="120px"
-        show-overflow-tooltip
-        fixed
-      >
+      <el-table-column prop="id" label="ID" sortable="custom" width="80px" fixed />
+      <el-table-column prop="name" label="任务名称" min-width="120px" show-overflow-tooltip fixed>
         <template slot-scope="scope">
-          <el-link
-            class="name-col"
-            @click="goRecord(scope.row.id)"
-          >{{ scope.row.name }}</el-link>
+          <el-link class="name-col" type="primary" @click="goRecord(scope.row.id)">{{
+            scope.row.name
+          }}</el-link>
         </template>
       </el-table-column>
       <el-table-column
@@ -90,49 +69,20 @@
         min-width="180px"
         show-overflow-tooltip
       />
-      <el-table-column
-        prop="modelName"
-        label="模型名称"
-        min-width="120px"
-      />
-      <el-table-column
-        prop="algorithmName"
-        label="优化算法"
-        min-width="180px"
-      />
-      <el-table-column
-        prop="updateTime"
-        label="更新时间"
-        sortable="custom"
-        min-width="160px"
-      >
+      <el-table-column prop="modelName" label="模型名称" min-width="120px" />
+      <el-table-column prop="algorithmName" label="优化算法" min-width="180px" />
+      <el-table-column prop="updateTime" label="更新时间" sortable="custom" min-width="160px">
         <template slot-scope="scope">
           <span>{{ parseTime(scope.row.updateTime) }}</span>
         </template>
       </el-table-column>
-      <el-table-column
-        label="操作"
-        width="250px"
-        fixed="right"
-      >
+      <el-table-column label="操作" width="250px" fixed="right">
         <template slot-scope="scope">
           <!--所有状态都有 -->
-          <el-button
-            type="text"
-            @click.stop="doEdit(scope.row)"
-          >编辑</el-button>
-          <el-button
-            type="text"
-            @click.stop="doSubmit(scope.row.id)"
-          >提交</el-button>
-          <el-button
-            type="text"
-            @click.stop="doFork(scope.row)"
-          >Fork</el-button>
-          <el-button
-            type="text"
-            @click.stop="doDelete(scope.row.id)"
-          >删除</el-button>
+          <el-button type="text" @click.stop="doEdit(scope.row)">编辑</el-button>
+          <el-button type="text" @click.stop="doSubmit(scope.row.id)">提交</el-button>
+          <el-button type="text" @click.stop="doFork(scope.row)">Fork</el-button>
+          <el-button type="text" @click.stop="doDelete(scope.row.id)">删除</el-button>
         </template>
       </el-table-column>
     </el-table>
@@ -149,10 +99,7 @@
       @cancel="onDialogCancel"
       @ok="onSubmitForm"
     >
-      <OptimizeForm
-        ref="form"
-        class="create-form"
-      />
+      <OptimizeForm ref="form" class="create-form" />
     </BaseModal>
   </div>
 </template>
@@ -160,7 +107,14 @@
 <script>
 import { mapActions } from 'vuex';
 
-import { list, add, edit, getOptimizeAlgorithms, submit, del as deleteTask } from '@/api/modelOptimize/optimize';
+import {
+  list,
+  add,
+  edit,
+  getOptimizeAlgorithms,
+  submit,
+  del as deleteTask,
+} from '@/api/modelOptimize/optimize';
 import CRUD, { presenter, header, crud } from '@crud/crud';
 import { Constant } from '@/utils';
 import BaseModal from '@/components/BaseModal';
@@ -214,7 +168,7 @@ export default {
 
       formVisible: false, // 表单 Dialog 是否可见
       submitting: false, // 表单提交状态
-      
+
       defaultSort: {}, // 进入页面是保留表格排序状态
     };
   },
@@ -227,11 +181,11 @@ export default {
   beforeRouteEnter(to, from, next) {
     // 如果不是从记录页返回到列表页的，页码重置为 1
     if (!['ModelOptRecord'].includes(from.name)) {
-      next(vm => vm.pageEnter(false));
+      next((vm) => vm.pageEnter(false));
       return;
     }
     // 从记录页返回时保留页码和排序状态
-    next(vm => vm.pageEnter(true));
+    next((vm) => vm.pageEnter(true));
   },
   beforeDestroy() {
     this.stopOpenNotebook();
@@ -240,7 +194,7 @@ export default {
     // 获取优化算法
     this.optimizeAlgorithms = await getOptimizeAlgorithms();
 
-    const {actionType} = this.$route.params;
+    const { actionType } = this.$route.params;
 
     if (actionType === 'add') {
       const form = {};
@@ -260,7 +214,11 @@ export default {
 
     pageEnter(keepPageInfos) {
       if (keepPageInfos) {
-        const { page, sort: { sort, order }, query } = this.lastPageInfo;
+        const {
+          page,
+          sort: { sort, order },
+          query,
+        } = this.lastPageInfo;
         this.crud.page.current = page;
         // 修改 table 的排序信息
         this.defaultSort = { prop: sort, order: Constant.tableSortMap2Element[order] };
@@ -273,7 +231,7 @@ export default {
       this.crud.refresh();
     },
     goRecord(id) {
-      this.$router.push({ path: '/model/optimize/record', query: { taskId: id }});
+      this.$router.push({ path: '/model/optimize/record', query: { taskId: id } });
     },
     filter(column, value) {
       this.localQuery[column] = value;
@@ -300,26 +258,24 @@ export default {
     },
 
     doDelete(id) {
-      this.$confirm('此操作将删除该任务, 是否继续?', '请确认')
-        .then(async() => {
-          await deleteTask({ id });
-          this.$message({
-            message: '删除成功',
-            type: 'success',
-          });
-          this.crud.refresh();
+      this.$confirm('此操作将删除该任务, 是否继续?', '请确认').then(async () => {
+        await deleteTask({ id });
+        this.$message({
+          message: '删除成功',
+          type: 'success',
         });
+        this.crud.refresh();
+      });
     },
     doSubmit(id) {
-      this.$confirm('请确认是否提交任务?', '请确认')
-        .then(async() => {
-          await submit({ id });
-          this.$message({
-            message: '提交成功',
-            type: 'success',
-          });
-          this.$router.push({ name: 'ModelOptRecord', query: { taskId: id }});
+      this.$confirm('请确认是否提交任务?', '请确认').then(async () => {
+        await submit({ id });
+        this.$message({
+          message: '提交成功',
+          type: 'success',
         });
+        this.$router.push({ name: 'ModelOptRecord', query: { taskId: id } });
+      });
     },
     // hooks
     [CRUD.HOOK.beforeRefresh]() {
@@ -343,24 +299,30 @@ export default {
     },
     onSubmitForm() {
       // 如果表单已经在提交了，就不做处理
-      if (this.submitting) { return; }
+      if (this.submitting) {
+        return;
+      }
       // 对基础表单进行验证
-      this.$refs.form.validate(form => {
+      this.$refs.form.validate((form) => {
         const func = this.formType === 'edit' ? edit : add;
         if (func) {
           this.submitting = true;
-          func(form).then(res => {
-            this.formVisible = false;
-            this.crud.refresh();
-            
-            if (form.editAlgorithm) {
-              if (res) {
-                this.editAlgorithm(res.algorithmId, res.algorithmPath);
-              } else {
-                this.$message.warning('没有返回算法信息，无法在线编辑');
+          func(form)
+            .then((res) => {
+              this.formVisible = false;
+              this.crud.refresh();
+
+              if (form.editAlgorithm) {
+                if (res) {
+                  this.editAlgorithm(res.algorithmId, res.algorithmPath);
+                } else {
+                  this.$message.warning('没有返回算法信息，无法在线编辑');
+                }
               }
-            }
-          }).finally(() => { this.submitting = false; });
+            })
+            .finally(() => {
+              this.submitting = false;
+            });
         }
       });
     },

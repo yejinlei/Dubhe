@@ -1,18 +1,18 @@
 /** Copyright 2020 Tianshu AI Platform. All Rights Reserved.
-*
-* Licensed under the Apache License, Version 2.0 (the "License");
-* you may not use this file except in compliance with the License.
-* You may obtain a copy of the License at
-*
-*     http://www.apache.org/licenses/LICENSE-2.0
-*
-* Unless required by applicable law or agreed to in writing, software
-* distributed under the License is distributed on an "AS IS" BASIS,
-* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-* See the License for the specific language governing permissions and
-* limitations under the License.
-* =============================================================
-*/
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ * =============================================================
+ */
 
 /**
  * validate，校验函数
@@ -21,29 +21,35 @@
 import { isPlainObject } from 'lodash';
 import { ValidationProvider, ValidationObserver, extend } from 'vee-validate';
 import { required } from 'vee-validate/dist/rules';
+import { isEmptyValue } from './base';
 import { stringIsValidPythonVariable } from './utils';
 
 // 全站名称统一为中文、英文、数字，下划线和中划线
-const isValidName = value => {
+const isValidName = (value) => {
   return /^[\u4E00-\u9FA5\w-]+$/.test(value) && value.length <= 50;
 };
 
-const isValidNameWithHyphen = value => {
+const isValidNameWithHyphen = (value) => {
   return /^[\u4E00-\u9FA5A-Za-z0-9_-]+$/.test(value);
 };
 
+const isValidAlphabetNumHyphenUnderline = (value) => {
+  return /^[A-Za-z0-9_-]+$/.test(value);
+};
+
 // 有效的病灶位置信息
-const isValidLesionSliceNumber = value => {
+const isValidLesionSliceNumber = (value) => {
   // 数字开头，后面接`,数字`结束，重复0或任意次
   return /^[1-9][0-9]*(,[0-9]+)*$/.test(value);
 };
 
 // 有效的病灶位置信息
-const isValidLesionId = value => {
+const isValidLesionId = (value) => {
   // 必须为数字
-  if(isNaN(value)) return false;
+  // eslint-disable-next-line
+  if (isNaN(value)) return false;
   // 必须不能有小数点
-  if(String(value).indexOf('.') > -1) return false;
+  if (String(value).indexOf('.') > -1) return false;
   // 数字长度限制
   return value < 1000000000 && value > 0;
 };
@@ -162,6 +168,12 @@ export function isValidText(name) {
   return reg.test(name);
 }
 
+// 图片文件格式校验
+export function isValidImg(name) {
+  const reg = /\.(jpg|png|bmp|jpeg)$/;
+  return reg.test(name);
+}
+
 /**
  * @param {string} str
  * @returns {Boolean}
@@ -219,6 +231,40 @@ export function validateNameWithHyphen(rule, value, callback) {
 }
 
 /**
+ * 是否合法名称，包含大小写字母、数字、下划线、横杠
+ * @param rule
+ * @param value
+ * @param callback
+ */
+export function validateAlphabetNumHyphenUnderline(rule, value, callback) {
+  if (value === '' || value == null) {
+    callback();
+  } else if (!isValidAlphabetNumHyphenUnderline(value)) {
+    callback(new Error('仅支持字母、数字、英文横杠和下划线'));
+  } else {
+    callback();
+  }
+}
+
+/**
+ * 根据传入的正则规则和错误提示，返回 el-form 的规则校验方法
+ * @param {RegExp} re
+ * @param {String} errorMsg
+ * @returns
+ */
+export function getRegValidator(re, errorMsg = '不符合校验规则') {
+  return (rule, value, callback) => {
+    if (value === '' || value == null) {
+      callback();
+    } else if (!re.test(value)) {
+      callback(new Error(errorMsg));
+    } else {
+      callback();
+    }
+  };
+}
+
+/**
  * 是否合法账号名
  * @param rule
  * @param value
@@ -267,7 +313,7 @@ export function validateIP(rule, value, callback) {
     callback();
   } else {
     const reg = /^(\d{1,2}|1\d\d|2[0-4]\d|25[0-5])\.(\d{1,2}|1\d\d|2[0-4]\d|25[0-5])\.(\d{1,2}|1\d\d|2[0-4]\d|25[0-5])\.(\d{1,2}|1\d\d|2[0-4]\d|25[0-5])$/;
-    if ((!reg.test(value)) && value !== '') {
+    if (!reg.test(value) && value !== '') {
       callback(new Error('请输入正确的IP地址'));
     } else {
       callback();
@@ -280,12 +326,15 @@ export function validateIdNo(rule, value, callback) {
   const reg = /(^\d{15}$)|(^\d{18}$)|(^\d{17}(\d|X|x)$)/;
   if (value === '' || value == null) {
     callback();
-  } else if ((!reg.test(value)) && value !== '') {
+  } else if (!reg.test(value) && value !== '') {
     callback(new Error('请输入正确的身份证号码'));
   } else {
     callback();
   }
 }
+
+// 移除 html tag
+export const stripeHtmlTag = (origin) => origin.replace(/(<([^>]+)>)/gi, '');
 
 /**
  * 是否合法 Python 命令
@@ -305,7 +354,7 @@ export function validateRunCommand(rule, value, callback) {
   }
 }
 
-const isInputEmpty = value => {
+const isInputEmpty = (value) => {
   return value === '' || value === null;
 };
 
@@ -317,30 +366,43 @@ export function pythonKeyValidator(errorMsg) {
       callback();
     }
   };
-};
+}
 
 // 校验标签组基本方法
 export const validateLabelsUtil = (value) => {
-  if(!isPlainObject(value)) {
+  if (!isPlainObject(value)) {
     return '标签不能为空';
   }
-  if(!value.name) {
+  if (!value.name) {
     return '标签格式异常，请检查';
   }
-  if(!value.color) {
+  if (!value.color) {
     return '标签颜色不能为空';
   }
-  if(!/^#[0-9A-F]{6}$/i.test(value.color)) {
+  if (!/^#[0-9A-F]{6}$/i.test(value.color)) {
     return '标签颜色格式不对';
   }
-    return '';
+  return '';
 };
 
 export function validateLabel(rule, value, callback) {
   const validateResult = validateLabelsUtil(value);
-  if(validateResult !== '') {
+  if (validateResult !== '') {
     callback(new Error(validateResult));
     return;
+  }
+  callback();
+}
+
+export function validateJSON(rule, value, callback) {
+  if (isEmptyValue(value)) {
+    callback();
+    return;
+  }
+  try {
+    JSON.parse(value);
+  } catch (e) {
+    callback(new Error('请输入正确的 json 格式'));
   }
   callback();
 }

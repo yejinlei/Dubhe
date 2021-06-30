@@ -1,21 +1,21 @@
 /** Copyright 2020 Tianshu AI Platform. All Rights Reserved.
-*
-* Licensed under the Apache License, Version 2.0 (the "License");
-* you may not use this file except in compliance with the License.
-* You may obtain a copy of the License at
-*
-*     http://www.apache.org/licenses/LICENSE-2.0
-*
-* Unless required by applicable law or agreed to in writing, software
-* distributed under the License is distributed on an "AS IS" BASIS,
-* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-* See the License for the specific language governing permissions and
-* limitations under the License.
-* =============================================================
-*/
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ * =============================================================
+ */
 
 <template>
-  <div class='lesion-table-wrapper'>
+  <div class="lesion-table-wrapper">
     <el-form label-position="top" @submit.native.prevent>
       <div class="el-form-item__label">
         可疑结节
@@ -39,36 +39,46 @@
           </template>
         </el-table-column>
         <el-table-column label="ID" :min-width="64">
-          <template slot-scope="{row}">
+          <template slot-scope="{ row }">
             <span>{{ row.lesionOrder }}</span>
-            <Edit :row="row" title="修改ID" valueBy="lesionOrder" rules="required|validateLesionId" label="ID" @handleOk="editLesionOrder" />
+            <Edit
+              :row="row"
+              title="修改ID"
+              valueBy="lesionOrder"
+              rules="required|validateLesionId"
+              label="ID"
+              @handleOk="editLesionOrder"
+            />
           </template>
         </el-table-column>
         <el-table-column label="层面" :min-width="60">
-          <template slot-scope="{row}">
+          <template slot-scope="{ row }">
             <span>{{ row.sliceDesc }}</span>
-            <Edit :row="row" title="修改层面" valueBy="sliceDesc" rules="required|validateLesionSliceNumber" label="层面" @handleOk="editLesionItem" />
+            <Edit
+              :row="row"
+              title="修改层面"
+              valueBy="sliceDesc"
+              rules="required|validateLesionSliceNumber"
+              label="层面"
+              @handleOk="editLesionItem"
+            />
           </template>
         </el-table-column>
         <el-table-column label="颜色" :min-width="60">
-          <template slot-scope="{row}">
-            <el-color-picker v-model="row.list[0].color" @change="editDrawDetail('color', $event, row)" />
+          <template slot-scope="{ row }">
+            <el-color-picker
+              v-model="row.list[0].color"
+              @change="editDrawDetail('color', $event, row)"
+            />
           </template>
         </el-table-column>
         <el-table-column label="操作" :min-width="60">
-          <template slot-scope="{row}">
+          <template slot-scope="{ row }">
             <el-tooltip effect="dark" content="跳转到结节层面" placement="top" :open-delay="800">
-              <i
-                class="el-icon-d-arrow-right cp"
-                style="color: #fff;"
-                @click="toPosition(row)"
-              />
+              <i class="el-icon-d-arrow-right cp" style="color: #fff;" @click="toPosition(row)" />
             </el-tooltip>
-            <el-popconfirm
-              title="确定删除标注？"
-              @onConfirm="() => deleteDrawItem(row)"
-            >
-              <span slot="reference"><i class="el-icon-delete cp ml-4" /></span>
+            <el-popconfirm title="确定删除标注？" @onConfirm="() => deleteDrawItem(row)">
+              <span slot="reference"><i class="el-icon-delete cp ml-4"/></span>
             </el-popconfirm>
           </template>
         </el-table-column>
@@ -89,7 +99,7 @@ export default {
   props: {
     lesions: {
       type: Array,
-      default: () => ([]),
+      default: () => [],
     },
     deleteDraw: Function,
     setCurrentSlice: Function,
@@ -98,13 +108,13 @@ export default {
     getApp: Function,
     editDrawDetail: Function,
   },
-  setup(props){
+  setup(props) {
     const { deleteDraw, setCurrentSlice, getApp } = props;
     const state = reactive({
       lesions: props.lesions,
     });
     // 删除标注
-    const deleteDrawItem = row => {
+    const deleteDrawItem = (row) => {
       deleteDraw(row);
     };
 
@@ -114,14 +124,17 @@ export default {
       setCurrentSlice(sliceNumber - 1);
       const drawLayer = getDrawLayer(getApp());
       const selectedShape = getShapeGroup(drawId, drawLayer);
-      if(selectedShape) {
+      if (selectedShape) {
         activeShapeGroup(getApp(), selectedShape);
       }
     };
 
-    watch(() => props.lesions, (next) => {
-      state.lesions = next;
-    });
+    watch(
+      () => props.lesions,
+      (next) => {
+        state.lesions = next;
+      }
+    );
 
     return {
       state,

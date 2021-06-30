@@ -1,18 +1,18 @@
 /** Copyright 2020 Tianshu AI Platform. All Rights Reserved.
-*
-* Licensed under the Apache License, Version 2.0 (the "License");
-* you may not use this file except in compliance with the License.
-* You may obtain a copy of the License at
-*
-*     http://www.apache.org/licenses/LICENSE-2.0
-*
-* Unless required by applicable law or agreed to in writing, software
-* distributed under the License is distributed on an "AS IS" BASIS,
-* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-* See the License for the specific language governing permissions and
-* limitations under the License.
-* =============================================================
-*/
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ * =============================================================
+ */
 
 // dubhe-web\src\utils\VisualUtils\api.js
 // import port from '@/utils/VisualUtils/api';
@@ -81,7 +81,7 @@ const mutations = {
     state.clickState = param;
   },
   setAudioData: (state, param) => {
-    const paramStringIndex = `${param.content.run  }/${  Object.keys(param.content.value)[0]}`;
+    const paramStringIndex = `${param.content.run}/${Object.keys(param.content.value)[0]}`;
     let flag = true;
     for (let i = 0; i < state.audio.length; i += 1) {
       if (paramStringIndex === state.audio[i].stringIndex) {
@@ -94,11 +94,15 @@ const mutations = {
       }
     }
     if (flag) {
-      state.audio.push({ stringIndex: paramStringIndex, checked: param.checked, content: param.content });
+      state.audio.push({
+        stringIndex: paramStringIndex,
+        checked: param.checked,
+        content: param.content,
+      });
     }
   },
   setTextData: (state, param) => {
-    const paramStringIndex = `${param.content.run  }/${  Object.keys(param.content.value)[0]}`;
+    const paramStringIndex = `${param.content.run}/${Object.keys(param.content.value)[0]}`;
     let flag = true;
     for (let i = 0; i < state.text.length; i += 1) {
       if (paramStringIndex === state.text[i].stringIndex) {
@@ -111,11 +115,15 @@ const mutations = {
       }
     }
     if (flag) {
-      state.text.push({ stringIndex: paramStringIndex, checked: param.checked, content: param.content });
+      state.text.push({
+        stringIndex: paramStringIndex,
+        checked: param.checked,
+        content: param.content,
+      });
     }
   },
   setImageData: (state, param) => {
-    const paramStringIndex = `${param.content.run  }/${  Object.keys(param.content.value)[0]}`;
+    const paramStringIndex = `${param.content.run}/${Object.keys(param.content.value)[0]}`;
     let flag = true;
     for (let i = 0; i < state.image.length; i += 1) {
       if (paramStringIndex === state.image[i].stringIndex) {
@@ -128,14 +136,23 @@ const mutations = {
       }
     }
     if (flag) {
-      state.image.push({ stringIndex: paramStringIndex, checked: param.checked, content: param.content });
+      state.image.push({
+        stringIndex: paramStringIndex,
+        checked: param.checked,
+        content: param.content,
+      });
     }
   },
   setStatisticData: (state, param) => {
     let flag = -1;
     for (let i = 0; i < state.statistic.length; i += 1) {
-      if (state.statistic[i].ttlabel === param.ttlabel && state.statistic[i].tag === param.tag &&
-       (state.statistic[i].componentName === param.componentName || param.componentName === 'threed' || param.componentName === 'orthographic')) {
+      if (
+        state.statistic[i].ttlabel === param.ttlabel &&
+        state.statistic[i].tag === param.tag &&
+        (state.statistic[i].componentName === param.componentName ||
+          param.componentName === 'threed' ||
+          param.componentName === 'orthographic')
+      ) {
         if (!param.delete) {
           state.statistic.splice(i, 1);
         } else {
@@ -152,7 +169,7 @@ const mutations = {
     }
     if (flag === -1) {
       if (param.itemp < 1000) param.itemp = 1000 + param.itemp;
-      param.divId = `custom${  param.componentName  }${param.itemp}`;
+      param.divId = `custom${param.componentName}${param.itemp}`;
       if (state.statisticMode === '三维' && param.componentName === 'orthographic') {
         param.componentName = 'threed';
       } else if (state.statisticMode === '二维' && param.componentName === 'threed') {

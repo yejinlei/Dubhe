@@ -269,3 +269,16 @@
     }
   }
 }
+
+.action-button {
+  margin-left: 10px;
+}
+
+.el-dropdown-menu {
+  .action-button {
+    width: 100%;
+    margin-right: 0;
+    margin-left: 0;
+    text-align: left;
+  }
+}

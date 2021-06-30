@@ -1,18 +1,18 @@
 /** Copyright 2020 Tianshu AI Platform. All Rights Reserved.
-*
-* Licensed under the Apache License, Version 2.0 (the "License");
-* you may not use this file except in compliance with the License.
-* You may obtain a copy of the License at
-*
-*     http://www.apache.org/licenses/LICENSE-2.0
-*
-* Unless required by applicable law or agreed to in writing, software
-* distributed under the License is distributed on an "AS IS" BASIS,
-* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-* See the License for the specific language governing permissions and
-* limitations under the License.
-* =============================================================
-*/
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ * =============================================================
+ */
 
 import { zoomTransform } from 'd3-zoom';
 
@@ -25,10 +25,10 @@ export const getCursorPosition = (el, event, options = {}) => {
 };
 
 // 根据 d3-zoom 获取缩放后的相对位置
-export const getZoomPosition = (el, {x, y}) => {
+export const getZoomPosition = (el, { x, y }) => {
   const transform = zoomTransform(el);
   // const invertPosition = transform.invert(originPosition)
-  return { x: x / transform.k,  y: y / transform.k };
+  return { x: x / transform.k, y: y / transform.k };
   // return invertPosition
 };
 
@@ -36,16 +36,27 @@ export const getZoomPosition = (el, {x, y}) => {
 export const noop = () => {};
 
 // bounding
-export const getBounding = element => {
+export const getBounding = (element) => {
   if (element instanceof HTMLElement) {
     return element.getBoundingClientRect();
   }
   return {};
 };
 
+// 检测是否位于当前边界之内
+export const inBoundary = (event, target) => {
+  const rect = target.getBoundingClientRect();
+  return (
+    event.clientX >= rect.x &&
+    event.clientX <= rect.right &&
+    event.clientY >= rect.y &&
+    event.clientY <= rect.bottom
+  );
+};
+
 // 将框选结果转化为 bbox 配置
 export const generateBbox = (brush) => {
-  const { start = {}, end = {}} = brush;
+  const { start = {}, end = {} } = brush;
   const region = {
     x0: Math.min(start.x, end.x),
     x1: Math.max(start.x, end.x),
@@ -61,7 +72,7 @@ export const generateBbox = (brush) => {
 };
 
 // Bbox 转为 extent
-export const bbox2Extent = bbox => ({
+export const bbox2Extent = (bbox) => ({
   x0: bbox.x,
   y0: bbox.y,
   x1: bbox.x + bbox.width,
@@ -69,7 +80,7 @@ export const bbox2Extent = bbox => ({
 });
 
 // 将 extent 转为 bbox
-export const extent2Bbox = extent => ({
+export const extent2Bbox = (extent) => ({
   x: extent.x0,
   y: extent.y0,
   width: extent.x1 - extent.x0,
@@ -84,6 +95,15 @@ export const parseBbox = (bbox = []) => {
     y: bbox[1],
     width: bbox[2],
     height: bbox[3],
+  };
+};
+
+// 解析多边形为 bbox
+export const parsePolygon2Bbox = (points = []) => {
+  if (points.length === 0) throw new Error('路径不存在');
+  return {
+    x: points[0].x,
+    y: points[0].y,
   };
 };
 
@@ -139,7 +159,21 @@ export const findAncestorSvg = (node, event) => {
 };
 
 export const raise = (arr, raiseIndex) => {
-  return ([...arr.slice(0, raiseIndex), ...arr.slice(raiseIndex + 1), arr[raiseIndex]]);
+  return [...arr.slice(0, raiseIndex), ...arr.slice(raiseIndex + 1), arr[raiseIndex]];
+};
+
+// 计算两点之间的距离
+export const calcDistance = (a, b) => {
+  const x = Math.abs(b.x - a.x);
+  const y = Math.abs(b.y - a.y);
+  return Math.sqrt(x * x + y * y);
+};
+
+export const midPoint = (a, b) => {
+  return {
+    x: (a.x + b.x) / 2,
+    y: (a.y + b.y) / 2,
+  };
 };
 
 export const promisifyFileReader = (file, encoding) => {
@@ -155,4 +189,3 @@ export const promisifyFileReader = (file, encoding) => {
     reader.readAsText(file, encoding);
   });
 };
-

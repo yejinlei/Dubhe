@@ -1,24 +1,25 @@
 /** Copyright 2020 Tianshu AI Platform. All Rights Reserved.
-*
-* Licensed under the Apache License, Version 2.0 (the "License");
-* you may not use this file except in compliance with the License.
-* You may obtain a copy of the License at
-*
-*     http://www.apache.org/licenses/LICENSE-2.0
-*
-* Unless required by applicable law or agreed to in writing, software
-* distributed under the License is distributed on an "AS IS" BASIS,
-* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-* See the License for the specific language governing permissions and
-* limitations under the License.
-* =============================================================
-*/
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ * =============================================================
+ */
 
 import request from '@/utils/request';
+import { API_MODULE_NAME } from '@/config';
 
 export function login(data) {
   return request({
-    url: '/auth/login',
+    url: `/${API_MODULE_NAME.ADMIN}/auth/login`,
     method: 'post',
     data,
   });
@@ -26,7 +27,7 @@ export function login(data) {
 
 export function registerUser(data) {
   return request({
-    url: 'auth/userRegister',
+    url: `/${API_MODULE_NAME.ADMIN}/auth/userRegister`,
     method: 'post',
     data,
   });
@@ -34,7 +35,7 @@ export function registerUser(data) {
 
 export function resetPassword(data) {
   return request({
-    url: 'auth/resetPassword',
+    url: `/${API_MODULE_NAME.ADMIN}/auth/resetPassword`,
     method: 'post',
     data,
   });
@@ -42,7 +43,7 @@ export function resetPassword(data) {
 
 export function getCodeBySentEmail(data) {
   return request({
-    url: 'auth/getCodeBySentEmail',
+    url: `/${API_MODULE_NAME.ADMIN}/auth/getCodeBySentEmail`,
     method: 'post',
     data,
   });
@@ -50,28 +51,28 @@ export function getCodeBySentEmail(data) {
 
 export function getInfo() {
   return request({
-    url: 'auth/info',
+    url: `/${API_MODULE_NAME.ADMIN}/auth/info`,
     method: 'get',
   });
 }
 
 export function getCodeImg() {
   return request({
-    url: '/auth/code',
+    url: `/${API_MODULE_NAME.ADMIN}/auth/code`,
     method: 'get',
   });
 }
 
 export function getPublicKey() {
   return request({
-    url: '/auth/getPublicKey',
+    url: `/${API_MODULE_NAME.ADMIN}/auth/getPublicKey`,
     method: 'get',
   });
 }
 
 export function logout() {
   return request({
-    url: 'auth/logout',
+    url: `/${API_MODULE_NAME.ADMIN}/auth/logout`,
     method: 'delete',
   });
 }
@@ -79,6 +80,6 @@ export function logout() {
 // 获取minIO 秘钥
 export function getMinIOAuth() {
   return request({
-    url: 'api/data/datasets/minio/info',
+    url: `/${API_MODULE_NAME.DATA}/datasets/minio/info`,
   });
 }

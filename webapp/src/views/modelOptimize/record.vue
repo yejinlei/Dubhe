@@ -1,30 +1,25 @@
 /** Copyright 2020 Tianshu AI Platform. All Rights Reserved.
-*
-* Licensed under the Apache License, Version 2.0 (the "License");
-* you may not use this file except in compliance with the License.
-* You may obtain a copy of the License at
-*
-*     http://www.apache.org/licenses/LICENSE-2.0
-*
-* Unless required by applicable law or agreed to in writing, software
-* distributed under the License is distributed on an "AS IS" BASIS,
-* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-* See the License for the specific language governing permissions and
-* limitations under the License.
-* =============================================================
-*/
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ * =============================================================
+ */
 
 <template>
   <div class="app-container">
     <!--工具栏-->
     <div class="head-container">
       <cdOperation>
-        <el-form
-          slot="right"
-          :inline="true"
-          :model="localQuery"
-          class="flex flex-end flex-wrap"
-        >
+        <el-form slot="right" :inline="true" :model="localQuery" class="flex flex-end flex-wrap">
           <el-form-item label="提交时间">
             <el-date-picker
               v-model="localQuery.createTime"
@@ -49,12 +44,7 @@
       highlight-current-row
       @row-click="onRowClick"
     >
-      <el-table-column
-        prop="id"
-        label="执行ID"
-        width="80px"
-        fixed
-      />
+      <el-table-column prop="id" label="执行ID" width="80px" fixed />
       <el-table-column
         prop="taskName"
         label="任务名称"
@@ -62,117 +52,90 @@
         show-overflow-tooltip
         fixed
       />
-      <el-table-column
-        prop="algorithmName"
-        label="优化算法"
-        min-width="180px"
-      />
-      <el-table-column
-        prop="status"
-        label="任务状态"
-        min-width="100px"
-      >
+      <el-table-column prop="algorithmName" label="优化算法" min-width="180px" />
+      <el-table-column prop="status" label="任务状态" min-width="120px">
         <template #header>
           <dropdown-header
             title="任务状态"
             :list="statusList"
             :filtered="Boolean(localQuery.status)"
-            @command="cmd => filter('status', cmd)"
+            @command="(cmd) => filter('status', cmd)"
           />
         </template>
         <template slot-scope="scope">
-          <el-tag
-            :type="OPTIMIZE_STATUS_MAP[scope.row.status].tagMap"
-            effect="plain"
-          >{{ OPTIMIZE_STATUS_MAP[scope.row.status].name }}</el-tag>
+          <el-tag :type="OPTIMIZE_STATUS_MAP[scope.row.status].tagMap" effect="plain">{{
+            OPTIMIZE_STATUS_MAP[scope.row.status].name
+          }}</el-tag>
+          <msg-popover
+            :status-detail="scope.row.statusDetail"
+            :show="showMessage(scope.row.status)"
+          />
         </template>
       </el-table-column>
-      <el-table-column
-        prop="startTime"
-        label="提交时间"
-        min-width="160px"
-      >
+      <el-table-column prop="startTime" label="提交时间" min-width="160px">
         <template slot-scope="scope">
           <span>{{ parseTime(scope.row.createTime) || '--' }}</span>
         </template>
       </el-table-column>
-      <el-table-column
-        prop="startTime"
-        label="开始时间"
-        min-width="160px"
-      >
+      <el-table-column prop="startTime" label="开始时间" min-width="160px">
         <template slot-scope="scope">
           <span>{{ parseTime(scope.row.startTime) || '--' }}</span>
         </template>
       </el-table-column>
-      <el-table-column
-        prop="endTime"
-        label="完成时间"
-        min-width="160px"
-      >
+      <el-table-column prop="endTime" label="完成时间" min-width="160px">
         <template slot-scope="scope">
           <span>{{ parseTime(scope.row.endTime) || '--' }}</span>
         </template>
       </el-table-column>
-      <el-table-column
-        label="操作"
-        width="250px"
-        fixed="right"
-      >
+      <el-table-column label="操作" width="250px" fixed="right">
         <template slot-scope="scope">
           <el-button
             v-if="needPoll(scope.row.status)"
             type="text"
             @click.stop="doCancel(scope.row.id)"
-          >取消</el-button>
+            >取消</el-button
+          >
           <el-button
             v-if="canResubmit(scope.row.status)"
             type="text"
             @click.stop="doResubmit(scope.row.id)"
-          >重新提交</el-button>
+            >重新提交</el-button
+          >
           <span v-if="isFinished(scope.row.status)">
             <el-button
               v-if="isFinished(scope.row.status)"
               type="text"
               @click.stop="doDownload(scope.row)"
-            >下载</el-button>
+              >下载</el-button
+            >
             <el-button
               v-if="isFinished(scope.row.status)"
               type="text"
               @click.stop="showResult(scope.row)"
-            >优化结果</el-button>
+              >优化结果</el-button
+            >
             <el-dropdown>
-              <el-button type="text" style="margin-left: 10px;" @click.stop="()=>{}">
+              <el-button type="text" style="margin-left: 10px;" @click.stop="() => {}">
                 更多<i class="el-icon-arrow-down el-icon--right" />
               </el-button>
               <el-dropdown-menu slot="dropdown">
-                <el-dropdown-item
-                  @click.native="showLog(scope.row)"
-                >
-                  <el-button
-                    type="text"
-                  >日志</el-button>
+                <el-dropdown-item @click.native="showLog(scope.row)">
+                  <el-button type="text">日志</el-button>
                 </el-dropdown-item>
-                <el-dropdown-item
-                  @click.native="doDelete(scope.row.id)"
-                >
-                  <el-button
-                    type="text"
-                  >删除</el-button>
+                <el-dropdown-item @click.native="doDelete(scope.row.id)">
+                  <el-button type="text">删除</el-button>
                 </el-dropdown-item>
               </el-dropdown-menu>
             </el-dropdown>
           </span>
           <span v-else class="ml-10">
-            <el-button
-              type="text"
-              @click.stop="showLog(scope.row)"
-            >日志</el-button>
+            <el-button type="text" @click.stop="showLog(scope.row)">日志</el-button>
             <el-button
               type="text"
               :disabled="!canDelete(scope.row.status)"
               @click.stop="doDelete(scope.row.id)"
-            >删除</el-button>
+              >删除</el-button
+            >
           </span>
         </template>
       </el-table-column>
@@ -187,9 +150,7 @@
       class="less-padding"
       @close="onResultDialogClose"
     >
-      <OptimizeResult
-        :result="selectedInstance.optResult"
-      />
+      <OptimizeResult :result="selectedInstance.optResult" />
       <div slot="footer" class="dialog-footer">
         <el-button @click="closeResultDialog">关闭</el-button>
         <el-button
@@ -197,21 +158,17 @@
           :loading="openNotebookLoading"
           type="primary"
           @click="onEditAlgorithm"
-        >修改模型算法</el-button>
+          >修改模型算法</el-button
+        >
         <el-button type="primary" @click="saveModel">保存优化后模型</el-button>
       </div>
     </BaseModal>
     <!-- 日志 Dialog -->
-    <BaseModal
-      :visible.sync="logVisible"
-      destroy-on-close
-      title="日志"
-      width="1000px"
-    >
+    <BaseModal :visible.sync="logVisible" destroy-on-close title="日志" width="1000px">
       <PodLogContainer
         v-if="selectedInstance.podName"
         ref="logContainer"
-        :pod-name="selectedInstance.podName"
+        :pod="selectedInstance"
         class="log-wrapper"
       />
       <div v-else>该实例没有 podName, 无法查看日志</div>
@@ -230,10 +187,7 @@
         <OptimizeRecordDetail :record="selectedInstance" />
       </div>
     </el-drawer>
-    <save-model-dialog
-      ref="saveModel"
-      type="optimize"
-    />
+    <save-model-dialog ref="saveModel" type="optimize" />
   </div>
 </template>
 
@@ -253,14 +207,26 @@ import BaseModal from '@/components/BaseModal';
 import DropdownHeader from '@/components/DropdownHeader';
 import SaveModelDialog from '@/components/Training/saveModelDialog';
 import PodLogContainer from '@/components/LogContainer/podLogContainer';
+import MsgPopover from '@/components/MsgPopover';
 
-import { list, del as deleteInstance, getInstance, cancel, resubmit } from '@/api/modelOptimize/record';
+import {
+  list,
+  del as deleteInstance,
+  getInstance,
+  cancel,
+  resubmit,
+} from '@/api/modelOptimize/record';
 import { getOptimizeAlgorithms } from '@/api/modelOptimize/optimize';
 import { getPodLog } from '@/api/system/pod';
 
 import OptimizeResult from './components/optimizeResult';
 import OptimizeRecordDetail from './components/recordDetail';
-import { OPTIMIZE_STATUS_ENUM, OPTIMIZE_STATUS_MAP, RESULT_NAME_MAP, RESULT_STATUS_MAP } from './util';
+import {
+  OPTIMIZE_STATUS_ENUM,
+  OPTIMIZE_STATUS_MAP,
+  RESULT_NAME_MAP,
+  RESULT_STATUS_MAP,
+} from './util';
 
 const defaultQuery = {
   status: null,
@@ -279,6 +245,7 @@ export default {
     OptimizeResult,
     OptimizeRecordDetail,
     PodLogContainer,
+    MsgPopover,
   },
   cruds() {
     return CRUD({
@@ -318,9 +285,11 @@ export default {
     allAlgorithmList() {
       let arr = [{ label: '全部', value: null }];
       for (const key in this.optimizeAlgorithms) {
-        arr = arr.concat(this.optimizeAlgorithms[key].map(item => {
-          return { label: item, value: item };
-        }));
+        arr = arr.concat(
+          this.optimizeAlgorithms[key].map((item) => {
+            return { label: item, value: item };
+          })
+        );
       }
       return arr;
     },
@@ -350,10 +319,17 @@ export default {
       return status === OPTIMIZE_STATUS_ENUM.FINISHED;
     },
     canResubmit(status) {
-      return [OPTIMIZE_STATUS_ENUM.FINISHED, OPTIMIZE_STATUS_ENUM.CANCELED, OPTIMIZE_STATUS_ENUM.FAILED].includes(status);
+      return [
+        OPTIMIZE_STATUS_ENUM.FINISHED,
+        OPTIMIZE_STATUS_ENUM.CANCELED,
+        OPTIMIZE_STATUS_ENUM.FAILED,
+      ].includes(status);
     },
     canDelete(status) {
       return ![OPTIMIZE_STATUS_ENUM.WAITING, OPTIMIZE_STATUS_ENUM.RUNNING].includes(status);
+    },
+    showMessage(status) {
+      return [OPTIMIZE_STATUS_ENUM.WAITING, OPTIMIZE_STATUS_ENUM.FAILED].includes(status);
     },
 
     showLog(inst) {
@@ -395,44 +371,43 @@ export default {
       }
     },
     async doCancel(id) {
-      this.$confirm('此操作将取消该任务实例的执行, 是否继续?', '请确认')
-        .then(async() => {
-          await cancel({ id });
-          this.$message({
-            message: '取消成功',
-            type: 'success',
-          });
-          this.crud.refresh();
+      this.$confirm('此操作将取消该任务实例的执行, 是否继续?', '请确认').then(async () => {
+        await cancel({ id });
+        this.$message({
+          message: '取消成功',
+          type: 'success',
         });
+        this.crud.refresh();
+      });
     },
     doResubmit(id) {
-      this.$confirm('此操作将重新提交该任务的实例, 是否继续?', '重新提交')
-        .then(async() => {
-          await resubmit({ id });
-          this.$message({
-            message: '提交成功',
-            type: 'success',
-          });
-          this.crud.refresh();
+      this.$confirm('此操作将重新提交该任务的实例, 是否继续?', '重新提交').then(async () => {
+        await resubmit({ id });
+        this.$message({
+          message: '提交成功',
+          type: 'success',
         });
+        this.crud.refresh();
+      });
     },
     doDownload(instance) {
-      downloadZipFromObjectPath(instance.outputModelDir, `${instance.taskName}-${nanoid(4)}.zip`, { flat: true });
+      downloadZipFromObjectPath(instance.outputModelDir, `${instance.taskName}-${nanoid(4)}.zip`, {
+        flat: true,
+      });
       this.$message({
         message: '请查看下载文件',
         type: 'success',
       });
     },
     doDelete(id) {
-      this.$confirm('此操作将删除该执行记录, 是否继续?', '请确认')
-        .then(async() => {
-          await deleteInstance({ id });
-          this.$message({
-            message: '删除成功',
-            type: 'success',
-          });
-          this.crud.refresh();
+      this.$confirm('此操作将删除该执行记录, 是否继续?', '请确认').then(async () => {
+        await deleteInstance({ id });
+        this.$message({
+          message: '删除成功',
+          type: 'success',
         });
+        this.crud.refresh();
+      });
     },
     onResetQuery() {
       this.localQuery = { ...this.defaultQuery };
@@ -453,7 +428,7 @@ export default {
     },
     [CRUD.HOOK.afterRefresh]() {
       // 同时只会有一条状态为 未完成/进行中 的实例
-      const unfinished = this.crud.data.find(inst => this.needPoll(inst.status));
+      const unfinished = this.crud.data.find((inst) => this.needPoll(inst.status));
       if (this.keepPoll && unfinished) {
         setTimeout(() => {
           this.getDetailDebounce(unfinished);
@@ -472,7 +447,8 @@ export default {
         this.$message.warning('该实例没有算法ID');
         return;
       }
-      const algorithmCodeDir = this.selectedInstance.algorithmCodeDir || this.selectedInstance.algorithmPath;
+      const algorithmCodeDir =
+        this.selectedInstance.algorithmCodeDir || this.selectedInstance.algorithmPath;
       if (!algorithmCodeDir) {
         this.$message.warning('该实例没有算法路径');
         return;

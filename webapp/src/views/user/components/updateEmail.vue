@@ -1,18 +1,9 @@
-/*
-* Copyright 2019-2020 Zheng Jie
-*
-* Licensed under the Apache License, Version 2.0 (the "License");
-* you may not use this file except in compliance with the License.
-* You may obtain a copy of the License at
-*
-* http://www.apache.org/licenses/LICENSE-2.0
-*
-* Unless required by applicable law or agreed to in writing, software
-* distributed under the License is distributed on an "AS IS" BASIS,
-* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-* See the License for the specific language governing permissions and
-* limitations under the License.
-*/
+/* * Copyright 2019-2020 Zheng Jie * * Licensed under the Apache License, Version 2.0 (the
+"License"); * you may not use this file except in compliance with the License. * You may obtain a
+copy of the License at * * http://www.apache.org/licenses/LICENSE-2.0 * * Unless required by
+applicable law or agreed to in writing, software * distributed under the License is distributed on
+an "AS IS" BASIS, * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. * See
+the License for the specific language governing permissions and * limitations under the License. */
 
 <template>
   <div style="display: inline-block;">
@@ -30,7 +21,13 @@
         </el-form-item>
         <el-form-item label="验证码" prop="code">
           <el-input v-model="form.code" style="width: 160px;" />
-          <el-button :loading="codeLoading" :disabled="isDisabled" style="width: 155px;" @click="sendCode">{{ buttonName }}</el-button>
+          <el-button
+            :loading="codeLoading"
+            :disabled="isDisabled"
+            style="width: 155px;"
+            @click="sendCode"
+            >{{ buttonName }}</el-button
+          >
         </el-form-item>
         <el-form-item label="当前密码" prop="pass">
           <el-input v-model="form.pass" type="password" style="width: 320px;" />
@@ -71,26 +68,24 @@ export default {
       }
     };
     return {
-      loading: false, dialog: false, title: '修改邮箱', form: { pass: '', email: '', code: '' },
-      users: { email: '', password: '' }, codeLoading: false,
-      buttonName: '获取验证码', isDisabled: false, time: 60,
+      loading: false,
+      dialog: false,
+      title: '修改邮箱',
+      form: { pass: '', email: '', code: '' },
+      users: { email: '', password: '' },
+      codeLoading: false,
+      buttonName: '获取验证码',
+      isDisabled: false,
+      time: 60,
       rules: {
-        pass: [
-          { required: true, message: '当前密码不能为空', trigger: 'blur' },
-        ],
-        email: [
-          { required: true, validator: validMail, trigger: 'blur' },
-        ],
-        code: [
-          { required: true, message: '验证码不能为空', trigger: 'blur' },
-        ],
+        pass: [{ required: true, message: '当前密码不能为空', trigger: 'blur' }],
+        email: [{ required: true, validator: validMail, trigger: 'blur' }],
+        code: [{ required: true, message: '验证码不能为空', trigger: 'blur' }],
       },
     };
   },
   computed: {
-    ...mapGetters([
-      'user',
-    ]),
+    ...mapGetters(['user']),
   },
   methods: {
     sendCode() {
@@ -101,33 +96,35 @@ export default {
           email: this.form.email,
           type: 2,
         };
-        getCodeBySentEmail(codeData).then(() => {
-          this.$message({
-            showClose: true,
-            message: '发送成功，验证码有效期5分钟',
-            type: 'success',
+        getCodeBySentEmail(codeData)
+          .then(() => {
+            this.$message({
+              showClose: true,
+              message: '发送成功，验证码有效期5分钟',
+              type: 'success',
+            });
+            this.codeLoading = false;
+            this.isDisabled = true;
+            this.buttonName = `${(this.time -= 1)}秒后重新发送`;
+            this.timer = window.setInterval(() => {
+              this.buttonName = `${this.time}秒后重新发送`;
+              this.time -= 1;
+              if (this.time < 0) {
+                this.buttonName = '重新发送';
+                this.time = 60;
+                this.isDisabled = false;
+                window.clearInterval(this.timer);
+              }
+            }, 1000);
+          })
+          .catch((err) => {
+            this.resetForm();
+            this.codeLoading = false;
+            this.$message({
+              message: err.message,
+              type: 'error',
+            });
           });
-          this.codeLoading = false;
-          this.isDisabled = true;
-          this.buttonName = `${this.time -= 1 }秒后重新发送`;
-          this.timer = window.setInterval(() => {
-            this.buttonName = `${this.time  }秒后重新发送`;
-            this.time -= 1;
-            if (this.time < 0) {
-              this.buttonName = '重新发送';
-              this.time = 60;
-              this.isDisabled = false;
-              window.clearInterval(this.timer);
-            }
-          }, 1000);
-        }).catch(err => {
-          this.resetForm();
-          this.codeLoading = false;
-          this.$message({
-            message: err.message,
-            type: 'error',
-          });
-        });
       }
     },
     doSubmit() {
@@ -140,26 +137,28 @@ export default {
             code: this.form.code,
             userId: this.user.id,
           };
-          resetEmail(formData).then(() => {
-            this.dialog = false;
-            this.loading = false;
-            this.resetForm();
-            this.$notify({
-              title: '邮箱修改成功',
-              type: 'success',
-              duration: 1500,
+          resetEmail(formData)
+            .then(() => {
+              this.dialog = false;
+              this.loading = false;
+              this.resetForm();
+              this.$notify({
+                title: '邮箱修改成功',
+                type: 'success',
+                duration: 1500,
+              });
+              store.dispatch('GetUserInfo').then(() => {});
+            })
+            .catch((err) => {
+              this.loading = false;
+              this.$message({
+                message: err.message,
+                type: 'error',
+              });
             });
-            store.dispatch('GetUserInfo').then(() => {});
-          }).catch(err => {
-            this.loading = false;
-            this.$message({
-              message: err.message,
-              type: 'error',
-            });
-          });
-        } else {
-          return false;
+          return true;
         }
+        return false;
       });
     },
     resetForm() {
@@ -173,4 +172,3 @@ export default {
   },
 };
 </script>
-

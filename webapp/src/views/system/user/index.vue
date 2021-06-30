@@ -1,18 +1,9 @@
-/*
-* Copyright 2019-2020 Zheng Jie
-*
-* Licensed under the Apache License, Version 2.0 (the "License");
-* you may not use this file except in compliance with the License.
-* You may obtain a copy of the License at
-*
-* http://www.apache.org/licenses/LICENSE-2.0
-*
-* Unless required by applicable law or agreed to in writing, software
-* distributed under the License is distributed on an "AS IS" BASIS,
-* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-* See the License for the specific language governing permissions and
-* limitations under the License.
-*/
+/* * Copyright 2019-2020 Zheng Jie * * Licensed under the Apache License, Version 2.0 (the
+"License"); * you may not use this file except in compliance with the License. * You may obtain a
+copy of the License at * * http://www.apache.org/licenses/LICENSE-2.0 * * Unless required by
+applicable law or agreed to in writing, software * distributed under the License is distributed on
+an "AS IS" BASIS, * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. * See
+the License for the specific language governing permissions and * limitations under the License. */
 
 <template>
   <div class="app-container">
@@ -31,7 +22,7 @@
           />
           <el-date-picker
             v-model="query.createTime"
-            :default-time="['00:00:00','23:59:59']"
+            :default-time="['00:00:00', '23:59:59']"
             type="daterange"
             range-separator=":"
             class="date-item"
@@ -81,6 +72,7 @@
             placeholder="请选择"
             class="filter-item"
             style="width: 185px;"
+            filterable
           >
             <el-option
               v-for="item in roleOptions"
@@ -91,12 +83,14 @@
           </el-select>
         </el-form-item>
         <el-form-item label="状态" prop="enabled" style="margin-bottom: 0;">
-          <el-radio-group v-model="form.enabled" :disabled="isDisabled(form.id)" style="width: 185px;">
-            <el-radio
-              v-for="item in dict.user_status"
-              :key="item.id"
-              :label="item.value"
-            >{{ item.label }}</el-radio>
+          <el-radio-group
+            v-model="form.enabled"
+            :disabled="isDisabled(form.id)"
+            style="width: 185px;"
+          >
+            <el-radio v-for="item in dict.user_status" :key="item.id" :label="item.value">{{
+              item.label
+            }}</el-radio>
           </el-radio-group>
         </el-form-item>
         <el-form-item label="备注" prop="remark" style="margin-bottom: 0;">
@@ -105,7 +99,13 @@
       </el-form>
     </BaseModal>
     <!--表格渲染-->
-    <el-table ref="table" v-loading="crud.loading" :data="crud.data" highlight-current-row @selection-change="crud.selectionChangeHandler">
+    <el-table
+      ref="table"
+      v-loading="crud.loading"
+      :data="crud.data"
+      highlight-current-row
+      @selection-change="crud.selectionChangeHandler"
+    >
       <el-table-column :selectable="checkboxT" type="selection" width="40" />
       <el-table-column show-overflow-tooltip prop="username" label="用户名" />
       <el-table-column show-overflow-tooltip prop="nickName" label="昵称" />
@@ -135,7 +135,9 @@
           />
         </template>
         <template slot-scope="scope">
-          <el-tag :type="scope.row.enabled ? '' : 'info'" effect="plain">{{ dict.label.user_status[scope.row.enabled.toString()] }} </el-tag>
+          <el-tag :type="scope.row.enabled ? '' : 'info'" effect="plain"
+            >{{ dict.label.user_status[scope.row.enabled.toString()] }}
+          </el-tag>
         </template>
       </el-table-column>
       <el-table-column show-overflow-tooltip prop="remark" label="备注" />
@@ -146,7 +148,13 @@
       </el-table-column>
       <el-table-column label="操作" width="120" fixed="right">
         <template slot-scope="scope">
-          <udOperation :data="scope.row" :disabled-edit="isDisabledEdit(scope.row.id)" :disabled-dle="isDisabled(scope.row.id)" />
+          <udOperation
+            :data="scope.row"
+            :show-edit="hasPermission('system:user:edit')"
+            :show-delete="hasPermission('system:user:delete')"
+            :disabled-edit="isDisabledEdit(scope.row.id)"
+            :disabled-dle="isDisabled(scope.row.id)"
+          />
         </template>
       </el-table-column>
     </el-table>
@@ -163,7 +171,7 @@ import rrOperation from '@crud/RR.operation';
 import cdOperation from '@crud/CD.operation';
 import udOperation from '@crud/UD.operation';
 import pagination from '@crud/Pagination';
-import { validateName, validateAccount } from '@/utils/validate';
+import { validateName, validateAccount, hasPermission } from '@/utils';
 import crudUser from '@/api/system/user';
 import { getAll } from '@/api/system/role';
 import BaseModal from '@/components/BaseModal';
@@ -172,19 +180,37 @@ import datePickerMixin from '@/mixins/datePickerMixin';
 
 const ADMIN_USER_ID = 1; // 系统管理员ID
 
-const defaultForm = { id: null, username: null, nickName: null, sex: null, email: null, remark: null, enabled: null, phone: null, roles: [], roleId: '' };
+const defaultForm = {
+  id: null,
+  username: null,
+  nickName: null,
+  sex: null,
+  email: null,
+  remark: null,
+  enabled: null,
+  phone: null,
+  roles: [],
+  roleId: '',
+};
 export default {
   name: 'User',
   components: { BaseModal, cdOperation, rrOperation, udOperation, pagination, DropdownHeader },
   cruds() {
-    return CRUD({ title: '用户', crudMethod: { ...crudUser }});
+    return CRUD({
+      title: '用户',
+      crudMethod: { ...crudUser },
+      optShow: {
+        add: hasPermission('system:user:create'),
+        del: hasPermission('system:user:delete'),
+      },
+    });
   },
   mixins: [presenter(), header(), form(defaultForm), crud(), datePickerMixin],
   // 数据字典
   dicts: ['user_status'],
   data() {
     return {
-      height: `${document.documentElement.clientHeight - 180  }px;`,
+      height: `${document.documentElement.clientHeight - 180}px;`,
       roleOptions: [],
       defaultProps: { children: 'children', label: 'name' },
       rules: {
@@ -198,34 +224,34 @@ export default {
         ],
         email: [
           { required: true, message: '请输入邮箱地址', trigger: 'blur' },
-          { pattern: /^\w+([-+.]\w+)*@\w+([-.]\w+)*\.\w+([-.]\w+)*$/, message: '请输入正确的邮箱地址', trigger: ['blur', 'change'] },
+          {
+            pattern: /^\w+([-+.]\w+)*@\w+([-.]\w+)*\.\w+([-.]\w+)*$/,
+            message: '请输入正确的邮箱地址',
+            trigger: ['blur', 'change'],
+          },
         ],
         phone: [
           { required: true, message: '请输入手机号码', trigger: 'blur' },
-          { pattern: /^1\d{10}$/, message: '请输入正确的11位手机号码', trigger: ['blur', 'change'] },
+          {
+            pattern: /^1\d{10}$/,
+            message: '请输入正确的11位手机号码',
+            trigger: ['blur', 'change'],
+          },
         ],
-        sex: [
-          { required: true, message: '请选择性别', trigger: 'change' },
-        ],
-        enabled: [
-          { required: true, message: '请选择状态', trigger: 'change' },
-        ],
-        roleId: [
-          { required: true, message: '请选择角色', trigger: 'change' },
-        ],
+        sex: [{ required: true, message: '请选择性别', trigger: 'change' }],
+        enabled: [{ required: true, message: '请选择状态', trigger: 'change' }],
+        roleId: [{ required: true, message: '请选择角色', trigger: 'change' }],
       },
     };
   },
   computed: {
-    ...mapGetters([
-      'user',
-    ]),
+    ...mapGetters(['user']),
     userStatusList() {
       return [{ label: '全部', value: null }].concat(this.dict.user_status);
     },
     userRoleList() {
       const arr = [{ label: '全部', value: null }];
-      this.roleOptions.forEach(item => {
+      this.roleOptions.forEach((item) => {
         arr.push({ label: item.name, value: item.id });
       });
       return arr;
@@ -240,10 +266,12 @@ export default {
   mounted() {
     const that = this;
     window.onresize = function temp() {
-      that.height = `${document.documentElement.clientHeight - 180  }px;`;
+      that.height = `${document.documentElement.clientHeight - 180}px;`;
     };
   },
   methods: {
+    hasPermission,
+
     [CRUD.HOOK.afterAddError]() {
       this.afterErrorMethod();
     },
@@ -267,12 +295,14 @@ export default {
     },
     // 获取弹窗内角色数据
     getRoles() {
-      getAll().then(res => {
-        this.roleOptions = res;
-      }).catch(() => { });
+      getAll()
+        .then((res) => {
+          this.roleOptions = res;
+        })
+        .catch(() => {});
     },
     isDisabledEdit(id) {
-      return id === ADMIN_USER_ID && this.user.id !== ADMIN_USER_ID;
+      return id === ADMIN_USER_ID;
     },
     isDisabled(id) {
       return id === this.user.id || id === ADMIN_USER_ID;
@@ -282,7 +312,7 @@ export default {
     },
     getUserRoles(row) {
       const roles = row.roles || [];
-      const names = roles.map(role => role.name);
+      const names = roles.map((role) => role.name);
       return names.join('<br/>') || '-';
     },
     filterByStatus(status) {

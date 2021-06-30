@@ -1,18 +1,18 @@
 /** Copyright 2020 Tianshu AI Platform. All Rights Reserved.
-*
-* Licensed under the Apache License, Version 2.0 (the "License");
-* you may not use this file except in compliance with the License.
-* You may obtain a copy of the License at
-*
-*     http://www.apache.org/licenses/LICENSE-2.0
-*
-* Unless required by applicable law or agreed to in writing, software
-* distributed under the License is distributed on an "AS IS" BASIS,
-* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-* See the License for the specific language governing permissions and
-* limitations under the License.
-* =============================================================
-*/
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ * =============================================================
+ */
 
 <script>
 import { isNil } from 'lodash';
@@ -25,7 +25,7 @@ export default {
     menuList: {
       type: Array,
       required: true,
-      default: () => ([]),
+      default: () => [],
     },
     labelKey: {
       type: String,
@@ -58,7 +58,7 @@ export default {
       }
     };
 
-    const handleVisibleChange = visible => {
+    const handleVisibleChange = (visible) => {
       if (visible !== state.isOpen) {
         state.isOpen = visible;
       }
@@ -73,7 +73,7 @@ export default {
   render() {
     const { labelKey, valueKey } = this;
     // 选中的 item
-    const selectedItem = this.menuList.find(d => d[valueKey] === this.state.selectedValue);
+    const selectedItem = this.menuList.find((d) => d[valueKey] === this.state.selectedValue);
 
     // 文本
     const label = (selectedItem || {})[labelKey];
@@ -96,18 +96,16 @@ export default {
       <el-dropdown {...dropdownProps}>
         <label class={klass}>
           <el-link underline={false}>{label}</el-link>
-          <span class='caret' />
+          <span class="caret" />
         </label>
-        <el-dropdown-menu slot='dropdown'>
-          {
-            this.menuList.map(menu => {
-              return (
-                <el-dropdown-item key={menu[valueKey]} command={menu[valueKey]}>
-                  {menu[labelKey]}
-                </el-dropdown-item>
-              );
-            })
-          }
+        <el-dropdown-menu slot="dropdown">
+          {this.menuList.map((menu) => {
+            return (
+              <el-dropdown-item key={menu[valueKey]} command={menu[valueKey]}>
+                {menu[labelKey]}
+              </el-dropdown-item>
+            );
+          })}
         </el-dropdown-menu>
       </el-dropdown>
     );

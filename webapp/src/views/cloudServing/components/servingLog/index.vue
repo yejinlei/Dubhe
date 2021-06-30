@@ -1,18 +1,18 @@
 /** Copyright 2020 Tianshu AI Platform. All Rights Reserved.
-*
-* Licensed under the Apache License, Version 2.0 (the "License");
-* you may not use this file except in compliance with the License.
-* You may obtain a copy of the License at
-*
-*     http://www.apache.org/licenses/LICENSE-2.0
-*
-* Unless required by applicable law or agreed to in writing, software
-* distributed under the License is distributed on an "AS IS" BASIS,
-* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-* See the License for the specific language governing permissions and
-* limitations under the License.
-* =============================================================
-*/
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ * =============================================================
+ */
 
 <template>
   <div id="serving-log-wrapper">
@@ -62,11 +62,7 @@
         <el-button @click="doRefresh">搜索</el-button>
       </span>
     </header>
-    <el-tabs
-      v-model="activeLogTimeTag"
-      class="log-time-tags my-10"
-      @tab-click="onLogTimeTabClick"
-    >
+    <el-tabs v-model="activeLogTimeTag" class="log-time-tags my-10" @tab-click="onLogTimeTabClick">
       <el-tab-pane
         v-for="time in timeOptions"
         :key="time.value"
@@ -75,10 +71,7 @@
       />
     </el-tabs>
     <el-collapse-transition>
-      <div
-        v-if="activeLogTimeTag === 'any'"
-        class="date-picker-wrapper"
-      >
+      <div v-if="activeLogTimeTag === 'any'" class="date-picker-wrapper">
         <label class="el-form-item__label">日志搜索区间</label>
         <el-date-picker
           v-model="logTimeRange"
@@ -102,7 +95,15 @@
 </template>
 
 <script>
-import { computed, watch, ref, reactive, toRefs, onActivated, onMounted } from '@vue/composition-api';
+import {
+  computed,
+  watch,
+  ref,
+  reactive,
+  toRefs,
+  onActivated,
+  onMounted,
+} from '@vue/composition-api';
 import { Message } from 'element-ui';
 
 import datePickerMixin from '@/mixins/datePickerMixin';
@@ -126,7 +127,7 @@ export default {
     },
     modelList: {
       type: Array,
-      default: () => ([]),
+      default: () => [],
     },
     serviceId: {
       type: Number,
@@ -162,19 +163,24 @@ export default {
       logTimeRange: [],
       logKeyword: null,
       activeLogTimeTag: 'any',
-      timeOptions: [{
-        title: '自定义时间段',
-        value: 'any',
-      }, {
-        title: '最近5分钟',
-        value: '5',
-      }, {
-        title: '最近30分钟',
-        value: '30',
-      }, {
-        title: '最近1小时',
-        value: '60',
-      }],
+      timeOptions: [
+        {
+          title: '自定义时间段',
+          value: 'any',
+        },
+        {
+          title: '最近5分钟',
+          value: '5',
+        },
+        {
+          title: '最近30分钟',
+          value: '30',
+        },
+        {
+          title: '最近1小时',
+          value: '60',
+        },
+      ],
     });
     const resetLogger = () => {
       if (state.selectedPod) {
@@ -184,24 +190,26 @@ export default {
       }
     };
     const logOptions = computed(() => {
-      return { 
+      return {
         podName: state.selectedPod?.podName,
-        beginTimeMillis: loggerState.logTimeRange?.length ? loggerState.logTimeRange[0].getTime() : undefined,
-        endTimeMillis: loggerState.logTimeRange?.length ? loggerState.logTimeRange[1].getTime() : undefined,
+        namespace: state.selectedPod?.namespace,
+        beginTimeMillis: loggerState.logTimeRange?.length
+          ? loggerState.logTimeRange[0].getTime()
+          : undefined,
+        endTimeMillis: loggerState.logTimeRange?.length
+          ? loggerState.logTimeRange[1].getTime()
+          : undefined,
         logKeyword: loggerState.logKeyword || undefined,
       };
     });
     const onLogTimeTabClick = () => {
       const minutes = Number.parseInt(loggerState.activeLogTimeTag, 10);
       // 如果解析为 NaN，说明选择了自定义时间段，将 logTimeRange 设为空数组
-      if (isNaN(minutes)) {
+      if (Number.isNaN(minutes)) {
         loggerState.logTimeRange = [];
       } else {
         const now = new Date();
-        loggerState.logTimeRange = [
-          new Date(now - 1000 * 60 * minutes),
-          now,
-        ];
+        loggerState.logTimeRange = [new Date(now - 1000 * 60 * minutes), now];
       }
       resetLogger();
     };
@@ -242,13 +250,16 @@ export default {
       resetLogger();
     };
 
-    watch(() => props.status, async (next, previous) => {
-      // 如果状态从 部署中 变为其他状态时，重新请求 pod 列表
-      if (previous === SERVING_STATUS_ENUM.IN_DEPLOYMENT) {
-        await getPodList();
-        onLogTimeTabClick();
+    watch(
+      () => props.status,
+      async (next, previous) => {
+        // 如果状态从 部署中 变为其他状态时，重新请求 pod 列表
+        if (previous === SERVING_STATUS_ENUM.IN_DEPLOYMENT) {
+          await getPodList();
+          onLogTimeTabClick();
+        }
       }
-    });
+    );
 
     // Model
     const onModelChange = async () => {
@@ -279,7 +290,9 @@ export default {
         }
         [state.selectedModel] = props.modelList;
       }
-      if (props.refresh) { return; } // 处理 进入页面之前进行刷新操作后请求两次的问题
+      if (props.refresh) {
+        return;
+      } // 处理 进入页面之前进行刷新操作后请求两次的问题
       await getPodList();
       onLogTimeTabClick();
     });
