@@ -1,3 +1,6 @@
+# !/usr/bin/env python
+# -*- coding:utf-8 -*-
+
 """
 /**
 * Copyright 2020 Tianshu AI Platform. All Rights Reserved.

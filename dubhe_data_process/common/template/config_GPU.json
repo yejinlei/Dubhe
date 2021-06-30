@@ -1,0 +1,90 @@
+{
+  "annotation": [
+    {
+      "step": 1,
+      "desc": "启动延时线程",
+      "module": "program.thread.delay_schedule",
+      "class": "Start_thread",
+      "method": "start_thread",
+      "paramType": 0,
+      "paramLocal": [
+        "algorithm_processing_queue"
+      ]
+    },
+    {
+      "step": 2,
+      "desc": "选择GPU",
+      "module": "common.util.public.select_gpu",
+      "class": "Select_gpu",
+      "method": "select_gpu",
+      "paramType": 0
+    },
+    {
+      "step": 3,
+      "desc": "初始化",
+      "module": "program.exec.algorithm.algorithm",
+      "class": "Algorithm",
+      "method": "__init__",
+      "paramType": 0
+    },
+    {
+      "step": 4,
+      "desc": "加载",
+      "module": "common.util.public.json_util",
+      "class": "JsonUtil",
+      "method": "load_json",
+      "paramType": 0,
+      "paramLocal": [
+        "/root/algorithm/sign"
+      ],
+      "judge": 0,
+      "jump": 4
+    },
+    {
+      "step": 5,
+      "desc": "获取任务",
+      "module": "program.impl.redis_storage",
+      "class": "RedisStorage",
+      "method": "get_one_task",
+      "paramType": 0,
+      "paramLocal": [
+        "local queue,value=KEYS[1],ARGV[1]\nlocal a=redis.call('TIME')\nlocal time=(a[1]*1000000+a[2])/1000 \nlocal element = redis.call('zrangebyscore', queue, 0, 9999999999999, 'limit', 0, 1)\nif table.getn(element)>0 then\nredis.call('zrem', queue, element[1])\nredis.call('zadd',value,time,element[1])\nend\nreturn element",
+        1,
+        "algorithm_task_queue",
+        "algorithm_processing_queue",
+        "/root/algorithm/config.json"
+      ],
+      "judge": 0,
+      "jump": 4
+    },
+    {
+      "step": 6,
+      "desc": "执行任务",
+      "module": "program.exec.algorithm.algorithm",
+      "class": "Algorithm",
+      "method": "execute",
+      "paramType": 1,
+      "param": [
+        5.2
+      ]
+    },
+    {
+      "step": 7,
+      "desc": "保存数据",
+      "module": "program.impl.redis_storage",
+      "class": "RedisStorage",
+      "method": "save_result",
+      "paramType": 1,
+      "paramLocal": [
+        "algorithm_finished_queue",
+        "algorithm_failed_queue",
+        "/root/algorithm/config.json"
+      ],
+      "param": [
+        6.1,
+        6.2
+      ],
+      "jump": 4
+    }
+  ]
+}
