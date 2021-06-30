@@ -1,108 +1,64 @@
-# 之江天枢-服务端
+# Spring Cloud
+## 微服务框架核心组件
+Nacos + Fegin + Gateway + （Spring Security + JWT + OAuth2）
 
-**之江天枢一站式人工智能开源平台**（简称：**之江天枢**），包括海量数据处理、交互式模型构建（包含Notebook和模型可视化）、AI模型高效训练。多维度产品形态满足从开发者到大型企业的不同需求，将提升人工智能技术的研发效率、扩大算法模型的应用范围，进一步构建人工智能生态“朋友圈”。
+数据库连接池 Druid
 
-## 源码部署
+需要额外部署 Mysql Nacos
 
-### 准备环境
-安装如下软件环境。
-- OpenJDK：1.8+
-- Redis: 5.0+
-- Maven: 3.0+
-- MYSQL: 5.7.0+
+## 初始化配置
+### Mysql
 
-### 下载源码
-``` bash
-git clone https://codeup.teambition.com/zhejianglab/dubhe-server.git
-# 进入项目根目录
-cd dubhe-server
+初始化sql位置   /sql
+
+**地址：** 127.0.0.1:3306
+**用户名：** test **密码：** test
+
+### Nacos
+
+**如何部署：** https://nacos.io/zh-cn/docs/quick-start.html
+
+配置中心配置参考  /yaml
+
+**配置规则：** ${prefix}-${spring.profiles.active}.${file-extension}
+
+**详见：** https://nacos.io/zh-cn/docs/quick-start-spring-cloud.html
+
+**地址：** http://127.0.0.1:8848/nacos/#/login
+
+**用户名:** nacos **密码：** nacos
+
+开发人员进行开发自测时，请使用以自己名字命名的namespace进行测试，不要使用dev或者test
+
+
+### swagger
+默认开启,若需要关闭，手动配置swagger.enabled: false
+
+**各模块swagger访问地址：** http://{IP}:{port}/doc.html
+
+**可通过swagger统一的网关访问地址：** http://{gateway IP}:{gateway port}/doc.html查看基于gateway路由配置的后台rest服务
+
+### OAuth2
+授权token获取样例：
+*POST* http://localhost:8866/oauth/token?grant_type=password&username=admin&client_id=dubhe-client&client_secret=dubhe-secret&password=123456&scope=all
+
+请求资源时在header添加：
+Authorization: 'Bearer '+${access_token}
+
+测试服务提供者配置中心动态获取配置样例：
+header 添加-> Authorization：'Bearer '+${access_token}
+*GET* http://localhost:8860/config/get
+
+刷新token样例：
+*POST* http://localhost:8866/oauth/token?grant_type=refresh_token&client_id=dubhe-client&client_secret=dubhe-secret&scope=all&refresh_token=${refresh_token}
+
+### Admin 
+登录接口
+```$xslt
+url:
+*POST* http://localhost:8870/auth/login
+param:
+{"username":"admin","password":"RBb2Czac2HBI9XNj4ZLF1QcTytOe5pN1vHZHYuAVgSAPRcYbndn/4zGDxKdXS1j0sLsDsKZLUojEXFnYHpsKxA==","code":"jggg","uuid":"validate_codeea991a3cb8ea47cca05744a47ad17a37"}
 ```
 
-### 创建DB
-在MySQL中依次执行如下sql文件
-```
-sql/v1/00-Dubhe-DB.sql
-sql/v1/01-Dubhe-DDL.sql
-sql/v1/02-Dubhe-DML.sql
-```
 
-### 配置
-根据实际情况修改如下配置文件。
-```
-dubhe-admin/src/main/resources/config/application-prod.yml
-```
-
-### 构建
-``` bash
-# 构建，生成的 jar 包位于 ./dubhe-admin/target/dubhe-admin-1.0.jar
-mvn clean compile package
-```
-
-### 启动
-``` bash
-# 指定启动环境为 prod
-## admin模块
-java -jar ./dubhe-admin/target/dubhe-admin-1.0-exec.jar --spring.profiles.active=prod
-
-## task模块
-java -jar ./dubhe-task/target/dubhe-task-1.0.jar --spring.profiles.active=prod
-
-## serving gateway模块
-java -jar ./dubhe-serving-gateway/target/dubhe-serving-gateway.jar --spring.profiles.active=prod
-```
-
-## 本地开发
-
-### 必要条件：
-    导入maven项目，下载所需的依赖包
-    mysql下创建数据库dubhe，初始化数据脚本
-    安装redis
-
-### 启动：
-    mvn spring-boot:run
-
-## 代码结构：
-```
-├── common   公共模块
-├── dubhe-admin 开发与训练模块  
-│   ├── src  
-│   │   └── main    
-│   │       ├── java    
-│   │       │   └── org   
-│   │       │       └── dubhe  
-│   │       │           ├── AppRun.java  
-│   │       │           ├── domain   实体对象  
-│   │       │           ├── repository  数据库层  
-│   │       │           ├── rest       控制层  
-│   │       │           └── service   服务层  
-│   │       │               ├── dto   数据传输对象     
-│   │       │               ├── impl  服务实现  
-│   │       │               └── mapper 对象转化  
-│   │       └── resources   配置文件  
-├── dubhe-data   数据处理模块  
-├── dubhe-model  模型管理模块
-├── dubhe-system  系统管理
-├── dubhe-task   定时任务模块
-├── dubhe-serving   云端serving模块
-├── dubhe-serving-gateway   云端serving gateway网关模块
-``` 
-
-## docker服务器
-    上传镜像功能依赖docker服务，harbor与dokcer的信任配置如下：
-### 1、对外开放端口
-    vi /lib/systemd/system/docker.service
-    ExecStart=/usr/bin/dockerd -H fd:// --containerd=/run/containerd/containerd.sock -H tcp://0.0.0.0:2375 -H unix://var/run/docker.sock
-### 2、信任harbor地址
-    vi /etc/docker/daemon.json
-    {
-      "exec-opts": ["native.cgroupdriver=systemd"],
-      "log-driver": "json-file",
-      "insecure-registries":[harbor地址],
-      "log-opts": {
-              "max-size": "100m"
-       }
-    }
-### 3、重新启动
-    systemctl daemon-reload
-    service docker restart
-    systemctl status docker

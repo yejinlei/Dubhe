@@ -37,7 +37,19 @@ public enum DatatypeEnum {
     /**
      * 文本
      */
-    TEXT(2, "文本");
+    TEXT(2, "文本"),
+    /**
+     * 表格
+     */
+    TABLE(3, "表格"),
+    /**
+     * 音频
+     */
+    AUDIO(4, "语音"),
+    /**
+     * 自定义导入
+     */
+    AUTO_IMPORT(100, "自定义导入");
 
     DatatypeEnum(Integer value, String msg) {
         this.value = value;
@@ -76,9 +88,26 @@ public enum DatatypeEnum {
                 return VIDEO;
             case 2:
                 return TEXT;
+            case 3:
+                return TABLE;
+            case 4:
+                return AUDIO;
             default:
                 return IMAGE;
         }
+    }
+
+    /**
+     * 获取错误提示信息
+     *
+     * @return 错误提示信息字符串
+     */
+    public static String getErrorMessage() {
+        StringBuilder stringBuilder = new StringBuilder("数据类型参数不对,请使用:");
+        for (DatatypeEnum datatypeEnum : DatatypeEnum.values()) {
+            stringBuilder.append(" ").append(datatypeEnum.getValue()).append("-").append(datatypeEnum.getMsg());
+        }
+        return stringBuilder.toString();
     }
 
 }

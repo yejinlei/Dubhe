@@ -30,5 +30,8 @@ import java.io.Serializable;
 @Builder
 public class IsImportVO implements Serializable {
 
+    /**
+     * 导入状态
+     */
     private Integer status;
 }

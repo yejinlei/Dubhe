@@ -17,6 +17,7 @@
 
 package org.dubhe.data.service;
 
+import org.dubhe.data.domain.entity.Dataset;
 import org.dubhe.data.domain.entity.DatasetLabel;
 import org.dubhe.data.domain.entity.Label;
 
@@ -81,4 +82,19 @@ public interface DatasetLabelService {
      * @param datasetLabel 数据标签实体
      */
     void insert(DatasetLabel datasetLabel);
+
+    /**
+     * 删除数据集标签
+     *
+     * @param id         数据集id
+     * @param deleteFlag 删除标识
+     */
+   void updateStatusByDatasetId(Long id, Boolean deleteFlag);
+
+    /**
+     * 备份数据集标签关系数据
+     * @param originDatasetId   原数据集ID
+     * @param targetDateset     目标数据集实体
+     */
+    void backupDatasetLabelDataByDatasetId(Long originDatasetId, Dataset targetDateset);
 }

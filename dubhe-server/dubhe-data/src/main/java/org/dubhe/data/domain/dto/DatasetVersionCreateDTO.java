@@ -22,9 +22,9 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import org.dubhe.base.MagicNumConstant;
+import org.dubhe.biz.base.constant.MagicNumConstant;
+import org.dubhe.biz.base.utils.StringUtils;
 import org.dubhe.data.constant.Constant;
-import org.dubhe.utils.StringUtils;
 
 import javax.validation.constraints.Max;
 import javax.validation.constraints.NotNull;
@@ -61,6 +61,13 @@ public class DatasetVersionCreateDTO implements Serializable {
     @ApiModelProperty(value = "版本说明")
     @Max(value = MagicNumConstant.FIFTY, message = "版本说明长度应小于50字符!")
     private String versionNote;
+
+    /**
+     * 是否进行ofRecord转换
+     */
+    @ApiModelProperty(value = "ofRecord转换")
+    @NotNull(message = "转换标志不能为空")
+    private Integer ofRecord;
 
     public @interface Create {
     }

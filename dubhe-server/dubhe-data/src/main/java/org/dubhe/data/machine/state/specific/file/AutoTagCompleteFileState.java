@@ -17,6 +17,8 @@
 package org.dubhe.data.machine.state.specific.file;
 
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
+import org.dubhe.biz.log.enums.LogEnum;
+import org.dubhe.biz.log.utils.LogUtil;
 import org.dubhe.data.constant.Constant;
 import org.dubhe.data.dao.DatasetVersionFileMapper;
 import org.dubhe.data.domain.entity.Dataset;
@@ -24,8 +26,6 @@ import org.dubhe.data.domain.entity.DatasetVersionFile;
 import org.dubhe.data.machine.enums.FileStateEnum;
 import org.dubhe.data.machine.state.AbstractFileState;
 import org.dubhe.data.machine.statemachine.FileStateMachine;
-import org.dubhe.enums.LogEnum;
-import org.dubhe.utils.LogUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 

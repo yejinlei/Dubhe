@@ -17,9 +17,9 @@
 
 package org.dubhe.data.service;
 
-import org.dubhe.data.domain.dto.DataFileAnnotationLabelDeleteDTO;
-import org.dubhe.data.domain.dto.LabelCreateDTO;
 import org.dubhe.data.domain.dto.LabelDTO;
+import org.dubhe.data.domain.dto.LabelDeleteDTO;
+import org.dubhe.data.domain.dto.LabelUpdateDTO;
 import org.dubhe.data.domain.entity.Label;
 
 import java.util.List;
@@ -82,18 +82,10 @@ public interface LabelService {
     /**
      * 删除数据集标签
      *
-     * @param id        数据集id
-     * @return int      执行次数
+     * @param id         数据集id
+     * @param deleteFlag 删除标识
      */
-    int delDataset(Long id);
-
-    /**
-     * 根据标签组ID查询标签
-     *
-     * @param labelGroupId 标签组ID
-     * @return List<Label> 标签列表
-     */
-    List<Label> listByGroup(Long labelGroupId);
+    void updateStatusByDatasetId(Long id,Boolean deleteFlag);
 
 
     /**
@@ -106,11 +98,10 @@ public interface LabelService {
     /**
      * 修改标签
      *
-     * @param labelCreateDto 修改标签条件
-     * @param labelId        标签Id
+     * @param labelUpdateDTO 修改标签DTO
      * @return boolean      修改结果是否成功
      */
-    boolean update(LabelCreateDTO labelCreateDto, Long labelId);
+    boolean update(LabelUpdateDTO labelUpdateDTO);
 
 
     /**
@@ -128,6 +119,15 @@ public interface LabelService {
      * @return List<Label> 标签组列表
      */
     List<Label> listByGroupId(Long labelGroupId);
+
+
+    /**
+     * 根据标签组类型获取标签列表
+     *
+     * @param type 标签组ID
+     * @return List<Long> 标签IDS
+     */
+    List<Long> listPubLabelByType(Integer type);
 
     /**
      * 编辑标签
@@ -169,13 +169,6 @@ public interface LabelService {
     List<Label> findByLabelGroupType(Integer labelGroupType);
 
     /**
-     * 删除已标注的文本标签
-     *
-     * @param dataFileAnnotationLabelDeleteDTO 数据文件注释标签删除DTO
-     */
-    void deleteFileAnnotationLabel(DataFileAnnotationLabelDeleteDTO dataFileAnnotationLabelDeleteDTO);
-
-    /**
      * 校验数据集下标签名称是否重复
      *
      * @param datasetId 数据集ID
@@ -183,4 +176,34 @@ public interface LabelService {
      * @return 是否重复
      */
     boolean checkoutLabelIsRepeat(Long datasetId,String labelName);
+
+    /**
+     * 删除标签
+     *
+     * @param labelDeleteDTO 需要删除的标签DTO
+     */
+    void delete(LabelDeleteDTO labelDeleteDTO);
+
+    /**
+     * 通过标签ID修改标签状态
+     *
+     * @param labelIds   标签ID
+     * @param deleteFlag 删除标识
+     */
+    void updateStatusByLabelIds(List<Long> labelIds, Boolean deleteFlag);
+
+    /**
+     * 根据标签组ID删除标签数据
+     *
+     * @param groupId  标签组ID
+     */
+    void deleteByGroupId(Long groupId);
+
+    /**
+     * 根据标签组ID修改状态
+     *
+     * @param groupId 标签组ID
+     * @param deletedFlag 删除标识
+     */
+    void updateStatusByGroupId(Long groupId, Boolean deletedFlag);
 }

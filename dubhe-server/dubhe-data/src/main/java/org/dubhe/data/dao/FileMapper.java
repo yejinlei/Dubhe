@@ -17,13 +17,13 @@
 
 package org.dubhe.data.dao;
 
-import com.baomidou.mybatisplus.core.conditions.Wrapper;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import org.apache.ibatis.annotations.Delete;
 import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Select;
 import org.apache.ibatis.annotations.Update;
-import org.dubhe.annotation.DataPermission;
+import org.dubhe.biz.base.annotation.DataPermission;
+import org.dubhe.data.domain.dto.EsTransportDTO;
 import org.dubhe.data.domain.dto.FileCreateDTO;
 import org.dubhe.data.domain.entity.File;
 
@@ -41,6 +41,7 @@ public interface FileMapper extends BaseMapper<File> {
      * 根据文件ID获取文件
      *
      * @param fileId    文件ID
+     * @param datasetId 数据集ID
      * @return File     文件对象
      */
     @Select("select * from data_file where id = #{fileId} and dataset_id = #{datasetId}")
@@ -113,13 +114,13 @@ public interface FileMapper extends BaseMapper<File> {
      * @return int 成功删除条数
      */
     @Delete("delete from data_file where dataset_id = #{datasetId} limit #{limitNumber} ")
-    int deleteBydatasetId(@Param("datasetId") Long datasetId, @Param("limitNumber") int limitNumber);
+    int deleteByDatasetId(@Param("datasetId") Long datasetId, @Param("limitNumber") int limitNumber);
 
     /**
      * 根据版本和数据集ID获取文件url
      *
-     * @Param datasetId     数据集ID
-     * @Param versionName   版本名
+     * @param datasetId     数据集ID
+     * @param versionName   版本名
      * @return List<String> url列表
      */
     @Select("select df.url from data_file df left join data_dataset_version_file ddvf on df.id = ddvf.file_id " +
@@ -130,12 +131,55 @@ public interface FileMapper extends BaseMapper<File> {
     /**
      * 根据version.changed获取文件name列表
      *
-     * @Param datasetId     数据集ID
-     * @Param changed       版本文件是否改动
+     * @param datasetId     数据集ID
+     * @param changed       版本文件是否改动
+     * @param versionName   版本名称
      * @return List<name>   名称列表
      */
     @Select("select df.name from data_file df left join data_dataset_version_file ddvf on df.id = ddvf.file_id " +
             "where ddvf.dataset_id = #{datasetId} and df.dataset_id = #{datasetId} " +
             "and ddvf.changed = #{changed} and ddvf.version_name = #{versionName}")
     List<String> selectNames(@Param("datasetId") Long datasetId, @Param("changed") Integer changed,@Param("versionName")String versionName);
+
+    /**
+     * 获取当前版本下原图文件数量
+     *
+     * @param datasetId 数据集ID
+     * @param versionName 版本名称
+     * @return 数据集文件数量
+     */
+    int getOriginalFileCountOfDataset(@Param("datasetId") Long datasetId, @Param("versionName") String versionName);
+
+    /**
+     * 批量新增文件数据
+     *
+     * @param fileList 数据文件列表
+     */
+    void insertBatch(@Param("listDataFile")List<File> fileList);
+
+    /**
+     * 选择需要同步到ES的数据
+     *
+     * @param datasetId 数据集ID
+     * @param fileIdsNotToEs 需要同步的文件ID
+     * @return List<EsTransportDTO>  ES数据同步DTO
+     */
+    List<EsTransportDTO> selectTextDataNoTransport(@Param("datasetId") Long datasetId,@Param("fileIdsNotToEs")List<Long> fileIdsNotToEs);
+
+    /**
+     * 更新同步es标志
+     *
+     * @param datasetId  数据集ID
+     * @param fileIds    文件ID列表
+     */
+    void updateEsStatus(@Param("datasetId") Long datasetId,@Param("fileIds")List<Long> fileIds);
+
+    /**
+     * 置回es标志
+     *
+     * @param datasetId  数据集ID
+     * @param fileId     文件ID
+     */
+    @Update("update data_file set es_transport = 0 where dataset_id = #{datasetId} and id = #{fileId}")
+    void recoverEsStatus(@Param("datasetId") Long datasetId, @Param("fileId") Long fileId);
 }

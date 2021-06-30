@@ -17,7 +17,8 @@
 
 package org.dubhe.data.constant;
 
-import org.dubhe.base.MagicNumConstant;
+
+import org.dubhe.biz.base.constant.MagicNumConstant;
 import org.dubhe.data.machine.constant.DataStateCodeConstant;
 import org.dubhe.data.machine.constant.FileStateCodeConstant;
 
@@ -32,7 +33,7 @@ import java.util.regex.Pattern;
  */
 public class Constant {
 
-    public static final String MODULE_URL_PREFIX = "/api/data";
+    public static final String MODULE_URL_PREFIX = "/";
     /**
      * 如有变更，需同时修改MVCConfig.class中的ResourceLocations
      */
@@ -91,10 +92,9 @@ public class Constant {
      */
     public static final String DATASET_VERSION_PREFIX = "V";
 
-    public static final String DATA_TYPE_RULE = "数据类型参数不对,请使用: 0-图片 1-视频";
+    public static final String DATA_TYPE_RULE = "数据类型参数不对,请使用: 0-图片 1-视频 2-文本 3-表格 4-语音 100-自定义导入";
 
-    public static final String ANNOTATE_TYPE_RULE = "数据标注类型参数不对,请使用: 2-分类 1-目标检测 5-目标跟踪 6 文本分类";
-
+    public static final String ANNOTATE_TYPE_RULE = "数据标注类型参数不对, 请使用: 1-目标检测 2-图像分类 5-目标跟踪 6-文本分类 7-语义分割 8-声音分类 9-语音识别 100-自定义导入";
 
     /**
      * 排序规则
@@ -217,6 +217,11 @@ public class Constant {
      * 分表业务编码 - 文件版本关系表
      */
     public static final String DATA_VERSION_FILE = "DATA_VERSION_FILE";
+
+    /**
+     * 分表业务编码 - 文件版本关系表
+     */
+    public static final String DATA_FILE_ANNOTATION = "DATA_FILE_ANNOTATION";
 
 
     /**

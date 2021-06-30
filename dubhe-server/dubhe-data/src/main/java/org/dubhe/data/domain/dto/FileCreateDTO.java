@@ -24,8 +24,8 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import org.dubhe.base.MagicNumConstant;
-import org.dubhe.constant.NumberConstant;
+import org.dubhe.biz.base.constant.MagicNumConstant;
+import org.dubhe.biz.base.constant.NumberConstant;
 import org.dubhe.data.domain.entity.File;
 import org.dubhe.data.machine.constant.FileStateCodeConstant;
 

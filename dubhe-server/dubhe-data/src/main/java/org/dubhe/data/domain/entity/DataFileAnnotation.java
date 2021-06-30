@@ -21,7 +21,7 @@ import com.baomidou.mybatisplus.annotation.TableName;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 import lombok.*;
-import org.dubhe.base.BaseEntity;
+import org.dubhe.biz.db.entity.BaseEntity;
 
 import java.io.Serializable;
 
@@ -40,6 +40,8 @@ public class DataFileAnnotation extends BaseEntity implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
+    private Long id;
+
     @ApiModelProperty("数据集ID")
     private Long datasetId;
 
@@ -51,5 +53,22 @@ public class DataFileAnnotation extends BaseEntity implements Serializable {
 
     @ApiModelProperty("预测值")
     private Double prediction;
+
+    @ApiModelProperty("文件名称")
+    private String fileName;
+
+    @ApiModelProperty("标注状态")
+    private Integer status;
+
+    @ApiModelProperty("版本标注")
+    private Integer invariable;
+
+    public DataFileAnnotation(Long datasetId, Long labelId, Long versionFileId, Double prediction, String fileName) {
+        this.datasetId = datasetId;
+        this.labelId = labelId;
+        this.versionFileId = versionFileId;
+        this.prediction = prediction;
+        this.fileName = fileName;
+    }
 
 }

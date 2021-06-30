@@ -95,10 +95,22 @@ public class Task implements Serializable {
     @ApiModelProperty(value = "数据集版本ID")
     private Long datasetVersionId;
 
+    @ApiModelProperty(value = "增强类型")
     private String enhanceType;
 
+    @ApiModelProperty(value = "地址")
     private String url;
 
+    @ApiModelProperty(value = "帧间隔")
     private Integer frameInterval;
+
+    @ApiModelProperty(value = "需要合并的列")
+    private String mergeColumn;
+
+    @ApiModelProperty(value = "版本名称")
+    private String versionName;
+
+    @ApiModelProperty(value = "目的ID")
+    private Long targetId;
 
 }

@@ -17,7 +17,9 @@
 
 package org.dubhe.data.domain.vo;
 
-import org.dubhe.base.BaseConvert;
+import org.dubhe.biz.db.base.BaseConvert;
+import org.dubhe.biz.base.vo.DatasetVO;
+import org.dubhe.biz.base.vo.ProgressVO;
 import org.dubhe.data.domain.entity.Dataset;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;

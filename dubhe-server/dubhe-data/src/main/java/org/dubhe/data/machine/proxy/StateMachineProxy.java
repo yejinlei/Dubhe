@@ -16,10 +16,10 @@
  */
 package org.dubhe.data.machine.proxy;
 
+import org.dubhe.biz.base.utils.SpringContextHolder;
+import org.dubhe.biz.statemachine.dto.StateChangeDTO;
+import org.dubhe.biz.statemachine.utils.StateMachineProxyUtil;
 import org.dubhe.data.machine.statemachine.GlobalStateMachine;
-import org.dubhe.dto.StateChangeDTO;
-import org.dubhe.utils.SpringContextHolder;
-import org.dubhe.utils.StateMachineProxyUtil;
 import org.springframework.stereotype.Component;
 
 import java.util.List;

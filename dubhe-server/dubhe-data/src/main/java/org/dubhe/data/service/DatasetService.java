@@ -17,10 +17,12 @@
 
 package org.dubhe.data.service;
 
-import com.baomidou.mybatisplus.core.conditions.Wrapper;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import org.dubhe.biz.base.enums.OperationTypeEnum;
+import org.dubhe.biz.base.vo.DatasetVO;
 import org.dubhe.data.constant.DatasetLabelEnum;
+import org.dubhe.biz.base.vo.ProgressVO;
 import org.dubhe.data.domain.dto.*;
 import org.dubhe.data.domain.entity.Dataset;
 import org.dubhe.data.domain.entity.DatasetVersionFile;
@@ -28,8 +30,7 @@ import org.dubhe.data.domain.entity.File;
 import org.dubhe.data.domain.entity.Label;
 import org.dubhe.data.domain.vo.*;
 import org.dubhe.data.machine.enums.DataStateEnum;
-import org.dubhe.enums.OperationTypeEnum;
-import org.springframework.transaction.annotation.Transactional;
+import org.dubhe.recycle.domain.dto.RecycleCreateDTO;
 
 import javax.servlet.http.HttpServletResponse;
 import java.util.List;
@@ -261,4 +262,42 @@ public interface DatasetService {
      * @return Map<Long, IsImportVO> 返回数据集状态
      */
     Map<Long, IsImportVO> determineIfTheDatasetIsAnImport(List<Long> datasetIds);
+
+    /**
+     * 整体删除数据还原
+     *
+     * @param dto 还原实体
+     */
+    void allRollback(RecycleCreateDTO dto);
+
+    /**
+     * 普通数据集转预置
+     *
+     * @param datasetConvertPresetDTO 普通数据集转预置请求实体
+     */
+    void convertPreset(DatasetConvertPresetDTO datasetConvertPresetDTO);
+
+    /**
+     * 根据数据集ID查询数据集是否转换信息
+     *
+     * @param datasetId 数据集ID
+     * @return  true: 允许 false: 不允许
+     */
+    Boolean getConvertInfoByDatasetId(Long datasetId);
+
+    /**
+     * 根据数据集ID删除数据信息
+     *
+     * @param datasetId 数据集ID
+     */
+    void deleteInfoById(Long datasetId);
+
+    /**
+     * 备份数据集DB和MINIO数据
+     *
+     * @param originDataset 原数据集实体
+     * @param targetDataset 目标数据集实体
+     * @param versionFiles  原版本列表
+     */
+    void backupDatasetDBAndMinioData(Dataset originDataset, Dataset targetDataset, List<DatasetVersionFile> versionFiles);
 }

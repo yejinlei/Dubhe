@@ -52,6 +52,7 @@ public class TaskSplitBO implements Serializable {
     private Long sendTime;
     private Long datasetId;
     private String versionName;
+    private String reTaskId;
 
     /**
      * 生成任务

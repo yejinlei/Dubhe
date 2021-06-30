@@ -23,20 +23,19 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import org.dubhe.annotation.EnumValue;
+import org.dubhe.biz.base.annotation.EnumValue;
+import org.dubhe.biz.base.enums.DatasetTypeEnum;
+import org.dubhe.cloud.authconfig.utils.JwtUtils;
 import org.dubhe.data.constant.AnnotateTypeEnum;
 import org.dubhe.data.constant.Constant;
 import org.dubhe.data.constant.DatatypeEnum;
 import org.dubhe.data.domain.entity.Dataset;
 import org.dubhe.data.machine.constant.DataStateCodeConstant;
-import org.dubhe.enums.DatasetTypeEnum;
-import org.dubhe.utils.JwtUtils;
 
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
 import java.io.Serializable;
-import java.util.Objects;
 
 /**
  * @description 数据集
@@ -99,7 +98,6 @@ public class DatasetCreateDTO implements Serializable {
     public static Dataset from(DatasetCreateDTO datasetCreateDTO) {
         Dataset dataset = new Dataset(datasetCreateDTO);
         dataset.setStatus(DataStateCodeConstant.NOT_ANNOTATION_STATE);
-        dataset.setOriginUserId(Objects.isNull(JwtUtils.getCurrentUserDto()) ? null : JwtUtils.getCurrentUserDto().getId());
         return dataset;
     }
 

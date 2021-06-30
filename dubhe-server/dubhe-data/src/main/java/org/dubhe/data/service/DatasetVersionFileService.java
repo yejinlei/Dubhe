@@ -18,14 +18,16 @@
 package org.dubhe.data.service;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
-import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import org.dubhe.data.domain.dto.DatasetVersionFileDTO;
 import org.dubhe.data.domain.entity.Dataset;
 import org.dubhe.data.domain.entity.DatasetVersion;
 import org.dubhe.data.domain.entity.DatasetVersionFile;
 import org.dubhe.data.domain.entity.File;
 
-import java.util.*;
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * @description 数据集版本文件 服务类
@@ -100,10 +102,11 @@ public interface DatasetVersionFileService {
      * @param offset      偏移量
      * @param limit       页容量
      * @param order       排序方式
+     * @param labelId     标签ID
      * @return List<DatasetVersionFile> 版本文件列表
      */
-    LinkedList<DatasetVersionFileDTO> getListByDatasetIdAndAnnotationStatus(Long datasetId, String versionName, Integer status, Long offset,
-                                                                     Integer limit, String orderByName, String order, Long labelId);
+    List<DatasetVersionFileDTO> getListByDatasetIdAndAnnotationStatus(Long datasetId, String versionName, Integer[] status, Long offset,
+                                                                     Integer limit, String orderByName, String order, Long[] labelId);
 
     /**
      * 获取数据集指定版本第一张图片
@@ -195,12 +198,7 @@ public interface DatasetVersionFileService {
      */
     List<DatasetVersionFile> getPages(int offset, int pageSize, Long datasetId, String versionName);
 
-    /**
-     * 查询当前版本的数据集信息
-     * @param datasetIds 数据集ID
-     * @return 数据集版本文件列表
-     */
-    List<DatasetVersionFile> listDatasetVersionFileByDatasetIds(List<Long> datasetIds);
+
 
     /**
      * 查询当前数据集下所有的文件数量
@@ -234,7 +232,7 @@ public interface DatasetVersionFileService {
      * @param type      数据集类型
      * @return Integer 获取到offset
      */
-    Integer getOffset(Long fileId, Long datasetId, Integer type);
+    Integer getOffset(Long fileId, Long datasetId, Integer[] type, Long[] labelIds);
 
 
     /**
@@ -244,15 +242,6 @@ public interface DatasetVersionFileService {
      * @return 大小
      */
     long selectCount(LambdaQueryWrapper<DatasetVersionFile> eq);
-
-    /**
-     * 根据数据集id,版本查询状态为删除的数据版本文件中间表
-     *
-     * @param id                 数据集Id
-     * @param currentVersionName 数据集版本
-     * @return DatasetVersionFile Dataset版本文件关系表
-     */
-    List<DatasetVersionFile> findStatusByDatasetIdAndVersionName(Long id, String currentVersionName);
 
     /**
      * 判断当前数据集是否需要回滚
@@ -303,4 +292,54 @@ public interface DatasetVersionFileService {
      * @param datasetVersionFile 数据集版本文件实体
      */
     void updateStatusById(DatasetVersionFile datasetVersionFile);
+
+    /**
+     * 根据数据集分页条件查询文件总数量
+     *
+     * @param datasetId             数据集ID
+     * @param currentVersionName    当前版本号码
+     * @param status                状态
+     * @param labelId               标签ID
+     * @return 文件数量
+     */
+    int selectFileListTotalCount(Long datasetId, String currentVersionName, Integer[] status, Long[] labelId);
+
+
+    /**
+     * 根据数据集ID和版本号查询版本文件信息
+     *
+     * @param datasetId     数据集ID
+     * @param versionName   版本名称
+     * @return  数据集版本文件列表
+     */
+    List<DatasetVersionFile> getDatasetVersionFileByDatasetIdAndVersion(Long datasetId, String versionName);
+
+
+    /**
+     * 备份版本文件数据
+     *
+     * @param originDataset 原数据集实体
+     * @param targetDataset 目标数据集实体
+     * @param versionFiles  原版本文件列表
+     * @param files         已转换文件列表
+     */
+    void backupDatasetVersionFileDataByDatasetId(Dataset originDataset, Dataset targetDataset, List<DatasetVersionFile> versionFiles, List<File> files);
+
+    /**
+     * 文件id获取版本文件id
+     *
+     * @param datasetId         数据集id
+     * @param fileIds           文件id
+     * @return List<Long>       版本文件id
+     */
+    List<Long> getVersionFileIdsByFileIds(Long datasetId, List<Long> fileIds);
+
+    /**
+     * 获取版本文件id
+     *
+     * @param datasetId         数据集id
+     * @param fileName            文件id
+     * @param versionName       版本名称
+     */
+    Long getVersionFileIdByFileName(Long datasetId, String fileName, String versionName);
 }

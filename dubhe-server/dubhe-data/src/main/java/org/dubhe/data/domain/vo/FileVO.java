@@ -39,8 +39,10 @@ public class FileVO implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
+    @ApiModelProperty(value = "文件ID")
     private Long id;
 
+    @ApiModelProperty(value = "文件名称")
     private String name;
 
     @ApiModelProperty(value = "状态: 101-未标注, 102-手动标注中, 103-自动标注完成, 104-标注完成, 105-标注未识别, 201-目标跟踪完成")
@@ -55,6 +57,7 @@ public class FileVO implements Serializable {
     @ApiModelProperty(value = "更新用户ID")
     private Long updateUserId;
 
+    @ApiModelProperty(value = "标注内容")
     private String annotation;
 
     @ApiModelProperty(value = "父文件id")

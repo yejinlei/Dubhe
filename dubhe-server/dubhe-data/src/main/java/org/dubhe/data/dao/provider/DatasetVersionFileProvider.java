@@ -17,10 +17,10 @@
 
 package org.dubhe.data.dao.provider;
 
+import org.dubhe.biz.base.utils.StringUtils;
 import org.dubhe.data.constant.Constant;
 import org.dubhe.data.constant.DataStatusEnum;
 import org.dubhe.data.constant.FileTypeEnum;
-import org.dubhe.utils.StringUtils;
 
 import java.util.List;
 import java.util.Map;

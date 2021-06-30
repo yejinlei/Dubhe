@@ -18,21 +18,21 @@ package org.dubhe.data.machine.statemachine;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import lombok.Data;
-import org.dubhe.constant.ErrorMessageConstant;
-import org.dubhe.constant.NumberConstant;
+import org.dubhe.biz.base.constant.NumberConstant;
+import org.dubhe.biz.base.utils.SpringContextHolder;
+import org.dubhe.biz.base.utils.StringUtils;
+import org.dubhe.biz.log.enums.LogEnum;
+import org.dubhe.biz.log.utils.LogUtil;
+import org.dubhe.biz.statemachine.exception.StateMachineException;
 import org.dubhe.data.dao.DatasetVersionFileMapper;
 import org.dubhe.data.domain.entity.Dataset;
 import org.dubhe.data.domain.entity.DatasetVersionFile;
+import org.dubhe.data.machine.constant.ErrorMessageConstant;
 import org.dubhe.data.machine.enums.DataStateEnum;
 import org.dubhe.data.machine.enums.FileStateEnum;
 import org.dubhe.data.machine.state.AbstractFileState;
 import org.dubhe.data.machine.state.specific.file.*;
-import org.dubhe.data.machine.utils.identify.service.StateIdentify;
-import org.dubhe.enums.LogEnum;
-import org.dubhe.exception.StateMachineException;
-import org.dubhe.utils.LogUtil;
-import org.dubhe.utils.SpringContextHolder;
-import org.dubhe.utils.StringUtils;
+import org.dubhe.data.machine.utils.StateIdentifyUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -76,7 +76,7 @@ public class FileStateMachine extends AbstractFileState implements Serializable 
     private DatasetVersionFileMapper datasetVersionFileMapper;
 
     @Autowired
-    private StateIdentify stateIdentify;
+    private StateIdentifyUtil stateIdentify;
 
     /**
      * 初始化状态机的状态

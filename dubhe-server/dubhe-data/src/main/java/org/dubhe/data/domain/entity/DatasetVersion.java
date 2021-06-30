@@ -20,9 +20,11 @@ package org.dubhe.data.domain.entity;
 import com.baomidou.mybatisplus.annotation.*;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
-import lombok.experimental.Accessors;
+import org.dubhe.biz.db.entity.BaseEntity;
 import org.dubhe.data.domain.dto.DatasetVersionCreateDTO;
 
 import java.sql.Timestamp;
@@ -33,10 +35,11 @@ import java.sql.Timestamp;
  */
 @Data
 @EqualsAndHashCode(callSuper = false)
-@Accessors(chain = true)
 @TableName("data_dataset_version")
 @ApiModel(value = "Dataset版本对象", description = "数据集版本管理")
-public class DatasetVersion {
+@Builder
+@AllArgsConstructor
+public class DatasetVersion extends BaseEntity {
 
     @TableId(type = IdType.AUTO)
     private Long id;
@@ -47,17 +50,6 @@ public class DatasetVersion {
     @ApiModelProperty(value = "团队ID")
     private Long teamId;
 
-    @TableField(value = "create_time", fill = FieldFill.INSERT)
-    private Timestamp createTime;
-
-    @TableField(value = "update_time", fill = FieldFill.INSERT_UPDATE)
-    private Timestamp updateTime;
-
-    @TableField(value = "create_user_id", fill = FieldFill.INSERT)
-    private Long createUserId;
-
-    @TableField(value = "update_user_id", fill = FieldFill.INSERT_UPDATE)
-    private Long updateUserId;
 
     @ApiModelProperty(value = "版本号")
     private String versionName;
@@ -74,11 +66,14 @@ public class DatasetVersion {
     @ApiModelProperty(value = "版本信息转换")
     private Integer dataConversion;
 
-    @TableField("deleted")
+    @TableField(value = "deleted",fill = FieldFill.INSERT)
     private Boolean deleted = false;
 
     @ApiModelProperty(value = "资源拥有人id")
     private Long originUserId;
+
+    @ApiModelProperty(value = "是否生成ofRecord文件")
+    private Integer ofRecord;
 
     public DatasetVersion() {
     }

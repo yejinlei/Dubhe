@@ -25,12 +25,13 @@ public class DataStateMachineConstant {
     private DataStateMachineConstant() {
     }
 
+
     /**
      * 数据集状态
      */
     public static final String DATA_STATE_MACHINE = "dataStateMachine";
     /**
-     * 采样事件   未采样-->调用采集图片程序-->采样中
+     * 采样事件   未采样/未标注/自动标注完成/标注中/目标跟踪完成-->调用采集图片程序-->采样中
      */
     public static final String DATA_SAMPLED_EVENT = "sampledEvent";
     /**
@@ -41,18 +42,6 @@ public class DataStateMachineConstant {
      * 采样事件   采样中-->调用采集图片程序-->未标注
      */
     public static final String DATA_SAMPLING_EVENT = "samplingEvent";
-    /**
-     * 手动标注事件  手动标注中-->手动标注完成-->手动标注完成
-     */
-    public static final String DATA_MANUAL_ANNOTATION_COMPLETE_EVENT = "manualAnnotationCompleteEvent";
-    /**
-     * 手动标注事件  手动标注中-->删除文件,文件只包含自动标注完成-->自动标注完成
-     */
-    public static final String DATA_MANUAL_AUTOMATIC_LABEKING_COMPLETION_EVENT = "manualAutomaticLabelingCompletionEvent";
-    /**
-     * 手动标注事件  手动标注中-->调用自动标注算法-->未标注
-     */
-    public static final String DATA_MANUAL_NOT_MARKED_EVENT = "manualNotMakedEvent";
     /**
      * 自动标注事件  手动标注中/未标注-->点击自动标注-->自动标注中
      */
@@ -69,22 +58,6 @@ public class DataStateMachineConstant {
      * 自动标注完成事件 自动标注完成-->调用增强算法-->增强中
      */
     public static final String DATA_STRENGTHENING_EVENT = "strengthenEvent";
-    /**
-     * 自动标注完成事件 自动标注完成-->删除图片文件-->未标注
-     */
-    public static final String DATA_DELETE_PICTRUE__NOT_MARKED_EVENT = "deletePictrueNotMarkedEvent";
-    /**
-     * 自动标注完成事件 自动标注完成-->上传图片-->标注中
-     */
-    public static final String DATA_UPLOAD_PICTURES_EVENT = "uploadPicturesEvent";
-    /**
-     * 标注完成事件  标注完成-->上传图片-->标注中
-     */
-    public static final String DATA_UPLOAD_SAVE_PICTURE_EVENT = "uploadSavePicturesEvent";
-    /**
-     * 标注完成事件  标注完成-->删除图片-->未标注
-     */
-    public static final String DATA_DELETE_PICTURE_EVENT = "deletePicturesEvent";
     /**
      * 标注完成事件  标注完成-->调用增强算法-->增强中
      */
@@ -117,5 +90,25 @@ public class DataStateMachineConstant {
      * 目标跟踪事件 目标跟踪失败/自动标注完成/标注完成/目标跟踪完成-->目标跟踪-->目标跟踪中
      */
     public static final String DATA_TRACK_EVENT ="trackEvent";
+    /**
+     * 删除文件事件
+     */
+    public static final String DATA_DELETE_FILES_EVENT = "deleteFilesEvent";
+    /**
+     * 上传文件事件
+     */
+    public static final String DATA_UPLOAD_FILES_EVENT = "uploadFilesEvent";
+    /**
+     * 增强完成事件
+     */
+    public static final String DATA_ENHANCE_FINISH_EVENT = "enhanceFinishEvent";
+    /**
+     * 表格导入
+     */
+    public static final String TABLE_IMPORT_EVENT = "tableImportEvent";
+    /**
+     * 表格导入完成
+     */
+    public static final String TABLE_IMPORT_FINISH_EVENT = "tableImportFinishEvent";
 
 }

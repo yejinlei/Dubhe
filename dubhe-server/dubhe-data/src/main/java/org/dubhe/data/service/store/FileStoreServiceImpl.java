@@ -19,8 +19,8 @@ package org.dubhe.data.service.store;
 
 import cn.hutool.core.io.FileUtil;
 import cn.hutool.core.io.IORuntimeException;
-import org.dubhe.enums.LogEnum;
-import org.dubhe.utils.LogUtil;
+import org.dubhe.biz.log.enums.LogEnum;
+import org.dubhe.biz.log.utils.LogUtil;
 import org.springframework.stereotype.Service;
 
 /**

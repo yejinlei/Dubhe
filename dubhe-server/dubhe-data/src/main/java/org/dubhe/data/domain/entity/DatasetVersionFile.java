@@ -17,17 +17,15 @@
 
 package org.dubhe.data.domain.entity;
 
-import com.baomidou.mybatisplus.annotation.IdType;
-import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
-import lombok.NoArgsConstructor;
+import org.dubhe.biz.base.utils.StringUtils;
 import org.dubhe.data.constant.Constant;
-import org.dubhe.utils.StringUtils;
+
 
 /**
  * @description 数据集版本文件管理
@@ -40,7 +38,6 @@ import org.dubhe.utils.StringUtils;
 @AllArgsConstructor
 public class DatasetVersionFile {
 
-    @TableId(type = IdType.AUTO)
     private Long id;
 
     public void setId(Long id) {
@@ -76,7 +73,7 @@ public class DatasetVersionFile {
     public DatasetVersionFile() {
     }
 
-    public DatasetVersionFile(Long datasetId, String versionName, Long fileId,String fileName) {
+    public DatasetVersionFile(Long datasetId, String versionName, Long fileId, String fileName) {
         this.datasetId = datasetId;
         this.versionName = versionName;
         this.fileId = fileId;

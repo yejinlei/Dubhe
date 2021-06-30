@@ -27,22 +27,45 @@ import lombok.Getter;
 public enum AnnotateTypeEnum {
 
     /**
-     * 图像分类
-     */
-    CLASSIFICATION(2, "图像分类"),
-    /**
      * 目标检测
      */
     OBJECT_DETECTION(1, "目标检测"),
     /**
+     * 图像分类
+     */
+    CLASSIFICATION(2, "图像分类"),
+    /**
      * 目标跟踪
      */
     OBJECT_TRACK(5, "目标跟踪"),
-
     /**
      * 文本分类
      */
-    TEXT_CLASSIFICATION(6, "文本分类");
+    TEXT_CLASSIFICATION(6, "文本分类"),
+    /**
+     * 语义分割
+     */
+    SEMANTIC_CUP(7, "语义分割"),
+    /**
+     * 音频分类
+     */
+    AUDIO_CLASSIFY(8, "声音分类"),
+    /**
+     * 文本分词
+     */
+    TEXT_SEGMENTATION(9,"文本分词"),
+    /**
+     * 命名实体识别
+     */
+    NAMED_ENTITY_RECOGNITION(10,"命名实体识别"),
+    /**
+     * 语音识别
+     */
+    SPEECH_RECOGNITION(11, "语音识别"),
+    /**
+     * 自定义导入
+     */
+    AUTO_IMPORT(100, "自定义导入");
 
 
     AnnotateTypeEnum(Integer value, String msg) {
@@ -81,6 +104,20 @@ public enum AnnotateTypeEnum {
             }
         }
         return null;
+    }
+
+    /**
+     * 获取错误提示信息
+     *
+     * @return 错误提示信息字符串
+     */
+    public static String getErrorMessage() {
+        StringBuilder stringBuilder = new StringBuilder("数据标注类型参数不对, 请使用:");
+        for (AnnotateTypeEnum annotateTypeEnum : AnnotateTypeEnum.values()) {
+            stringBuilder.append(" ").append(annotateTypeEnum.getValue()).append("-")
+                    .append(annotateTypeEnum.getMsg());
+        }
+        return stringBuilder.toString();
     }
 
 }

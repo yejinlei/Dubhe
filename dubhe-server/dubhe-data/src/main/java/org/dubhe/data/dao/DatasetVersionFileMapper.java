@@ -20,11 +20,11 @@ package org.dubhe.data.dao;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import org.apache.ibatis.annotations.*;
 import org.dubhe.data.domain.dto.DatasetVersionFileDTO;
+import org.dubhe.data.domain.entity.DataFileAnnotation;
 import org.dubhe.data.domain.entity.Dataset;
 import org.dubhe.data.domain.entity.DatasetVersionFile;
 import org.dubhe.data.domain.entity.File;
 
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -62,8 +62,8 @@ public interface DatasetVersionFileMapper extends BaseMapper<DatasetVersionFile>
      * @param versionName 版本名称
      * @param fileIds     文件ID
      */
-    void deleteShip(@Param("datasetId") Long datasetId, @Param("versionName") String versionName,
-                    @Param("fileIds") List<Long> fileIds);
+    void updateStatusByFileIdAndDatasetId(@Param("datasetId") Long datasetId, @Param("versionName") String versionName,
+                                          @Param("fileIds") List<Long> fileIds);
 
 
 
@@ -157,15 +157,6 @@ public interface DatasetVersionFileMapper extends BaseMapper<DatasetVersionFile>
     Map<Integer, Integer> getDatasetVersionFileCount(@Param("datasetId") Long datasetId, @Param("versionName") String versionName);
 
     /**
-     * 根据数据集id,版本查询状态为删除的数据版本文件中间表
-     *
-     * @param id                 数据集Id
-     * @param currentVersionName 数据集版本
-     * @return DatasetVersionFile Dataset版本文件关系表
-     */
-    List<DatasetVersionFile> findStatusByDatasetIdAndVersionName(@Param("datasetId") Long id, @Param("versionName") String currentVersionName);
-
-    /**
      * 根据数据集ID删除数据版本文件数据
      *
      * @param datasetId     数据集ID
@@ -188,29 +179,20 @@ public interface DatasetVersionFileMapper extends BaseMapper<DatasetVersionFile>
      * @param offset        偏移量
      * @param limit         页容量
      * @param order         排序方式
-     * @return List<Integer> 数据集版本文件ID列表
+     * @param dataFileAnnotations       标签ID
+     * @return List<DatasetVersionFile> 版本文件列表
      */
-    LinkedList<Integer> getIdByDatasetIdAndAnnotationStatus(@Param("datasetId") Long datasetId,
-                                                                @Param("versionName") String versionName,
-                                                                @Param("status") Set<Integer> status,
-                                                                @Param("orderByName")String orderByName,
-                                                                @Param("offset") Long offset,
-                                                                @Param("limit") Integer limit,
-                                                                @Param("order") String order,
-                                                                @Param("labelId")Long labelId);
+    List<DatasetVersionFileDTO> getIdByDatasetIdAndAnnotationStatus(@Param("datasetId") Long datasetId,
+                                                                          @Param("versionName") String versionName,
+                                                                          @Param("status") Set<Integer> status,
+                                                                          @Param("orderByName")String orderByName,
+                                                                          @Param("offset") Long offset,
+                                                                          @Param("limit") Integer limit,
+                                                                          @Param("order") String order,
+                                                                          @Param("dataFileAnnotations")List<DataFileAnnotation> dataFileAnnotations,
+                                                                          @Param("annotationType")Integer annotationType);
 
-    /**
-     * 通过数据集ID和注释状态获取列表
-     *
-     * @param datasetId             数据集ID
-     * @param orderByName           排序字段
-     * @param versionFileIdList     版本文件ID列表
-     * @return List<DatasetVersionFileDTO>    版本文件列表
-     */
-    LinkedList<DatasetVersionFileDTO> getListByDatasetIdAndAnnotationStatus(@Param("datasetId") Long datasetId,
-                                                                           @Param("orderByName")String orderByName,
-                                                                           @Param("versionFileIdList")List<Integer> versionFileIdList,
-                                                                           @Param("order") String order);
+
 
 
 
@@ -255,4 +237,69 @@ public interface DatasetVersionFileMapper extends BaseMapper<DatasetVersionFile>
      */
     @Update("update data_dataset_version_file set annotation_status = #{annotationStatus} where dataset_id = #{datasetId} and id = #{id}")
     void updateAnnotationStatusById(@Param("annotationStatus")Integer annotationStatus, @Param("datasetId") Long datasetId,  @Param("id")Long id);
+
+
+    /**
+     * 根据数据集分页条件查询文件总数量
+     *
+     * @param datasetId             数据集ID
+     * @param versionName    当前版本号码
+     * @param status                状态
+     * @param versionId             标签ID
+     * @return 文件数量
+     */
+    int selectFileListTotalCount(@Param("datasetId") Long datasetId,
+                                  @Param("versionName") String versionName,
+                                  @Param("status") Set<Integer> status,
+                                  @Param("versionId") List<Long> versionId);
+
+    /**
+     * 批量新增版本文件数据
+     *
+     * @param versionFiles 版本文件数据
+     */
+    void insertBatch(@Param("list") List<DatasetVersionFile> versionFiles);
+
+    /**
+     * 根据数据集Id和版本号查询数据集版本列表
+     *
+     * @param datasetId
+     * @param currentVersionName
+     * @return List<DatasetVersionFile>
+     */
+    List<Long> findByDatasetIdAndVersionNameAndStatus(@Param("datasetId") Long datasetId, @Param("versionName") String currentVersionName,
+                                                      @Param("labelIds") Long[] labelIds);
+
+    /**
+     * 搜索时获取文件offset
+     *
+     * @param datasetId        数据集ID
+     * @param annotationStatus 文件标注状态
+     * @param versionName      版本名称
+     * @param versionFileId    版本文件ID
+     * @param labelIds         标签ID集合
+     * @return Integer 文件偏移量
+     */
+    Integer getOffset(@Param("datasetId") Long datasetId, @Param("annotationStatus")Set<Integer> annotationStatus,
+                      @Param("versionName") String versionName, @Param("versionFileId") Long versionFileId,
+                      @Param("labelIds") Long[] labelIds);
+
+    /**
+     * 文件id获取版本文件id
+     *
+     * @param datasetId         数据集id
+     * @param fileIds           文件id
+     * @return List<Long>       版本文件id
+     */
+    List<Long> getVersionFileIdsByFileIds(@Param("datasetId") Long datasetId,@Param("fileIds")List<Long> fileIds);
+
+    /**
+     * 获取版本文件id
+     *
+     * @param datasetId         数据集id
+     * @param fileName          文件名称
+     * @param versionName       版本名称
+     * @return Long             版本文件id
+     */
+    Long getVersionFileIdByFileName(@Param("datasetId")Long datasetId, @Param("fileName")String fileName, @Param("versionName")String versionName);
 }

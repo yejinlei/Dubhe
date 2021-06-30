@@ -36,7 +36,7 @@ Thumbs.db
 target/
 output/
 *.jar
-!/dubhe-dcm/lib/dcm4che-core-5.19.1.jar
+!/dubhe-data-dcm/lib/dcm4che-core-5.19.1.jar
 !.mvn/wrapper/*
 *.war
 *.zip
@@ -48,6 +48,4 @@ output/
 .project
 .classpath
 logs/
-/dubhe-k8s/src/main/resources/kubeconfig
 *.log
-/dubhe-admin/kubeconfig

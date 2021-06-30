@@ -19,7 +19,7 @@ package org.dubhe.data.domain.dto;
 
 import io.swagger.annotations.ApiModelProperty;
 import lombok.*;
-import org.dubhe.constant.NumberConstant;
+import org.dubhe.biz.base.constant.NumberConstant;
 
 import javax.validation.constraints.Min;
 import javax.validation.constraints.NotNull;

@@ -5,42 +5,149 @@
 
 
     <insert id="insertBatch">
+
         insert into data_file_annotation
-            (dataset_id, label_id, version_file_id, prediction, create_user_id, create_time, update_user_id, update_time, deleted) VALUES
+            (id,dataset_id, label_id, version_file_id, prediction, create_user_id, create_time, update_user_id, update_time
+            , deleted, file_name, status, invariable) VALUES
         <foreach collection="list" item="item" separator=",">
-            (#{item.datasetId},#{item.labelId},#{item.versionFileId},#{item.prediction},#{item.createUserId},#{item.createTime}
-            ,#{item.updateUserId},#{item.updateTime},#{item.deleted})
+            (#{item.id},#{item.datasetId},#{item.labelId},#{item.versionFileId},#{item.prediction},#{item.createUserId},#{item.createTime}
+            ,#{item.updateUserId},#{item.updateTime},#{item.deleted},#{item.fileName},#{item.status},#{item.invariable})
         </foreach>
+
     </insert>
 
-
-    <update id="updateAnnotationFileByVersionIdAndLabelIds">
-        update data_file_annotation set prediction = #{prediction} where version_file_id = #{versionFileId} and
-            label_id in
-        <foreach collection="fileLabelIds" item="id" open="(" close=")" separator=",">
+    <update id="updateStatusByVersionIds">
+        update data_file_annotation set deleted = #{deleteFlag} where
+        dataset_id = #{datasetId} and
+        version_file_id in
+        <foreach collection="ids" item="id" open="(" close=")" separator=",">
             #{id}
         </foreach>
     </update>
 
-    <delete id="deleteBatch">
-        delete from data_file_annotation where version_file_id in
-        <foreach collection="list" item="id" open="(" close=")" separator=",">
+    <update id="deleteBatch">
+        update data_file_annotation set status = 1
+        where dataset_id = #{datasetId} and
+        version_file_id in
+        <foreach collection="ids" item="id" open="(" close=")" separator=",">
             #{id}
         </foreach>
-    </delete>
+    </update>
 
-    <delete id="deleteAnnotationFileByVersionIdAndLabelIds">
-        delete from data_file_annotation where version_file_id = #{versionFileId} and
-                                               label_id in
+    <update id="deleteAnnotationFileByVersionIdAndLabelIds">
+        update data_file_annotation set status = 1 where
+        dataset_id = #{datasetId} and
+        version_file_id = #{versionFileId}
+         and label_id in
         <foreach collection="fileLabelIds" item="labelId" separator="," open="(" close=")">
             #{labelId}
         </foreach>
-    </delete>
+    </update>
 
     <select id="findInfoByVersionId" resultType="java.lang.Long">
         select label_id
         from data_file_annotation
-        where version_file_id = #{versionFileId}
+        where dataset_id = #{datasetId} and  version_file_id = #{versionFileId}
+        and status != 1
     </select>
 
+    <select id="getLabelIdByDatasetIdAndVersionId" resultType="org.dubhe.data.domain.entity.DataFileAnnotation">
+        select dfa.version_file_id, dfa.label_id, dfa.prediction
+        from data_file_annotation dfa
+        LEFT JOIN data_dataset_version_file ddvf on dfa.version_file_id = ddvf.id
+        where dfa.dataset_id = #{datasetId}
+        and ddvf.dataset_id = #{datasetId}
+        <if test="labelId != null">
+            and dfa.label_id in
+            <foreach item="labelId" collection="labelId" separator="," open="(" close=")">
+                #{labelId}
+            </foreach>
+        </if>
+        and dfa.status != 1
+        and ddvf.version_name
+        <choose>
+            <when test = "versionName == null">
+                is
+            </when>
+            <otherwise>
+                =
+            </otherwise>
+        </choose>
+        #{versionName}
+        group by dfa.version_file_id
+        limit #{offset}, #{limit}
+    </select>
+
+    <select id="getVersionFileIdByLabelId" resultType="java.lang.Long">
+        select version_file_id from data_file_annotation  where  dataset_id =#{datasetId} and label_id in
+        <foreach item="labelId" collection="labelId" separator="," open="(" close=")">
+            #{labelId}
+        </foreach>
+        and version_file_id in
+        <foreach item="ids" collection="ids" separator="," open="(" close=")">
+            #{ids}
+        </foreach>
+        and status != 1
+     group by version_file_id
+    </select>
+
+    <select id="getAnnotationByVersion" resultType="org.dubhe.data.domain.entity.DataFileAnnotation">
+        select dfa.* from data_file_annotation dfa left join data_dataset_version_file ddvf
+        on dfa.version_file_id = ddvf.id
+        where ddvf.dataset_id = #{datasetId} and
+        dfa.dataset_id = #{datasetId} and
+        ddvf.version_name
+        <choose>
+            <when test = "versionName == null">
+                is
+            </when>
+            <otherwise>
+                =
+            </otherwise>
+        </choose>
+        #{versionName} and
+        ddvf.status = #{status}
+        order by dfa.version_file_id
+    </select>
+
+    <update id="updateDataFileAnnotations">
+        update data_file_annotation set
+        status = #{status}, invariable = #{invariable}, version_file_id = #{versionFileId}
+        where
+        dataset_id = #{datasetId} and
+        id = #{id}
+    </update>
+
+    <update id="rollbackAnnotation">
+        update data_file_annotation dfa left join data_dataset_version_file ddvf
+        on dfa.version_file_id = ddvf.id  set
+        dfa.status = #{status}
+        where
+        dfa.dataset_id = #{datasetId} and
+        ddvf.dataset_id = #{datasetId} and
+        dfa.invariable = #{invariable} and
+        ddvf.version_name
+        <choose>
+            <when test = "versionSource == null">
+                is
+            </when>
+            <otherwise>
+                =
+            </otherwise>
+        </choose>
+        #{versionSource} and
+        ddvf.changed = 1 and
+        ddvf.status = 1
+    </update>
+
+    <select id="selectDetectionCount" resultType="java.lang.Long">
+        select count(distinct version_file_id) from data_file_annotation where
+        dataset_id = #{datasetId}
+        <if test="labelIds != null and labelIds.length &gt;= 0">
+            and label_id in
+            <foreach collection="labelIds" item="labelId" separator="," open="(" close=")">
+                #{labelId}
+            </foreach>
+        </if>
+    </select>
 </mapper>

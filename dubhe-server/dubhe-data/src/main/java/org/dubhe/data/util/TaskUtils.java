@@ -17,9 +17,10 @@
 
 package org.dubhe.data.util;
 
-import org.dubhe.base.MagicNumConstant;
-import org.dubhe.enums.LogEnum;
-import org.dubhe.utils.LogUtil;
+import org.dubhe.biz.base.constant.MagicNumConstant;
+import org.dubhe.biz.base.utils.StringUtils;
+import org.dubhe.biz.log.enums.LogEnum;
+import org.dubhe.biz.log.utils.LogUtil;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.ZSetOperations;
@@ -63,21 +64,16 @@ public class TaskUtils {
      *
      * @param queueName    任务队列名称
      * @param taskDetails  任务详情
-     * @param keyId        redis中key
-     * @param datasetIdKey 数据集key
      * @param score        分数
-     * @param subTask      子任务
-     * @param taskType     任务类型
      * @return 任务是否存放成功
      */
-    public boolean addTask(String queueName, String taskDetails, String keyId, String taskType, String subTask
-            , String datasetIdKey, int score) {
+    public boolean addTask(String queueName, String taskDetails, String detailKey,int score) {
         DefaultRedisScript<Boolean> addTaskScript = new DefaultRedisScript<>();
         addTaskScript.setResultType(Boolean.class);
         addTaskScript.setLocation(new ClassPathResource("addTask.lua"));
         try {
-            return redisTemplate.execute(addTaskScript, Collections.singletonList(keyId)
-                    , queueName, taskDetails, taskType, subTask, datasetIdKey, score);
+            return redisTemplate.execute(addTaskScript, Collections.singletonList(detailKey)
+                    , queueName, taskDetails, score);
         } catch (Exception e) {
             LogUtil.error(LogEnum.BIZ_DATASET, "RedisUtils addTask error:{}", e.getMessage(), e);
             return false;
@@ -169,16 +165,14 @@ public class TaskUtils {
     public void restartTask(String startQueue, String pendingQueue) {
         Set<ZSetOperations.TypedTuple<Object>> typedTuples = zGetWithScore(startQueue);
         typedTuples.forEach(value -> {
-            String timestampString = new BigDecimal(value.getScore().toString()).toPlainString();
+            String timestampString = new BigDecimal(StringUtils.substringBefore(value.getScore().toString(),"."))
+                    .toPlainString();
             long timestamp = Long.parseLong(timestampString);
             String keyId = value.getValue().toString().replaceAll("\"", "");
             long timestampNow = System.currentTimeMillis() / 1000;
             if (timestampNow - timestamp > MagicNumConstant.TWO_HUNDRED) {
                 LogUtil.info(LogEnum.BIZ_DATASET, "restart {} task keyId:{}", startQueue, keyId);
-                zAdd(pendingQueue, value.getValue().toString(), 10L);
-                zrem(startQueue, value.getValue().toString());
             }
         });
     }
-
 }

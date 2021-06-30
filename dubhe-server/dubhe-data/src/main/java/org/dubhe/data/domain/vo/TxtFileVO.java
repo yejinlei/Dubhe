@@ -39,8 +39,10 @@ public class TxtFileVO implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
+    @ApiModelProperty(value = "文本文件id")
     private Long id;
 
+    @ApiModelProperty(value = "文本文件名称")
     private String name;
 
     @ApiModelProperty(value = "状态: 101-未标注, 102-手动标注中, 103-自动标注完成, 104-标注完成, 105-标注未识别")
@@ -64,4 +66,9 @@ public class TxtFileVO implements Serializable {
     @ApiModelProperty("摘要Url")
     private String abstractUrl;
 
+    @ApiModelProperty("文本内容")
+    private String content;
+
+    @ApiModelProperty("标注信息")
+    private String annotation;
 }

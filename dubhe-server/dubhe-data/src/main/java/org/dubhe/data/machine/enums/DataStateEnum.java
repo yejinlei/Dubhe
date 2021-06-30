@@ -70,7 +70,11 @@ public enum DataStateEnum {
     /**
      * 增强中
      */
-    STRENGTHENING_STATE(DataStateCodeConstant.STRENGTHENING_STATE, "strengtheningState","增强中");
+    STRENGTHENING_STATE(DataStateCodeConstant.STRENGTHENING_STATE, "strengtheningState","增强中"),
+    /**
+     * 导入中
+     */
+    IN_THE_IMPORT_STATE(DataStateCodeConstant.IN_THE_IMPORT_STATE, "isTheImportState", "导入中");
 
     /**
      * 编码

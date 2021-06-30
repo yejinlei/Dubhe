@@ -20,8 +20,8 @@ package org.dubhe.data.rest;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
-import org.apache.shiro.authz.annotation.RequiresPermissions;
-import org.dubhe.base.DataResponseBody;
+import org.dubhe.biz.base.constant.Permissions;
+import org.dubhe.biz.base.vo.DataResponseBody;
 import org.dubhe.data.constant.Constant;
 import org.dubhe.data.domain.dto.*;
 import org.dubhe.data.domain.entity.LabelGroup;
@@ -29,13 +29,13 @@ import org.dubhe.data.domain.vo.LabelGroupQueryVO;
 import org.dubhe.data.domain.vo.LabelGroupVO;
 import org.dubhe.data.service.LabelGroupService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
-import static org.dubhe.constant.Permissions.DATA;
 
 /**
  * @description 标签组管理
@@ -51,7 +51,7 @@ public class LabelGroupController {
 
     @ApiOperation(value = "标签组创建")
     @PostMapping(value = "/labelGroup")
-    @RequiresPermissions(DATA)
+    @PreAuthorize(Permissions.DATA)
     public DataResponseBody create(@Validated @RequestBody LabelGroupCreateDTO labelGroupCreateDTO) {
         labelGroupService.creatLabelGroup(labelGroupCreateDTO);
         return new DataResponseBody();
@@ -59,14 +59,14 @@ public class LabelGroupController {
 
     @ApiOperation(value = "标签组分页列表")
     @GetMapping(value = "/labelGroup/query")
-    @RequiresPermissions(DATA)
+    @PreAuthorize(Permissions.DATA)
     public DataResponseBody query(Page page, LabelGroupQueryVO labelGroupQueryVO) {
         return new DataResponseBody(labelGroupService.listVO(page, labelGroupQueryVO));
     }
 
     @ApiOperation(value = "标签组详情")
     @GetMapping(value = "/labelGroup/{labelGroupId}")
-    @RequiresPermissions(DATA)
+    @PreAuthorize(Permissions.DATA)
     public DataResponseBody get(@PathVariable(name = "labelGroupId") Long labelGroupId) {
         LabelGroupVO labelGroupVO = labelGroupService.get(labelGroupId);
         return new DataResponseBody(labelGroupVO);
@@ -74,7 +74,7 @@ public class LabelGroupController {
 
     @ApiOperation(value = "标签组列表")
     @GetMapping(value = "/labelGroup/getList")
-    @RequiresPermissions(DATA)
+    @PreAuthorize(Permissions.DATA)
     public DataResponseBody query(@Validated LabelGroupQueryDTO labelGroupQueryDTO) {
         List<LabelGroup> list = labelGroupService.getList(labelGroupQueryDTO);
         return new DataResponseBody(list);
@@ -83,7 +83,7 @@ public class LabelGroupController {
 
     @ApiOperation(value = "标签组编辑")
     @PutMapping(value = "/labelGroup/{labelGroupId}")
-    @RequiresPermissions(DATA)
+    @PreAuthorize(Permissions.DATA)
     public DataResponseBody update(@PathVariable(name = "labelGroupId") Long labelGroupId, @Validated @RequestBody LabelGroupCreateDTO labelGroupCreateDTO) {
         labelGroupService.update(labelGroupId, labelGroupCreateDTO);
         return new DataResponseBody();
@@ -91,7 +91,7 @@ public class LabelGroupController {
 
     @ApiOperation(value = "标签组删除", notes = "删除标签组及标签组下的标签")
     @DeleteMapping(value = "/labelGroup")
-    @RequiresPermissions(DATA)
+    @PreAuthorize(Permissions.DATA)
     public DataResponseBody delete(@Validated @RequestBody LabelGroupDeleteDTO labelGroupDeleteDTO) {
         labelGroupService.delete(labelGroupDeleteDTO);
         return new DataResponseBody();
@@ -99,7 +99,7 @@ public class LabelGroupController {
 
     @ApiOperation(value = "标签组导入")
     @PostMapping(value = "/labelGroup/import")
-    @RequiresPermissions(DATA)
+    @PreAuthorize(Permissions.DATA)
     public DataResponseBody importLabelGroup(
             @RequestParam(value = "file", required = false) MultipartFile file,
             LabelGroupImportDTO labelGroupImportDTO) {
@@ -110,9 +110,19 @@ public class LabelGroupController {
 
     @ApiOperation(value = "标签组复制")
     @PostMapping(value = "/labelGroup/copy")
-    @RequiresPermissions(DATA)
+    @PreAuthorize(Permissions.DATA)
     public DataResponseBody copy(@Validated @RequestBody LabelGroupCopyDTO labelGroupCopyDTO) {
         labelGroupService.copy(labelGroupCopyDTO);
+        return new DataResponseBody();
+    }
+
+
+
+    @ApiOperation(value = "普通标签组转预置")
+    @PostMapping(value = "labelGroup/convertPreset")
+    @PreAuthorize(Permissions.DATA)
+    public DataResponseBody convertPreset(@RequestBody GroupConvertPresetDTO groupConvertPresetDTO) {
+        labelGroupService.convertPreset(groupConvertPresetDTO);
         return new DataResponseBody();
     }
 

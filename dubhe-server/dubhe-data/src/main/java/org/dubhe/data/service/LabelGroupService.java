@@ -110,4 +110,26 @@ public interface LabelGroupService {
      * @return      true: 能  false: 否
      */
     boolean isAnnotationByGroupId(Long labelGroupId);
+
+    /**
+     * 普通标签组转预置
+     *
+     * @param groupConvertPresetDTO 普通标签组转预置请求实体
+     */
+    void convertPreset(GroupConvertPresetDTO groupConvertPresetDTO);
+
+    /**
+     * 根据标签组ID查询标签组数据
+     *
+     * @param groupId 标签组ID
+     */
+    void deleteByGroupId(Long groupId);
+
+    /**
+     * 根据标签组ID修改状态
+     *
+     * @param groupId 标签组ID
+     * @param deletedFlag 删除标识
+     */
+    void updateStatusByGroupId(Long groupId, Boolean deletedFlag);
 }

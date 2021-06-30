@@ -1,5 +1,4 @@
 
-# type: subject
 # type:feat增加新功能；fix修复错误；docs修改文档；style修改样式；refactor代码重构；test增加测试模块，不涉及生产环境的代码；chore更新核心模块，包配置文件，不涉及生产环境的代码
 # subject: 一两句话简述提交原因，与下方详细描述间隔一行
 

@@ -18,7 +18,7 @@
 package org.dubhe.data.constant;
 
 import lombok.Getter;
-import org.dubhe.exception.ErrorCode;
+import org.dubhe.biz.base.exception.ErrorCode;
 
 /**
  * @description 错误类型
@@ -50,17 +50,18 @@ public enum ErrorEnum implements ErrorCode {
      * 数据集文件操作异常
      */
     NAME_DUPLICATED_ERROR(1300, "同一个数据集下不能有重名文件"),
-    DATASET_NAME_DUPLICATED_ERROR(1300, "该名称的数据集已存在"),
     DATASET_ABSENT(1301, "数据集不存在"),
     TASK_SPLIT_ABSENT(1302, "任务子集不存在，可能已被清除"),
     FILE_ABSENT(1303, "文件不存在"),
     FILE_EXIST(1304, "文件已存在"),
     VIDEO_EXIST(1305, "数据集存在视频"),
     FILE_DELETE_ERROR(1306, "文件删除失败"),
-    DATASET_TYPE_MODIFY_ERROR(1307,"数据集存在文件不可更改数据类型"),
-    DATASET_ANNOTATION_MODIFY_ERROR(1308,"非未标注状态不可更改标注类型"),
-    DATASET_PUBLIC_LIMIT_ERROR(1309,"公共数据集不可操作"),
-    TASK_ABSENT(1302, "任务不存在"),
+    DATASET_TYPE_MODIFY_ERROR(1307, "数据集存在文件不可更改数据类型"),
+    DATASET_ANNOTATION_MODIFY_ERROR(1308, "非未标注状态不可更改标注类型"),
+    DATASET_PUBLIC_LIMIT_ERROR(1309, "预置数据集不可操作"),
+    DATASET_NAME_DUPLICATED_ERROR(1310, "数据集已存在"),
+    TASK_ABSENT(1311, "任务不存在"),
+    ES_DATA_DELETE_ERROR(1312,"删除es数据错误"),
 
 
     /**
@@ -80,12 +81,12 @@ public enum ErrorEnum implements ErrorCode {
      */
     LABEL_ERROR(1600, "标签名不能为空或非系统自动标注支持的标签"),
     LABEL_NAME_EXIST(1601, "本数据集已有同名标签"),
-    LABEL_NAME_DUPLICATION(1602,"标签名称或标签ID重复，请检查"),
-    LABEL_NOT_EXISTS(1603,"标签不存在"),
-    LABEL_NAME_COLOR_NOT_NULL(1604,"JSON文件中标签名称和颜色不能为空"),
-    LABEL_PUBLIC_EORROR(1605,"不允许操作公共标签"),
-    LABEL_GROUP_ID_IS_NULL(1606,"标签组ID为null"),
-    LABEL_FORMAT_IS_ERROR(1607,"标签格式不正确"),
+    LABEL_NAME_DUPLICATION(1602, "标签名称或标签ID重复，请检查"),
+    LABEL_NOT_EXISTS(1603, "标签不存在"),
+    LABEL_NAME_COLOR_NOT_NULL(1604, "JSON文件中标签名称和颜色不能为空"),
+    LABEL_PUBLIC_EORROR(1605, "普通用户不允许操作公共标签"),
+    LABEL_GROUP_ID_IS_NULL(1606, "标签组ID为null"),
+    LABEL_FORMAT_IS_ERROR(1607, "标签格式不正确"),
 
     /**
      * 数据集操作错误
@@ -107,6 +108,10 @@ public enum ErrorEnum implements ErrorCode {
     DATASET_PUBLISH_ERROR(1714, "数据集必须是发布后才能操作!"),
     DATASET_SWITCH_VERSION_ERROR(1715, "数据集必须版本回退后才能操作!"),
     DATASET_VERSION_FILE_IS_ERROR(1716, "数据集版本文件不存在!"),
+    DATASET_ORIGINAL_FILE_IS_EMPTY(1717, "数据集无原始图片无法进行增强"),
+    DATASET_NOT_ANNOTATION(1718, "数据集暂不支持自动标注"),
+    DATASET_NOT_OPERATIONS_BASE_DATASET(1719, "禁止操作内置的数据集"),
+    DATASET_PUBLISH_REJECT(1720, "文本暂不支持多版本发布"),
 
     /**
      * 数据集版本校验
@@ -119,31 +124,33 @@ public enum ErrorEnum implements ErrorCode {
     /**
      * 标签组错误
      */
-    LABELGROUP_NAME_DUPLICATED_ERROR(1901,"标签组名已存在"),
-    LABELGROUP_PUBLIC_ERROR(1902,"不允许操作公共标签组"),
-    LABELGROUP_IN_USE_STATUS(1903,"当前标签组内标签正在使用，无法操作"),
-    LABELGROUP_JSON_FILE_ERROR(1904,"请上传json格式文件"),
-    LABELGROUP_JSON_FILE_SIZE_ERROR(1905,"文件大小不能超过5M"),
-    LABELGROUP_JSON_FILE_FORMAT_ERROR(1906,"请输入正确的JSON内容"),
-    LABELGROUP_DOES_NOT_EXIST(1907,"标签组不存在"),
-    LABELGROUP_FILE_NAME_NOT_EXIST(1908,"请输入文件名称"),
-    LABELGROUP_LABELG_ID_ERROR(1909,"标签ID异常"),
-    LABELGROUP_OPERATE_LABEL_ID_ERROR(1910,"不允许操作公共标签组中的标签"),
-    LABELGROUP_LABEL_NAME_ERROR(1911,"请输入正确预置标签组标签"),
-    LABELGROUP_LABEL_GROUP_EDIT_ERROR(1912,"标签组下标签不许修改"),
-    LABELGROUP_LABEL_GROUP_QUOTE_DEL_ERROR(1913,"标签组已被数据集引用,无法删除!"),
-    LABEL_NAME_REPEAT(1914,"标签名称已存在!"),
-    LABEL_PREPARE_IS_TXT(1915,"请选择文本预制标签进行自动标注!"),
+    LABELGROUP_NAME_DUPLICATED_ERROR(1901, "标签组名已存在"),
+    LABELGROUP_PUBLIC_ERROR(1902, "不允许操作公共标签组"),
+    LABELGROUP_IN_USE_STATUS(1903, "当前标签组内标签正在使用，无法操作"),
+    LABELGROUP_JSON_FILE_ERROR(1904, "请上传json格式文件"),
+    LABELGROUP_JSON_FILE_SIZE_ERROR(1905, "文件大小不能超过5M"),
+    LABELGROUP_JSON_FILE_FORMAT_ERROR(1906, "请输入正确的JSON内容"),
+    LABELGROUP_DOES_NOT_EXIST(1907, "标签组不存在"),
+    LABELGROUP_FILE_NAME_NOT_EXIST(1908, "请输入文件名称"),
+    LABELGROUP_LABELG_ID_ERROR(1909, "标签ID异常"),
+    LABELGROUP_OPERATE_LABEL_ID_ERROR(1910, "不允许操作公共标签组中的标签"),
+    LABELGROUP_LABEL_NAME_ERROR(1911, "请输入正确预置标签组标签"),
+    LABELGROUP_LABEL_GROUP_EDIT_ERROR(1912, "标签组下标签不许修改"),
+    LABELGROUP_LABEL_GROUP_QUOTE_DEL_ERROR(1913, "标签组已被数据集引用,无法删除!"),
+    LABEL_NAME_REPEAT(1914, "标签名称已存在!"),
+    LABEL_PREPARE_IS_TXT(1915, "请选择文本预制标签进行自动标注!"),
+    LABEL_AUTHORITY_ERROR(1915, "无权限操作当前标签"),
+    LABEL_QUOTE_DEL_ERROR(1913, "标签已被引用,无法删除!"),
 
     /**
      * 医学数据集错误
      */
-    MEDICINE_AUTO_DATASET_ERROR(2001,"当前医学数据集不可自动标注"),
-    MEDICINE_MEDICAL_ALREADY_EXISTS(2002,"当前类型的医学数据集已存在"),
+    MEDICINE_AUTO_DATASET_ERROR(2001, "当前医学数据集不可自动标注"),
+    MEDICINE_MEDICAL_ALREADY_EXISTS(2002, "当前类型的医学数据集已存在"),
     DATAMEDICINE_ABSENT(2003, "医学数据集不存在"),
-    DATAMEDICINE_AUTOMATIC(2004,"数据集正在自动标注中,请稍等!"),
-    MEDICINE_NAME_ERROR(2005,"当前名称已存在")
-    ;
+    DATAMEDICINE_AUTOMATIC(2004, "数据集正在自动标注中,请稍等!"),
+    MEDICINE_NAME_ERROR(2005, "当前名称已存在"),
+    MEDICINE_MEDICAL_ALREADY_EXISTS_RESTORE(2006, "当前类型的医学数据集已存在,请确认后在进行还原");
 
     ErrorEnum(int code, String msg) {
         this.code = code;

@@ -20,17 +20,18 @@ package org.dubhe.data.dao;
 import com.baomidou.mybatisplus.core.conditions.Wrapper;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import org.apache.ibatis.annotations.Delete;
 import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Select;
 import org.apache.ibatis.annotations.Update;
-import org.dubhe.annotation.DataPermission;
+import org.dubhe.biz.base.annotation.DataPermission;
 import org.dubhe.data.domain.entity.Dataset;
 
 /**
  * @description 数据集管理 Mapper 接口
  * @date 2020-04-10
  */
-@DataPermission(ignoresMethod = {"insert","selectById","selectCountByPublic"})
+@DataPermission(ignoresMethod = {"insert", "selectById", "selectCountByPublic"})
 public interface DatasetMapper extends BaseMapper<Dataset> {
 
     /**
@@ -68,8 +69,8 @@ public interface DatasetMapper extends BaseMapper<Dataset> {
      * @param type 数据集类型
      * @return int  公共数据集的数量
      */
-    @Select("SELECT count(1) FROM data_dataset where type = #{type}")
-    int selectCountByPublic(@Param("type") Integer type);
+    @Select("SELECT count(1) FROM data_dataset where type = #{type} and deleted = #{deleted}")
+    int selectCountByPublic(@Param("type") Integer type,@Param("deleted") Integer deleted);
 
 
     /**
@@ -79,5 +80,24 @@ public interface DatasetMapper extends BaseMapper<Dataset> {
      * @return int 数量
      */
     @Select("SELECT count(1) FROM data_dataset where label_group_id = #{labelGroupId}")
-    int getCountByLabelGroupId(@Param("labelGroupId")Long labelGroupId);
+    int getCountByLabelGroupId(@Param("labelGroupId") Long labelGroupId);
+
+    /**
+     * 数据集数据删除
+     *
+     * @param id            数据集id
+     * @param deleteFlag    删除标识
+     * @return int 数量
+     */
+    @Update("update data_dataset set deleted = #{deleteFlag} where id = #{id}")
+    int updateStatusById(@Param("id") Long id, @Param("deleteFlag") boolean deleteFlag);
+
+    /**
+     * 根据数据集ID删除数据信息
+     *
+     * @param datasetId 数据集ID
+     */
+    @Delete("delete from data_dataset where  id = #{datasetId}")
+    void deleteInfoById(@Param("datasetId") Long datasetId);
+
 }

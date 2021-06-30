@@ -17,9 +17,9 @@
 
 package org.dubhe.data.service.store;
 
-import org.dubhe.enums.LogEnum;
-import org.dubhe.utils.LogUtil;
-import org.dubhe.utils.MinioUtil;
+import org.dubhe.biz.file.utils.MinioUtil;
+import org.dubhe.biz.log.enums.LogEnum;
+import org.dubhe.biz.log.utils.LogUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;

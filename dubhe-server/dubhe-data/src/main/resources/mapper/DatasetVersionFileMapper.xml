@@ -23,6 +23,15 @@
         </foreach>
     </insert>
 
+    <insert id="insertBatch" parameterType="java.util.List">
+        insert into data_dataset_version_file (id,dataset_id,file_id,annotation_status,status,version_name,file_name)
+        values
+        <foreach collection="list" item="temp" separator=",">
+            (#{temp.id},#{temp.datasetId},#{temp.fileId},#{temp.annotationStatus},#{temp.status},#{temp.versionName},#{temp.fileName})
+        </foreach>
+    </insert>
+
+
     <select id="getNeedEnhanceFilesByDatasetIdAndVersionName"
             resultType="org.dubhe.data.domain.entity.DatasetVersionFile">
         select ddvf.* from data_dataset_version_file ddvf left join data_file df on ddvf.file_id = df.id
@@ -30,6 +39,7 @@
         <if test="versionName != null">
             and ddvf.version_name = #{versionName}
         </if>
+        order by ddvf.file_id
     </select>
 
     <select id="getEnhanceFileList" resultType="org.dubhe.data.domain.entity.File">
@@ -124,7 +134,7 @@
         </if>
     </update>
 
-    <update id="deleteShip">
+    <update id="updateStatusByFileIdAndDatasetId">
         update data_dataset_version_file
         set
         status = 1,changed = 1
@@ -137,62 +147,36 @@
         </if>
     </update>
 
-    <select id="findStatusByDatasetIdAndVersionName" resultType="org.dubhe.data.domain.entity.DatasetVersionFile">
-        select * from data_dataset_version_file
-        where dataset_id = #{datasetId}
-        <if test="versionName != null">
-            and version_name = #{versionName}
-        </if>
-    </select>
 
-    <select id="getIdByDatasetIdAndAnnotationStatus"  resultType="java.lang.Integer">
-        select ddvf.id from data_dataset_version_file ddvf
-                                left join data_file_annotation dfa on ddvf.id = dfa.version_file_id
-        where ddvf.dataset_id=#{datasetId} and ddvf.status in (0,2) and ddvf.annotation_status in
+    <select id="getIdByDatasetIdAndAnnotationStatus" resultType="org.dubhe.data.domain.dto.DatasetVersionFileDTO">
+        select ddvf.id,ddvf.dataset_id,ddvf.file_id,ddvf.status,ddvf.annotation_status,ddvf.backup_status
+        ,ddvf.changed,ddvf.file_name,ddvf.version_name  from data_dataset_version_file ddvf
+        where ddvf.dataset_id=#{datasetId}  and ddvf.status in (0,2) and ddvf.annotation_status in
         <foreach item="status" collection="status" separator="," open="(" close=")">
             #{status}
         </foreach>
         <if test="versionName != null">
             and ddvf.version_name = #{versionName}
         </if>
-        <if test="labelId != null">
-            and dfa.label_id = #{labelId}
+        <if test="dataFileAnnotations != null and dataFileAnnotations.size() > 0">
+            and ddvf.id in
+            <foreach item="dataFileAnnotations" collection="dataFileAnnotations" separator="," open="(" close=")">
+                #{dataFileAnnotations.versionFileId}
+            </foreach>
         </if>
         <choose>
             <when test="orderByName=='name'">
                 order by ddvf.file_name
             </when>
-            <when test="orderByName=='prediction'">
-                order by dfa.prediction ${order}
-            </when>
             <otherwise>
-                order by ddvf.id desc
+                order by ddvf.id
             </otherwise>
         </choose>
+        <if test="!dataFileAnnotations != null and !dataFileAnnotations.size() > 0">
             limit #{offset}, #{limit}
+        </if>
     </select>
 
-    <select id="getListByDatasetIdAndAnnotationStatus" resultType="org.dubhe.data.domain.dto.DatasetVersionFileDTO">
-
-        select ddvf.dataset_id,ddvf.file_id,ddvf.status,ddvf.annotation_status,ddvf.backup_status
-        ,ddvf.changed,ddvf.file_name,dfa.label_id,dfa.prediction from data_dataset_version_file ddvf
-        left join data_file_annotation dfa on ddvf.id = dfa.version_file_id
-        where ddvf.dataset_id=#{datasetId} and ddvf.status in (0,2) and ddvf.id in
-        <foreach item="id" collection="versionFileIdList" separator="," open="(" close=")">
-            #{id}
-        </foreach>
-        <choose>
-            <when test="orderByName=='name'">
-                order by ddvf.file_name
-            </when>
-            <when test="orderByName=='prediction'">
-                order by dfa.prediction ${order}
-            </when>
-            <otherwise>
-                order by ddvf.id desc
-            </otherwise>
-        </choose>
-    </select>
 
 
     <update id="updateByFileIdAndCurrentVersionName">
@@ -219,4 +203,95 @@
             </foreach>
     </select>
 
+    <select id="selectFileListTotalCount" resultType="int">
+        select count(1) from data_dataset_version_file ddvf
+        where ddvf.dataset_id=#{datasetId} and  ddvf.status in (0,2)
+          and ddvf.annotation_status in
+          <foreach item="status" collection="status" separator="," open="(" close=")">
+              #{status}
+         </foreach>
+        <if test="versionName != null">
+            and ddvf.version_name = #{versionName}
+        </if>
+        <if test="versionId != null and versionId.size()> 0">
+            and ddvf.id in
+            <foreach item="versionId" collection="versionId" separator="," open="(" close=")">
+                #{versionId}
+            </foreach>
+        </if>
+    </select>
+
+    <select id="findByDatasetIdAndVersionNameAndStatus" resultType="java.lang.Long">
+        select ddvf.id from data_dataset_version_file ddvf left join
+        data_file_annotation dfa on ddvf.id = dfa.version_file_id
+        where ddvf.dataset_id = #{datasetId}
+        and dfa.dataset_id = #{datasetId}
+        and ddvf.version_name
+        <choose>
+            <when test = "versionName == null">
+                is
+            </when>
+            <otherwise>
+                =
+            </otherwise>
+        </choose>
+        #{versionName}
+        and dfa.label_id in
+        <foreach item="labelId" collection="labelIds" separator="," open="(" close=")">
+            #{labelId}
+        </foreach>
+        and ddvf.status in (0,2)
+        and dfa.status != 1
+    </select>
+
+    <select id="getOffset" resultType="java.lang.Integer">
+        select count(1) from (
+        select ddvf.file_id from data_dataset_version_file ddvf
+
+        <if test="labelIds != null and labelIds.length &gt;= 0">
+            left join data_file_annotation dfa on ddvf.id = dfa.version_file_id
+        </if>
+
+        where ddvf.dataset_id = #{datasetId}
+
+        <if test="labelIds != null and labelIds.length &gt;= 0">
+            and dfa.dataset_id = #{datasetId}
+        </if>
+
+        and ddvf.id &lt;= #{versionFileId}
+        and ddvf.status in (0,2)
+        <if test="labelIds != null and labelIds.length &gt;= 0">
+        and dfa.status != 1
+        </if>
+        <if test="versionName != null">
+            and ddvf.version_name = #{versionName}
+        </if>
+        <if test="labelIds != null and labelIds.length &gt;= 0">
+            and dfa.label_id in
+            <foreach collection="labelIds" item="labelId" separator="," open="(" close=")">
+                #{labelId}
+            </foreach>
+        </if>
+        <if test="annotationStatus != null">
+            and ddvf.annotation_status in
+            <foreach collection="annotationStatus" item="status" separator="," open="(" close=")">
+                #{status}
+            </foreach>
+        </if>
+        group by ddvf.file_id
+        ) a
+    </select>
+
+    <select id="getVersionFileIdsByFileIds" resultType="java.lang.Long">
+        select id from data_dataset_version_file where dataset_id = #{datasetId}
+        and file_id in
+        <foreach collection="fileIds" item="fileId" separator="," open="(" close=")">
+            #{fileId}
+        </foreach>
+    </select>
+
+    <select id="getVersionFileIdByFileName" resultType="java.lang.Long">
+        select id from data_dataset_version_file where file_name = #{fileName} and version_name = #{versionName}
+        and dataset_id = #{datasetId}
+    </select>
 </mapper>

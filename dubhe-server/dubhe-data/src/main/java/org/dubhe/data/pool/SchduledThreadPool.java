@@ -17,7 +17,7 @@
 
 package org.dubhe.data.pool;
 
-import org.dubhe.base.MagicNumConstant;
+import org.dubhe.biz.base.constant.MagicNumConstant;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.scheduling.annotation.EnableAsync;

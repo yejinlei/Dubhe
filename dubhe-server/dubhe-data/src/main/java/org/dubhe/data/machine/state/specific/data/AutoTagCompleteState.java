@@ -16,20 +16,20 @@
  */
 package org.dubhe.data.machine.state.specific.data;
 
-import org.dubhe.constant.ErrorMessageConstant;
+import org.dubhe.biz.base.exception.BusinessException;
+import org.dubhe.biz.log.enums.LogEnum;
+import org.dubhe.biz.log.utils.LogUtil;
+import org.dubhe.biz.statemachine.exception.StateMachineException;
 import org.dubhe.data.constant.DatatypeEnum;
 import org.dubhe.data.constant.ErrorEnum;
 import org.dubhe.data.dao.DatasetMapper;
 import org.dubhe.data.dao.DatasetVersionFileMapper;
 import org.dubhe.data.domain.entity.Dataset;
+import org.dubhe.data.machine.constant.ErrorMessageConstant;
 import org.dubhe.data.machine.enums.DataStateEnum;
 import org.dubhe.data.machine.state.AbstractDataState;
 import org.dubhe.data.machine.statemachine.DataStateMachine;
-import org.dubhe.data.machine.utils.identify.service.StateIdentify;
-import org.dubhe.enums.LogEnum;
-import org.dubhe.exception.BusinessException;
-import org.dubhe.exception.StateMachineException;
-import org.dubhe.utils.LogUtil;
+import org.dubhe.data.machine.utils.StateIdentifyUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
@@ -52,7 +52,7 @@ public class AutoTagCompleteState extends AbstractDataState {
     private DatasetMapper datasetMapper;
 
     @Autowired
-    private StateIdentify stateIdentify;
+    private StateIdentifyUtil stateIdentify;
 
     /**
      * 自动标注完成   自动标注完成-->调用增强算法-->增强中
@@ -141,28 +141,23 @@ public class AutoTagCompleteState extends AbstractDataState {
         DataStateEnum status = stateIdentify.getStatus(dataset.getId(),dataset.getCurrentVersionName(),true);
         switch (status){
             case AUTO_TAG_COMPLETE_STATE:
-                return;
+                break;
             case ANNOTATION_COMPLETE_STATE:
                 //标注完成
-                datasetMapper.updateStatus(dataset.getId(), DataStateEnum.ANNOTATION_COMPLETE_STATE.getCode());
-                dataStateMachine.setMemoryDataState(dataStateMachine.getAnnotationCompleteState());
-                LogUtil.debug(LogEnum.STATE_MACHINE, " 【自动标注完成】 执行事件后内存状态机的切换： {}", dataStateMachine.getMemoryDataState());
-                return;
+                dataStateMachine.doStateChange(dataset.getId(),DataStateEnum.ANNOTATION_COMPLETE_STATE.getCode(),dataStateMachine.getAnnotationCompleteState());
+                break;
             case NOT_ANNOTATION_STATE:
                 //未标注
-                datasetMapper.updateStatus(dataset.getId(), DataStateEnum.NOT_ANNOTATION_STATE.getCode());
-                dataStateMachine.setMemoryDataState(dataStateMachine.getNotAnnotationState());
-                LogUtil.debug(LogEnum.STATE_MACHINE, " 【自动标注完成】 执行事件后内存状态机的切换： {}", dataStateMachine.getMemoryDataState());
-                return;
+                dataStateMachine.doStateChange(dataset.getId(),DataStateEnum.NOT_ANNOTATION_STATE.getCode(),dataStateMachine.getNotAnnotationState());
+                break;
             case MANUAL_ANNOTATION_STATE:
                 //手动标注中
-                datasetMapper.updateStatus(dataset.getId(), DataStateEnum.MANUAL_ANNOTATION_STATE.getCode());
-                dataStateMachine.setMemoryDataState(dataStateMachine.getManualAnnotationState());
-                LogUtil.debug(LogEnum.STATE_MACHINE, " 【自动标注完成】 执行事件后内存状态机的切换： {}", dataStateMachine.getMemoryDataState());
-                return;
+                dataStateMachine.doStateChange(dataset.getId(),DataStateEnum.MANUAL_ANNOTATION_STATE.getCode(),dataStateMachine.getManualAnnotationState());
+                break;
             default:
                 throw new StateMachineException(ErrorMessageConstant.DATASET_CHANGE_ERR_MESSAGE);
         }
+        LogUtil.debug(LogEnum.STATE_MACHINE, " 【自动标注完成】 执行事件后内存状态机的切换： {}", dataStateMachine.getMemoryDataState());
     }
 
     /**
@@ -179,4 +174,66 @@ public class AutoTagCompleteState extends AbstractDataState {
         LogUtil.debug(LogEnum.STATE_MACHINE, " 【自动标注完成】 执行事件后内存状态机的切换： {}", dataStateMachine.getMemoryDataState());
     }
 
+    /**
+     * 删除文件事件
+     *
+     * @param dataset 数据集详情
+     */
+    @Override
+    public void deleteFilesEvent(Dataset dataset) {
+        LogUtil.debug(LogEnum.STATE_MACHINE, " 【自动标注完成】 执行事件前内存中状态机的状态 :{} ", dataStateMachine.getMemoryDataState());
+        LogUtil.debug(LogEnum.STATE_MACHINE, " 接受参数： {} ", dataset);
+        DataStateEnum status = stateIdentify.getStatus(dataset.getId(),dataset.getCurrentVersionName(),true);
+        switch (status){
+            case AUTO_TAG_COMPLETE_STATE:
+                //自动标注完成
+                break;
+            case ANNOTATION_COMPLETE_STATE:
+                //标注完成
+                dataStateMachine.doStateChange(dataset.getId(),DataStateEnum.ANNOTATION_COMPLETE_STATE.getCode(),dataStateMachine.getAnnotationCompleteState());
+                break;
+            case NOT_ANNOTATION_STATE:
+                //未标注
+                dataStateMachine.doStateChange(dataset.getId(),DataStateEnum.NOT_ANNOTATION_STATE.getCode(),dataStateMachine.getNotAnnotationState());
+                break;
+            default:
+                throw new StateMachineException(ErrorMessageConstant.DATASET_CHANGE_ERR_MESSAGE);
+        }
+        LogUtil.debug(LogEnum.STATE_MACHINE, " 【自动标注完成】 执行事件后内存状态机的切换： {}", dataStateMachine.getMemoryDataState());
+    }
+
+    /**
+     * 上传文件事件
+     *
+     * @param dataset 数据集详情
+     */
+    @Override
+    public void uploadFilesEvent(Dataset dataset) {
+        LogUtil.debug(LogEnum.STATE_MACHINE, " 【自动标注完成】 执行事件前内存中状态机的状态 :{} ", dataStateMachine.getMemoryDataState());
+        LogUtil.debug(LogEnum.STATE_MACHINE, " 接受参数： {} ", dataset);
+        DataStateEnum status = stateIdentify.getStatus(dataset.getId(),dataset.getCurrentVersionName(),true);
+        switch (status){
+            case MANUAL_ANNOTATION_STATE:
+                //手动标注中
+                dataStateMachine.doStateChange(dataset.getId(),DataStateEnum.MANUAL_ANNOTATION_STATE.getCode(),dataStateMachine.getManualAnnotationState());
+                break;
+            default:
+                throw new StateMachineException(ErrorMessageConstant.DATASET_CHANGE_ERR_MESSAGE);
+        }
+        LogUtil.debug(LogEnum.STATE_MACHINE, " 【自动标注完成】 执行事件后内存状态机的切换： {}", dataStateMachine.getMemoryDataState());
+    }
+
+    /**
+     * 多视频导入事件  自动标注完成 --> 导入视频 --> 采样中
+     *
+     * @param primaryKeyId 数据集详情
+     */
+    @Override
+    public void sampledEvent(Integer primaryKeyId) {
+        LogUtil.debug(LogEnum.STATE_MACHINE, " 【未标注】 执行事件前内存中状态机的状态 :{} ", dataStateMachine.getMemoryDataState());
+        LogUtil.debug(LogEnum.STATE_MACHINE, " 接受参数： {} ", primaryKeyId);
+        datasetMapper.updateStatus(Long.valueOf(primaryKeyId), DataStateEnum.SAMPLING_STATE.getCode());
+        dataStateMachine.setMemoryDataState(dataStateMachine.getSamplingState());
+        LogUtil.debug(LogEnum.STATE_MACHINE, " 【未标注】 执行事件后内存状态机的切换： {}", dataStateMachine.getMemoryDataState());
+    }
 }

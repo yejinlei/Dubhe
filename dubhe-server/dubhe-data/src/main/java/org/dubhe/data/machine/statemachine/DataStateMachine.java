@@ -17,15 +17,15 @@
 package org.dubhe.data.machine.statemachine;
 
 import lombok.Data;
-import org.dubhe.constant.ErrorMessageConstant;
+import org.dubhe.biz.base.utils.SpringContextHolder;
+import org.dubhe.biz.statemachine.exception.StateMachineException;
 import org.dubhe.data.dao.DatasetMapper;
 import org.dubhe.data.domain.entity.Dataset;
+import org.dubhe.data.machine.constant.ErrorMessageConstant;
 import org.dubhe.data.machine.enums.DataStateEnum;
 import org.dubhe.data.machine.state.AbstractDataState;
 import org.dubhe.data.machine.state.specific.data.*;
-import org.dubhe.data.machine.utils.identify.service.StateIdentify;
-import org.dubhe.exception.StateMachineException;
-import org.dubhe.utils.SpringContextHolder;
+import org.dubhe.data.machine.utils.StateIdentifyUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -111,6 +111,12 @@ public class DataStateMachine extends AbstractDataState implements Serializable 
     @Autowired
     private TargetFollowState targetFollowState;
 
+    /**
+     * 导入中
+     */
+    @Autowired
+    private IsTheImportState importState;
+
 
     @Autowired
     private DatasetMapper datasetMapper;
@@ -122,7 +128,18 @@ public class DataStateMachine extends AbstractDataState implements Serializable 
 
 
     @Autowired
-    private StateIdentify stateIdentify;
+    private StateIdentifyUtil stateIdentify;
+
+    /**
+     * 改变数据集的状态
+     * @param datasetId         数据集ID
+     * @param status            数据集状态
+     * @param dataStateMachine  内存中的状态
+     */
+    public void doStateChange(Long datasetId,Integer status,AbstractDataState dataStateMachine){
+        datasetMapper.updateStatus(datasetId, status);
+        this.memoryDataState=dataStateMachine;
+    }
 
     /**
      * 初始化状态机的状态
@@ -244,7 +261,7 @@ public class DataStateMachine extends AbstractDataState implements Serializable 
     @Override
     public void sampledEvent(Integer primaryKeyId) {
         initMemoryDataState(primaryKeyId);
-        if (memoryDataState != notSampledState) {
+        if (memoryDataState == samplingState) {
             throw new StateMachineException(ErrorMessageConstant.DATASET_CHANGE_ERR_MESSAGE);
         }
         memoryDataState.sampledEvent(primaryKeyId);
@@ -377,13 +394,12 @@ public class DataStateMachine extends AbstractDataState implements Serializable 
      */
     @Override
     public void finishManualEvent(Dataset dataset) {
-        //当前实时状态不是标注完成时不作处理
         initMemoryDataState(dataset.getId().intValue());
         if (
                 memoryDataState != notAnnotationState &&
                         memoryDataState != manualAnnotationState &&
                         memoryDataState != autoTagCompleteState &&
-                        memoryDataState != targetCompleteState&&
+                        memoryDataState != targetCompleteState &&
                         memoryDataState != annotationCompleteState
         ) {
             throw new StateMachineException(ErrorMessageConstant.DATASET_CHANGE_ERR_MESSAGE);
@@ -502,6 +518,87 @@ public class DataStateMachine extends AbstractDataState implements Serializable 
             throw new StateMachineException(ErrorMessageConstant.DATASET_CHANGE_ERR_MESSAGE);
         }
         memoryDataState.deletePictrueNotMarkedEvent(primaryKeyId);
+    }
+
+    /**
+     * 删除文件事件
+     *
+     * @param dataset 数据集详情
+     */
+    @Override
+    public void deleteFilesEvent(Dataset dataset) {
+        initMemoryDataState(dataset.getId().intValue());
+        if (memoryDataState==notAnnotationState){
+            return;
+        }
+        if (memoryDataState != manualAnnotationState &&
+                memoryDataState != autoTagCompleteState &&
+                memoryDataState != annotationCompleteState
+        ) {
+            throw new StateMachineException(ErrorMessageConstant.DATASET_CHANGE_ERR_MESSAGE);
+        }
+        memoryDataState.deleteFilesEvent(dataset);
+    }
+
+    /**
+     * 上传文件事件
+     *
+     * @param dataset 数据集详情
+     */
+    @Override
+    public void uploadFilesEvent(Dataset dataset) {
+        initMemoryDataState(dataset.getId().intValue());
+        if (memoryDataState == notAnnotationState ||
+                memoryDataState == manualAnnotationState) {
+            return;
+        }
+        if (memoryDataState != autoTagCompleteState &&
+                memoryDataState != annotationCompleteState) {
+            throw new StateMachineException(ErrorMessageConstant.DATASET_CHANGE_ERR_MESSAGE);
+        }
+        memoryDataState.uploadFilesEvent(dataset);
+    }
+
+    /**
+     * 增强完成事件
+     *
+     * @param dataset 数据集详情
+     */
+    @Override
+    public void enhanceFinishEvent(Dataset dataset){
+        initMemoryDataState(dataset.getId().intValue());
+        if (memoryDataState != strengtheningState) {
+            throw new StateMachineException(ErrorMessageConstant.DATASET_CHANGE_ERR_MESSAGE);
+        }
+        memoryDataState.enhanceFinishEvent(dataset);
+    }
+
+    /**
+     * 表格导入事件 未标注 --> 导入表格 --> 导入中
+     *
+     * @param primaryKeyId 业务ID
+     */
+    @Override
+    public void tableImportEvent(Integer primaryKeyId) {
+        initMemoryDataState(primaryKeyId);
+        if (memoryDataState == importState) {
+            throw new StateMachineException(ErrorMessageConstant.DATASET_CHANGE_ERR_MESSAGE);
+        }
+        memoryDataState.tableImportEvent(primaryKeyId);
+    }
+
+    /**
+     * 表格导入完成时间 导入中 --> 解析表格 --> 未标注
+     *
+     * @param dataset 数据集详情
+     */
+    @Override
+    public void tableImportFinishEvent(Dataset dataset) {
+        initMemoryDataState(dataset.getId().intValue());
+        if (memoryDataState != importState) {
+            throw new StateMachineException(ErrorMessageConstant.DATASET_CHANGE_ERR_MESSAGE);
+        }
+        memoryDataState.tableImportFinishEvent(dataset);
     }
 
 }

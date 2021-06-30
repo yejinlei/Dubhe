@@ -17,14 +17,12 @@
 
 package org.dubhe.data.domain.entity;
 
-import com.baomidou.mybatisplus.annotation.IdType;
-import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 import lombok.*;
 import lombok.experimental.Accessors;
-import org.dubhe.base.BaseEntity;
+import org.dubhe.biz.db.entity.BaseEntity;
 
 import java.util.Objects;
 
@@ -45,7 +43,6 @@ public class File extends BaseEntity {
 
     private static final long serialVersionUID = 1L;
 
-    @TableId(type = IdType.AUTO)
     private Long id;
 
     @ApiModelProperty(value = "文件名")
@@ -80,6 +77,12 @@ public class File extends BaseEntity {
 
     @ApiModelProperty(value = "资源拥有人id")
     private Long originUserId;
+
+    @ApiModelProperty(value = "是否上传至es")
+    private Integer esTransport;
+
+    @ApiModelProperty(value = "导入表格式，是否排除头")
+    private Boolean excludeHeader;
 
     @Override
     public boolean equals(Object o) {

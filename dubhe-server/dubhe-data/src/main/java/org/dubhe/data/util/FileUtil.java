@@ -17,15 +17,17 @@
 
 package org.dubhe.data.util;
 
-import org.dubhe.constant.NumberConstant;
+
+import org.dubhe.biz.base.constant.NumberConstant;
+import org.dubhe.biz.base.constant.SymbolConstant;
+import org.dubhe.biz.base.exception.BusinessException;
+import org.dubhe.biz.base.utils.StringUtils;
+import org.dubhe.biz.log.enums.LogEnum;
+import org.dubhe.biz.log.utils.LogUtil;
 import org.dubhe.data.constant.Constant;
 import org.dubhe.data.constant.ErrorEnum;
 import org.dubhe.data.domain.entity.Dataset;
 import org.dubhe.data.service.DatasetService;
-import org.dubhe.enums.LogEnum;
-import org.dubhe.exception.BusinessException;
-import org.dubhe.utils.LogUtil;
-import org.dubhe.utils.StringUtils;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
@@ -49,7 +51,7 @@ public class FileUtil {
     @Lazy
     private DatasetService datasetService;
 
-    @Value("${k8s.nfs-root-path}")
+    @Value("${storage.file-store-root-path}")
     private String nfs;
 
     @Value("${minio.bucketName}")
@@ -221,5 +223,48 @@ public class FileUtil {
         }
 
     }
+
+    /**
+     * 拼接文件名称和数据集ID
+     * @param datasetId 数据集ID
+     * @param fileName  文件名称
+     * @return  拼接后名称
+     */
+    public static String spliceFileNameAndDatasetId(Long datasetId, String fileName){
+        return new StringBuffer(fileName).append(SymbolConstant.HYPHEN).append(datasetId.toString()).toString();
+    }
+
+    /**
+     * 拼接文件名称和数据集版本
+     * @param version 数据集版本号
+     * @param fileName  文件名称
+     * @return  拼接后名称
+     */
+    public static String spliceFileNameAndVersion(String version, String fileName){
+        return new StringBuffer(fileName).append(SymbolConstant.HYPHEN).append(version).toString();
+    }
+
+
+    /**
+     * 截取文件名称和数据集ID
+     * @param datasetId 数据集ID
+     * @param fileName  文件名称
+     * @return  截取后名称
+     */
+    public static String interceptFileNameAndDatasetId(Long datasetId, String fileName){
+        return StringUtils.substringBeforeLast(fileName, SymbolConstant.HYPHEN + datasetId);
+    }
+
+    /**
+     * 截取文件名称和数据集版本号
+     * @param version 数据集版本
+     * @param fileName  文件名称
+     * @return  截取后名称
+     */
+    public static String interceptFileNameAndVersion(String version, String fileName){
+        return StringUtils.substringBeforeLast(fileName, SymbolConstant.HYPHEN + version);
+    }
+
+
 
 }

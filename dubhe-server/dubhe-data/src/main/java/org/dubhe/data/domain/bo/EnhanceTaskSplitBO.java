@@ -19,13 +19,13 @@ package org.dubhe.data.domain.bo;
 
 import cn.hutool.core.util.ObjectUtil;
 import lombok.Data;
-import org.dubhe.base.MagicNumConstant;
-import org.dubhe.constant.NumberConstant;
+import org.dubhe.biz.base.constant.MagicNumConstant;
+import org.dubhe.biz.base.constant.NumberConstant;
+import org.dubhe.cloud.authconfig.utils.JwtUtils;
 import org.dubhe.data.constant.Constant;
 import org.dubhe.data.domain.entity.DatasetVersionFile;
 import org.dubhe.data.domain.entity.File;
 import org.dubhe.data.util.FileUtil;
-import org.dubhe.utils.JwtUtils;
 
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -89,6 +89,11 @@ public class EnhanceTaskSplitBO implements Serializable {
      */
     private Long sendTime;
 
+    /**
+     * 任务ID
+     */
+    private String reTaskId;
+
     public EnhanceTaskSplitBO() {
     }
 
@@ -112,8 +117,8 @@ public class EnhanceTaskSplitBO implements Serializable {
                     file.getHeight()));
         });
         this.fileDtos = fileDtos;
-        if (ObjectUtil.isNotNull(JwtUtils.getCurrentUserDto())) {
-            this.setUserId(JwtUtils.getCurrentUserDto().getId());
+        if (ObjectUtil.isNotNull(JwtUtils.getCurUserId())) {
+            this.setUserId(JwtUtils.getCurUserId());
         }
     }
 

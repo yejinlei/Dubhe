@@ -16,12 +16,10 @@
  */
 package org.dubhe.data.machine.state;
 
-import org.dubhe.data.domain.dto.AnnotationInfoCreateDTO;
 import org.dubhe.data.domain.entity.Dataset;
 import org.dubhe.data.domain.entity.DatasetVersionFile;
 
 import java.util.HashSet;
-import java.util.Map;
 
 /**
  * @description 文件抽象类

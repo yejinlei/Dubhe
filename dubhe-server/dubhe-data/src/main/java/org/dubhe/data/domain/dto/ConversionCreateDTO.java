@@ -28,6 +28,9 @@ import java.io.Serializable;
 @Data
 public class ConversionCreateDTO implements Serializable {
 
+    /**
+     * 消息内容
+     */
     private String msg;
 
 }

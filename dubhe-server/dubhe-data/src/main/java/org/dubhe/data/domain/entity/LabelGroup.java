@@ -22,7 +22,7 @@ import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 import lombok.*;
 import lombok.experimental.Accessors;
-import org.dubhe.base.BaseEntity;
+import org.dubhe.biz.db.entity.BaseEntity;
 import org.dubhe.data.domain.dto.LabelGroupCreateDTO;
 
 import java.io.Serializable;
@@ -39,7 +39,7 @@ import java.io.Serializable;
 @AllArgsConstructor
 @TableName("data_label_group")
 @ApiModel(value = "LabelGroup对象", description = "标签组信息")
-public class LabelGroup extends  BaseEntity  implements Serializable {
+public class LabelGroup extends BaseEntity implements Serializable {
 
     private static final long serialVersionUID = 1L;
 

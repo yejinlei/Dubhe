@@ -19,15 +19,19 @@ package org.dubhe.data.service;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import org.dubhe.biz.file.dto.FilePageDTO;
 import org.dubhe.data.domain.bo.TaskSplitBO;
+import org.dubhe.data.domain.dto.DatasetCsvImportDTO;
 import org.dubhe.data.domain.dto.FileCreateDTO;
+import org.dubhe.biz.file.dto.FileDTO;
 import org.dubhe.data.domain.entity.Dataset;
 import org.dubhe.data.domain.entity.File;
 import org.dubhe.data.domain.entity.Task;
 import org.dubhe.data.domain.vo.FileQueryCriteriaVO;
 import org.dubhe.data.domain.vo.FileVO;
-import org.dubhe.data.domain.vo.ProgressVO;
+import org.dubhe.biz.base.vo.ProgressVO;
 import org.dubhe.data.machine.enums.FileStateEnum;
+import org.springframework.web.bind.annotation.RequestBody;
 
 import java.util.Collection;
 import java.util.List;
@@ -69,7 +73,7 @@ public interface FileService {
      * @param type      文件类型
      * @return Page<File> 文件查询列表
      */
-    Page<File> listByLimit(Long datasetId, Long offset, Integer limit, Integer page, Integer type);
+    Page<File> listByLimit(Long datasetId, Long offset, Integer limit, Integer page, Integer[] type, Long[] labelId);
 
     /**
      * 获取offset
@@ -79,7 +83,7 @@ public interface FileService {
      * @param type      文件类型
      * @return Integer 获取到的offset
      */
-    Integer getOffset(Long fileId, Long datasetId, Integer type);
+    Integer getOffset(Long fileId, Long datasetId, Integer[] type, Long[] labelIds);
 
     /**
      * 获取首个文件
@@ -124,7 +128,7 @@ public interface FileService {
      * 根据文件ID获取文件内容
      *
      * @param fileId 文件ID
-     * @return
+     * @return 文件实体
      */
     File selectById(Long fileId, Long datasetId);
 
@@ -136,19 +140,12 @@ public interface FileService {
      */
     File selectOne(QueryWrapper<File> queryWrapper);
 
-    /**
-     * 文件完成自动标注
-     *
-     * @param dataset       数据集
-     * @param files         文件
-     * @return boolean      文件完成自动标注是否成功
-     */
-    boolean finishAnnotation(Dataset dataset, Set<Long> files);
 
     /**
      * 如果ids为空，则返回空
      *
      * @param fileIds       文件id集合
+     * @param datasetId     数据集ID
      * @return Set<File>    获取到的文件
      */
     Set<File> get(List<Long> fileIds, Long datasetId);
@@ -192,16 +189,11 @@ public interface FileService {
      * @param type   文件类型
      * @param pid    文件父id
      * @param userId 用户id
-     */
-    void saveVideoFiles(Long fileId, List<FileCreateDTO> files, int type, Long pid, Long userId);
-
-    /**
-     * 判断是否存在手动标注中的文件
      *
-     * @param datasetId 数据集id
-     * @return boolean 判断是否存在手动标注中的文件
+     * @return  List<File> 文件列表
      */
-    boolean hasManualAnnotating(Long datasetId);
+    List<File> saveVideoFiles(Long fileId, List<FileCreateDTO> files, int type, Long pid, Long userId);
+
 
     /**
      * 将整体任务分割
@@ -255,6 +247,16 @@ public interface FileService {
     List<String> selectNames(Long datasetId, Integer changed,String versionName);
 
     /**
+     * 音频数据集文件查询
+     *
+     * @param datasetId         数据集id
+     * @param page              分页条件
+     * @param fileQueryCriteria 查询文件参数
+     * @return Map<String, Object> 文件查询列表
+     */
+    Map<String, Object> audioFilesByPage(Long datasetId, Page page, FileQueryCriteriaVO fileQueryCriteria);
+
+    /**
      * 文本数据集文件查询
      *
      * @param datasetId         数据集id
@@ -262,13 +264,91 @@ public interface FileService {
      * @param fileQueryCriteria 查询文件参数
      * @return Map<String, Object> 文件查询列表
      */
-    Map<String, Object> txtFilesByPage(Long datasetId, Page page, FileQueryCriteriaVO fileQueryCriteria);
+    Map<String, Object> txtContentByPage(Long datasetId, Page page, FileQueryCriteriaVO fileQueryCriteria);
 
     /**
      * 文本状态数量统计
      *
-     * @param datasetId 数据集ID
+     * @param datasetId               数据集ID
+     * @param fileQueryCriteria       文件查询条件
      * @return 文本状态数量统计
      */
-    ProgressVO getFileCountByStatus(Long datasetId);
+    ProgressVO getFileCountByStatus(Long datasetId, FileQueryCriteriaVO fileQueryCriteria);
+
+    /**
+     * 获取数据集文件数量
+     *
+     * @param datasetId 数据集ID
+     * @return 数据集文件数量
+     */
+    int getFileCountByDatasetId(Long datasetId);
+
+    /**
+     * 获取数据集原图文件数量
+     *
+     * @param datasetId 数据集ID
+     * @param versionName 版本名称
+     * @return 数据集原图文件数量
+     */
+    int getOriginalFileCountOfDataset(Long datasetId, String versionName);
+
+
+    /**
+     * 备份数据集文件数据
+     * @param originDataset    原数据集实体
+     * @param targetDataset    目标数据集实体
+     * @return 新生成文件数据
+     */
+    List<File> backupFileDataByDatasetId(Dataset originDataset, Dataset targetDataset);
+
+    /**
+     * 文本数据集csv导入
+     *
+     * @param datasetCsvImportDTO 导入信息
+     */
+    void tableImport(DatasetCsvImportDTO datasetCsvImportDTO);
+
+
+    /**
+     * 将文本数据同步至ES
+     *
+     * @param dataset 数据集
+     * @param fileIdsNotToEs  需要同步的文件ID
+     */
+    void transportTextToEs(Dataset dataset,List<Long> fileIdsNotToEs);
+
+    /**
+     * 还原es_transport状态
+     *
+     * @param datasetId 数据集ID
+     * @param fileId 文件ID
+     */
+    void recoverEsStatus(Long datasetId, Long fileId);
+
+    /**
+     * 删除es中数据
+     *
+     * @param fileIds 文件ID数组
+     */
+    void deleteEsData(Long[] fileIds);
+
+    /**
+     * 获取文件列表
+     *
+     * @param datasetId  数据集ID
+     * @param prefix     匹配前缀
+     * @param recursive  是否递归
+     * @param versionName 版本
+     * @return List<FileListDTO> 文件列表
+     */
+    List<FileDTO> fileList(Long datasetId, String prefix, boolean recursive, String versionName, boolean isVersionFile);
+
+    /**
+     * 分页获取文件列表
+     *
+     * @param filePageDTO 文件查询和响应实体
+     * @param datasetId 数据集ID
+     */
+    void filePage(FilePageDTO filePageDTO, Long datasetId);
+
 }

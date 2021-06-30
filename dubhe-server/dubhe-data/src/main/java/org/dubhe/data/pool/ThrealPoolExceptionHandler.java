@@ -17,8 +17,8 @@
 
 package org.dubhe.data.pool;
 
-import org.dubhe.enums.LogEnum;
-import org.dubhe.utils.LogUtil;
+import org.dubhe.biz.log.enums.LogEnum;
+import org.dubhe.biz.log.utils.LogUtil;
 
 /**
  * @description 异常线程池

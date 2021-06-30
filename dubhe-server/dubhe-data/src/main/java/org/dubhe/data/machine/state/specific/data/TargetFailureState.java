@@ -16,13 +16,13 @@
  */
 package org.dubhe.data.machine.state.specific.data;
 
+import org.dubhe.biz.log.enums.LogEnum;
+import org.dubhe.biz.log.utils.LogUtil;
 import org.dubhe.data.dao.DatasetMapper;
 import org.dubhe.data.domain.entity.Dataset;
 import org.dubhe.data.machine.enums.DataStateEnum;
 import org.dubhe.data.machine.state.AbstractDataState;
 import org.dubhe.data.machine.statemachine.DataStateMachine;
-import org.dubhe.enums.LogEnum;
-import org.dubhe.utils.LogUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;

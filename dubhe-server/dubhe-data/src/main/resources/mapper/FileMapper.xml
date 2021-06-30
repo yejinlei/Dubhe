@@ -29,4 +29,77 @@
             )
         </foreach>
     </insert>
+
+
+    <insert id="insertBatch" useGeneratedKeys="true">
+
+        insert into data_file (id,name,dataset_id,status,url,enhance_type,width,height,origin_user_id,create_user_id,pid)
+        values
+        <foreach collection="listDataFile" item="file" separator=",">
+            (#{file.id},#{file.name},#{file.datasetId},#{file.status},
+            #{file.url},#{file.enhanceType},#{file.width},#{file.height},#{file.originUserId},#{file.createUserId} ,#{file.pid}
+            )
+        </foreach>
+
+    </insert>
+
+    <select id="getOriginalFileCountOfDataset" resultType="int">
+        SELECT
+	        count( 1 )
+        FROM
+	        data_file df
+	        LEFT JOIN data_dataset_version_file ddvf ON df.id = ddvf.file_id
+        WHERE
+            ddvf.status != 1
+	        AND df.dataset_id = #{datasetId}
+	        AND ddvf.dataset_Id = #{datasetId}
+	        AND df.enhance_type IS NULL
+            AND ddvf.version_name
+        <choose>
+            <when test = "versionName == null">
+                IS
+            </when>
+            <otherwise>
+                =
+            </otherwise>
+        </choose>
+            #{versionName}
+    </select>
+
+    <select id="selectTextDataNoTransport" resultType="org.dubhe.data.domain.dto.EsTransportDTO">
+        SELECT
+            ddvf.annotation_status,
+            ddvf.file_name,
+            df.url,
+            df.create_time,
+            df.create_user_id,
+            df.update_user_id,
+            df.update_time,
+            df.file_type,
+            df.enhance_type,
+            df.origin_user_id,
+            df.id
+        FROM
+            data_dataset_version_file ddvf
+            LEFT JOIN data_file df ON ddvf.file_id = df.id
+        WHERE
+            df.es_transport = 0
+            AND ddvf.dataset_id = #{datasetId}
+            AND df.dataset_id = #{datasetId}
+            AND df.id in
+            <foreach collection="fileIdsNotToEs" item="fileId" open="(" close=")" separator=",">
+                #{fileId}
+            </foreach>
+    </select>
+
+    <update id="updateEsStatus">
+        UPDATE data_file
+        SET es_transport = 1
+        WHERE
+	    dataset_id = #{datasetId}
+	    AND id in
+        <foreach collection="fileIds" item="fileId" open="(" close=")" separator=",">
+            #{fileId}
+        </foreach>
+    </update>
 </mapper>

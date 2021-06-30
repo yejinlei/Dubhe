@@ -21,8 +21,8 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import org.dubhe.annotation.Query;
-import org.dubhe.base.PageQueryBase;
+import org.dubhe.biz.db.annotation.Query;
+import org.dubhe.biz.db.base.PageQueryBase;
 
 import java.io.Serializable;
 import java.sql.Timestamp;

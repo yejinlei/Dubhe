@@ -76,9 +76,10 @@ public interface DatasetVersionService {
     /**
      * 数据集版本数据删除
      *
-     * @param datasetId 数据集id
+     * @param datasetId     数据集id
+     * @param deleteFlag    删除标识
      */
-    void datasetVersionDelete(Long datasetId);
+    void updateStatusByDatasetId(Long datasetId, Boolean deleteFlag);
 
     /**
      * 训练任务所需版本
@@ -136,7 +137,7 @@ public interface DatasetVersionService {
      * 获取数据集版本数据
      *
      * @param dataset 数据集实体
-     * @return  数据集版本信息
+     * @return 数据集版本信息
      */
     DatasetVersion getDatasetVersionSourceVersion(Dataset dataset);
 
@@ -148,4 +149,45 @@ public interface DatasetVersionService {
      * @return DatasetVersion 数据集版本
      */
     DatasetVersion getVersionByDatasetIdAndVersionName(Long datasetId, String versionName);
+
+    /**
+     * 根据数据集ID删除数据信息
+     *
+     * @param datasetId 数据集ID
+     */
+    void deleteByDatasetId(Long datasetId);
+
+    /**
+     * 备份数据集版本数据
+     * @param originDataset      原数据集实体
+     * @param targetDateset      目标数据集实体
+     * @param currentVersionName 版本名称
+     */
+    void backupDatasetVersionDataByDatasetId(Dataset originDataset, Dataset targetDateset, String currentVersionName);
+
+    /**
+     * 根据数据集ID查询版本名称列表
+     * @param datasetId 数据集ID
+     * @return  版本名称
+     */
+    List<String> getDatasetVersionNameListByDatasetId(Long datasetId);
+
+    /**
+     * 生成ofRecord文件
+     *
+     * @param datasetId          数据集ID
+     * @param versionName        版本名称
+     */
+    void createOfRecord(Long datasetId, String versionName);
+
+    /**
+     * 插入es数据
+     *
+     * @param versionSource         源版本
+     * @param versionTarget         目标版本
+     * @param datasetId             数据集id
+     * @param datasetIdTarget       目标数据集id
+     * @param fileNameMap           文件列表
+     */
+    void insertEsData(String versionSource, String versionTarget, Long datasetId, Long datasetIdTarget, Map<String, Long> fileNameMap);
 }

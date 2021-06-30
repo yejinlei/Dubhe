@@ -19,8 +19,8 @@ package org.dubhe.data.rest;
 
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
-import org.apache.shiro.authz.annotation.RequiresPermissions;
-import org.dubhe.base.DataResponseBody;
+import org.dubhe.biz.base.constant.Permissions;
+import org.dubhe.biz.base.vo.DataResponseBody;
 import org.dubhe.data.constant.Constant;
 import org.dubhe.data.domain.dto.AnnotationDeleteDTO;
 import org.dubhe.data.domain.dto.AnnotationInfoCreateDTO;
@@ -29,10 +29,10 @@ import org.dubhe.data.domain.dto.BatchAnnotationInfoCreateDTO;
 import org.dubhe.data.service.AnnotationService;
 import org.dubhe.data.service.TaskService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
-import static org.dubhe.constant.Permissions.DATA;
 
 /**
  * @description 标注管理
@@ -57,7 +57,7 @@ public class AnnotationController {
 
     @ApiOperation(value = "标注保存")
     @PostMapping(value = "/{datasetId}/{fileId}/annotations")
-    @RequiresPermissions(DATA)
+    @PreAuthorize(Permissions.DATA)
     public DataResponseBody save(@PathVariable(value = "fileId") Long fileId,
                                  @PathVariable(value = "datasetId") Long datasetId,
                                  @Validated @RequestBody AnnotationInfoCreateDTO annotationInfoCreateDTO) {
@@ -67,7 +67,7 @@ public class AnnotationController {
 
     @ApiOperation(value = "标注保存", notes = "状态直接转为完成，用于分类的批量保存")
     @PostMapping(value = "/{datasetId}/annotations")
-    @RequiresPermissions(DATA)
+    @PreAuthorize(Permissions.DATA)
     public DataResponseBody save(@Validated @RequestBody BatchAnnotationInfoCreateDTO batchAnnotationInfoCreateDTO,@PathVariable(value = "datasetId") Long datasetId) {
         annotationService.save(datasetId,batchAnnotationInfoCreateDTO);
         return new DataResponseBody();
@@ -75,7 +75,7 @@ public class AnnotationController {
 
     @ApiOperation(value = "标注完成")
     @PostMapping(value = "/{datasetId}/{fileId}/annotations/finish")
-    @RequiresPermissions(DATA)
+    @PreAuthorize(Permissions.DATA)
     public DataResponseBody finish(@PathVariable(value = "fileId") Long fileId,
                                    @RequestBody AnnotationInfoCreateDTO annotationInfoCreateDTO,@PathVariable(value = "datasetId") Long datasetId) {
         annotationService.finishManual(fileId,datasetId,annotationInfoCreateDTO);
@@ -84,7 +84,7 @@ public class AnnotationController {
 
     @ApiOperation(value = "重新标注", notes = "删除文件或数据集下所有文件的标注，并且重新标注，自动标注中的数据集下的文件不允许清除")
     @DeleteMapping(value = "/annotations")
-    @RequiresPermissions(DATA)
+    @PreAuthorize(Permissions.DATA)
     public DataResponseBody reAuto(@Validated @RequestBody AnnotationDeleteDTO annotationDeleteDTO) {
         annotationService.reAuto(annotationDeleteDTO);
         return new DataResponseBody();
@@ -92,7 +92,7 @@ public class AnnotationController {
 
     @ApiOperation(value = "自动标注，只对未标注状态的文件进行标注")
     @PostMapping(value = "/annotations/auto")
-    @RequiresPermissions(DATA)
+    @PreAuthorize(Permissions.DATA)
     public DataResponseBody auto(@Validated @RequestBody AutoAnnotationCreateDTO autoAnnotationCreateDTO) {
         return new DataResponseBody(taskService.auto(autoAnnotationCreateDTO));
     }
@@ -114,7 +114,7 @@ public class AnnotationController {
 
     @ApiOperation(value = "目标跟踪")
     @GetMapping(value = "/annotations/auto/track/{datasetId}")
-    @RequiresPermissions(DATA)
+    @PreAuthorize(Permissions.DATA)
     public DataResponseBody track(@PathVariable(value = "datasetId") Long datasetId) {
         annotationService.track(datasetId);
         return new DataResponseBody();

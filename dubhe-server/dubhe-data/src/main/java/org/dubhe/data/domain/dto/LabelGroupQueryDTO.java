@@ -48,7 +48,7 @@ public class LabelGroupQueryDTO implements Serializable {
     /**
      * 数据集标注类型
      */
-    @ApiModelProperty(value = "标注类型：2分类,1目标检测,5目标跟踪")
+    @ApiModelProperty(value = "标注类型：1目标检测,2分类,5目标跟踪,7语义分割")
     @NotNull(message = "标注类型不能为空")
     private Integer annotateType;
 }

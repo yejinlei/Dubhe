@@ -16,8 +16,9 @@
  */
 package org.dubhe.data.machine.utils;
 
+
+import org.dubhe.biz.statemachine.dto.StateChangeDTO;
 import org.dubhe.data.machine.proxy.StateMachineProxy;
-import org.dubhe.dto.StateChangeDTO;
 
 import java.util.List;
 

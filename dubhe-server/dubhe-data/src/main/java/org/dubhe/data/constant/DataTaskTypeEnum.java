@@ -61,7 +61,11 @@ public enum DataTaskTypeEnum {
     /**
      * 重新自动标注
      */
-    AGAIN_ANNOTATION(8, "重新自动标注")
+    AGAIN_ANNOTATION(8, "重新自动标注"),
+    /**
+     * csv导入
+     */
+    CSV_IMPORT(10, "csv导入")
     ;
 
     DataTaskTypeEnum(Integer value, String msg) {

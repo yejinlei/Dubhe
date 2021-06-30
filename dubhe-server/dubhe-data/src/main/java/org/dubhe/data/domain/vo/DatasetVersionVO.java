@@ -19,9 +19,10 @@ package org.dubhe.data.domain.vo;
 
 import io.swagger.annotations.ApiModelProperty;
 import lombok.Data;
+import org.dubhe.biz.base.dto.UserSmallDTO;
+import org.dubhe.biz.base.vo.ProgressVO;
 import org.dubhe.data.domain.entity.Dataset;
 import org.dubhe.data.domain.entity.DatasetVersion;
-import org.dubhe.domain.dto.UserSmallDTO;
 
 import java.io.Serializable;
 import java.util.Date;
@@ -67,10 +68,25 @@ public class DatasetVersionVO implements Serializable {
     private Integer dataConversion;
     @ApiModelProperty("图片数量")
     private Integer imageCounts;
+    @ApiModelProperty("转预置标识")
+    private Boolean presetFlag;
+    @ApiModelProperty("是否生成ofRecord")
+    private Integer isOfRecord;
 
 
-
-    public static DatasetVersionVO from(DatasetVersion datasetVersion, Dataset dataset, ProgressVO progress,Integer fileCount,UserSmallDTO createUser,UserSmallDTO updateUser) {
+    /**
+     * 数据集版本VO转换方法
+     *
+     * @param datasetVersion    数据集版本实体
+     * @param dataset           数据集实体
+     * @param progress          数据集状态
+     * @param fileCount         文件数量
+     * @param createUser        创建用户
+     * @param updateUser        编辑用户
+     * @return  数据集版本VO
+     */
+    public static DatasetVersionVO from(DatasetVersion datasetVersion, Dataset dataset, ProgressVO progress,
+                                        Integer fileCount,UserSmallDTO createUser,UserSmallDTO updateUser,Boolean presetFlag) {
         if (dataset == null || datasetVersion == null) {
             return null;
         }
@@ -82,6 +98,7 @@ public class DatasetVersionVO implements Serializable {
             setVersionName(datasetVersion.getVersionName());
             setCreateTime(datasetVersion.getCreateTime());
             setVersionNote(datasetVersion.getVersionNote());
+            setIsOfRecord(datasetVersion.getOfRecord());
             setIsCurrent(dataset.getCurrentVersionName() == null || dataset.getCurrentVersionName().equals(datasetVersion.getVersionName()));
             setStatus(dataset.getStatus());
             setFileCount(fileCount);
@@ -90,6 +107,7 @@ public class DatasetVersionVO implements Serializable {
             setUpdateUser(updateUser);
             setDataConversion(datasetVersion.getDataConversion());
             setImageCounts(fileCount);
+            setPresetFlag(presetFlag);
         }};
     }
 

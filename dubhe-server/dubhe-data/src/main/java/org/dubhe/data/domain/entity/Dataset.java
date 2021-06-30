@@ -22,14 +22,12 @@ import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 import lombok.*;
 import lombok.experimental.Accessors;
-import org.dubhe.data.constant.AnnotateTypeEnum;
-import org.dubhe.data.constant.DatatypeEnum;
+import org.dubhe.biz.base.dto.TeamDTO;
+import org.dubhe.biz.base.dto.UserDTO;
+import org.dubhe.biz.base.enums.DatasetTypeEnum;
 import org.dubhe.data.domain.dto.DatasetCreateDTO;
 import org.dubhe.data.domain.dto.DatasetCustomCreateDTO;
 import org.dubhe.data.machine.constant.DataStateCodeConstant;
-import org.dubhe.domain.entity.Team;
-import org.dubhe.domain.entity.User;
-import org.dubhe.enums.DatasetTypeEnum;
 
 import java.sql.Timestamp;
 
@@ -105,17 +103,20 @@ public class Dataset {
     @ApiModelProperty(value = "标签组Id")
     private Long labelGroupId;
 
+    @ApiModelProperty(value = "数据集源ID")
+    private Long sourceId;
+
     /**
      * 团队
      */
     @TableField(exist = false)
-    private Team team;
+    private TeamDTO team;
 
     /**
      * 创建用户
      */
     @TableField(exist = false)
-    private User createUser;
+    private UserDTO createUser;
 
     @TableField(value = "create_time", fill = FieldFill.INSERT)
     private Timestamp createTime;
@@ -132,7 +133,7 @@ public class Dataset {
     private Long originUserId;
 
     @TableField(exist = false)
-    private User updateUser;
+    private UserDTO updateUser;
 
     public Dataset() {
     }

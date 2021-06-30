@@ -17,7 +17,7 @@
 
 package org.dubhe.data.domain.vo;
 
-import org.dubhe.base.BaseConvert;
+import org.dubhe.biz.db.base.BaseConvert;
 import org.dubhe.data.domain.entity.File;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;

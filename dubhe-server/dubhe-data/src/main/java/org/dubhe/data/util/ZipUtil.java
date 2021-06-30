@@ -20,7 +20,7 @@ package org.dubhe.data.util;
 import cn.hutool.core.util.CharsetUtil;
 import cn.hutool.core.util.IdUtil;
 import cn.hutool.core.util.NumberUtil;
-import org.dubhe.annotation.Log;
+import org.dubhe.biz.base.annotation.Log;
 import org.dubhe.data.constant.Constant;
 
 import java.io.File;

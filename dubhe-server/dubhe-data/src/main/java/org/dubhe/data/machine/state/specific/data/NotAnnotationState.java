@@ -16,16 +16,16 @@
  */
 package org.dubhe.data.machine.state.specific.data;
 
-import org.dubhe.constant.ErrorMessageConstant;
+import org.dubhe.biz.log.enums.LogEnum;
+import org.dubhe.biz.log.utils.LogUtil;
+import org.dubhe.biz.statemachine.exception.StateMachineException;
 import org.dubhe.data.dao.DatasetMapper;
 import org.dubhe.data.domain.entity.Dataset;
+import org.dubhe.data.machine.constant.ErrorMessageConstant;
 import org.dubhe.data.machine.enums.DataStateEnum;
 import org.dubhe.data.machine.state.AbstractDataState;
 import org.dubhe.data.machine.statemachine.DataStateMachine;
-import org.dubhe.data.machine.utils.identify.service.StateIdentify;
-import org.dubhe.enums.LogEnum;
-import org.dubhe.exception.StateMachineException;
-import org.dubhe.utils.LogUtil;
+import org.dubhe.data.machine.utils.StateIdentifyUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
@@ -45,7 +45,7 @@ public class NotAnnotationState extends AbstractDataState {
     private DatasetMapper datasetMapper;
 
     @Autowired
-    private StateIdentify stateIdentify;
+    private StateIdentifyUtil stateIdentify;
 
     /**
      * 数据集 未标注-->自动标准算法-->自动标注中
@@ -88,23 +88,47 @@ public class NotAnnotationState extends AbstractDataState {
         switch (status){
             case MANUAL_ANNOTATION_STATE:
                 //手动标注中
-                datasetMapper.updateStatus(dataset.getId(), DataStateEnum.MANUAL_ANNOTATION_STATE.getCode());
-                dataStateMachine.setMemoryDataState(dataStateMachine.getManualAnnotationState());
-                LogUtil.debug(LogEnum.STATE_MACHINE, " 【未标注】 执行事件后内存状态机的切换： {}", dataStateMachine.getMemoryDataState());
-                return;
+                dataStateMachine.doStateChange(dataset.getId(),DataStateEnum.MANUAL_ANNOTATION_STATE.getCode(),dataStateMachine.getManualAnnotationState());
+                break;
             case ANNOTATION_COMPLETE_STATE:
                 //标注完成
-                datasetMapper.updateStatus(dataset.getId(), DataStateEnum.ANNOTATION_COMPLETE_STATE.getCode());
-                dataStateMachine.setMemoryDataState(dataStateMachine.getAnnotationCompleteState());
-                LogUtil.debug(LogEnum.STATE_MACHINE, " 【未标注】 执行事件后内存状态机的切换： {}", dataStateMachine.getMemoryDataState());
-                return;
+                dataStateMachine.doStateChange(dataset.getId(),DataStateEnum.ANNOTATION_COMPLETE_STATE.getCode(),dataStateMachine.getAnnotationCompleteState());
+                break;
             case NOT_ANNOTATION_STATE:
                 //未标注
-                LogUtil.debug(LogEnum.STATE_MACHINE, " 【未标注】 执行事件后内存状态机的切换： {}", dataStateMachine.getMemoryDataState());
-                return;
+                break;
             default:
                 throw new StateMachineException(ErrorMessageConstant.DATASET_CHANGE_ERR_MESSAGE);
         }
+        LogUtil.debug(LogEnum.STATE_MACHINE, " 【未标注】 执行事件后内存状态机的切换： {}", dataStateMachine.getMemoryDataState());
+    }
+
+    /**
+     * 表格导入事件 未标注 --> 导入表格 --> 导入中
+     *
+     * @param primaryKeyId 数据集详情
+     */
+    @Override
+    public void tableImportEvent(Integer primaryKeyId) {
+        LogUtil.debug(LogEnum.STATE_MACHINE, " 【未标注】 执行事件前内存中状态机的状态 :{} ", dataStateMachine.getMemoryDataState());
+        LogUtil.debug(LogEnum.STATE_MACHINE, " 接受参数： {} ", primaryKeyId);
+        datasetMapper.updateStatus(Long.valueOf(primaryKeyId), DataStateEnum.IN_THE_IMPORT_STATE.getCode());
+        dataStateMachine.setMemoryDataState(dataStateMachine.getImportState());
+        LogUtil.debug(LogEnum.STATE_MACHINE, " 【未标注】 执行事件后内存状态机的切换： {}", dataStateMachine.getMemoryDataState());
+    }
+
+    /**
+     * 多视频导入事件  未标注 --> 导入视频 --> 采样中
+     *
+     * @param primaryKeyId 数据集详情
+     */
+    @Override
+    public void sampledEvent(Integer primaryKeyId) {
+        LogUtil.debug(LogEnum.STATE_MACHINE, " 【未标注】 执行事件前内存中状态机的状态 :{} ", dataStateMachine.getMemoryDataState());
+        LogUtil.debug(LogEnum.STATE_MACHINE, " 接受参数： {} ", primaryKeyId);
+        datasetMapper.updateStatus(Long.valueOf(primaryKeyId), DataStateEnum.SAMPLING_STATE.getCode());
+        dataStateMachine.setMemoryDataState(dataStateMachine.getSamplingState());
+        LogUtil.debug(LogEnum.STATE_MACHINE, " 【未标注】 执行事件后内存状态机的切换： {}", dataStateMachine.getMemoryDataState());
     }
 
 }

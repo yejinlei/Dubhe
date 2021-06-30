@@ -22,7 +22,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import org.dubhe.base.BaseEntity;
+import org.dubhe.biz.db.entity.BaseEntity;
 
 import java.io.Serializable;
 

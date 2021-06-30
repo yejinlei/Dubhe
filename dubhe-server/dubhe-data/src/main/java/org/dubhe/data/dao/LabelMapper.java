@@ -18,6 +18,7 @@
 package org.dubhe.data.dao;
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
+import org.apache.ibatis.annotations.Delete;
 import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Select;
 import org.dubhe.data.domain.dto.LabelDTO;
@@ -37,7 +38,7 @@ public interface LabelMapper extends BaseMapper<Label> {
      * @param datasetId 数据集ID
      * @return List<Label> 数据集下所有标签
      */
-    @Select("select dl.* from data_label dl left join data_dataset_label ddl on dl.id = ddl.label_id where ddl.dataset_id = #{datasetId}  and dl.deleted = 0")
+    @Select("select dl.id, dl.name, dl.color, dl.type from data_label dl left join data_dataset_label ddl on dl.id = ddl.label_id where ddl.dataset_id = #{datasetId}  and dl.deleted = 0")
     List<Label> listLabelByDatasetId(@Param("datasetId") Long datasetId);
 
     /**
@@ -73,9 +74,19 @@ public interface LabelMapper extends BaseMapper<Label> {
      * @param labelGroupId 标签组ID
      * @return List<Label> 标签组列表
      */
-    @Select("select dl.* from data_label dl left join data_group_label dgl on dl.id = dgl.label_id\n" +
+    @Select("select dl.id, dl.name, dl.color, dl.type from data_label dl left join data_group_label dgl on dl.id = dgl.label_id\n" +
             "where dgl.label_group_id = #{labelGroupId} and dl.deleted = 0")
     List<Label> listByGroupId(@Param("labelGroupId") Long labelGroupId);
+
+    /**
+     * 根据标签组获取标签列表
+     *
+     * @param type 标签组类型
+     * @return List<Long> 标签ids
+     */
+    @Select("select dl.id from data_label_group dlg left join data_group_label dgl on dlg.id = dgl.label_group_id\n" +
+            "left join data_label dl on dgl.label_id = dl.id where dlg.type = #{type}")
+    List<Long> listPubLabelByType(@Param("type") Integer type);
 
 
 
@@ -91,4 +102,21 @@ public interface LabelMapper extends BaseMapper<Label> {
             "left join data_dataset dd on dgl.label_group_id = dd.label_group_id\n" +
             "where dd.id = #{datasetId}  and dl.deleted = 0")
     List<LabelDTO> listByDatesetId(@Param("datasetId") Long datasetId);
+
+
+    /**
+     * 通过标签ID修改标签状态
+     *
+     * @param labelIds   标签ID
+     * @param deleteFlag 删除标识
+     */
+    void updateStatusByLabelIds(@Param("labelIds") List<Long> labelIds, @Param("deleteFlag") Boolean deleteFlag);
+
+    /**
+     * 根据标签组ID删除标签数据
+     *
+     * @param groupId  标签组ID
+     */
+    @Delete("delete from data_label where id in ( select * from (select label_id from data_group_label where label_group_id = #{groupId}) m )")
+    void deleteByGroupId(@Param("groupId") Long groupId);
 }

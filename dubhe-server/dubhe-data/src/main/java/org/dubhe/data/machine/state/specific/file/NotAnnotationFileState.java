@@ -16,34 +16,20 @@
  */
 package org.dubhe.data.machine.state.specific.file;
 
-import com.alibaba.druid.support.json.JSONParser;
-import com.alibaba.druid.support.json.JSONUtils;
-import com.alibaba.fastjson.JSON;
-import com.alibaba.fastjson.JSONObject;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
-import com.fasterxml.jackson.jaxrs.json.annotation.JSONP;
-import com.google.gson.Gson;
-import com.google.gson.JsonArray;
-import com.google.gson.reflect.TypeToken;
-import org.dubhe.constant.NumberConstant;
+import org.dubhe.biz.base.utils.StringUtils;
+import org.dubhe.biz.log.enums.LogEnum;
+import org.dubhe.biz.log.utils.LogUtil;
 import org.dubhe.data.constant.Constant;
 import org.dubhe.data.dao.DatasetVersionFileMapper;
-import org.dubhe.data.domain.dto.AnnotationInfoCreateDTO;
 import org.dubhe.data.domain.entity.DatasetVersionFile;
 import org.dubhe.data.machine.enums.FileStateEnum;
 import org.dubhe.data.machine.state.AbstractFileState;
 import org.dubhe.data.machine.statemachine.FileStateMachine;
-import org.dubhe.enums.LogEnum;
-import org.dubhe.utils.LogUtil;
-import org.dubhe.utils.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-import java.lang.reflect.Type;
-import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Map;
 
 /**
  * @description 未标注状态类
@@ -164,7 +150,7 @@ public class NotAnnotationFileState extends AbstractFileState {
         }
         updatawrapper.eq(DatasetVersionFile::getDatasetId, datasetId);
         updatawrapper.in(DatasetVersionFile::getFileId, filesId);
-        int update = datasetVersionFileMapper.update(new DatasetVersionFile() {{
+        datasetVersionFileMapper.update(new DatasetVersionFile() {{
                                                          setAnnotationStatus(FileStateEnum.ANNOTATION_NOT_DISTINGUISH_FILE_STATE.getCode());
                                                          if (versionName != null) {
                                                              setChanged(Constant.CHANGED);

@@ -17,11 +17,13 @@
 
 package org.dubhe.data.service.impl;
 
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
-import org.dubhe.base.MagicNumConstant;
+import org.dubhe.biz.base.constant.MagicNumConstant;
 import org.dubhe.data.dao.DatasetLabelMapper;
 import org.dubhe.data.dao.LabelMapper;
+import org.dubhe.data.domain.entity.Dataset;
 import org.dubhe.data.domain.entity.DatasetLabel;
 import org.dubhe.data.domain.entity.Label;
 import org.dubhe.data.service.DatasetLabelService;
@@ -147,5 +149,35 @@ public class DatasetLabelServiceImpl extends ServiceImpl<DatasetLabelMapper, Dat
     @Override
     public void insert(DatasetLabel datasetLabel) {
         super.save(datasetLabel);
+    }
+
+    /**
+     * 删除数据集标签
+     *
+     * @param datasetId         数据集id
+     * @param deleteFlag        删除标识
+     */
+    @Override
+    public void updateStatusByDatasetId(Long datasetId, Boolean deleteFlag) {
+        baseMapper.updateStatusByDatasetId(datasetId, deleteFlag);
+    }
+
+
+    /**
+     * 备份数据集标签关系数据
+     * @param originDatasetId   原数据集ID
+     * @param targetDateset     目标数据集实体
+     */
+    @Override
+    public void backupDatasetLabelDataByDatasetId(Long originDatasetId, Dataset targetDateset) {
+        List<DatasetLabel> datasetLabels = baseMapper.selectList(new LambdaQueryWrapper<DatasetLabel>().eq(DatasetLabel::getDatasetId, originDatasetId));
+        if (!CollectionUtils.isEmpty(datasetLabels)) {
+            datasetLabels.forEach(a -> {
+                a.setDatasetId(targetDateset.getId());
+                a.setCreateUserId(targetDateset.getCreateUserId());
+                a.setUpdateUserId(a.getCreateUserId());
+            });
+            baseMapper.insertBatch(datasetLabels);
+        }
     }
 }

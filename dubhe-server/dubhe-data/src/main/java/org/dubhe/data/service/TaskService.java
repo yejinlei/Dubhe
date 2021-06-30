@@ -18,6 +18,7 @@
 package org.dubhe.data.service;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import org.dubhe.data.domain.bo.EnhanceTaskSplitBO;
 import org.dubhe.data.domain.dto.AutoAnnotationCreateDTO;
 import org.dubhe.data.domain.entity.Dataset;
 import org.dubhe.data.domain.entity.Task;
@@ -42,10 +43,10 @@ public interface TaskService {
     /**
      * 完成文件
      *
-     * @param taskId       任务id
-     * @param filesCount   完成的文件数量
+     * @param enhanceTaskSplitBO       任务
+     * @param filesCount               完成的文件数量
      */
-    void finishTaskFile(Long taskId, Integer filesCount);
+    void finishTaskFile(EnhanceTaskSplitBO enhanceTaskSplitBO, Integer filesCount);
 
     /**
      * 完成文件

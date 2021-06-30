@@ -216,5 +216,44 @@ public abstract class AbstractDataState {
     public void trackEvent(Dataset dataset){
     }
 
+    /**
+     * 删除文件事件
+     *
+     * @param dataset 数据集详情
+     */
+    public void deleteFilesEvent(Dataset dataset){
+    }
+
+    /**
+     * 上传文件事件
+     *
+     * @param dataset 数据集详情
+     */
+    public void uploadFilesEvent(Dataset dataset){
+    }
+
+    /**
+     * 增强完成事件
+     *
+     * @param dataset 数据集详情
+     */
+    public void enhanceFinishEvent(Dataset dataset){
+    }
+
+    /**
+     * 表格导入事件 未标注 --> 导入表格 --> 导入中
+     *
+     * @param primaryKeyId 业务ID
+     */
+    public void tableImportEvent(Integer primaryKeyId) {
+    }
+
+    /**
+     * 表格导入完成时间 导入中 --> 解析表格 --> 未标注
+     *
+     * @param dataset 数据集详情
+     */
+    public void tableImportFinishEvent(Dataset dataset) {
+    }
 
 }

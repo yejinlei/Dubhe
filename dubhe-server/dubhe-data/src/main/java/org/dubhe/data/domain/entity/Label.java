@@ -24,8 +24,8 @@ import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 import lombok.*;
 import lombok.experimental.Accessors;
-import org.dubhe.base.BaseEntity;
-import org.dubhe.data.domain.dto.LabelCreateDTO;
+import org.dubhe.biz.db.entity.BaseEntity;
+import org.dubhe.data.domain.dto.LabelUpdateDTO;
 
 import java.io.Serializable;
 
@@ -55,10 +55,9 @@ public class Label extends BaseEntity implements Serializable {
 
     private Integer type;
 
-
-    public Label (LabelCreateDTO labelCreateDTO){
-        this.name = labelCreateDTO.getName();
-        this.color = labelCreateDTO.getColor();
+    public Label (LabelUpdateDTO labelUpdateDTO){
+        this.name = labelUpdateDTO.getName();
+        this.color = labelUpdateDTO.getColor();
     }
 
 }

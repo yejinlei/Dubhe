@@ -20,6 +20,7 @@ package org.dubhe.data.service;
 import org.dubhe.data.domain.entity.DatasetGroupLabel;
 
 import java.util.List;
+import java.util.Map;
 
 /**
  * @description 标签组标签中间表服务
@@ -57,6 +58,29 @@ public interface DatasetGroupLabelService {
      *
      * @param groupId 标签组ID
      */
-    void deleteById(Long groupId);
+    void deleteByGroupId(Long groupId);
 
+    /**
+     * 通过标签组ID修改标签状态
+     *
+     * @param labelGroupId   标签组ID
+     * @param deleteFlag     删除标识
+     */
+    void updateStatusByGroupId(Long labelGroupId, Boolean deleteFlag);
+
+    /**
+     * 更具标签组ID获取标签Ids
+     *
+     * @param groupId 标签组ID
+     * @return 标签Ids
+     */
+    List<Long> getLabelIdsByGroupId(Long groupId);
+
+    /**
+     * 根据标签组ID查询标签数据量
+     *
+     * @param groupIds 标签组列表
+     * @return  key:标签组ID value:标签数量
+     */
+    Map<Long, Integer> getLabelByGroupIds(List<Long> groupIds);
 }

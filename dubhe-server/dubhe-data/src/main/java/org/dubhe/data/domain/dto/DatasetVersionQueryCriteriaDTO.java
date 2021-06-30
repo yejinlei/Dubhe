@@ -19,10 +19,10 @@ package org.dubhe.data.domain.dto;
 
 import io.swagger.annotations.ApiModelProperty;
 import lombok.Data;
-import org.dubhe.annotation.Query;
-import org.dubhe.base.PageQueryBase;
-import org.dubhe.constant.NumberConstant;
-import org.dubhe.constant.SymbolConstant;
+import org.dubhe.biz.base.constant.NumberConstant;
+import org.dubhe.biz.base.constant.SymbolConstant;
+import org.dubhe.biz.db.annotation.Query;
+import org.dubhe.biz.db.base.PageQueryBase;
 
 import javax.validation.constraints.Min;
 import javax.validation.constraints.NotNull;

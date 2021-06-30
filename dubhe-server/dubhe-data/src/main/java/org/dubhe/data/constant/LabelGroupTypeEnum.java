@@ -32,7 +32,15 @@ public enum LabelGroupTypeEnum {
     /**
      * 文本
      */
-    TXT(1, "文本");
+    TXT(1, "文本"),
+    /**
+     * 表格
+     */
+    TABLE(2, "表格"),
+    /**
+     * 音频
+     */
+    AUDIO(4, "音频");
 
     LabelGroupTypeEnum(Integer value, String msg) {
         this.value = value;
@@ -49,11 +57,17 @@ public enum LabelGroupTypeEnum {
      * @param datatypeEnum 数据类型
      * @return 标签组类型
      */
-    public static  LabelGroupTypeEnum convertGroup(DatatypeEnum datatypeEnum){
+    public static LabelGroupTypeEnum convertGroup(DatatypeEnum datatypeEnum){
         LabelGroupTypeEnum labelGroupTypeEnum;
         switch (datatypeEnum){
             case TEXT:
                 labelGroupTypeEnum = LabelGroupTypeEnum.TXT;
+                break;
+            case TABLE:
+                labelGroupTypeEnum = LabelGroupTypeEnum.TABLE;
+                break;
+            case AUDIO:
+                labelGroupTypeEnum = LabelGroupTypeEnum.AUDIO;
                 break;
             default:
                 labelGroupTypeEnum = LabelGroupTypeEnum.VISUAL;

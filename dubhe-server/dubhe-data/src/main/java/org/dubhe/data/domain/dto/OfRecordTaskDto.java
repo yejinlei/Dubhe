@@ -34,5 +34,5 @@ public class OfRecordTaskDto {
     private List<String> files;
     private Integer partNum;
     private Long datasetVersionId;
-
+    private String reTaskId;
 }

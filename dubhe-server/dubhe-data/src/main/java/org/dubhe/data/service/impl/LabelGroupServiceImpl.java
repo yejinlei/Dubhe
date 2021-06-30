@@ -23,8 +23,23 @@ import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
-import org.dubhe.annotation.DataPermissionMethod;
-import org.dubhe.base.MagicNumConstant;
+import org.dubhe.biz.permission.annotation.DataPermissionMethod;
+import org.dubhe.biz.permission.annotation.RolePermission;
+import org.dubhe.biz.base.constant.MagicNumConstant;
+import org.dubhe.biz.base.constant.NumberConstant;
+import org.dubhe.biz.base.context.DataContext;
+import org.dubhe.biz.base.dto.CommonPermissionDataDTO;
+import org.dubhe.biz.base.enums.DatasetTypeEnum;
+import org.dubhe.biz.base.enums.SwitchEnum;
+import org.dubhe.biz.base.exception.BusinessException;
+import org.dubhe.biz.base.utils.RandomUtil;
+import org.dubhe.biz.base.utils.StringUtils;
+import org.dubhe.biz.permission.base.BaseService;
+import org.dubhe.biz.db.utils.PageUtil;
+import org.dubhe.biz.db.utils.WrapperHelp;
+import org.dubhe.biz.log.enums.LogEnum;
+import org.dubhe.biz.log.utils.LogUtil;
+import org.dubhe.cloud.authconfig.utils.JwtUtils;
 import org.dubhe.data.constant.*;
 import org.dubhe.data.dao.DatasetMapper;
 import org.dubhe.data.dao.LabelGroupMapper;
@@ -41,10 +56,13 @@ import org.dubhe.data.service.LabelGroupService;
 import org.dubhe.data.service.LabelService;
 import org.dubhe.data.util.FileUtil;
 import org.dubhe.data.util.JsonUtil;
-import org.dubhe.enums.DatasetTypeEnum;
-import org.dubhe.enums.SwitchEnum;
-import org.dubhe.exception.BusinessException;
-import org.dubhe.utils.*;
+import org.dubhe.recycle.domain.dto.RecycleCreateDTO;
+import org.dubhe.recycle.domain.dto.RecycleDetailCreateDTO;
+import org.dubhe.recycle.enums.RecycleModuleEnum;
+import org.dubhe.recycle.enums.RecycleResourceEnum;
+import org.dubhe.recycle.enums.RecycleTypeEnum;
+import org.dubhe.recycle.service.RecycleService;
+import org.dubhe.recycle.utils.RecycleTool;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -77,6 +95,12 @@ public class LabelGroupServiceImpl extends ServiceImpl<LabelGroupMapper, LabelGr
     private DatasetGroupLabelService datasetGroupLabelService;
 
     /**
+     * 数据回收服务
+     */
+    @Autowired
+    private RecycleService recycleService;
+
+    /**
      * 创建标签组
      *
      * @param labelGroupCreateDTO 创建标签组DTO
@@ -87,7 +111,7 @@ public class LabelGroupServiceImpl extends ServiceImpl<LabelGroupMapper, LabelGr
     public void creatLabelGroup(LabelGroupCreateDTO labelGroupCreateDTO) {
 
         //1 标签组名称唯一校验
-        labelGroupCreateDTO.setOriginUserId(JwtUtils.getCurrentUserDto().getId());
+        labelGroupCreateDTO.setOriginUserId(JwtUtils.getCurUserId());
         if (checkoutLabelGroupName(labelGroupCreateDTO.getName())) {
             throw new BusinessException(ErrorEnum.LABELGROUP_NAME_DUPLICATED_ERROR);
         }
@@ -171,7 +195,7 @@ public class LabelGroupServiceImpl extends ServiceImpl<LabelGroupMapper, LabelGr
     private void buildLabelDataByUpdate(Map<Long, List<Label>> dbListMap, LabelGroup labelGroup, List<LabelDTO> labelList, Map<Long, String> pubLabels) {
 
         //删除标签和标签组的关联关系
-        datasetGroupLabelService.deleteById(labelGroup.getId());
+        datasetGroupLabelService.deleteByGroupId(labelGroup.getId());
 
         Map<String, Long> nameMap = new HashMap<>(labelList.size());
 
@@ -249,15 +273,20 @@ public class LabelGroupServiceImpl extends ServiceImpl<LabelGroupMapper, LabelGr
     public void delete(Long labelGroupId) {
         LabelGroup labelGroup = baseMapper.selectById(labelGroupId);
         //校验标签组是否存在
-        if (labelGroup.getType().equals(MagicNumConstant.ONE)) {
-            throw new BusinessException(ErrorEnum.LABELGROUP_PUBLIC_ERROR);
+        if(Objects.isNull(labelGroup)){
+            throw new BusinessException(ErrorEnum.LABELGROUP_DOES_NOT_EXIST);
         }
+        //校验预置标签组是否为管理员操作
+        if (labelGroup.getType().compareTo(MagicNumConstant.ONE) == 0) {
+            BaseService.checkAdminPermission();
+        }
+
         //校验标签组是否被数据集引用
         if (datasetService.getCountByLabelGroupId(labelGroupId) > 0) {
             throw new BusinessException(ErrorEnum.LABELGROUP_LABEL_GROUP_QUOTE_DEL_ERROR);
         }
 
-        List<Label> labels = labelService.listByGroup(labelGroupId);
+        List<Label> labels = labelService.listByGroupId(labelGroupId);
 
         if (!CollectionUtils.isEmpty(labels)) {
 
@@ -273,14 +302,48 @@ public class LabelGroupServiceImpl extends ServiceImpl<LabelGroupMapper, LabelGr
                     throw new BusinessException(ErrorEnum.LABELGROUP_IN_USE_STATUS);
                 }
                 //删除标签
-                labelService.deleteByIds(labelIds);
+                labelService.updateStatusByLabelIds(labelIds,true);
                 //删除标签和标签组关联关系
-                datasetGroupLabelService.deleteById(labelGroupId);
+                datasetGroupLabelService.updateStatusByGroupId(labelGroupId,true);
             }
-
         }
         //删除标签组数据
-        getBaseMapper().deleteById(labelGroupId);
+        getBaseMapper().updateStatusByGroupId(labelGroupId,true);
+        //添加回收数据
+        try {
+            addRecycleDataByDeleteDataset(labelGroup);
+        } catch (Exception e) {
+            LogUtil.error(LogEnum.BIZ_DATASET, "LabelGroupServiceImpl addRecycleDataByDeleteDataset error:{}", e);
+        }
+
+
+    }
+
+
+    /**
+     * 添加回收数据
+     *
+     * @param labelGroup 标签组实体
+     */
+    private void addRecycleDataByDeleteDataset( LabelGroup labelGroup){
+
+        //落地回收详情数据文件回收信息
+        List<RecycleDetailCreateDTO> detailList = new ArrayList<>();
+        detailList.add( RecycleDetailCreateDTO.builder()
+                .recycleCondition(labelGroup.getId().toString())
+                .recycleType(RecycleTypeEnum.TABLE_DATA.getCode())
+                .recycleNote(RecycleTool.generateRecycleNote("落地 标签组DB 数据回收", labelGroup.getId()))
+                .build());
+        //落地回收信息
+        RecycleCreateDTO recycleCreateDTO = RecycleCreateDTO.builder()
+                .recycleModule(RecycleModuleEnum.BIZ_DATASET.getValue())
+                .recycleCustom(RecycleResourceEnum.LABEL_GROUP_RECYCLE_FILE.getClassName())
+                .restoreCustom(RecycleResourceEnum.LABEL_GROUP_RECYCLE_FILE.getClassName())
+                .recycleDelayDate(NumberConstant.NUMBER_1)
+                .recycleNote(RecycleTool.generateRecycleNote("删除标签组相关信息", labelGroup.getId()))
+                .detailList(detailList)
+                .build();
+        recycleService.createRecycleTask(recycleCreateDTO);
     }
 
     /**
@@ -291,9 +354,12 @@ public class LabelGroupServiceImpl extends ServiceImpl<LabelGroupMapper, LabelGr
      * @return Map<String, Object> 查询出对应的标签组
      */
     @Override
-    @DataPermissionMethod(dataType = DatasetTypeEnum.PUBLIC)
+    @DataPermissionMethod
     public Map<String, Object> listVO(Page<LabelGroup> page, LabelGroupQueryVO labelGroupQueryVO) {
         String name = labelGroupQueryVO.getName();
+        if(MagicNumConstant.ONE == labelGroupQueryVO.getType()){
+            DataContext.set(CommonPermissionDataDTO.builder().type(true).build());
+        }
         if (StringUtils.isEmpty(name)) {
             return queryLabelGroups(page, labelGroupQueryVO, null);
         }
@@ -331,20 +397,24 @@ public class LabelGroupServiceImpl extends ServiceImpl<LabelGroupMapper, LabelGr
             queryWrapper.orderByDesc("update_time");
         }
         Page<LabelGroup> labelGroupPage = baseMapper.selectPage(page, queryWrapper);
-
-        List<LabelGroupQueryVO> labelGroups = labelGroupPage.getRecords().stream().map(labelGroup -> {
-            LabelGroupQueryVO labelGroupQuery = LabelGroupQueryVO.builder()
-                    .id(labelGroup.getId()).name(labelGroup.getName())
-                    .operateType(labelGroup.getOperateType())
-                    .type(labelGroup.getType())
-                    .createTime(labelGroup.getCreateTime())
-                    .labelGroupType(labelGroup.getLabelGroupType())
-                    .remark(labelGroup.getRemark()).updateTime(labelGroup.getUpdateTime()).build();
-            int count = labelService.selectCount(labelGroup.getId());
-            labelGroupQuery.setCount(count);
-            return labelGroupQuery;
-        }).collect(Collectors.toList());
-        Map<String, Object> stringObjectMap = PageUtil.toPage(page, labelGroups);
+        List<LabelGroupQueryVO> labelGroups = new ArrayList<>();
+        if(!CollectionUtils.isEmpty(labelGroupPage.getRecords())){
+            List<LabelGroup> records = labelGroupPage.getRecords();
+            List<Long> groupIds = records.stream().map(a -> a.getId()).collect(Collectors.toList());
+            Map<Long, Integer> labelGroupMap = datasetGroupLabelService.getLabelByGroupIds(groupIds);
+            labelGroups = records.stream().map(labelGroup -> {
+                LabelGroupQueryVO labelGroupQuery = LabelGroupQueryVO.builder()
+                        .id(labelGroup.getId()).name(labelGroup.getName())
+                        .operateType(labelGroup.getOperateType())
+                        .type(labelGroup.getType())
+                        .createTime(labelGroup.getCreateTime())
+                        .labelGroupType(labelGroup.getLabelGroupType())
+                        .remark(labelGroup.getRemark()).updateTime(labelGroup.getUpdateTime()).build();
+                labelGroupQuery.setCount(labelGroupMap.get(labelGroup.getId()));
+                return labelGroupQuery;
+            }).collect(Collectors.toList());
+        }
+        Map<String, Object> stringObjectMap = PageUtil.toPage(page,labelGroups);
         return stringObjectMap;
     }
 
@@ -385,8 +455,11 @@ public class LabelGroupServiceImpl extends ServiceImpl<LabelGroupMapper, LabelGr
      * @return List<LabelGroup> 查询出对应的标签组
      */
     @Override
-    @DataPermissionMethod(dataType = DatasetTypeEnum.PUBLIC)
+    @DataPermissionMethod
     public List<LabelGroup> getList(LabelGroupQueryDTO labelGroupQueryDTO) {
+        if(MagicNumConstant.ONE == labelGroupQueryDTO.getType()){
+            DataContext.set(CommonPermissionDataDTO.builder().type(true).build());
+        }
         Integer groupType = LabelGroupTypeEnum.convertGroup(DatatypeEnum.getEnumValue(labelGroupQueryDTO.getDataType())).getValue();
         LambdaQueryWrapper<LabelGroup> labelGroupLambdaQueryWrapper = new LambdaQueryWrapper<>();
         labelGroupLambdaQueryWrapper.eq(LabelGroup::getDeleted, MagicNumConstant.ZERO)
@@ -394,8 +467,9 @@ public class LabelGroupServiceImpl extends ServiceImpl<LabelGroupMapper, LabelGr
                 .eq(LabelGroup::getLabelGroupType,groupType);
         if (MagicNumConstant.ONE == labelGroupQueryDTO.getType()) {
             if(AnnotateTypeEnum.OBJECT_DETECTION.getValue().compareTo(labelGroupQueryDTO.getAnnotateType()) == 0
-                    || AnnotateTypeEnum.OBJECT_TRACK.getValue().compareTo(labelGroupQueryDTO.getAnnotateType()) == 0){
-                labelGroupLambdaQueryWrapper.eq(LabelGroup::getId,MagicNumConstant.ONE);
+                    || AnnotateTypeEnum.OBJECT_TRACK.getValue().compareTo(labelGroupQueryDTO.getAnnotateType()) == 0
+                    || AnnotateTypeEnum.SEMANTIC_CUP.getValue().compareTo(labelGroupQueryDTO.getAnnotateType()) == 0){
+                labelGroupLambdaQueryWrapper.ne(LabelGroup::getId,MagicNumConstant.TWO);
             }
             labelGroupLambdaQueryWrapper.orderByAsc(LabelGroup::getId);
         }else {
@@ -487,7 +561,8 @@ public class LabelGroupServiceImpl extends ServiceImpl<LabelGroupMapper, LabelGr
             for (DatasetGroupLabel groupLabel : datasetGroupLabels) {
                 //查看标签是否属于预置标签组
                 String labelName = longListMap.get(groupLabel.getLabelId());
-                if (Objects.isNull(labelName)) { //不属于预置标签组
+                //不属于预置标签组
+                if (Objects.isNull(labelName)) {
                     Label buildLabel = Label.builder()
                             .color(labelListMap.get(groupLabel.getLabelId()).get(0).getColor())
                             .name(labelListMap.get(groupLabel.getLabelId()).get(0).getName())
@@ -542,6 +617,47 @@ public class LabelGroupServiceImpl extends ServiceImpl<LabelGroupMapper, LabelGr
             throw new BusinessException(ErrorEnum.LABELGROUP_DOES_NOT_EXIST);
         }
         return MagicNumConstant.ONE == labelGroup.getType();
+    }
+
+
+    /**
+     * 普通标签组转预置
+     *
+     * @param groupConvertPresetDTO 普通标签组转预置请求实体
+     */
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    @RolePermission
+    public void convertPreset(GroupConvertPresetDTO groupConvertPresetDTO) {
+        LabelGroup labelGroup = baseMapper.selectById(groupConvertPresetDTO.getLabelGroupId());
+        if(Objects.isNull(labelGroup)){
+           throw new BusinessException("标签组数据不存在");
+        }
+        if(MagicNumConstant.ZERO != labelGroup.getType()){
+            throw new BusinessException("标签组已为预置标签组");
+        }
+        baseMapper.updateInfoByGroupId(MagicNumConstant.ONE, (long) MagicNumConstant.ZERO,groupConvertPresetDTO.getLabelGroupId());
+    }
+
+    /**
+     * 根据标签组ID查询标签组数据
+     *
+     * @param groupId 标签组ID
+     */
+    @Override
+    public void deleteByGroupId(Long groupId) {
+        baseMapper.deleteByGroupId(groupId);
+    }
+
+    /**
+     * 根据标签组ID修改状态
+     *
+     * @param groupId 标签组ID
+     * @param deletedFlag 删除标识
+     */
+    @Override
+    public void updateStatusByGroupId(Long groupId, Boolean deletedFlag) {
+            baseMapper.updateStatusByGroupId(groupId,deletedFlag);
     }
 
 

@@ -18,7 +18,7 @@
 package org.dubhe.data.util;
 
 import com.alibaba.fastjson.JSON;
-import org.dubhe.utils.StringUtils;
+import org.dubhe.biz.base.utils.StringUtils;
 
 /**
  * @description 校验字符串是否是 json 格式 工具类
