@@ -15,10 +15,10 @@ class InferenceServiceStub(object):
             channel: A grpc.Channel.
         """
         self.inference = channel.unary_unary(
-            '/InferenceService/inference',
-            request_serializer=inference__pb2.DataRequest.SerializeToString,
-            response_deserializer=inference__pb2.DataResponse.FromString,
-        )
+                '/InferenceService/inference',
+                request_serializer=inference__pb2.DataRequest.SerializeToString,
+                response_deserializer=inference__pb2.DataResponse.FromString,
+                )
 
 
 class InferenceServiceServicer(object):
@@ -33,34 +33,34 @@ class InferenceServiceServicer(object):
 
 def add_InferenceServiceServicer_to_server(servicer, server):
     rpc_method_handlers = {
-        'inference': grpc.unary_unary_rpc_method_handler(
-            servicer.inference,
-            request_deserializer=inference__pb2.DataRequest.FromString,
-            response_serializer=inference__pb2.DataResponse.SerializeToString,
-        ),
+            'inference': grpc.unary_unary_rpc_method_handler(
+                    servicer.inference,
+                    request_deserializer=inference__pb2.DataRequest.FromString,
+                    response_serializer=inference__pb2.DataResponse.SerializeToString,
+            ),
     }
     generic_handler = grpc.method_handlers_generic_handler(
-        'InferenceService', rpc_method_handlers)
+            'InferenceService', rpc_method_handlers)
     server.add_generic_rpc_handlers((generic_handler,))
 
 
-# This class is part of an EXPERIMENTAL API.
+ # This class is part of an EXPERIMENTAL API.
 class InferenceService(object):
     """Missing associated documentation comment in .proto file."""
 
     @staticmethod
     def inference(request,
-                  target,
-                  options=(),
-                  channel_credentials=None,
-                  call_credentials=None,
-                  insecure=False,
-                  compression=None,
-                  wait_for_ready=None,
-                  timeout=None,
-                  metadata=None):
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
         return grpc.experimental.unary_unary(request, target, '/InferenceService/inference',
-                                             inference__pb2.DataRequest.SerializeToString,
-                                             inference__pb2.DataResponse.FromString,
-                                             options, channel_credentials,
-                                             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
+            inference__pb2.DataRequest.SerializeToString,
+            inference__pb2.DataResponse.FromString,
+            options, channel_credentials,
+            insecure, call_credentials, compression, wait_for_ready, timeout, metadata)

@@ -58,12 +58,12 @@ def get_parser(parser=None):
     parser.add_argument("--job_name", type=str, default="inference", help="oneflow job name")
     parser.add_argument("--prepare_mode", type=str, default="tfhub",
                         help="tensorflow prepare mode(tfhub、caffe、tf、torch)")
-    parser.add_argument("--use_gpu", type=ast.literal_eval, default=True, help="is use gpu")
+    parser.add_argument("--use_gpu", type=ast.literal_eval, default=True, help="whether to use gpu")
     parser.add_argument('--channel_last', type=str2bool, nargs='?', const=False,
                         help='Whether to use use channel last mode(nhwc)')
-    parser.add_argument("--model_path", type=str, default="/usr/local/model/pytorch_models/resnet50/",
+    parser.add_argument("--model_path", type=str, default="/usr/local/work/models/pytorch_models/resnet50/",
                         help="model load directory if need")
-    parser.add_argument("--image_path", type=str, default='/usr/local/data/fish.jpg', help="image path")
+    parser.add_argument("--data_path", type=str, default='/usr/local/work/dog.jpg', help="input data path")
     parser.add_argument("--reshape_size", type=int_list, default='[224]',
                         help="The reshape size of the image(eg. 224)")
     parser.add_argument("--num_classes", type=int, default=1000, help="num of pic classes")
@@ -78,8 +78,9 @@ def get_parser(parser=None):
     parser.add_argument("--model_config_file", type=str, default="", help="The file of the model config(eg. '')")
     parser.add_argument("--enable_distributed", type=ast.literal_eval, default=False, help="If enable use distributed "
                                                                                            "environment")
-    parser.add_argument("--input_path", type=str, default="/usr/local/data/images/", help="images path")
-    parser.add_argument("--output_path", type=str, default="/usr/local/output_path/", help="json path")
+    parser.add_argument("--input_path", type=str, default="/usr/local/input/", help="input batch data path")
+    parser.add_argument("--output_path", type=str, default="/usr/local/output/", help="output json path")
+    parser.add_argument("--use_script", type=ast.literal_eval, default=False, help="whether to use custom inference script")
 
     return parser
 

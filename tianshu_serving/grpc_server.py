@@ -46,19 +46,21 @@ class InferenceService(inference_pb2_grpc.InferenceServiceServicer):
     调用grpc方法进行推理
     """
     def inference(self, request, context):
-        image_files = request.images
+        data_list = request.data_list
         log.info("===============> grpc inference start <===============")
         try:
-            images = file_utils.upload_image_by_base64(image_files)  # 上传图片到本地
+            data_list_b64 = file_utils.upload_image_by_base64(data_list)  # 上传图片到本地
         except Exception as e:
+            log.error("upload data failed", e)
             return inference_pb2.DataResponse(json_result=json.dumps(
-                response_convert(Response(success=False, data=str(e), error="upload image fail"))))
+                response_convert(Response(success=False, data=str(e), error="upload data failed"))))
         try:
-            result = inference_service.inference(args.model_name, images)
+            result = inference_service.inference(args.model_name, data_list_b64)
             log.info("===============> grpc inference success <===============")
             return inference_pb2.DataResponse(json_result=json.dumps(
                 response_convert(Response(success=True, data=result))))
         except Exception as e:
+            log.error("inference fail", e)
             return inference_pb2.DataResponse(json_result=json.dumps(
                 response_convert(Response(success=False, data=str(e), error="inference fail"))))
 

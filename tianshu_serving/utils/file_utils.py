@@ -43,52 +43,52 @@ def download_image(images_path):
             save_image_dir + str(int(round(time.time() * MAX_TIME_LENGTH))) + "." + image_path.split("/")[-1].split(".")[-1])
 
 
-def upload_image(image_files):
+def upload_data(files):
     """
     前端上传图片保存到本地
     """
-    save_image_dir = "/usr/local/images/"
-    if not os.path.exists(save_image_dir):
-        os.mkdir(save_image_dir)
-    images = list()
-    for image_file in image_files:
+    save_data_dir = "/usr/local/data/"
+    if not os.path.exists(save_data_dir):
+        os.mkdir(save_data_dir)
+    data_list = list()
+    for file in files:
         try:
-            suffix = Path(image_file.filename).suffix
-            with NamedTemporaryFile(delete=False, suffix=suffix, dir=save_image_dir) as tmp:
-                shutil.copyfileobj(image_file.file, tmp)
+            suffix = Path(file.filename).suffix
+            with NamedTemporaryFile(delete=False, suffix=suffix, dir=save_data_dir) as tmp:
+                shutil.copyfileobj(file.file, tmp)
                 tmp_file_name = Path(tmp.name).name
-            file = {"image_name": image_file.filename, "image_path": save_image_dir + tmp_file_name}
-            images.append(file)
+            data = {"data_name": file.filename, "data_path": save_data_dir + tmp_file_name}
+            data_list.append(data)
         finally:
-            image_file.file.close()
-    return images
+            file.file.close
+    return data_list
 
 
-def upload_image_by_base64(image_files):
+def upload_image_by_base64(data_list):
     """
     base64图片信息保存到本地
     """
-    save_image_dir = "/usr/local/images/"
-    if not os.path.exists(save_image_dir):
-        os.mkdir(save_image_dir)
-    images = list()
-    for img_file in image_files:
-        file_path = save_image_dir + str(int(round(time.time() * MAX_TIME_LENGTH))) + "." + img_file.image_name.split(".")[-1]
-        img_data = base64.b64decode(img_file.image_file)
+    save_data_dir = "/usr/local/data/"
+    if not os.path.exists(save_data_dir):
+        os.mkdir(save_data_dir)
+    data_list_b64 = list()
+    for data in data_list:
+        file_path = save_data_dir + str(int(round(time.time() * MAX_TIME_LENGTH))) + "." + data.data_name.split(".")[-1]
+        file_b64 = base64.b64decode(data.data_file)
         file = open(file_path, 'wb')
-        file.write(img_data)
+        file.write(file_b64)
         file.close()
-        image = {"image_name": img_file.image_name, "image_path": file_path}
-        images.append(image)
-    return images
+        data_b64 = {"data_name": data.data_name, "data_path": file_path}
+        data_list_b64.append(data_b64)
+    return data_list_b64
 
 
-def writer_json_file(json_path, image_name, data):
+def writer_json_file(json_path, data_name, data):
     """
     保存为json文件
     """
     if not os.path.exists(json_path):
         os.mkdir(json_path)
-    filename = json_path + image_name + '.json'
+    filename = json_path + data_name + '.json'
     with open(filename, 'w', encoding='utf-8') as file_obj:
         file_obj.write(json.dumps(data, ensure_ascii=False))

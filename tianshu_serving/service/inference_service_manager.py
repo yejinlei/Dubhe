@@ -15,8 +15,10 @@ import time
 from service.oneflow_inference_service import OneFlowInferenceService
 from service.tensorflow_inference_service import TensorflowInferenceService
 from service.pytorch_inference_service import PytorchInferenceService
+import service.common_inference_service as common_inference_service
 from logger import Logger
 from utils import file_utils
+from utils.find_class_in_file import FindClassInFile
 
 log = Logger().logger
 
@@ -36,47 +38,58 @@ class InferenceServiceManager:
                 for model_config in model_config_list:
                     model_name = model_config["model_name"]
                     model_path = model_config["model_path"]
+                    self.args.model_name = model_name
+                    self.args.model_path = model_path
                     model_platform = model_config.get("platform")
 
                     if model_platform == "oneflow":
-                        self.inference_service = OneFlowInferenceService(model_name, model_path)
+                        self.inference_service = OneFlowInferenceService(self.args)
                     elif model_platform == "tensorflow" or model_platform == "keras":
-                        self.inference_service = TensorflowInferenceService(model_name, model_path)
+                        self.inference_service = TensorflowInferenceService(self.args)
                     elif model_platform == "pytorch":
-                        self.inference_service = PytorchInferenceService(model_name, model_path)
+                        self.inference_service = PytorchInferenceService(self.args)
 
                     self.model_name_service_map[model_name] = self.inference_service
         else:
             # Read from command-line parameter
-            if self.args.platform == "oneflow":
-                self.inference_service = OneFlowInferenceService(self.args.model_name, self.args.model_path)
-            elif self.args.platform == "tensorflow" or self.args.platform == "keras":
-                self.inference_service = TensorflowInferenceService(self.args.model_name, self.args.model_path)
-            elif self.args.platform == "pytorch":
-                self.inference_service = PytorchInferenceService(self.args.model_name, self.args.model_path)
+            if self.args.use_script:
+                # 使用自定义推理脚本
+                find_class_in_file = FindClassInFile()
+                cls = find_class_in_file.find(common_inference_service)
+                self.inference_service = cls[1](self.args)
+
+            else :
+                # 使用默认推理脚本
+                if self.args.platform == "oneflow":
+                    self.inference_service = OneFlowInferenceService(self.args)
+                elif self.args.platform == "tensorflow" or self.args.platform == "keras":
+                    self.inference_service = TensorflowInferenceService(self.args)
+                elif self.args.platform == "pytorch":
+                    self.inference_service = PytorchInferenceService(self.args)
+
 
             self.model_name_service_map[self.args.model_name] = self.inference_service
 
-    def inference(self, model_name, images):
+    def inference(self, model_name, data_list):
         """
         在线服务推理方法
         """
         inferenceService = self.model_name_service_map[model_name]
         result = list()
-        for image in images:
-            data = inferenceService.inference(image)
-            if len(images) == 1:
-                return data
+        for data in data_list:
+            output = inferenceService.inference(data)
+            if len(data_list) == 1:
+                return output
             else:
-                result.append(data)
+                result.append(output)
         return result
 
-    def inference_and_save_json(self, model_name, json_path, images):
+    def inference_and_save_json(self, model_name, json_path, data_list):
         """
         批量服务推理方法
         """
         inferenceService = self.model_name_service_map[model_name]
-        for image in images:
-            data = inferenceService.inference(image)
-            file_utils.writer_json_file(json_path, image['image_name'], data)
+        for data in data_list:
+            result = inferenceService.inference(data)
+            file_utils.writer_json_file(json_path, data['data_name'], result)
             time.sleep(1)

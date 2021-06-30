@@ -27,49 +27,47 @@ log = Logger().logger
 def get_host_ip():
     """
     查询本机ip地址
-    :return:
+    return
     """
-    global s
-    try:
-        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        ip = s.getsockname()[0]
-    finally:
-        s.close()
+    hostname = socket.gethostname()
+    ip = socket.gethostbyname(hostname)
     return ip
 
 
-def read_directory(images_path):
+def read_directory(data_path):
     """
     读取文件夹并进行拆分文件
     :return:
     """
-    files = os.listdir(images_path)
+    files = os.listdir(data_path)
     num_files = len(files)
     index_list = list(range(num_files))
-    images = list()
+    data_list = list()
     for index in index_list:
         # 是否开启分布式
         if args.enable_distributed:
             ip = get_host_ip()
+            log.info("NODE_IPS:{}", os.getenv('NODE_IPS'))
             ip_list = os.getenv('NODE_IPS').split(",")
             num_ips = len(ip_list)
             ip_index = ip_list.index(ip)
             if ip_index == index % num_ips:
                 filename = files[index]
-                image = {"image_name": filename, "image_path": images_path + filename}
-                images.append(image)
+                data = {"data_name": filename, "data_path": data_path + filename}
+                data_list.append(data)
         else:
             filename = files[index]
-            image = {"image_name": filename, "image_path": images_path + filename}
-            images.append(image)
-    return images
+            data = {"data_name": filename, "data_path": data_path + filename}
+            data_list.append(data)
+    return data_list
 
 
 def main():
-    images = read_directory(args.input_path)
-    inference_service.inference_and_save_json(args.model_name, args.output_path, images)
+    data_list = read_directory(args.input_path)
+    inference_service.inference_and_save_json(args.model_name, args.output_path, data_list)
     if args.enable_distributed:
         ip = get_host_ip()
+        log.info("NODE_IPS:{}", os.getenv('NODE_IPS'))
         ip_list = os.getenv('NODE_IPS').split(",")
         # 主节点必须等待从节点推理完成
         if ip == ip_list[0]:

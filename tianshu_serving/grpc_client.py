@@ -21,8 +21,8 @@ log = Logger().logger
 parser = configs.get_parser()
 args = parser.parse_args()
 
-_HOST = 'kohj2s.serving.dubhe.ai'
-_PORT = '31365'
+_HOST = '10.5.24.134'
+_PORT = '8500'
 MAX_MESSAGE_LENGTH = 1024 * 1024 * 1024  # 可根据具体需求设置，此处设为1G
 
 
@@ -41,12 +41,12 @@ def run():
             ('grpc.max_receive_message_length', MAX_MESSAGE_LENGTH), ], )  # 创建连接
     client = inference_pb2_grpc.InferenceServiceStub(channel=channel)  # 创建客户端
     data_request = inference_pb2.DataRequest()
-    Image = data_request.images.add()
-    Image.image_file = str(base64.b64encode(open("F:\\Files\\pic\\哈士奇.jpg", "rb").read()), encoding='utf-8')
-    Image.image_name = "哈士奇.jpg"
-    Image = data_request.images.add()
-    Image.image_file = str(base64.b64encode(open("F:\\Files\\pic\\fish.jpg", "rb").read()), encoding='utf-8')
-    Image.image_name = "fish.jpg"
+    data1 = data_request.data_list.add()
+    data1.data_file = str(base64.b64encode(open("/usr/local/input/dog.jpg", "rb").read()), encoding='utf-8')
+    data1.data_name = "dog.jpg"
+    data2 = data_request.data_list.add()
+    data2.data_file = str(base64.b64encode(open("/usr/local/input/6.jpg", "rb").read()), encoding='utf-8')
+    data2.data_name = "6.jpg"
     response = client.inference(data_request)
     log.info(response.json_result.encode('utf-8').decode('unicode_escape'))
 

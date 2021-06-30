@@ -13,7 +13,6 @@ limitations under the License.
 import tensorflow as tf
 import requests
 import numpy as np
-import config as configs
 from imagenet1000_clsidx_to_labels import clsidx_2_labels
 from service.abstract_inference_service import AbstractInferenceService
 from utils.imagenet_preprocessing_utils import preprocess_input
@@ -21,8 +20,6 @@ from logger import Logger
 from PIL import Image
 from io import BytesIO
 
-parser = configs.get_parser()
-args = parser.parse_args()
 log = Logger().logger
 
 
@@ -30,11 +27,12 @@ class TensorflowInferenceService(AbstractInferenceService):
     """
     tensorflow 框架推理service
     """
-    def __init__(self, model_name, model_path):
+    def __init__(self, args):
         super().__init__()
         self.session = tf.compat.v1.Session(graph=tf.Graph())
-        self.model_name = model_name
-        self.model_path = model_path
+        self.args = args
+        self.model_name = args.model_name
+        self.model_path = args.model_path
         self.signature_input_keys = []
         self.signature_input_tensor_names = []
         self.signature_output_keys = []
@@ -69,11 +67,11 @@ class TensorflowInferenceService(AbstractInferenceService):
             self.session, [tf.compat.v1.saved_model.tag_constants.SERVING], self.model_path)
 
         # 加载模型之前先校验用户传入signature name
-        if args.signature_name not in meta_graph.signature_def:
+        if self.args.signature_name not in meta_graph.signature_def:
             log.error("==============> Invalid signature name <==================")
 
         # 从signature中获取meta graph中输入和输出的节点信息
-        signature = meta_graph.signature_def[args.signature_name]
+        signature = meta_graph.signature_def[self.args.signature_name]
         input_keys, input_tensor_names = get_tensors(signature.inputs)
         output_keys, output_tensor_names = get_tensors(signature.outputs)
 
@@ -87,14 +85,14 @@ class TensorflowInferenceService(AbstractInferenceService):
         log.info("===============> load tensorflow model success <===============")
 
     def inference(self, image):
-        data = {"image_name": image['image_name']}
+        data = {"data_name": image['data_name']}
         # 获得用户输入的图片
-        log.info("===============> start load " + image['image_name'] + " <===============")
+        log.info("===============> start load " + image['data_name'] + " <===============")
         # 推理所需的输入,目前的分类预置模型都只有一个输入
         input_dict = {}
         input_keys = self.signature_input_keys
         input_data = {}
-        im = preprocess_input(self.load_image(image['image_path']), mode=args.prepare_mode)
+        im = preprocess_input(self.load_image(image['data_path']), mode=self.args.prepare_mode)
         if len(list(im.shape)) == 3:
             input_data[input_keys[0]] = np.expand_dims(im, axis=0)
 

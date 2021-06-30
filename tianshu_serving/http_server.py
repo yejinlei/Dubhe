@@ -49,7 +49,7 @@ async def inference(images_path: List[str] = None):
     threading.Thread(target=file_utils.download_image(images_path))  # 开启异步线程下载图片到本地
     images = list()
     for image in images_path:
-        data = {"image_name": image.split("/")[-1], "image_path": image}
+        data = {"data_name": image.split("/")[-1], "data_path": image}
         images.append(data)
     try:
         data = inference_service.inference(args.model_name, images)
@@ -59,17 +59,22 @@ async def inference(images_path: List[str] = None):
 
 
 @app.post("/inference")
-async def inference(image_files: List[UploadFile] = File(...)):
+async def inference(files: List[UploadFile] = File(...)):
+    """
+    上传本地文件推理
+    """
     log.info("===============> http inference start <===============")
     try:
-        images = file_utils.upload_image(image_files)  # 上传图片到本地
+        data_list = file_utils.upload_data(files)  # 上传图片到本地
     except Exception as e:
-        return Response(success=False, data=str(e), error="upload image fail")
+        log.error("upload data failed", e)
+        return Response(success=False, data=str(e), error="upload data failed")
     try:
-        result = inference_service.inference(args.model_name, images)
+        result = inference_service.inference(args.model_name, data_list)
         log.info("===============> http inference success <===============")
         return Response(success=True, data=result)
     except Exception as e:
+        log.error("inference fail", e)
         return Response(success=False, data=str(e), error="inference fail")
 
 

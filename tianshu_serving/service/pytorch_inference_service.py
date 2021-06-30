@@ -16,15 +16,12 @@ import torch
 import torch.nn.functional as functional
 from PIL import Image
 from torchvision import transforms
-import config
 import requests
 from imagenet1000_clsidx_to_labels import clsidx_2_labels
 from io import BytesIO
 from logger import Logger
 from service.abstract_inference_service import AbstractInferenceService
 
-parser = config.get_parser()
-args = parser.parse_args()
 log = Logger().logger
 
 
@@ -33,10 +30,11 @@ class PytorchInferenceService(AbstractInferenceService):
     pytorch 框架推理service
     """
 
-    def __init__(self, model_name, model_path):
+    def __init__(self, args):
         super().__init__()
-        self.model_name = model_name
-        self.model_path = model_path
+        self.args = args
+        self.model_name = args.model_name
+        self.model_path = args.model_path
         self.model = self.load_model()
         self.checkpoint = None
 
@@ -52,38 +50,38 @@ class PytorchInferenceService(AbstractInferenceService):
             image = Image.open(io.BytesIO(image))
         if image.mode != 'RGB':
             image = image.convert("RGB")
-        image = transforms.Resize((args.reshape_size[0], args.reshape_size[1]))(image)
+        image = transforms.Resize((self.args.reshape_size[0], self.args.reshape_size[1]))(image)
         image = transforms.ToTensor()(image)
         image = transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])(image)
         image = image[None]
-        if args.use_gpu:
+        if self.args.use_gpu:
             image = image.cuda()
         log.info("===============> load image success <===============")
         return image
 
     def load_model(self):
-        log.info("===============> start load pytorch model :" + args.model_path + " <===============")
-        if os.path.isfile(args.model_path):
+        log.info("===============> start load pytorch model :" + self.args.model_path + " <===============")
+        if os.path.isfile(self.args.model_path):
             self.checkpoint = torch.load(self.model_path)
         else:
-            for file in os.listdir(args.model_path):
+            for file in os.listdir(self.args.model_path):
                 self.checkpoint = torch.load(self.model_path + file)
-        model = self.checkpoint[args.model_structure]
+        model = self.checkpoint[self.args.model_structure]
         model.load_state_dict(self.checkpoint['state_dict'])
         for parameter in model.parameters():
             parameter.requires_grad = False
-        if args.use_gpu:
+        if self.args.use_gpu:
             model.cuda()
         model.eval()
         log.info("===============> load pytorch model success <===============")
         return model
 
     def inference(self, image):
-        data = {"image_name": image['image_name']}
-        log.info("===============> start load " + image['image_name'] + " <===============")
-        image = self.load_image(image['image_path'])
-        predis = functional.softmax(self.model(image), dim=1)
-        results = torch.topk(predis.data, k=5, dim=1)
+        data = {"data_name": image['data_name']}
+        log.info("===============> start load " + image['data_name'] + " <===============")
+        image = self.load_image(image['data_path'])
+        preds = functional.softmax(self.model(image), dim=1)
+        results = torch.topk(preds.data, k=5, dim=1)
         data['predictions'] = list()
         for prob, label in zip(results[0][0], results[1][0]):
             result = {"label": clsidx_2_labels[int(label)], "probability": "{:.3f}".format(float(prob))}

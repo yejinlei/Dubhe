@@ -20,11 +20,7 @@ import google.protobuf.text_format as text_format
 import os
 from imagenet1000_clsidx_to_labels import clsidx_2_labels
 from logger import Logger
-import config as configs
 from service.abstract_inference_service import AbstractInferenceService
-
-parser = configs.get_parser()
-args = parser.parse_args()
 
 log = Logger().logger
 
@@ -33,10 +29,11 @@ class OneFlowInferenceService(AbstractInferenceService):
     """
     oneflow 框架推理service
     """
-    def __init__(self, model_name, model_path):
+    def __init__(self, args):
         super().__init__()
-        self.model_name = model_name
-        self.model_path = model_path
+        self.args = args
+        self.model_name = args.model_name
+        self.model_path = args.model_path
         flow.clear_default_session()
         self.infer_session = flow.SimpleSession()
         self.load_model()
@@ -91,9 +88,9 @@ class OneFlowInferenceService(AbstractInferenceService):
         return saved_model_proto
 
     def inference(self, image):
-        data = {"image_name": image['image_name']}
-        log.info("===============> start load " + image['image_name'] + " <===============")
-        images = self.load_image(image['image_path'])
+        data = {"data_name": image['data_name']}
+        log.info("===============> start load " + image['data_name'] + " <===============")
+        images = self.load_image(image['data_path'])
 
         predictions = self.infer_session.run('inference', image=images)
 
