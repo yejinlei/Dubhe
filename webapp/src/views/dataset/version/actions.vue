@@ -29,9 +29,7 @@
       </div>
       <el-button slot="reference" type="text">详情</el-button>
     </el-popover>
-    <el-button v-if="isCurrent && !publishing && !isCustom" type="text" @click="gotoDetail"
-      >查看标注</el-button
-    >
+    <el-button v-if="isCurrent && !publishing" type="text" @click="gotoDetail">查看标注</el-button>
     <el-button v-if="isPreset" type="text" @click="convert(row)">生成预置数据集</el-button>
     <el-dropdown placement="bottom">
       <el-button type="text" style="margin-left: 10px;" @click.stop="() => {}">
@@ -99,7 +97,9 @@ export default {
     // 发布中
     const publishing = computed(() => isPublishDataset(props.row));
     const isCurrent = computed(() => !!props.row.isCurrent);
-    const isPreset = computed(() => props.row.presetFlag);
+    const isPreset = computed(
+      () => props.row.presetFlag && props.row.dataType !== dataTypeCodeMap.CUSTOM
+    );
     const isOfRecord = computed(() => props.row.isOfRecord);
     const isCustom = computed(() => props.row.dataType === dataTypeCodeMap.CUSTOM);
     const title = computed(() => `${props.row.name}(${props.row.versionName})`);

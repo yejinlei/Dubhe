@@ -302,10 +302,17 @@ export default {
       if (!originService) {
         return;
       }
-      const { status, progress, startTime, endTime, outputPath } = service;
+      const { status, progress, startTime, endTime, outputPath, statusDetail } = service;
       const { pollId } = option;
       // 更新数据
-      Object.assign(originService, { status, progress, startTime, endTime, outputPath });
+      Object.assign(originService, {
+        status,
+        progress,
+        startTime,
+        endTime,
+        outputPath,
+        statusDetail,
+      });
       if (this.needPoll(status) && pollId && this.pollMap[id] === pollId) {
         setTimeout(() => {
           this.getServiceProgress(id, option);

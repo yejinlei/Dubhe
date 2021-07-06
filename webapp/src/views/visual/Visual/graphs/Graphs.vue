@@ -263,7 +263,7 @@ export default {
       }
       // 判断是否为计算图特殊节点
       function IsSpecialNode(itemnode) {
-        if (!itemnode || itemnode.op !== '') {
+        if (!itemnode) {
           return false;
         }
         if (itemnode.sub_net.length > 0) {
@@ -274,22 +274,20 @@ export default {
             }
           }
         }
-        for (const n in itemnode.sub_net) {
-          // 1:卷积层,2:全连接层,3:池化层,4:归一化
-          if (itemnode.sub_net[n].op.toLowerCase().indexOf(SpecialNodeList[0].toLowerCase()) >= 0) {
-            return 1;
-          }
-          if (itemnode.label.toLowerCase().indexOf(SpecialNodeList[1].toLowerCase()) >= 0) {
-            return 2;
-          }
-          if (itemnode.label.toLowerCase().indexOf(SpecialNodeList[2].toLowerCase()) >= 0) {
-            return 3;
-          }
-          if (itemnode.label.toLowerCase().indexOf(SpecialNodeList[3].toLowerCase()) >= 0) {
-            return 4;
-          }
-          return false;
+        // 1:卷积层,2:全连接层,3:池化层,4:归一化
+        if (itemnode.op.toLowerCase().indexOf(SpecialNodeList[0].toLowerCase()) >= 0) {
+          return 1;
         }
+        if (itemnode.op.toLowerCase().indexOf(SpecialNodeList[1].toLowerCase()) >= 0) {
+          return 2;
+        }
+        if (itemnode.op.toLowerCase().indexOf(SpecialNodeList[2].toLowerCase()) >= 0) {
+          return 3;
+        }
+        if (itemnode.op.toLowerCase().indexOf(SpecialNodeList[3].toLowerCase()) >= 0) {
+          return 4;
+        }
+        return false;
       }
       // 绘制计算图特殊节点
       function DrawSpecialNodes(graph) {
