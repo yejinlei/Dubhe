@@ -394,6 +394,7 @@ public class BatchServingServiceImpl extends ServiceImpl<BatchServingMapper, Bat
         }
         BatchServing batchServing = checkBatchServingExist(batchServingUpdateDTO.getId(), user.getId());
         checkBatchServingStatus(batchServing.getStatus());
+        batchServing.setStatusDetail(SymbolConstant.BRACKETS);
         deployServingAsyncTask.deleteBatchServing(user, batchServing, batchServing.getResourceInfo());
         //修改输入路径时，定时删除之前路径下的文件
         if (!batchServing.getInputPath().equals(batchServingUpdateDTO.getInputPath())) {
@@ -794,6 +795,7 @@ public class BatchServingServiceImpl extends ServiceImpl<BatchServingMapper, Bat
                 .name(batchServing.getName())
                 .description(batchServing.getDescription())
                 .status(batchServing.getStatus())
+                .statusDetail(batchServing.getStatusDetail())
                 .progress(progress)
                 .startTime(batchServing.getStartTime())
                 .endTime(batchServing.getEndTime())

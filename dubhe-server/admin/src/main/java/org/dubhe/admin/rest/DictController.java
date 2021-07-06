@@ -101,7 +101,6 @@ public class DictController {
 
     @ApiOperation("根据名称查询字典详情")
     @GetMapping(value = "/{name}")
-    @PreAuthorize(Permissions.DICT)
     public DataResponseBody getDict(@PathVariable String name) {
         return DataResponseFactory.success(dictService.findByName(name));
     }

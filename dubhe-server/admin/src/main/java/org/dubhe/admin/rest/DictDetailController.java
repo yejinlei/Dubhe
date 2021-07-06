@@ -88,7 +88,6 @@ public class DictDetailController {
 
     @ApiOperation("根据名称查询字典详情")
     @GetMapping("/getDictDetails")
-    @PreAuthorize(Permissions.DICT)
     public DataResponseBody<List<DictDetailVO>> findDictDetailByName(@Validated DictDetailQueryByLabelNameDTO dictDetailQueryByLabelNameDTO) {
         return new DataResponseBody(dictDetailService.getDictName(dictDetailQueryByLabelNameDTO));
     }

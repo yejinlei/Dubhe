@@ -1,34 +1,34 @@
 -- DDL 脚本
-use dubhe-cloud-prod;
+use `dubhe-cloud-prod`;
 
 -- 原boot单体项目 DDL 脚本内容
-CREATE TABLE IF NOT EXISTS `data_dataset`  (
-   `id` bigint(20) NOT NULL AUTO_INCREMENT,
-   `name` varchar(255) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL,
-   `remark` varchar(255) CHARACTER SET utf8 COLLATE utf8_general_ci NULL DEFAULT NULL,
-   `type` tinyint(4) NOT NULL DEFAULT 0 COMMENT '类型 0: private 私有数据,  1:team  团队数据  2:public 公开数据',
-   `team_id` bigint(20) NULL DEFAULT NULL,
-   `uri` varchar(255) CHARACTER SET utf8 COLLATE utf8_general_ci NULL DEFAULT '' COMMENT '数据集存储位置',
-   `create_user_id` bigint(20) NULL DEFAULT NULL,
-   `create_time` datetime(0) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-   `update_user_id` bigint(20) NULL DEFAULT NULL,
-   `update_time` datetime(0) NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP(0),
-   `deleted` bit(1) NULL DEFAULT NULL,
-   `data_type` tinyint(4) NOT NULL DEFAULT 0 COMMENT '数据类型:0图片，1视频，2文本',
-   `annotate_type` tinyint(4) NOT NULL DEFAULT 0 COMMENT '标注类型：2分类,1目标检测,5目标跟踪',
-   `labels` varchar(255) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL DEFAULT '' COMMENT '标签集合，以逗号分隔',
-   `status` int(11) NOT NULL DEFAULT 0 COMMENT '101:未标注  102:手动标注中  103:自动标注中  104:自动标注完成  105:标注完成  201:目标跟踪中  202:目标跟踪完成  203:目标跟踪失败  301:未采样  302:采样中  303:采样失败  401:增强中  402:导入中',
-   `current_version_name` varchar(16) CHARACTER SET utf8 COLLATE utf8_general_ci NULL DEFAULT NULL COMMENT '当前版本号',
-   `is_import` tinyint(1) NULL DEFAULT 0 COMMENT '是否用户导入',
-   `archive_url` varchar(255) CHARACTER SET utf8 COLLATE utf8_general_ci NULL DEFAULT NULL COMMENT '用户导入数据集压缩包地址',
-   `decompress_state` tinyint(2) NULL DEFAULT 0 COMMENT '解压状态: 0未解压 1解压中 2解压完成 3解压失败',
-   `decompress_fail_reason` varchar(255) CHARACTER SET utf8 COLLATE utf8_general_ci NULL DEFAULT NULL COMMENT '解压失败原因',
-   `is_top` tinyint(1) NULL DEFAULT NULL COMMENT '是否为置顶',
-   `origin_user_id` bigint(20) NULL DEFAULT NULL COMMENT '资源拥有人id',
-   `label_group_id` bigint(20) NULL DEFAULT NULL COMMENT '标签组ID',
-   `source_id` bigint(20) NULL DEFAULT NULL COMMENT '数据集源ID',
-   PRIMARY KEY (`id`) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 1 CHARACTER SET = utf8 COLLATE = utf8_general_ci COMMENT = '数据集管理' ROW_FORMAT = Dynamic;
+CREATE TABLE IF NOT EXISTS `data_dataset` (
+    `id` bigint(20) NOT NULL AUTO_INCREMENT,
+    `name` varchar(255) NOT NULL,
+    `remark` varchar(255) DEFAULT NULL,
+    `type` tinyint(4) NOT NULL DEFAULT '0' COMMENT '类型 0: private 私有数据,  1:team  团队数据  2:public 公开数据',
+    `team_id` bigint(20) DEFAULT NULL,
+    `uri` varchar(255) DEFAULT '' COMMENT '数据集存储位置',
+    `create_user_id` bigint(20) DEFAULT NULL,
+    `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    `update_user_id` bigint(20) DEFAULT NULL,
+    `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    `deleted` bit(1) DEFAULT NULL,
+    `data_type` tinyint(4) NOT NULL DEFAULT '0' COMMENT '数据类型:0图片，1视频，2文本',
+    `annotate_type` tinyint(4) NOT NULL DEFAULT '0' COMMENT '标注类型：2分类,1目标检测,5目标跟踪',
+    `labels` varchar(255) NOT NULL DEFAULT '' COMMENT '标签集合，以逗号分隔',
+    `status` int(11) NOT NULL DEFAULT '0' COMMENT '101:未标注  102:手动标注中  103:自动标注中  104:自动标注完成  105:标注完成  201:目标跟踪中  202:目标跟踪完成  203:目标跟踪失败  301:未采样  302:采样中  303:采样失败  401:增强中  402:导入中',
+    `current_version_name` varchar(16) DEFAULT NULL COMMENT '当前版本号',
+    `is_import` tinyint(1) DEFAULT '0' COMMENT '是否用户导入',
+    `archive_url` varchar(255) DEFAULT NULL COMMENT '用户导入数据集压缩包地址',
+    `decompress_state` tinyint(2) DEFAULT '0' COMMENT '解压状态: 0未解压 1解压中 2解压完成 3解压失败',
+    `decompress_fail_reason` varchar(255) DEFAULT NULL COMMENT '解压失败原因',
+    `is_top` tinyint(1) DEFAULT NULL COMMENT '是否为置顶',
+    `origin_user_id` bigint(20) DEFAULT NULL COMMENT '资源拥有人id',
+    `label_group_id` bigint(20) DEFAULT NULL COMMENT '标签组ID',
+    `source_id` bigint(20) DEFAULT NULL COMMENT '数据集源ID',
+    PRIMARY KEY (`id`) USING BTREE
+) ENGINE=InnoDB AUTO_INCREMENT = 1 COMMENT='数据集管理';
 
 CREATE TABLE IF NOT EXISTS `data_dataset_label`  (
    `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT,
@@ -41,27 +41,27 @@ CREATE TABLE IF NOT EXISTS `data_dataset_label`  (
    `update_user_id` bigint(20) NULL DEFAULT NULL COMMENT '修改人id',
    PRIMARY KEY (`id`) USING BTREE,
    UNIQUE INDEX `dataset_id`(`dataset_id`, `label_id`) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 1 CHARACTER SET = utf8 COLLATE = utf8_general_ci ROW_FORMAT = Dynamic;
+) ENGINE = InnoDB AUTO_INCREMENT = 1 COMMENT='数据集标签';
 
-CREATE TABLE IF NOT EXISTS `data_dataset_version`  (
-   `id` bigint(19) NOT NULL AUTO_INCREMENT COMMENT '主键',
-   `dataset_id` bigint(19) NULL DEFAULT NULL COMMENT '数据集ID',
-   `team_id` bigint(19) NULL DEFAULT NULL COMMENT '团队ID',
-   `create_user_id` bigint(19) NULL DEFAULT NULL COMMENT '创建人',
-   `create_time` datetime(0) NOT NULL COMMENT '创建时间',
-   `update_user_id` bigint(19) NULL DEFAULT NULL COMMENT '修改人',
-   `update_time` datetime(0) NULL DEFAULT NULL COMMENT '修改时间',
-   `deleted` bit(1) NOT NULL DEFAULT b'0' COMMENT '数据集版本删除标记0正常，1已删除',
-   `version_name` varchar(8) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL COMMENT '版本号',
-   `version_note` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL COMMENT '版本说明',
-   `version_source` varchar(32) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL COMMENT '来源版本号',
-   `version_url` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL COMMENT '版本信息存储url',
-   `data_conversion` int(1) NOT NULL DEFAULT 0 COMMENT '数据转换；0：图片未复制；1：未转换；2：已转换；3：无法转换; 4:标注未复制',
-   `origin_user_id` bigint(19) NULL DEFAULT 0 COMMENT '资源拥有人id',
-   `of_record` tinyint(1) NULL DEFAULT 0 COMMENT '是否生成ofRecord文件',
-   PRIMARY KEY (`id`) USING BTREE,
-   UNIQUE INDEX `unique_version`(`dataset_id`, `version_name`) USING BTREE COMMENT '数据集版本号唯一'
-) ENGINE = InnoDB AUTO_INCREMENT = 1 CHARACTER SET = utf8 COLLATE = utf8mb4_general_ci COMMENT = '数据集版本表' ROW_FORMAT = Dynamic;
+CREATE TABLE IF NOT EXISTS `data_dataset_version` (
+    `id` bigint(19) NOT NULL AUTO_INCREMENT COMMENT '主键',
+    `dataset_id` bigint(19) DEFAULT NULL COMMENT '数据集ID',
+    `team_id` bigint(19) DEFAULT NULL COMMENT '团队ID',
+    `create_user_id` bigint(19) DEFAULT NULL COMMENT '创建人',
+    `create_time` datetime NOT NULL COMMENT '创建时间',
+    `update_user_id` bigint(19) DEFAULT NULL COMMENT '修改人',
+    `update_time` datetime DEFAULT NULL COMMENT '修改时间',
+    `deleted` bit(1) NOT NULL DEFAULT b'0' COMMENT '数据集版本删除标记0正常，1已删除',
+    `version_name` varchar(8) NOT NULL COMMENT '版本号',
+    `version_note` varchar(50) NOT NULL COMMENT '版本说明',
+    `version_source` varchar(32) DEFAULT NULL COMMENT '来源版本号',
+    `version_url` varchar(255) DEFAULT NULL COMMENT '版本信息存储url',
+    `data_conversion` int(1) NOT NULL DEFAULT '0' COMMENT '数据转换；0：未复制；1：已复制;2:转换完成,3:转换失败',
+    `origin_user_id` bigint(20) DEFAULT NULL COMMENT '资源用有人ID',
+    `of_record` tinyint(1) DEFAULT '0' COMMENT '是否生成ofRecord文件',
+    PRIMARY KEY (`id`) USING BTREE,
+    UNIQUE KEY `unique_version` (`dataset_id`,`version_name`) COMMENT '数据集版本号唯一'
+) ENGINE=InnoDB AUTO_INCREMENT=1 COMMENT='数据集版本表';
 
 CREATE TABLE IF NOT EXISTS `data_dataset_version_file` (
      `id` bigint(20) NOT NULL AUTO_INCREMENT COMMENT '主键',
@@ -78,7 +78,7 @@ CREATE TABLE IF NOT EXISTS `data_dataset_version_file` (
      KEY `dataset_id_annotation_status` (`dataset_id`,`annotation_status`,`version_name`) USING BTREE,
      KEY `select_file` (`dataset_id`,`status`,`annotation_status`,`version_name`,`file_id`),
      KEY `file_state_annotation_finished` (`dataset_id`,`file_id`,`version_name`) USING BTREE
-) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8 COMMENT='数据集版本文件关系表';
+) ENGINE=InnoDB AUTO_INCREMENT=1 COMMENT='数据集版本文件关系表';
 
 CREATE TABLE IF NOT EXISTS `data_file` (
      `id` bigint(20) unsigned zerofill NOT NULL AUTO_INCREMENT COMMENT 'ID',
@@ -107,7 +107,7 @@ CREATE TABLE IF NOT EXISTS `data_file` (
      KEY `uuid` (`url`,`deleted`) USING BTREE,
      KEY `status` (`dataset_id`,`status`,`deleted`) USING BTREE,
      KEY `es_transport` (`es_transport`) USING BTREE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='文件信息';
+) ENGINE=InnoDB AUTO_INCREMENT=1 COMMENT='文件信息';
 
 CREATE TABLE IF NOT EXISTS `data_file_annotation` (
     `id` bigint(20) NOT NULL AUTO_INCREMENT,
@@ -126,7 +126,7 @@ CREATE TABLE IF NOT EXISTS `data_file_annotation` (
     PRIMARY KEY (`id`),
     KEY `version_file_index` (`version_file_id`) USING BTREE,
     KEY `label_dataset_id_index` (`label_id`,`dataset_id`) USING BTREE
-) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8 COMMENT='数据集文件标注表';
+) ENGINE=InnoDB AUTO_INCREMENT=1 COMMENT='数据集文件标注表';
 
 CREATE TABLE IF NOT EXISTS `data_group_label` (
     `id` bigint(20) NOT NULL AUTO_INCREMENT,
@@ -138,7 +138,7 @@ CREATE TABLE IF NOT EXISTS `data_group_label` (
     `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     `deleted` bit(1) NOT NULL DEFAULT b'0',
     PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8 COMMENT='标签组标签中间表';
+) ENGINE=InnoDB AUTO_INCREMENT=1 COMMENT='标签组标签中间表';
 
 CREATE TABLE IF NOT EXISTS `data_label` (
       `id` bigint(20) NOT NULL AUTO_INCREMENT,
@@ -152,7 +152,7 @@ CREATE TABLE IF NOT EXISTS `data_label` (
       `type` tinyint(1) NOT NULL DEFAULT '0' COMMENT '标签类型 0:自定义标签 1:自动标注标签 2:ImageNet 3: MS COCO',
       PRIMARY KEY (`id`) USING BTREE,
       KEY `dataset` (`name`,`deleted`) USING BTREE
-) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8 COMMENT='数据集标签';
+) ENGINE=InnoDB AUTO_INCREMENT=1 COMMENT='数据集标签';
 
 CREATE TABLE IF NOT EXISTS `data_label_group` (
       `id` bigint(20) NOT NULL AUTO_INCREMENT,
@@ -168,7 +168,7 @@ CREATE TABLE IF NOT EXISTS `data_label_group` (
       `operate_type` int(11) DEFAULT NULL COMMENT '操作类型 1:Json编辑器操作类型 2:自定义操作类型 3:导入操作类型',
       `label_group_type` int(1) NOT NULL DEFAULT '0' COMMENT '标签组数据类型  0:视觉  1:文本',
       PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8 COMMENT='标签组';
+) ENGINE=InnoDB AUTO_INCREMENT=1 COMMENT='标签组';
 
 CREATE TABLE IF NOT EXISTS `data_lesion_slice` (
      `id` bigint(20) NOT NULL AUTO_INCREMENT,
@@ -183,7 +183,7 @@ CREATE TABLE IF NOT EXISTS `data_lesion_slice` (
      `draw_info` text,
      `origin_user_id` bigint(19) DEFAULT NULL COMMENT '资源拥有者ID',
      PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8;
+) ENGINE=InnoDB AUTO_INCREMENT=1 COMMENT='数据病变切片';
 
 CREATE TABLE IF NOT EXISTS `data_medicine` (
      `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT COMMENT 'ID',
@@ -205,7 +205,7 @@ CREATE TABLE IF NOT EXISTS `data_medicine` (
      `type` tinyint(4) NOT NULL DEFAULT '0' COMMENT '类型 0: private 私有数据,  1:team  团队数据  2:public 公开数据',
      `annotate_type` smallint(5) NOT NULL DEFAULT '0' COMMENT '标注类型: 1.器官分割 2.病灶检测之肺结节检测',
      PRIMARY KEY (`id`) USING BTREE
-) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8 COMMENT='医学数据集';
+) ENGINE=InnoDB AUTO_INCREMENT=1 COMMENT='医学数据集';
 
 CREATE TABLE IF NOT EXISTS `data_medicine_file` (
       `id` bigint(20) unsigned zerofill NOT NULL AUTO_INCREMENT COMMENT 'ID',
@@ -223,7 +223,7 @@ CREATE TABLE IF NOT EXISTS `data_medicine_file` (
       `status` tinyint(4) DEFAULT NULL COMMENT '状态 101-未标注 103-自动标注完成 104-完成',
       `image_position_patient` double(11,1) DEFAULT NULL,
       PRIMARY KEY (`id`) USING BTREE
-) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8 COMMENT='医学数据集';
+) ENGINE=InnoDB AUTO_INCREMENT=1 COMMENT='医学数据集';
 
 CREATE TABLE IF NOT EXISTS `data_sequence` (
      `id` int(11) NOT NULL,
@@ -232,7 +232,7 @@ CREATE TABLE IF NOT EXISTS `data_sequence` (
      `step` int(11) NOT NULL,
      PRIMARY KEY (`id`),
      UNIQUE KEY `business_code_unique` (`business_code`) USING BTREE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='自定义获取主键ID表';
+) ENGINE=InnoDB COMMENT='自定义获取主键ID表';
 
 CREATE TABLE IF NOT EXISTS `data_task`  (
   `id` bigint(20) UNSIGNED ZEROFILL NOT NULL AUTO_INCREMENT COMMENT 'ID',
@@ -261,13 +261,7 @@ CREATE TABLE IF NOT EXISTS `data_task`  (
   PRIMARY KEY (`id`) USING BTREE,
   KEY `deleted` (`deleted`) USING BTREE,
   KEY `ds_status` (`datasets`,`status`) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 1 CHARACTER SET = utf8 COLLATE = utf8_general_ci COMMENT = '标注任务信息' ROW_FORMAT = Dynamic;
-
-create index deleted
-    on data_task (deleted);
-
-create index ds_status
-    on data_task (datasets, status);
+) ENGINE = InnoDB AUTO_INCREMENT = 1 COMMENT = '标注任务信息';
 
 create table if not exists dict
 (
@@ -1282,11 +1276,6 @@ CREATE TABLE IF NOT EXISTS `oauth_refresh_token` (
   `authentication` blob
 ) comment '权限token刷新表' ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-create index label_dataset_id_indx
-	on data_file_annotation (label_id, dataset_id);
-
-create index version_file_index
-	on data_file_annotation (version_file_id);
 
 -- 操作权限表
 CREATE TABLE if not exists `permission` (

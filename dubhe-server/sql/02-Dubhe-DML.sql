@@ -1,7 +1,7 @@
 -- DML 脚本
-use dubhe-cloud-prod;
+use `dubhe-cloud-prod`;
 
-
+SET SQL_SAFE_UPDATES = 0;
 -- 原boot单体项目 DML 脚本内容
 
 -- truncate table dict;
@@ -15,55 +15,77 @@ use dubhe-cloud-prod;
 -- 初始化默认用户
 INSERT INTO user (id, email, enabled, nick_name, password, phone, sex, username) VALUES (1, 'admin@tom.com', true, '系统管理员', '$2a$10$VhAWNoUtpJKr000UYmfMee4SONBXJuRWGus64bmomyFKEo4kiwHve', '18888888888', '男', 'admin');
 
+insert  into `menu` (`id`,`pid`,`type`,`name`,`icon`,`path`,`component`,`component_name`,`layout`,`permission`,`back_to`,`ext_config`,`hidden`,`cache`,`sort`,`create_user_id`,`update_user_id`,`deleted`) values
+(1,0,1,'概览','yibiaopan','dashboard','dashboard/dashboard','Dashboard','BaseLayout',NULL,NULL,NULL,'\0','\0',1,NULL,NULL,'\0'),
+(10,0,0,'数据管理','shujuguanli','data',NULL,NULL,NULL,'data',NULL,NULL,'\0','\0',2,NULL,NULL,'\0'),
+(11,10,1,'数据集管理','shujuguanli','datasets/list','dataset/list','Datasets','BaseLayout','data:dataset',NULL,NULL,'\0','\0',999,NULL,NULL,'\0'),
+(12,10,1,'图像分类',NULL,'datasets/classify/:datasetId','dataset/classify','DatasetClassify','DetailLayout',NULL,NULL,NULL,'','\0',999,NULL,NULL,'\0'),
+(13,10,1,'目标检测',NULL,'datasets/annotate/:datasetId/file/:fileId','dataset/annotate','AnnotateDatasetFile','DetailLayout',NULL,NULL,NULL,'','\0',999,NULL,NULL,'\0'),
+(14,10,1,'目标检测',NULL,'datasets/annotate/:datasetId','dataset/annotate','AnnotateDataset','DetailLayout',NULL,NULL,NULL,'','\0',999,NULL,NULL,'\0'),
+(15,10,1,'目标跟踪',NULL,'datasets/track/:datasetId/file/:fileId','dataset/annotate','TrackDatasetFile','DatasetLayout',NULL,NULL,NULL,'','\0',999,NULL,NULL,'\0'),
+(16,10,1,'目标跟踪',NULL,'datasets/track/:datasetId','dataset/annotate','TrackDataset','DatasetLayout',NULL,NULL,NULL,'','\0',999,NULL,NULL,'\0'),
+(17,10,1,'数据集版本管理',NULL,'datasets/:datasetId/version','dataset/version','DatasetVersion','SubpageLayout',NULL,NULL,NULL,'','\0',999,NULL,NULL,'\0'),
+(30,0,0,'算法开发','xunlianzhunbei','development',NULL,NULL,NULL,'development',NULL,NULL,'\0','\0',3,NULL,NULL,'\0'),
+(31,30,1,'Notebook','kaifahuanjing','development:notebook','development/notebook','Notebook','BaseLayout','notebook',NULL,NULL,'\0','\0',999,NULL,NULL,'\0'),
+(32,30,1,'算法管理','mobanguanli','algorithm','algorithm/index','Algorithm','BaseLayout','development:algorithm',NULL,NULL,'\0','\0',999,NULL,NULL,'\0'),
+(40,0,0,'训练管理','xunlianguocheng','training',NULL,NULL,NULL,'training',NULL,NULL,'\0','\0',4,NULL,NULL,'\0'),
+(41,40,1,'镜像管理','jingxiangguanli','image','trainingImage/index','TrainingImage','BaseLayout','training:image',NULL,NULL,'\0','\0',999,NULL,NULL,'\0'),
+(42,40,1,'训练任务','renwuguanli','job','trainingJob/index','TrainingJob','BaseLayout','training:job',NULL,NULL,'\0','\0',999,NULL,NULL,'\0'),
+(43,40,1,'任务详情',NULL,'jobDetail','trainingJob/detail','JobDetail','SubpageLayout',NULL,NULL,NULL,'','\0',999,NULL,NULL,'\0'),
+(44,40,1,'添加任务',NULL,'jobAdd','trainingJob/add','jobAdd','SubpageLayout',NULL,NULL,NULL,'','\0',999,NULL,NULL,'\0'),
+(45,40,1,'可视化任务','mobanguanli','visual','trainingJob/trainingVisualList','TrainVisual','BaseLayout','training:visual',NULL,NULL,'\0','\0',999,NULL,NULL,'\0'),
+(50,0,1,'模型管理','moxingguanli','model',NULL,NULL,NULL,'model',NULL,NULL,'\0','\0',5,NULL,NULL,'\0'),
+(51,50,1,'模型列表','zongshili','model','model/index','ModelModel','BaseLayout','model:model',NULL,NULL,'\0','\0',999,NULL,NULL,'\0'),
+(52,50,1,'模型优化','caidanguanli','optimize','modelOptimize/index','ModelOptimize','BaseLayout','model:optimize',NULL,NULL,'\0','\0',52,1,1,'\0'),
+(53,50,1,'模型版本管理',NULL,'version','model/version','ModelVersion','SubpageLayout','model:branch',NULL,NULL,'','\0',999,NULL,NULL,'\0'),
+(54,50,1,'模型优化执行记录',NULL,'optimize/record','modelOptimize/record','ModelOptRecord','SubpageLayout',NULL,NULL,NULL,'\0','\0',54,1,1,'\0'),
+(90,0,0,'控制台','kongzhitaixitongguanliyuankejian','system',NULL,NULL,NULL,'system',NULL,NULL,'\0','\0',999,NULL,NULL,'\0'),
+(91,90,1,'用户管理','yonghuguanli','user','system/user/index','SystemUser','BaseLayout','system:user',NULL,NULL,'\0','\0',999,NULL,NULL,'\0'),
+(92,90,1,'角色管理','jiaoseguanli','role','system/role/index','SystemRole','BaseLayout','system:role',NULL,NULL,'\0','\0',999,NULL,NULL,'\0'),
+(93,90,1,'菜单管理','caidanguanli','menu','system/menu/index','SystemMenu','BaseLayout','system:menu',NULL,NULL,'\0','\0',999,NULL,NULL,'\0'),
+(94,90,1,'字典管理','mobanguanli','dict','system/dict/index','SystemDict','BaseLayout','system:dict',NULL,NULL,'\0','\0',999,NULL,NULL,'\0'),
+(95,90,1,'集群状态','jiqunguanli','node','system/node/index','SystemNode','BaseLayout','system:node',NULL,NULL,'\0','\0',999,NULL,NULL,'\0'),
+(96,90,1,'回收站','shuju1','recycle','system/recycle/index','SystemRecycle','BaseLayout','system:recycle',NULL,NULL,'\0','\0',999,1,1,'\0'),
+(97,0,0,'模型炼知','icon_huabanfuben1','atlas',NULL,NULL,NULL,NULL,NULL,NULL,'\0','\0',70,1,1,'\0'),
+(100,10,1,'编辑标签组',NULL,'labelgroup/edit','labelGroup/labelGroupForm','LabelGroupEdit','SubpageLayout',NULL,NULL,NULL,'','\0',24,1,1,'\0'),
+(101,10,1,'标签组详情',NULL,'labelgroup/detail','labelGroup/labelGroupForm','LabelGroupDetail','SubpageLayout',NULL,NULL,NULL,'','\0',23,1,1,'\0'),
+(102,10,1,'创建标签组',NULL,'labelgroup/create','labelGroup/labelGroupForm','LabelGroupCreate','SubpageLayout',NULL,NULL,NULL,'','\0',22,1,1,'\0'),
+(103,10,1,'标签组管理','mobanguanli','labelgroup','labelGroup/index','LabelGroup','BaseLayout','',NULL,NULL,'\0','\0',21,1,1,'\0'),
+(1058,0,0,'云端Serving','shujumoxing','cloudserving',NULL,NULL,NULL,NULL,NULL,NULL,'\0','\0',60,1,1,'\0'),
+(1059,1058,1,'在线服务','shujumoxing','onlineserving','cloudServing','CloudServing','BaseLayout','serving:online',NULL,NULL,'\0','\0',61,1,1,'\0'),
+(1060,1058,1,'批量服务','shujumoxing','batchserving','cloudServing/batch','BatchServing','BaseLayout','serving:batch',NULL,NULL,'\0','\0',62,1,1,'\0'),
+(1061,1058,1,'部署详情',NULL,'onlineserving/detail','cloudServing/detail','CloudServingDetail','SubpageLayout','serving:online',NULL,NULL,'','\0',63,1,1,'\0'),
+(1062,1058,1,'部署详情',NULL,'batchserving/detail','cloudServing/batchDetail','BatchServingDetail','SubpageLayout','serving:batch',NULL,NULL,'','\0',64,1,1,'\0'),
+(1063,1058,1,'部署在线服务',NULL,'onlineserving/form','cloudServing/formPage','CloudServingForm','SubpageLayout','serving:online',NULL,NULL,'','\0',65,1,1,'\0'),
+(1064,97,1,'度量管理','icon_huabanfuben1','measure','atlas/measure','Measure','BaseLayout','atlas:measure',NULL,NULL,'\0','\0',71,1,1,'\0'),
+(1065,97,1,'图谱可视化','icon_huabanfuben1','graphvisual','atlas/graphVisual','AtlasGraphVisual','BaseLayout',NULL,NULL,NULL,'\0','\0',72,1,1,'\0'),
+(1066,97,1,'图谱列表','icon_huabanfuben1','graph','atlas/graphList','AtlasGraph','BaseLayout',NULL,NULL,NULL,'\0','\0',73,1,1,'\0'),
+(1067,10,1,'图像语义分割',NULL,'datasets/segmentation/:datasetId','dataset/annotate','SegmentationDataset','DatasetLayout',NULL,NULL,'{\"test\": 1}','','\0',19,1,1,'\0'),
+(1068,10,1,'图像语义分割',NULL,'datasets/segmentation/:datasetId/file/:fileId','dataset/annotate','SegmentationDatasetFile','DatasetLayout',NULL,NULL,NULL,'','\0',18,1,1,'\0'),
+(1069,10,1,'医学影像阅读','beauty','datasets/medical/viewer/:medicalId','dataset/medical/viewer','DatasetMedicalViewer','FullpageLayout',NULL,NULL,NULL,'','\0',999,1,1,'\0'),
+(1070,10,1,'数据集管理','shujuguanli','datasets','dataset/fork','DatasetFork','BaseLayout',NULL,NULL,NULL,'\0','\0',17,1,1,'\0'),
+(1071,10,1,'医疗影像数据集',NULL,'datasets/medical','dataset/medical/list','DatasetMedical','BaseLayout',NULL,NULL,NULL,'','\0',25,1,1,'\0'),
+(1072,10,1,'数据集场景选择',NULL,'datasets/entrance','dataset/entrance','Entrance','BaseLayout',NULL,NULL,NULL,'','\0',20,1,1,'\0'),
+(1073,10,1,'文本分类',NULL,'datasets/textclassify/:datasetId','dataset/nlp/textClassify','TextClassify','DetailLayout','',NULL,NULL,'','\0',26,1,1,'\0'),
+(1074,10,1,'文本标注',NULL,'datasets/text/annotation/:datasetId','dataset/nlp/annotation','TextAnnotation','DetailLayout',NULL,NULL,NULL,'','\0',27,1,1,'\0'),
+(1075,10,1,'导入表格',NULL,'datasets/table/import','dataset/tableImport','TableImport','DetailLayout',NULL,NULL,'{}','','\0',999,1,1,'\0'),
+(1076,90,1,'用户组管理','tuanduiguanli-tuanduiguanli','userGroup','system/userGroup','UserGroup','BaseLayout','system:userGroup',NULL,'{}','\0','\0',91,3,3,'\0'),
+(1077,90,1,'权限管理','fuwuguanli','authCode','system/authCode','AuthCode','BaseLayout','system:authCode',NULL,'{}','\0','\0',92,1,3,'\0'),
+(1078,10,1,'文本数据集',NULL,'datasets/text/list/:datasetId','dataset/nlp/list','TextList','DetailLayout',NULL,NULL,'{}','','\0',999,1,1,'\0'),
+(1079,10,1,'音频数据集',NULL,'datasets/audio/list/:datasetId','dataset/audio/list','AudioList','DetailLayout',NULL,NULL,'{}','','\0',999,1,1,'\0'),
+(1080,10,1,'音频标注',NULL,'datasets/audio/annotation/:datasetId','dataset/audio/annotation','AudioAnnotation','DetailLayout',NULL,NULL,'{}','','\0',999,1,1,'\0'),
+(1081,10,1,'自定义数据集',NULL,'datasets/custom/:datasetId','dataset/custom','CustomList','DetailLayout',NULL,NULL,'{}','','\0',999,1,1,'\0'),
+(1084,90,1,'资源规格管理','xunlianzhunbei','resources','system/resources','Resources','BaseLayout','system:specs',NULL,NULL,'\0','\0',999,NULL,NULL,'\0');
+
+insert  into `auth`(`id`,`auth_code`,`description`,`create_user_id`,`update_user_id`,`create_time`,`update_time`,`deleted`) values
+(1,'admin权限组','默认全部操作权限',1,1,'2021-07-01 08:54:32','2021-07-01 08:54:32','\0');
+
 -- 初始化默认角色
 INSERT INTO `role`(`id`, `name`, `permission`) VALUES (1, '管理员', 'admin');
 INSERT INTO `role`(`id`, `name`, `permission`) VALUES (2, '注册用户', 'register');
 
 -- 初始化 admin 角色
 INSERT INTO `users_roles`(`user_id`, `role_id`) VALUES (1, 1);
-
--- 初始化菜单
-INSERT INTO `menu`(`id`, `pid`, `type`, `name`, `icon`, `path`, `component`, `component_name`, `layout`, `hidden`, `permission`) VALUES
-    -- 概览, 1~9
-    (1, 0, 1, '概览', 'yibiaopan', 'dashboard', 'dashboard/dashboard', 'Dashboard', 'BaseLayout', b'0', NULL),
-    -- 数据管理, 10~29
-    (10, 0, 0, '数据管理', 'shujuguanli', 'data', NULL, NULL, NULL, b'0', 'data'),
-    (11, 10, 1, '数据集管理', 'shujuguanli', 'datasets', 'dataset/list', 'Datasets', 'BaseLayout', b'0', 'data:dataset'),
-    (12, 10, 1, '图像分类', NULL, 'datasets/classify/:datasetId', 'dataset/classify', 'DatasetClassify', 'DetailLayout', b'1', NULL),
-    (13, 10, 1, '目标检测', NULL, 'datasets/annotate/:datasetId/file/:fileId', 'dataset/annotate', 'AnnotateDatasetFile', 'DetailLayout', b'1', NULL),
-    (14, 10, 1, '目标检测', NULL, 'datasets/annotate/:datasetId', 'dataset/annotate', 'AnnotateDataset', 'DetailLayout', b'1', NULL),
-    (15, 10, 1, '目标跟踪', NULL, 'datasets/track/:datasetId/file/:fileId', 'dataset/annotate', 'TrackDatasetFile', 'DatasetLayout', b'1', NULL),
-    (16, 10, 1, '目标跟踪', NULL, 'datasets/track/:datasetId', 'dataset/annotate', 'TrackDataset', 'DatasetLayout', b'1', NULL),
-    (17, 10, 1, '数据集版本管理', NULL, 'datasets/:datasetId/version', 'dataset/version', 'DatasetVersion', 'SubpageLayout', b'1', NULL),
-    -- 算法开发, 30~39
-    (30, 0, 0, '算法开发', 'xunlianzhunbei', 'development', NULL, NULL, NULL, b'0', 'development'),
-    (31, 30, 1, 'Notebook', 'kaifahuanjing', 'notebook', 'development/notebook', 'Notebook', 'BaseLayout', b'0', 'development:notebook'),
-    (32, 30, 1, '算法管理', 'mobanguanli', 'algorithm', 'algorithm/index', 'Algorithm', 'BaseLayout', b'0', 'development:algorithm'),
-    -- 训练管理, 40~49
-    (40, 0, 0, '训练管理', 'xunlianguocheng', 'training', NULL, NULL, NULL, b'0', 'training'),
-    (41, 40, 1, '镜像管理', 'jingxiangguanli', 'image', 'trainingImage/index', 'TrainingImage', 'BaseLayout', b'0', 'training:image'),
-    (42, 40, 1, '训练任务', 'renwuguanli', 'job', 'trainingJob/index', 'TrainingJob', 'BaseLayout', b'0', 'training:job'),
-    (43, 40, 1, '任务详情', NULL, 'jobDetail', 'trainingJob/detail', 'JobDetail', 'SubpageLayout', b'1', NULL),
-    (44, 40, 1, '添加任务', NULL, 'jobAdd', 'trainingJob/add', 'jobAdd', 'SubpageLayout', b'1', NULL),
-    (45, 40, 1, '可视化任务', 'mobanguanli', 'visual', 'trainingJob/trainingVisualList', 'TrainVisual', 'BaseLayout', b'0', 'training:visual'),
-    -- 模型管理, 50~59
-    (50, 0, 1, '模型管理', 'moxingguanli', 'model', NULL, NULL, NULL, b'0', 'model'),
-    (51, 50, 1, '模型列表', 'zongshili', 'model', 'model/index', 'ModelModel', 'BaseLayout', b'0', 'model:model'),
-    (53, 50, 1, '模型版本管理', NULL, 'version', 'model/version', 'ModelVersion', 'SubpageLayout', b'1', 'model:branch'),
-    -- 控制台, 90~99
-    (90, 0, 0, '控制台', 'kongzhitaixitongguanliyuankejian', 'system', NULL, NULL, NULL, b'0', 'system'),
-    (91, 90, 1, '用户管理', 'yonghuguanli', 'user', 'system/user/index', 'SystemUser', 'BaseLayout', b'0', 'system:user'),
-    (92, 90, 1, '角色管理', 'jiaoseguanli', 'role', 'system/role/index', 'SystemRole', 'BaseLayout', b'0', 'system:role'),
-    (93, 90, 1, '菜单管理', 'caidanguanli', 'menu', 'system/menu/index', 'SystemMenu', 'BaseLayout', b'0', 'system:menu'),
-    (94, 90, 1, '字典管理', 'mobanguanli', 'dict', 'system/dict/index', 'SystemDict', 'BaseLayout', b'0', 'system:dict'),
-    (95, 90, 1, '集群状态', 'jiqunguanli', 'node', 'system/node/index', 'SystemNode', 'BaseLayout', b'0', 'system:node');
-
--- 回收站菜单
-INSERT INTO menu ( pid, type, name, icon, path, component, component_name, layout, permission, hidden, cache, sort, create_user_id, update_user_id, deleted, back_to, ext_config) VALUES ( 90, 1, '回收站', 'shuju1', 'recycle', 'system/recycle/index', 'SystemRecycle', 'BaseLayout', 'system:recycle', false, false, 999, 1, 1,  false, null, null);
-
--- 初始化 admin 和 注册用户 菜单
-INSERT INTO `roles_menus` (`role_id`, `menu_id`) SELECT 1, `id` FROM `menu`;
-INSERT INTO `roles_menus` (`role_id`, `menu_id`) SELECT 2, `id` FROM `menu` WHERE `id` != 90 and pid != 90 ;
 
 -- 字典定义
 INSERT INTO `dict`(`id`, `name`, `remark`) VALUES (1, 'Layout', '页面布局');
@@ -209,36 +231,52 @@ INSERT INTO `dict_detail`(`dict_id`, `label`, `value`, `sort`) VALUES (38, 'shuf
 INSERT INTO `dict_detail`(`dict_id`, `label`, `value`, `sort`) VALUES (38, 'shufflenet_v2_x1_5', 'shufflenet_v2_x1_5', '34');
 INSERT INTO `dict_detail`(`dict_id`, `label`, `value`, `sort`) VALUES (38, 'shufflenet_v2_x2_0', 'shufflenet_v2_x2_0', '35');
 
--- DML
-INSERT INTO `harbor_project` (`id`, `image_name`, `create_resource`,  `create_user_id`,  `update_user_id`, `deleted`) VALUES (1, 'notebook', 0, NULL,  NULL, b'0');
 
--- 新增镜像预置数据
-insert into `pt_image` (`id`, `image_name`, `image_url`, `image_tag`, `remark`, `create_user_id`, `create_time`,
-                        `update_user_id`, `update_time`, `deleted`, `project_name`, `image_resource`, `image_status`)
-values ('1', 'oneflow', 'train/oneflow:cudnn7-py35-of', 'cudnn7-py35-of', '预置镜像', 1, '2020-07-01 11:40:30', NULL, NULL, b'0', 'train', 1, '1');
+-- 增加在线服务运行状态
+INSERT INTO `dict`(`id`, `name`, `remark`) VALUES (27, 'serving_status', '服务状态');
+INSERT INTO `dict_detail`(`dict_id`, `label`, `value`, `sort`) VALUES (27, '部署中', '1', 1);
+INSERT INTO `dict_detail`(`dict_id`, `label`, `value`, `sort`) VALUES (27, '运行中', '2', 2);
+INSERT INTO `dict_detail`(`dict_id`, `label`, `value`, `sort`) VALUES (27, '已停止', '3', 3);
+INSERT INTO `dict_detail`(`dict_id`, `label`, `value`, `sort`) VALUES (27, '运行失败', '0', 4);
 
-insert into `pt_image` (`id`, `image_name`, `image_url`, `image_tag`, `remark`, `create_user_id`, `create_time`,
-                        `update_user_id`, `update_time`, `deleted`, `project_name`, `image_resource`, `image_status`)
-values ('2', 'oneflow', 'train/oneflow:cudnn7-py36-of', 'cudnn7-py36-of', '预置镜像，其中包含：asn1crypto==0.24.0 cryptography==2.1.4 idna==2.6 keyring==10.6.0 keyrings.alt==3.0 numpy==1.19.0 oneflow==0.1.0 pandas==1.0.5 protobuf==3.12.2 pycrypto==2.6.1', 1, '2020-07-01 11:40:30', NULL, NULL, b'0', 'train', 1, '1');
+-- 增加在线服务各框架部署参数
+INSERT INTO `dict`(`id`, `name`, `remark`) VALUES (30, 'deploy_params', '部署参数');
+INSERT INTO `dict_detail`(`dict_id`, `label`, `value`, `sort`) VALUES (30, 'signature_name', 'Tensorflow模型接口定义名称（serving_default）', 1);
+INSERT INTO `dict_detail`(`dict_id`, `label`, `value`, `sort`) VALUES (30, 'reshape_size', '图片预处理形状 [H, W]', 2);
+INSERT INTO `dict_detail`(`dict_id`, `label`, `value`, `sort`) VALUES (30, 'prepare_mode', 'keras/Tensoflow模型预处理模式(tfhub、caffe、tf、torch)', 3);
+INSERT INTO `dict_detail`(`dict_id`, `label`, `value`, `sort`) VALUES (30, 'model_structure', 'pytorch模型保存网络名称（model）', 4);
+INSERT INTO `dict_detail`(`dict_id`, `label`, `value`, `sort`) VALUES (30, 'job_name', 'oneflow模型推理job名称（inference）', 5);
 
-insert into `pt_image` (`id`, `image_name`, `image_url`, `image_tag`, `remark`, `create_user_id`, `create_time`,
-                        `update_user_id`, `update_time`, `deleted`, `project_name`, `image_resource`, `image_status`)
-values ('3', 'oneflow', 'train/oneflow:cudnn7-py36-of010-yolov3', 'cudnn7-py36-of010-yolov3', '预置镜像，其中包含：asn1crypto==0.24.0 cryptography==2.1.4 idna==2.6 keyring==10.6.0 keyrings.alt==3.0 numpy==1.19.0 oneflow==0.1.0 protobuf==3.12.2 pycrypto==2.6.1 pygobject==3.26.1', 1, '2020-07-01 11:40:30', NULL, NULL, b'0', 'train', 1, '1');
+-- 补充模型来源
+INSERT INTO `dict_detail`(`dict_id`, `label`, `value`, `sort`) VALUES (9, '模型转换', '3', 4);
 
-insert into `pt_image` (`id`, `image_name`, `image_url`, `image_tag`, `remark`, `create_user_id`, `create_time`,
-                        `update_user_id`, `update_time`, `deleted`, `project_name`, `image_resource`, `image_status`)
-values ('4', 'oneflow', 'train/oneflow:cudnn7-py36-of010-yolo0717', 'cudnn7-py36-of010-yolo0717', '预置镜像，其中包含：asn1crypto==0.24.0 cryptography==2.1.4 idna==2.6 keyring==10.6.0 keyrings.alt==3.0 numpy==1.19.0 oneflow==0.1.0 protobuf==3.12.2 pycrypto==2.6.1 pygobject==3.26.1 python-apt==1.6.5+ubuntu0.3 pyxdg==0.25 SecretStorage==2.3.1 six==1.11.0 unattended-upgrade==0.1', 1, '2020-07-01 11:40:30', NULL, NULL, b'0', 'train', 1, '1');
-
-insert into `pt_image` (`id`, `image_name`, `image_url`, `image_tag`, `remark`, `create_user_id`, `create_time`,
-                        `update_user_id`, `update_time`, `deleted`, `project_name`, `image_resource`, `image_status`)
-values ('5', 'tensorflow', 'train/tensorflow:latest', 'latest', '预置镜像', 1, '2020-07-01 11:40:30', NULL, NULL, b'0', 'train', 1, '1');
-
-insert into `pt_image` (`id`, `image_name`, `image_url`, `image_tag`, `remark`, `create_user_id`, `create_time`,
-                        `update_user_id`, `update_time`, `deleted`, `project_name`, `image_resource`, `image_status`)
-values ('6', 'pytorch', 'train/pytorch:cuda-9.2', 'cuda-9.2', '预置镜像', 1, '2020-07-01 11:40:30', NULL, NULL, b'0', 'train', 1, '1');
-
-insert into pt_image (project_name, image_resource, image_status, image_name, image_url, image_tag, remark, create_user_id, create_time, update_user_id, update_time, deleted, origin_user_id)
-values ('serving', 1, 1, 'serving-gpu', 'serving/serving-gpu:base', 'base', 'serving预置镜像', 1, '2021-04-13 15:23:01', 1, '2021-04-13 15:23:07', 0, 0);
+-- -- 新增镜像预置数据
+-- insert into `pt_image` (`id`, `image_name`, `image_url`, `image_tag`, `remark`, `create_user_id`, `create_time`,
+--                         `update_user_id`, `update_time`, `deleted`, `project_name`, `image_resource`, `image_status`)
+-- values ('1', 'oneflow', 'train/oneflow:cudnn7-py35-of', 'cudnn7-py35-of', '预置镜像', 1, '2020-07-01 11:40:30', NULL, NULL, b'0', 'train', 1, '1');
+--
+-- insert into `pt_image` (`id`, `image_name`, `image_url`, `image_tag`, `remark`, `create_user_id`, `create_time`,
+--                         `update_user_id`, `update_time`, `deleted`, `project_name`, `image_resource`, `image_status`)
+-- values ('2', 'oneflow', 'train/oneflow:cudnn7-py36-of', 'cudnn7-py36-of', '预置镜像，其中包含：asn1crypto==0.24.0 cryptography==2.1.4 idna==2.6 keyring==10.6.0 keyrings.alt==3.0 numpy==1.19.0 oneflow==0.1.0 pandas==1.0.5 protobuf==3.12.2 pycrypto==2.6.1', 1, '2020-07-01 11:40:30', NULL, NULL, b'0', 'train', 1, '1');
+--
+-- insert into `pt_image` (`id`, `image_name`, `image_url`, `image_tag`, `remark`, `create_user_id`, `create_time`,
+--                         `update_user_id`, `update_time`, `deleted`, `project_name`, `image_resource`, `image_status`)
+-- values ('3', 'oneflow', 'train/oneflow:cudnn7-py36-of010-yolov3', 'cudnn7-py36-of010-yolov3', '预置镜像，其中包含：asn1crypto==0.24.0 cryptography==2.1.4 idna==2.6 keyring==10.6.0 keyrings.alt==3.0 numpy==1.19.0 oneflow==0.1.0 protobuf==3.12.2 pycrypto==2.6.1 pygobject==3.26.1', 1, '2020-07-01 11:40:30', NULL, NULL, b'0', 'train', 1, '1');
+--
+-- insert into `pt_image` (`id`, `image_name`, `image_url`, `image_tag`, `remark`, `create_user_id`, `create_time`,
+--                         `update_user_id`, `update_time`, `deleted`, `project_name`, `image_resource`, `image_status`)
+-- values ('4', 'oneflow', 'train/oneflow:cudnn7-py36-of010-yolo0717', 'cudnn7-py36-of010-yolo0717', '预置镜像，其中包含：asn1crypto==0.24.0 cryptography==2.1.4 idna==2.6 keyring==10.6.0 keyrings.alt==3.0 numpy==1.19.0 oneflow==0.1.0 protobuf==3.12.2 pycrypto==2.6.1 pygobject==3.26.1 python-apt==1.6.5+ubuntu0.3 pyxdg==0.25 SecretStorage==2.3.1 six==1.11.0 unattended-upgrade==0.1', 1, '2020-07-01 11:40:30', NULL, NULL, b'0', 'train', 1, '1');
+--
+-- insert into `pt_image` (`id`, `image_name`, `image_url`, `image_tag`, `remark`, `create_user_id`, `create_time`,
+--                         `update_user_id`, `update_time`, `deleted`, `project_name`, `image_resource`, `image_status`)
+-- values ('5', 'tensorflow', 'train/tensorflow:latest', 'latest', '预置镜像', 1, '2020-07-01 11:40:30', NULL, NULL, b'0', 'train', 1, '1');
+--
+-- insert into `pt_image` (`id`, `image_name`, `image_url`, `image_tag`, `remark`, `create_user_id`, `create_time`,
+--                         `update_user_id`, `update_time`, `deleted`, `project_name`, `image_resource`, `image_status`)
+-- values ('6', 'pytorch', 'train/pytorch:cuda-9.2', 'cuda-9.2', '预置镜像', 1, '2020-07-01 11:40:30', NULL, NULL, b'0', 'train', 1, '1');
+--
+-- insert into pt_image (project_name, image_resource, image_status, image_name, image_url, image_tag, remark, create_user_id, create_time, update_user_id, update_time, deleted, origin_user_id)
+-- values ('serving', 1, 1, 'serving-gpu', 'serving/serving-gpu:base', 'base', 'serving预置镜像', 1, '2021-04-13 15:23:01', 1, '2021-04-13 15:23:07', 0, 0);
 
 -- 新增算法用途预置数据
 insert into `pt_auxiliary_info` (`origin_user_id`,`type`,`aux_info`) values (0,'algorithem_usage','目标检测');
@@ -2508,76 +2546,12 @@ INSERT INTO data_sequence (id, business_code, start, step) VALUES (1, 'DATA_FILE
 INSERT INTO data_sequence (id, business_code, start, step) VALUES (2, 'DATA_VERSION_FILE', 1, 5000);
 INSERT INTO data_sequence (id, business_code, start, step) VALUES (3, 'DATA_FILE_ANNOTATION', 1, 5000);
 
--- 新增 表menu 标签组默认菜单
-INSERT INTO menu (id, cache, component, component_name, hidden,  icon, name, path, permission, pid, sort, type, layout, create_time, update_time, create_user_id, update_user_id, deleted) VALUES (100, false, 'labelGroup/labelGroupForm', 'LabelGroupEdit', true, null, '编辑标签组', 'labelgroup/edit', null, 10, 24, 1, 'SubpageLayout', current_timestamp, current_timestamp, 1, 1, false);
-INSERT INTO menu (id, cache, component, component_name, hidden,  icon, name, path, permission, pid, sort, type, layout, create_time, update_time, create_user_id, update_user_id, deleted) VALUES (101,false, 'labelGroup/labelGroupForm', 'LabelGroupDetail', true, null, '标签组详情', 'labelgroup/detail', null, 10, 23, 1, 'SubpageLayout', current_timestamp, current_timestamp, 1, 1, false);
-INSERT INTO menu (id, cache, component, component_name, hidden,  icon, name, path, permission, pid, sort, type, layout, create_time, update_time, create_user_id, update_user_id, deleted) VALUES (102,false, 'labelGroup/labelGroupForm', 'LabelGroupCreate', true, null, '创建标签组', 'labelgroup/create', null, 10, 22, 1, 'SubpageLayout', current_timestamp, current_timestamp, 1, 1, false);
-INSERT INTO menu (id, cache, component, component_name, hidden,  icon, name, path, permission, pid, sort, type, layout, create_time, update_time, create_user_id, update_user_id, deleted) VALUES (103,false, 'labelGroup/index',           'LabelGroup', false,  'mobanguanli', '标签组管理', 'labelgroup', '', 10, 21, 1, 'BaseLayout', current_timestamp, current_timestamp, 1, 1, false);
-
--- 新增 表roles_menus 管理员角色与标签组菜单权限关系
-INSERT INTO roles_menus (role_id, menu_id) VALUES (1, 100);
-INSERT INTO roles_menus (role_id, menu_id) VALUES (1, 101);
-INSERT INTO roles_menus (role_id, menu_id) VALUES (1, 102);
-INSERT INTO roles_menus (role_id, menu_id) VALUES (1, 103);
-
--- 新增 表roles_menus 注册用户角色与标签组菜单权限关系
-INSERT INTO roles_menus (role_id, menu_id) VALUES (2, 100);
-INSERT INTO roles_menus (role_id, menu_id) VALUES (2, 101);
-INSERT INTO roles_menus (role_id, menu_id) VALUES (2, 102);
-INSERT INTO roles_menus (role_id, menu_id) VALUES (2, 103);
 
 -- 第二版本初始化系统版本数据
 INSERT INTO `system_version` (`id`, `version`) VALUES (1, 1);
 INSERT INTO `system_version` (`id`, `version`) VALUES (2, 2);
 
--- 新增 表menu 度量管理菜单
-INSERT INTO menu (id, cache, component, component_name, hidden, icon, name, path, permission, pid,sort, type, layout, create_time, update_time, create_user_id, update_user_id,deleted)
-VALUES ('97', '', NULL, NULL, '', 'icon_huabanfuben1', '模型炼知', 'atlas', NULL, '0', '70', '0', NULL,'2020-11-20 09:08:12', '2020-11-20 09:08:12', '1', '1', '');
-INSERT INTO menu (id, cache, component, component_name, hidden, icon, name, path, permission, pid,sort, type, layout, create_time, update_time, create_user_id, update_user_id,deleted)
-VALUES ('1064', '', 'atlas/measure', 'Measure', '', 'icon_huabanfuben1', '度量管理', 'measure', 'atlas:measure', '97', '71', '1','BaseLayout', '2020-11-20 11:03:20', '2020-11-20 11:03:20', '1', '1', '');
-INSERT INTO menu (id, cache, component, component_name, hidden, icon, name, path, permission, pid,sort, type, layout, create_time, update_time, create_user_id, update_user_id,deleted)
-VALUES ('1065', '', 'atlas/graphVisual', 'AtlasGraphVisual', '', 'icon_huabanfuben1', '图谱可视化', 'graphvisual', NULL,'97', '72', '1', 'BaseLayout', '2020-11-20 11:07:14', '2020-11-20 11:07:14', '1', '1', '');
-INSERT INTO menu (id, cache, component, component_name, hidden, icon, name, path, permission, pid,sort, type, layout, create_time, update_time, create_user_id, update_user_id,deleted)
-VALUES ('1066', '', 'atlas/graphList', 'AtlasGraph', '', 'icon_huabanfuben1', '图谱列表', 'graph', NULL, '97', '73', '1','BaseLayout', '2020-11-20 11:08:02', '2020-11-20 11:08:02', '1', '1', '');
 
--- 增加在线服务运行状态
-INSERT INTO `dict`(`id`, `name`, `remark`) VALUES (27, 'serving_status', '服务状态');
-INSERT INTO `dict_detail`(`dict_id`, `label`, `value`, `sort`) VALUES (27, '部署中', '1', 1);
-INSERT INTO `dict_detail`(`dict_id`, `label`, `value`, `sort`) VALUES (27, '运行中', '2', 2);
-INSERT INTO `dict_detail`(`dict_id`, `label`, `value`, `sort`) VALUES (27, '已停止', '3', 3);
-INSERT INTO `dict_detail`(`dict_id`, `label`, `value`, `sort`) VALUES (27, '运行失败', '0', 4);
-
--- 增加在线服务各框架部署参数
-INSERT INTO `dict`(`id`, `name`, `remark`) VALUES (30, 'deploy_params', '部署参数');
-INSERT INTO `dict_detail`(`dict_id`, `label`, `value`, `sort`) VALUES (30, 'signature_name', 'Tensorflow模型接口定义名称（serving_default）', 1);
-INSERT INTO `dict_detail`(`dict_id`, `label`, `value`, `sort`) VALUES (30, 'reshape_size', '图片预处理形状 [H, W]', 2);
-INSERT INTO `dict_detail`(`dict_id`, `label`, `value`, `sort`) VALUES (30, 'prepare_mode', 'keras/Tensoflow模型预处理模式(tfhub、caffe、tf、torch)', 3);
-INSERT INTO `dict_detail`(`dict_id`, `label`, `value`, `sort`) VALUES (30, 'model_structure', 'pytorch模型保存网络名称（model）', 4);
-INSERT INTO `dict_detail`(`dict_id`, `label`, `value`, `sort`) VALUES (30, 'job_name', 'oneflow模型推理job名称（inference）', 5);
-
--- 新增 表menu 云端Serving默认菜单
-INSERT INTO menu (id, cache, component, component_name, hidden,  icon, name, path, permission, pid, sort, type, layout, create_time, update_time, create_user_id, update_user_id, deleted) VALUES (1058, false, NULL, NULL, false, 'shujumoxing', '云端Serving', 'cloudserving', NULL, 0, 60, 0, NULL, current_timestamp, current_timestamp, 1, 1, false);
-INSERT INTO menu (id, cache, component, component_name, hidden,  icon, name, path, permission, pid, sort, type, layout, create_time, update_time, create_user_id, update_user_id, deleted) VALUES(1059, false, 'cloudServing', 'CloudServing', false,  'shujumoxing', '在线服务', 'onlineserving', 'serving:online', 1058, 61, 1, 'BaseLayout', current_timestamp, current_timestamp, 1, 1, false);
-INSERT INTO menu (id, cache, component, component_name, hidden,  icon, name, path, permission, pid, sort, type, layout, create_time, update_time, create_user_id, update_user_id, deleted) VALUES(1060, false, 'cloudServing/batch', 'BatchServing', false, 'shujumoxing', '批量服务', 'batchserving', 'serving:batch', 1058, 62, 1, 'BaseLayout', current_timestamp, current_timestamp, 1, 1, false);
-INSERT INTO menu (id, cache, component, component_name, hidden,  icon, name, path, permission, pid, sort, type, layout, create_time, update_time, create_user_id, update_user_id, deleted) VALUES(1061, false, 'cloudServing/detail', 'CloudServingDetail', true, NULL, '部署详情', 'onlineserving/detail', 'serving:online', 1058, 63, 1, 'SubpageLayout', current_timestamp, current_timestamp, 1, 1, false);
-INSERT INTO menu (id, cache, component, component_name, hidden,  icon, name, path, permission, pid, sort, type, layout, create_time, update_time, create_user_id, update_user_id, deleted) VALUES(1062, false, 'cloudServing/batchDetail', 'BatchServingDetail', true, NULL, '部署详情', 'batchserving/detail', 'serving:batch', 1058, 64, 1, 'SubpageLayout', current_timestamp, current_timestamp, 1, 1, false);
-INSERT INTO menu (id, cache, component, component_name, hidden,  icon, name, path, permission, pid, sort, type, layout, create_time, update_time, create_user_id, update_user_id, deleted) VALUES(1063, false, 'cloudServing/formPage', 'CloudServingForm', true, NULL, '部署在线服务', 'onlineserving/form', 'serving:online', 1058, 65, 1, 'SubpageLayout', current_timestamp, current_timestamp, 1, 1, false);
-
--- 新增 表roles_menus 管理员角色与云端Serving菜单权限关系
-INSERT INTO roles_menus (role_id, menu_id) VALUES (1, 1058);
-INSERT INTO roles_menus (role_id, menu_id) VALUES (1, 1059);
-INSERT INTO roles_menus (role_id, menu_id) VALUES (1, 1060);
-INSERT INTO roles_menus (role_id, menu_id) VALUES (1, 1061);
-INSERT INTO roles_menus (role_id, menu_id) VALUES (1, 1062);
-INSERT INTO roles_menus (role_id, menu_id) VALUES (1, 1063);
-
--- 新增 表roles_menus 注册用户角色与云端Serving菜单权限关系
-INSERT INTO roles_menus (role_id, menu_id) VALUES (2, 1058);
-INSERT INTO roles_menus (role_id, menu_id) VALUES (2, 1059);
-INSERT INTO roles_menus (role_id, menu_id) VALUES (2, 1060);
-INSERT INTO roles_menus (role_id, menu_id) VALUES (2, 1061);
-INSERT INTO roles_menus (role_id, menu_id) VALUES (2, 1062);
-INSERT INTO roles_menus (role_id, menu_id) VALUES (2, 1063);
 
 -- 新增模型优化结果单位
 INSERT INTO `dict`(`id`, `name`, `remark`) VALUES (29, 'opt_result', '模型优化-结果');
@@ -2585,61 +2559,14 @@ INSERT INTO `dict_detail` ( `dict_id`, `label`, `value`, `sort`) VALUES (29, 'ac
 INSERT INTO `dict_detail` ( `dict_id`, `label`, `value`, `sort`) VALUES (29, 'reasoningTime', '(images/sec)', '2');
 INSERT INTO `dict_detail` ( `dict_id`, `label`, `value`, `sort`) VALUES (29, 'modelSize', 'M', '3');
 
--- 新增 表menu 模型优化默认菜单
-INSERT INTO menu (id, cache, component, component_name, hidden,  icon, name, path, permission, pid, sort, type, layout, create_time, update_time, create_user_id, update_user_id, deleted) VALUES
-(52, false, 'modelOptimize/index', 'ModelOptimize', false, 'caidanguanli', '模型优化', 'optimize', 'model:optimize', 50, 52, 1, 'BaseLayout', current_timestamp, current_timestamp, 1, 1, false);
-INSERT INTO menu (id, cache, component, component_name, hidden,  icon, name, path, permission, pid, sort, type, layout, create_time, update_time, create_user_id, update_user_id, deleted) VALUES
-(54, false, 'modelOptimize/record', 'ModelOptRecord', false,  null, '模型优化执行记录', 'optimize/record', null, 50, 54, 1, 'SubpageLayout', current_timestamp, current_timestamp, 1, 1, false);
+-- 初始化 admin 和 注册用户 菜单
+INSERT INTO `roles_menus` (`role_id`, `menu_id`) SELECT 1, `id` FROM `menu`;
+INSERT INTO `roles_menus` (`role_id`, `menu_id`) SELECT 2, `id` FROM `menu` WHERE `id` != 90 and pid != 90 ;
 
--- 新增 表roles_menus 管理员角色与模型优化菜单权限关系
-INSERT INTO roles_menus (role_id, menu_id) VALUES (1, 52);
-INSERT INTO roles_menus (role_id, menu_id) VALUES (1, 54);
-
--- 新增 表roles_menus 注册用户角色与模型优化菜单权限关系
-INSERT INTO roles_menus (role_id, menu_id) VALUES (2, 52);
-INSERT INTO roles_menus (role_id, menu_id) VALUES (2, 54);
 
 -- auth服务 系统客户端认证数据初始化
 INSERT INTO `oauth_client_details` (`client_id`, `resource_ids`, `client_secret`, `scope`, `authorized_grant_types`, `web_server_redirect_uri`, `authorities`, `access_token_validity`, `refresh_token_validity`, `additional_information`, `autoapprove`) VALUES
 	('dubhe-client', NULL, '$2a$10$RUYBRsyV2jpG7pvg/VNus.YHVebzfRen3RGeDe1LVEIJeHYe2F1YK', 'all', 'authorization_code,password,refresh_token', 'http://localhost:8866/oauth/callback', NULL, 3600, 2592000, NULL, NULL);
-
-
--- 菜单新增数据集相关路由
-INSERT INTO menu ( pid, type, name, icon, path, component, component_name, layout, permission, hidden, cache, sort, create_user_id, update_user_id, deleted, back_to, ext_config) VALUES ( 10, 1, '图像语义分割', null, 'datasets/segmentation/:datasetId', 'dataset/annotate', 'SegmentationDataset', 'DatasetLayout', null, true, false, 19, 1, 1,  false, null, '{"test": 1}');
-INSERT INTO menu ( pid, type, name, icon, path, component, component_name, layout, permission, hidden, cache, sort, create_user_id, update_user_id, deleted, back_to, ext_config) VALUES ( 10, 1, '图像语义分割', null, 'datasets/segmentation/:datasetId/file/:fileId', 'dataset/annotate', 'SegmentationDatasetFile', 'DatasetLayout', null, true, false, 18, 1, 1, false, null, null);
-INSERT INTO menu ( pid, type, name, icon, path, component, component_name, layout, permission, hidden, cache, sort, create_user_id, update_user_id, deleted, back_to, ext_config) VALUES ( 10, 1, '医学影像阅读', 'beauty', 'datasets/medical/viewer/:medicalId', 'dataset/medical/viewer', 'DatasetMedicalViewer', 'FullpageLayout', null, true, false, 999, 1, 1,  false, null, null);
-INSERT INTO menu ( pid, type, name, icon, path, component, component_name, layout, permission, hidden, cache, sort, create_user_id, update_user_id, deleted, back_to, ext_config) VALUES ( 10, 1, '数据集管理', 'shujuguanli', 'datasets', 'dataset/fork', 'DatasetFork', 'BaseLayout', null, false, false, 17, 1, 1,  false, null, null);
-INSERT INTO menu ( pid, type, name, icon, path, component, component_name, layout, permission, hidden, cache, sort, create_user_id, update_user_id, deleted, back_to, ext_config) VALUES ( 10, 1, '医疗影像数据集', null, 'datasets/medical', 'dataset/medical/list', 'DatasetMedical', 'BaseLayout', null, true, false, 25, 1, 1, false, null, null);
-INSERT INTO menu ( pid, type, name, icon, path, component, component_name, layout, permission, hidden, cache, sort, create_user_id, update_user_id, deleted, back_to, ext_config) VALUES ( 10, 1, '数据集场景选择', null, 'datasets/entrance', 'dataset/entrance', 'Entrance', 'BaseLayout', null, true, false, 20, 1, 1,  false, null, null);
-INSERT INTO menu ( pid, type, name, icon, path, component, component_name, layout, permission, hidden, cache, sort, create_user_id, update_user_id, deleted, back_to, ext_config) VALUES ( 10, 1, '文本分类', null, 'datasets/textclassify/:datasetId', 'dataset/nlp/textClassify', 'TextClassify', 'DetailLayout', '', true, false, 26, 1, 1,  false, null, null);
-INSERT INTO menu ( pid, type, name, icon, path, component, component_name, layout, permission, hidden, cache, sort, create_user_id, update_user_id, deleted, back_to, ext_config) VALUES ( 10, 1, '文本标注', null, 'datasets/text/annotation/:datasetId', 'dataset/nlp/annotation', 'TextAnnotation', 'DetailLayout', null, true, false, 27, 1, 1,  false, null, null);
-INSERT INTO menu ( pid, type, name, icon, path, component, component_name, layout, permission, hidden, cache, sort, create_user_id, update_user_id, deleted, back_to, ext_config) VALUES ( 10, 1, '导入表格', null, 'datasets/table/import', 'dataset/tableImport', 'TableImport', 'DetailLayout', null, true, false, 999, 1, 1,  false, null, '{}');
-
--- 管理员角色新增数据集相关权限
-INSERT INTO roles_menus (role_id, menu_id) value (1, (select id from menu where path = 'datasets/segmentation/:datasetId'));
-INSERT INTO roles_menus (role_id, menu_id) value (1, (select id from menu where path = 'datasets/segmentation/:datasetId/file/:fileId'));
-INSERT INTO roles_menus (role_id, menu_id) value (1, (select id from menu where path = 'datasets/medical/viewer/:medicalId'));
-INSERT INTO roles_menus (role_id, menu_id) value (1, (select id from menu where path = 'datasets'));
-INSERT INTO roles_menus (role_id, menu_id) value (1, (select id from menu where path = 'datasets/medical'));
-INSERT INTO roles_menus (role_id, menu_id) value (1, (select id from menu where path = 'datasets/entrance'));
-INSERT INTO roles_menus (role_id, menu_id) value (1, (select id from menu where path = 'datasets/textclassify/:datasetId'));
-INSERT INTO roles_menus (role_id, menu_id) value (1, (select id from menu where path = 'datasets/text/annotation/:datasetId'));
-INSERT INTO roles_menus (role_id, menu_id) value (1, (select id from menu where path = 'datasets/table/import'));
-
-
--- 注册角色新增数据集相关权限
-INSERT INTO roles_menus (role_id, menu_id) value (2, (select id from menu where path = 'datasets/segmentation/:datasetId'));
-INSERT INTO roles_menus (role_id, menu_id) value (2, (select id from menu where path = 'datasets/segmentation/:datasetId/file/:fileId'));
-INSERT INTO roles_menus (role_id, menu_id) value (2, (select id from menu where path = 'datasets/medical/viewer/:medicalId'));
-INSERT INTO roles_menus (role_id, menu_id) value (2, (select id from menu where path = 'datasets'));
-INSERT INTO roles_menus (role_id, menu_id) value (2, (select id from menu where path = 'datasets/medical'));
-INSERT INTO roles_menus (role_id, menu_id) value (2, (select id from menu where path = 'datasets/entrance'));
-INSERT INTO roles_menus (role_id, menu_id) value (2, (select id from menu where path = 'datasets/textclassify/:datasetId'));
-INSERT INTO roles_menus (role_id, menu_id) value (2, (select id from menu where path = 'datasets/text/annotation/:datasetId'));
-INSERT INTO roles_menus (role_id, menu_id) value (2, (select id from menu where path = 'datasets/table/import'));
-
-
-update menu set name = '视觉/文本数据集' where name = '视觉文本数据集';
 
 -- 初始化模型格式表pt_model_type
 INSERT INTO `pt_model_type`(`frame_type`, `model_type`) VALUES (1, '1,17');
@@ -2673,41 +2600,8 @@ INSERT INTO `permission` VALUES (2, 1, '上传镜像', 'training:image:upload', 
 INSERT INTO `permission` VALUES (3, 1, '修改镜像', 'training:image:edit', 1, 1, '2021-04-26 16:19:37', '2021-04-26 16:19:37', b'0');
 INSERT INTO `permission` VALUES (4, 1, '删除镜像', 'training:image:delete', 1, 1, '2021-04-26 16:19:37', '2021-04-26 16:19:37', b'0');
 
-INSERT INTO menu (pid, type, name, icon, path, component, component_name, layout, permission, hidden, cache, sort, create_user_id, update_user_id, create_time, update_time, deleted, back_to, ext_config) VALUES (90, 1, '用户组管理', 'tuanduiguanli-tuanduiguanli', 'userGroup', 'system/userGroup', 'UserGroup', 'BaseLayout', 'system:userGroup', false, false, 91, 3, 3, '2021-05-11 09:32:32', '2021-05-11 09:32:32', false, null, '{}');
-INSERT INTO menu (pid, type, name, icon, path, component, component_name, layout, permission, hidden, cache, sort, create_user_id, update_user_id, create_time, update_time, deleted, back_to, ext_config) VALUES (90, 1, '权限管理', 'fuwuguanli', 'authCode', 'system/authCode', 'AuthCode', 'BaseLayout', 'system:authCode', false, false, 92, 1, 3, '2021-05-19 09:16:32', '2021-05-19 09:19:44', false, null, '{}');
-
--- 初始化管理员和注册用户 用户组菜单权限
-INSERT INTO roles_menus (role_id, menu_id) value (1, (select id from menu where path = 'userGroup'));
-INSERT INTO roles_menus (role_id, menu_id) value (2, (select id from menu where path = 'userGroup'));
-
--- 初始化管理员和注册用户 权限组菜单权限
-INSERT INTO roles_menus (role_id, menu_id) value (1, (select id from menu where path = 'authCode'));
-INSERT INTO roles_menus (role_id, menu_id) value (2, (select id from menu where path = 'authCode'));
-
-
--- 菜单新增数据集相关路由
-INSERT INTO menu ( pid, type, name, icon, path, component, component_name, layout, permission, hidden, cache, sort, create_user_id, update_user_id, deleted, back_to, ext_config) VALUES (10,1,'文本数据集',null,'datasets/text/list/:datasetId','dataset/nlp/list','TextList','DetailLayout',null,true,false,999,1,1,false,null,'{}');
-INSERT INTO menu ( pid, type, name, icon, path, component, component_name, layout, permission, hidden, cache, sort, create_user_id, update_user_id, deleted, back_to, ext_config) VALUES (10,1,'音频数据集',null,'datasets/audio/list/:datasetId','dataset/audio/list','AudioList','DetailLayout',null,true,false,999,1,1,false,null,'{}');
-INSERT INTO menu ( pid, type, name, icon, path, component, component_name, layout, permission, hidden, cache, sort, create_user_id, update_user_id, deleted, back_to, ext_config) VALUES (10,1,'音频标注',null,'datasets/audio/annotation/:datasetId','dataset/audio/annotation','AudioAnnotation','DetailLayout',null,true,false,999,1,1,false,null,'{}');
-INSERT INTO menu ( pid, type, name, icon, path, component, component_name, layout, permission, hidden, cache, sort, create_user_id, update_user_id, deleted, back_to, ext_config) VALUES (10,1,'自定义数据集',null,'datasets/custom/:datasetId','dataset/custom','CustomList','DetailLayout',null,true,false,999,1,1,false,null,'{}');
-
-
--- 管理员角色新增数据集相关权限
-INSERT INTO roles_menus (role_id, menu_id) value (1, (select id from menu where path = 'datasets/text/list/:datasetId'));
-INSERT INTO roles_menus (role_id, menu_id) value (1, (select id from menu where path = 'datasets/audio/list/:datasetId'));
-INSERT INTO roles_menus (role_id, menu_id) value (1, (select id from menu where path = 'datasets/audio/annotation/:datasetId'));
-INSERT INTO roles_menus (role_id, menu_id) value (1, (select id from menu where path = 'datasets/custom/:datasetId'));
-
-
--- 注册角色新增数据集相关权限
-INSERT INTO roles_menus (role_id, menu_id) value (2, (select id from menu where path = 'datasets/text/list/:datasetId'));
-INSERT INTO roles_menus (role_id, menu_id) value (2, (select id from menu where path = 'datasets/audio/list/:datasetId'));
-INSERT INTO roles_menus (role_id, menu_id) value (2, (select id from menu where path = 'datasets/audio/annotation/:datasetId'));
-INSERT INTO roles_menus (role_id, menu_id) value (2, (select id from menu where path = 'datasets/custom/:datasetId'));
 
 -- 菜单新增资源规格相关路由
-INSERT INTO `menu`( `pid`, `type`, `name`, `icon`, `path`, `component`, `component_name`, `layout`, `hidden`, `permission`) VALUES
-(90, 1, '资源规格管理','xunlianzhunbei','resources','system/resources','Resources','BaseLayout',b'0','system:specs');
 
 -- 初始化资源规格
 -- 初始化notebook资源规格
@@ -2780,151 +2674,23 @@ INSERT INTO resource_specs(specs_name,resources_pool_type,module,cpu_num,gpu_num
 INSERT INTO resource_specs(specs_name,resources_pool_type,module,cpu_num,gpu_num,mem_num,workspace_request) value
 ('32CPU256GB内存 8GPU',1,3,32,8,256000,50000);
 
--- 控制台
-insert into `permission` (`pid`, `name`, `create_user_id`, `update_user_id`) VALUES (0, '控制台', 1, 1);
--- 控制台-用户管理操作权限初始化
-insert into `permission` (`pid`, `name`, `create_user_id`, `update_user_id`) select id, '用户管理', 1, 1 from permission where name='控制台';
-select @pid := @@IDENTITY;
-insert into `permission` (`pid`, `name`, `permission`, `create_user_id`, `update_user_id`) values (@pid, '创建用户', 'system:user:create', 1, 1);
-insert into `permission` (`pid`, `name`, `permission`, `create_user_id`, `update_user_id`) values (@pid, '编辑用户', 'system:user:edit', 1, 1);
-insert into `permission` (`pid`, `name`, `permission`, `create_user_id`, `update_user_id`) values (@pid, '删除用户', 'system:user:delete', 1, 1);
--- 控制台-用户组管理操作权限初始化
-insert into `permission` (`pid`, `name`, `create_user_id`, `update_user_id`) select id, '用户组管理', 1, 1 from permission where name='控制台';
-select @pid := @@IDENTITY;
-insert into `permission` (`pid`, `name`, `permission`, `create_user_id`, `update_user_id`) values (@pid, '创建用户组', 'system:userGroup:create', 1, 1);
-insert into `permission` (`pid`, `name`, `permission`, `create_user_id`, `update_user_id`) values (@pid, '编辑用户组', 'system:userGroup:edit', 1, 1);
-insert into `permission` (`pid`, `name`, `permission`, `create_user_id`, `update_user_id`) values (@pid, '删除用户组', 'system:userGroup:delete', 1, 1);
-insert into `permission` (`pid`, `name`, `permission`, `create_user_id`, `update_user_id`) values (@pid, '编辑成员', 'system:userGroup:editUser', 1, 1);
-insert into `permission` (`pid`, `name`, `permission`, `create_user_id`, `update_user_id`) values (@pid, '批量修改角色', 'system:userGroup:editUserRole', 1, 1);
-insert into `permission` (`pid`, `name`, `permission`, `create_user_id`, `update_user_id`) values (@pid, '批量激活锁定', 'system:userGroup:editUserState', 1, 1);
-insert into `permission` (`pid`, `name`, `permission`, `create_user_id`, `update_user_id`) values (@pid, '批量删除用户', 'system:userGroup:deleteUser', 1, 1);
--- 控制台-权限管理操作权限初始化
-insert into `permission` (`pid`, `name`, `create_user_id`, `update_user_id`) select id, '权限管理', 1, 1 from permission where name='控制台';
-select @pid := @@IDENTITY;
-insert into `permission` (`pid`, `name`, `permission`, `create_user_id`, `update_user_id`) values (@pid, '创建权限组', 'system:authCode:create', 1, 1);
-insert into `permission` (`pid`, `name`, `permission`, `create_user_id`, `update_user_id`) values (@pid, '编辑权限组', 'system:authCode:edit', 1, 1);
-insert into `permission` (`pid`, `name`, `permission`, `create_user_id`, `update_user_id`) values (@pid, '删除权限`组', 'system:authCode:delete', 1, 1);
-insert into `permission` (`pid`, `name`, `permission`, `create_user_id`, `update_user_id`) values (@pid, '创建权限', 'system:permission:create', 1, 1);
-insert into `permission` (`pid`, `name`, `permission`, `create_user_id`, `update_user_id`) values (@pid, '编辑权限', 'system:permission:edit', 1, 1);
-insert into `permission` (`pid`, `name`, `permission`, `create_user_id`, `update_user_id`) values (@pid, '删除权限', 'system:permission:delete', 1, 1);
--- 控制台-角色管理操作权限初始化
-insert into `permission` (`pid`, `name`, `create_user_id`, `update_user_id`) select id, '角色管理', 1, 1 from permission where name='控制台';
-select @pid := @@IDENTITY;
-insert into `permission` (`pid`, `name`, `permission`, `create_user_id`, `update_user_id`) values (@pid, '创建角色', 'system:role:create', 1, 1);
-insert into `permission` (`pid`, `name`, `permission`, `create_user_id`, `update_user_id`) values (@pid, '编辑角色', 'system:role:edit', 1, 1);
-insert into `permission` (`pid`, `name`, `permission`, `create_user_id`, `update_user_id`) values (@pid, '删除角色', 'system:role:delete', 1, 1);
-insert into `permission` (`pid`, `name`, `permission`, `create_user_id`, `update_user_id`) values (@pid, '权限分配', 'system:role:auth', 1, 1);
-insert into `permission` (`pid`, `name`, `permission`, `create_user_id`, `update_user_id`) values (@pid, '菜单分配', 'system:role:menu', 1, 1);
--- 控制台-菜单管理操作权限初始化
-insert into `permission` (`pid`, `name`, `create_user_id`, `update_user_id`) select id, '菜单管理', 1, 1 from permission where name='控制台';
-select @pid := @@IDENTITY;
-insert into `permission` (`pid`, `name`, `permission`, `create_user_id`, `update_user_id`) values (@pid, '删除菜单', 'system:menu:create', 1, 1);
-insert into `permission` (`pid`, `name`, `permission`, `create_user_id`, `update_user_id`) values (@pid, '编辑菜单', 'system:menu:edit', 1, 1);
-insert into `permission` (`pid`, `name`, `permission`, `create_user_id`, `update_user_id`) values (@pid, '创建菜单', 'system:menu:delete', 1, 1);
--- 控制台-字典管理操作权限初始化
-insert into `permission` (`pid`, `name`, `create_user_id`, `update_user_id`) select id, '字典管理', 1, 1 from permission where name='控制台';
-select @pid := @@IDENTITY;
-insert into `permission` (`pid`, `name`, `permission`, `create_user_id`, `update_user_id`) values (@pid, '创建字典', 'system:dict:create', 1, 1);
-insert into `permission` (`pid`, `name`, `permission`, `create_user_id`, `update_user_id`) values (@pid, '编辑字典', 'system:dict:edit', 1, 1);
-insert into `permission` (`pid`, `name`, `permission`, `create_user_id`, `update_user_id`) values (@pid, '删除字典', 'system:dict:delete', 1, 1);
-insert into `permission` (`pid`, `name`, `permission`, `create_user_id`, `update_user_id`) values (@pid, '字典详情-创建', 'system:dictDetail:create', 1, 1);
-insert into `permission` (`pid`, `name`, `permission`, `create_user_id`, `update_user_id`) values (@pid, '字典详情-修改', 'system:dictDetail:edit', 1, 1);
-insert into `permission` (`pid`, `name`, `permission`, `create_user_id`, `update_user_id`) values (@pid, '字典详情-删除', 'system:dictDetail:delete', 1, 1);
--- 控制台-资源规格管理操作权限初始化
-insert into `permission` (`pid`, `name`, `create_user_id`, `update_user_id`) select id, '资源规格管理', 1, 1 from permission where name='控制台';
-select @pid := @@IDENTITY;
-insert into `permission` (`pid`, `name`, `permission`, `create_user_id`, `update_user_id`) values (@pid, '创建资源规格', 'system:specs:create', 1, 1 );
-insert into `permission` (`pid`, `name`, `permission`, `create_user_id`, `update_user_id`) values (@pid, '修改资源规格', 'system:specs:edit', 1, 1);
-insert into `permission` (`pid`, `name`, `permission`, `create_user_id`, `update_user_id`) values (@pid, '删除资源规格', 'system:specs:delete', 1, 1);
 
--- 算法开发
-insert into `permission` (`pid`, `name`, `create_user_id`, `update_user_id`) VALUES (0, '算法开发', 1, 1);
--- 算法开发-算法管理操作权限初始化
-insert into `permission` (`pid`, `name`, `create_user_id`, `update_user_id`) select id, '算法管理', 1, 1 from permission where name='算法开发';
-select @pid := @@IDENTITY;
-insert into `permission` (`pid`, `name`, `permission`, `create_user_id`, `update_user_id`) values (@pid, '创建算法', 'development:algorithm:create', 1, 1);
-insert into `permission` (`pid`, `name`, `permission`, `create_user_id`, `update_user_id`) values (@pid, '修改算法', 'development:algorithm:edit', 1, 1);
-insert into `permission` (`pid`, `name`, `permission`, `create_user_id`, `update_user_id`) values (@pid, '删除算法', 'development:algorithm:delete', 1, 1);
--- 算法开发-notebook操作权限初始化
-insert into `permission` (`pid`, `name`, `create_user_id`, `update_user_id`) select id, 'notebook', 1, 1 from permission where name='算法开发';
-select @pid := @@IDENTITY;
-insert into `permission` (`pid`, `name`, `permission`, `create_user_id`, `update_user_id`) values (@pid, '创建notebook', 'notebook:create', 1, 1);
-insert into `permission` (`pid`, `name`, `permission`, `create_user_id`, `update_user_id`) values (@pid, '修改notebook', 'notebook:update', 1, 1);
-insert into `permission` (`pid`, `name`, `permission`, `create_user_id`, `update_user_id`) values (@pid, '打开notebook', 'notebook:open', 1, 1);
-insert into `permission` (`pid`, `name`, `permission`, `create_user_id`, `update_user_id`) values (@pid, '启动notebook', 'notebook:start', 1, 1);
-insert into `permission` (`pid`, `name`, `permission`, `create_user_id`, `update_user_id`) values (@pid, '停止notebook', 'notebook:stop', 1, 1);
-insert into `permission` (`pid`, `name`, `permission`, `create_user_id`, `update_user_id`) values (@pid, '删除notebook', 'notebook:delete', 1, 1);
+-- 删除无效预置算法
+delete from pt_train_algorithm where algorithm_name in ('OneFlow预置算法-resnet50','OneFlow预置算法-bert','OneFlow预置算法-alexnet','OneFlow预置算法-mobilenetv2','OneFlow预置算法-dcgan','OneFlow预置算法-vgg16','OneFlow预置算法-insightface','OneFlow预置算法-yolov3','OneFlow预置算法-deep_and_wide');
 
--- 模型管理
-insert into `permission` (`pid`, `name`, `create_user_id`, `update_user_id`) VALUES (0, '模型管理', 1, 1);
--- 模型管理-模型列表操作权限初始化
-insert into `permission` (`pid`, `name`, `create_user_id`, `update_user_id`) select id, '模型列表', 1, 1 from permission where name='模型管理';
-select @pid := @@IDENTITY;
-insert into `permission` (`pid`, `name`, `permission`, `create_user_id`, `update_user_id`) values (@pid, '模型列表-创建', 'model:model:create', 1, 1);
-insert into `permission` (`pid`, `name`, `permission`, `create_user_id`, `update_user_id`) values (@pid, '模型列表-修改', 'model:model:edit', 1, 1);
-insert into `permission` (`pid`, `name`, `permission`, `create_user_id`, `update_user_id`) values (@pid, '模型列表-删除', 'model:model:delete', 1, 1);
--- 模型管理-模型优化操作权限初始化
-insert into `permission` (`pid`, `name`, `create_user_id`, `update_user_id`) select id, '模型优化', 1, 1 from permission where name='模型管理';
-select @pid := @@IDENTITY;
-insert into `permission` (`pid`, `name`, `permission`, `create_user_id`, `update_user_id`) values (@pid, '创建任务', 'model:optimize:createTask', 1, 1);
-insert into `permission` (`pid`, `name`, `permission`, `create_user_id`, `update_user_id`) values (@pid, '提交任务', 'model:optimize:submitTask', 1, 1);
-insert into `permission` (`pid`, `name`, `permission`, `create_user_id`, `update_user_id`) values (@pid, '修改任务', 'model:optimize:editTask', 1, 1);
-insert into `permission` (`pid`, `name`, `permission`, `create_user_id`, `update_user_id`) values (@pid, '删除任务', 'model:optimize:deleteTask', 1, 1);
-insert into `permission` (`pid`, `name`, `permission`, `create_user_id`, `update_user_id`) values (@pid, '提交任务实例', 'model:optimize:submitTaskInstance', 1, 1);
-insert into `permission` (`pid`, `name`, `permission`, `create_user_id`, `update_user_id`) values (@pid, '取消任务实例实例', 'model:optimize:cancelTaskInstance', 1, 1);
-insert into `permission` (`pid`, `name`, `permission`, `create_user_id`, `update_user_id`) values (@pid, '删除任务实例', 'model:optimize:deleteTaskInstance', 1, 1);
--- 模型管理-模型列表历史版本-模型版本管理操作权限初始化
-insert into `permission` (`pid`, `name`, `create_user_id`, `update_user_id`) select id, '模型版本管理', 1, 1 from permission where name='模型管理';
-select @pid := @@IDENTITY;
-insert into `permission` (`pid`, `name`, `permission`, `create_user_id`, `update_user_id`) values (@pid, '模型版本管理-创建', 'model:branch:create', 1, 1);
-insert into `permission` (`pid`, `name`, `permission`, `create_user_id`, `update_user_id`) values (@pid, '模型版本管理-删除', 'model:branch:delete', 1, 1);
-insert into `permission` (`pid`, `name`, `permission`, `create_user_id`, `update_user_id`) values (@pid, '模型版本管理-转预置', 'model:branch:convertPreset', 1, 1);
-insert into `permission` (`pid`, `name`, `permission`, `create_user_id`, `update_user_id`) values (@pid, '模型版本管理-转onnx', 'model:branch:convertOnnx', 1, 1);
 
--- 训练管理
-insert into `permission` (`pid`, `name`, `create_user_id`, `update_user_id`) VALUES (0, '训练管理', 1, 1);
--- 训练管理-镜像管理操作权限初始化
-insert into `permission` (`pid`, `name`, `create_user_id`, `update_user_id`) select id, '镜像管理', 1, 1 from permission where name='训练管理';
-select @pid := @@IDENTITY;
-insert into `permission` (`pid`, `name`, `permission`, `create_user_id`, `update_user_id`) values (@pid, '上传镜像', 'training:image:upload', 1, 1);
-insert into `permission` (`pid`, `name`, `permission`, `create_user_id`, `update_user_id`) values (@pid, '修改镜像', 'training:image:edit', 1, 1);
-insert into `permission` (`pid`, `name`, `permission`, `create_user_id`, `update_user_id`) values (@pid, '删除镜像', 'training:image:delete', 1, 1);
--- 训练管理-训练任务操作权限初始化
-insert into `permission` (`pid`, `name`, `create_user_id`, `update_user_id`) select id, '训练任务', 1, 1 from permission where name='训练管理';
-select @pid := @@IDENTITY;
-insert into `permission` (`pid`, `name`, `permission`, `create_user_id`, `update_user_id`) values (@pid, '创建训练', 'training:job:create', 1, 1);
-insert into `permission` (`pid`, `name`, `permission`, `create_user_id`, `update_user_id`) values (@pid, '修改训练', 'training:job:update', 1, 1);
-insert into `permission` (`pid`, `name`, `permission`, `create_user_id`, `update_user_id`) values (@pid, '删除训练', 'training:job:delete', 1, 1);
 
--- 云端serving
-insert into `permission` (`pid`, `name`, `create_user_id`, `update_user_id`) VALUES (0, '云端serving', 1, 1);
--- 云端serving-在线服务操作权限初始化
-insert into `permission` (`pid`, `name`, `create_user_id`, `update_user_id`) select id, '在线服务', 1, 1 from permission where name='云端serving';
-select @pid := @@IDENTITY;
-insert into `permission` (`pid`, `name`, `permission`, `create_user_id`, `update_user_id`) values (@pid, '创建服务', 'serving:online:create', 1, 1);
-insert into `permission` (`pid`, `name`, `permission`, `create_user_id`, `update_user_id`) values (@pid, '修改服务', 'serving:online:edit', 1, 1);
-insert into `permission` (`pid`, `name`, `permission`, `create_user_id`, `update_user_id`) values (@pid, '删除服务', 'serving:online:delete', 1, 1);
-insert into `permission` (`pid`, `name`, `permission`, `create_user_id`, `update_user_id`) values (@pid, '启动服务', 'serving:online:start', 1, 1);
-insert into `permission` (`pid`, `name`, `permission`, `create_user_id`, `update_user_id`) values (@pid, '停止服务', 'serving:online:stop', 1, 1);
--- 云端serving-批量服务操作权限初始化
-insert into `permission` (`pid`, `name`, `create_user_id`, `update_user_id`) select id, '批量服务', 1, 1 from permission where name='云端serving';
-select @pid := @@IDENTITY;
-insert into `permission` (`pid`, `name`, `permission`, `create_user_id`, `update_user_id`) values (@pid, '创建批量任务', 'serving:batch:create', 1, 1);
-insert into `permission` (`pid`, `name`, `permission`, `create_user_id`, `update_user_id`) values (@pid, '修改批量服务', 'serving:batch:edit', 1, 1);
-insert into `permission` (`pid`, `name`, `permission`, `create_user_id`, `update_user_id`) values (@pid, '删除批量服务', 'serving:batch:delete', 1, 1);
-insert into `permission` (`pid`, `name`, `permission`, `create_user_id`, `update_user_id`) values (@pid, '启动批量服务', 'serving:batch:start', 1, 1);
-insert into `permission` (`pid`, `name`, `permission`, `create_user_id`, `update_user_id`) values (@pid, '停止批量服务', 'serving:batch:stop', 1, 1);
+-- 修改训练主表字段
+-- alter table pt_train_job change out_path model_path varchar(128) default '' null comment '训练模型输出路径';
+-- alter table pt_train_job change log_path out_path varchar(128) default '' null comment '训练输出路径';
+-- 修改算法表字段
+-- alter table pt_train_algorithm change is_train_out is_train_model_out tinyint(1) default 1 null comment '是否输出训练结果:1是，0否';
+-- alter table pt_train_algorithm change is_train_log is_train_out tinyint(1) default 1 null comment '是否输出训练信息:1是，0否';
 
--- 模型炼知
-insert into `permission` (`pid`, `name`, `create_user_id`, `update_user_id`) VALUES (0, '模型炼知', 1, 1);
--- 模型炼知-度量管理操作权限初始化
-insert into `permission` (`pid`, `name`, `create_user_id`, `update_user_id`) select id, '度量管理', 1, 1 from permission where name='模型炼知';
-select @pid := @@IDENTITY;
-insert into `permission` (`pid`, `name`, `permission`, `create_user_id`, `update_user_id`) values (@pid, '创建度量', 'atlas:measure:create', 1, 1);
-insert into `permission` (`pid`, `name`, `permission`, `create_user_id`, `update_user_id`) values (@pid, '编辑度量', 'atlas:measure:edit', 1, 1);
-insert into `permission` (`pid`, `name`, `permission`, `create_user_id`, `update_user_id`) values (@pid, '删除度量', 'atlas:measure:delete', 1, 1);
 
--- 管理员角色操作权限初始化
-insert into auth(id, auth_code, description, create_user_id, update_user_id) values (1, 'admin权限组', '默认全部操作权限', 1, 1);
-insert into auth_permission (auth_id, permission_id) select 1, id from permission;
-INSERT INTO `roles_auth` (role_id, auth_id) values (1, 1);
+
+
+-- 修改任务参数模型输出路径、训练输出路径
+alter table pt_train_param change out_path model_path varchar(128) default '' null comment '模型输出路径';
+alter table pt_train_param change log_path out_path varchar(128) default '' null comment '输出路径';
+
