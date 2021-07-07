@@ -38,4 +38,4 @@ es:
   serverPort: 9200
   transportPort: 9300
   clusterName: docker-cluster
-  index: dataset_text_test
+  index: dataset_text_prod
