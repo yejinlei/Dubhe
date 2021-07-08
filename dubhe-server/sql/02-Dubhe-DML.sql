@@ -77,8 +77,7 @@ insert  into `menu` (`id`,`pid`,`type`,`name`,`icon`,`path`,`component`,`compone
 (1081,10,1,'自定义数据集',NULL,'datasets/custom/:datasetId','dataset/custom','CustomList','DetailLayout',NULL,NULL,'{}','','\0',999,1,1,'\0'),
 (1084,90,1,'资源规格管理','xunlianzhunbei','resources','system/resources','Resources','BaseLayout','system:specs',NULL,NULL,'\0','\0',999,NULL,NULL,'\0');
 
-insert  into `auth`(`id`,`auth_code`,`description`,`create_user_id`,`update_user_id`,`create_time`,`update_time`,`deleted`) values
-(1,'admin权限组','默认全部操作权限',1,1,'2021-07-01 08:54:32','2021-07-01 08:54:32','\0');
+insert into auth(id, auth_code, description, create_user_id, update_user_id) values (1, 'admin权限组', '默认全部操作权限', 1, 1);
 
 -- 初始化默认角色
 INSERT INTO `role`(`id`, `name`, `permission`) VALUES (1, '管理员', 'admin');
@@ -2835,7 +2834,6 @@ alter table pt_train_param change out_path model_path varchar(128) default '' nu
 alter table pt_train_param change log_path out_path varchar(128) default '' null comment '输出路径';
 
 -- 管理员角色操作权限初始化
-insert into auth(id, auth_code, description, create_user_id, update_user_id) values (1, 'admin权限组', '默认全部操作权限', 1, 1);
 insert into auth_permission (auth_id, permission_id) select 1, id from permission;
 INSERT INTO `roles_auth` (role_id, auth_id) values (1, 1);
 
