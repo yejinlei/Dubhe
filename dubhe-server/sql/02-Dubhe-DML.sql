@@ -77,8 +77,7 @@ insert  into `menu` (`id`,`pid`,`type`,`name`,`icon`,`path`,`component`,`compone
 (1081,10,1,'自定义数据集',NULL,'datasets/custom/:datasetId','dataset/custom','CustomList','DetailLayout',NULL,NULL,'{}','','\0',999,1,1,'\0'),
 (1084,90,1,'资源规格管理','xunlianzhunbei','resources','system/resources','Resources','BaseLayout','system:specs',NULL,NULL,'\0','\0',999,NULL,NULL,'\0');
 
-insert  into `auth`(`id`,`auth_code`,`description`,`create_user_id`,`update_user_id`,`create_time`,`update_time`,`deleted`) values
-(1,'admin权限组','默认全部操作权限',1,1,'2021-07-01 08:54:32','2021-07-01 08:54:32','\0');
+insert into auth(id, auth_code, description, create_user_id, update_user_id) values (1, 'admin权限组', '默认全部操作权限', 1, 1);
 
 -- 初始化默认角色
 INSERT INTO `role`(`id`, `name`, `permission`) VALUES (1, '管理员', 'admin');
@@ -2675,11 +2674,86 @@ INSERT INTO resource_specs(specs_name,resources_pool_type,module,cpu_num,gpu_num
 ('32CPU256GB内存 8GPU',1,3,32,8,256000,50000);
 
 
+
+-- 控制台
+insert into `permission` (`pid`, `name`, `create_user_id`, `update_user_id`) VALUES (0, '控制台', 1, 1);
+-- 控制台-用户管理操作权限初始化
+insert into `permission` (`pid`, `name`, `create_user_id`, `update_user_id`) select id, '用户管理', 1, 1 from permission where name='控制台';
+select @pid := @@IDENTITY;
+insert into `permission` (`pid`, `name`, `permission`, `create_user_id`, `update_user_id`) values (@pid, '创建用户', 'system:user:create', 1, 1);
+insert into `permission` (`pid`, `name`, `permission`, `create_user_id`, `update_user_id`) values (@pid, '编辑用户', 'system:user:edit', 1, 1);
+insert into `permission` (`pid`, `name`, `permission`, `create_user_id`, `update_user_id`) values (@pid, '删除用户', 'system:user:delete', 1, 1);
+-- 控制台-用户组管理操作权限初始化
+insert into `permission` (`pid`, `name`, `create_user_id`, `update_user_id`) select id, '用户组管理', 1, 1 from permission where name='控制台';
+select @pid := @@IDENTITY;
+insert into `permission` (`pid`, `name`, `permission`, `create_user_id`, `update_user_id`) values (@pid, '创建用户组', 'system:userGroup:create', 1, 1);
+insert into `permission` (`pid`, `name`, `permission`, `create_user_id`, `update_user_id`) values (@pid, '编辑用户组', 'system:userGroup:edit', 1, 1);
+insert into `permission` (`pid`, `name`, `permission`, `create_user_id`, `update_user_id`) values (@pid, '删除用户组', 'system:userGroup:delete', 1, 1);
+insert into `permission` (`pid`, `name`, `permission`, `create_user_id`, `update_user_id`) values (@pid, '编辑成员', 'system:userGroup:editUser', 1, 1);
+insert into `permission` (`pid`, `name`, `permission`, `create_user_id`, `update_user_id`) values (@pid, '批量修改角色', 'system:userGroup:editUserRole', 1, 1);
+insert into `permission` (`pid`, `name`, `permission`, `create_user_id`, `update_user_id`) values (@pid, '批量激活锁定', 'system:userGroup:editUserState', 1, 1);
+insert into `permission` (`pid`, `name`, `permission`, `create_user_id`, `update_user_id`) values (@pid, '批量删除用户', 'system:userGroup:deleteUser', 1, 1);
+-- 控制台-权限管理操作权限初始化
+insert into `permission` (`pid`, `name`, `create_user_id`, `update_user_id`) select id, '权限管理', 1, 1 from permission where name='控制台';
+select @pid := @@IDENTITY;
+insert into `permission` (`pid`, `name`, `permission`, `create_user_id`, `update_user_id`) values (@pid, '创建权限组', 'system:authCode:create', 1, 1);
+insert into `permission` (`pid`, `name`, `permission`, `create_user_id`, `update_user_id`) values (@pid, '编辑权限组', 'system:authCode:edit', 1, 1);
+insert into `permission` (`pid`, `name`, `permission`, `create_user_id`, `update_user_id`) values (@pid, '删除权限组', 'system:authCode:delete', 1, 1);
+insert into `permission` (`pid`, `name`, `permission`, `create_user_id`, `update_user_id`) values (@pid, '创建权限', 'system:permission:create', 1, 1);
+insert into `permission` (`pid`, `name`, `permission`, `create_user_id`, `update_user_id`) values (@pid, '编辑权限', 'system:permission:edit', 1, 1);
+insert into `permission` (`pid`, `name`, `permission`, `create_user_id`, `update_user_id`) values (@pid, '删除权限', 'system:permission:delete', 1, 1);
+-- 控制台-角色管理操作权限初始化
+insert into `permission` (`pid`, `name`, `create_user_id`, `update_user_id`) select id, '角色管理', 1, 1 from permission where name='控制台';
+select @pid := @@IDENTITY;
+insert into `permission` (`pid`, `name`, `permission`, `create_user_id`, `update_user_id`) values (@pid, '创建角色', 'system:role:create', 1, 1);
+insert into `permission` (`pid`, `name`, `permission`, `create_user_id`, `update_user_id`) values (@pid, '编辑角色', 'system:role:edit', 1, 1);
+insert into `permission` (`pid`, `name`, `permission`, `create_user_id`, `update_user_id`) values (@pid, '删除角色', 'system:role:delete', 1, 1);
+insert into `permission` (`pid`, `name`, `permission`, `create_user_id`, `update_user_id`) values (@pid, '权限分配', 'system:role:auth', 1, 1);
+insert into `permission` (`pid`, `name`, `permission`, `create_user_id`, `update_user_id`) values (@pid, '菜单分配', 'system:role:menu', 1, 1);
+-- 控制台-菜单管理操作权限初始化
+insert into `permission` (`pid`, `name`, `create_user_id`, `update_user_id`) select id, '菜单管理', 1, 1 from permission where name='控制台';
+select @pid := @@IDENTITY;
+insert into `permission` (`pid`, `name`, `permission`, `create_user_id`, `update_user_id`) values (@pid, '删除菜单', 'system:menu:create', 1, 1);
+insert into `permission` (`pid`, `name`, `permission`, `create_user_id`, `update_user_id`) values (@pid, '编辑菜单', 'system:menu:edit', 1, 1);
+insert into `permission` (`pid`, `name`, `permission`, `create_user_id`, `update_user_id`) values (@pid, '创建菜单', 'system:menu:delete', 1, 1);
+-- 控制台-字典管理操作权限初始化
+insert into `permission` (`pid`, `name`, `create_user_id`, `update_user_id`) select id, '字典管理', 1, 1 from permission where name='控制台';
+select @pid := @@IDENTITY;
+insert into `permission` (`pid`, `name`, `permission`, `create_user_id`, `update_user_id`) values (@pid, '创建字典', 'system:dict:create', 1, 1);
+insert into `permission` (`pid`, `name`, `permission`, `create_user_id`, `update_user_id`) values (@pid, '编辑字典', 'system:dict:edit', 1, 1);
+insert into `permission` (`pid`, `name`, `permission`, `create_user_id`, `update_user_id`) values (@pid, '删除字典', 'system:dict:delete', 1, 1);
+insert into `permission` (`pid`, `name`, `permission`, `create_user_id`, `update_user_id`) values (@pid, '字典详情-创建', 'system:dictDetail:create', 1, 1);
+insert into `permission` (`pid`, `name`, `permission`, `create_user_id`, `update_user_id`) values (@pid, '字典详情-修改', 'system:dictDetail:edit', 1, 1);
+insert into `permission` (`pid`, `name`, `permission`, `create_user_id`, `update_user_id`) values (@pid, '字典详情-删除', 'system:dictDetail:delete', 1, 1);
+-- 控制台-资源规格管理操作权限初始化
+insert into `permission` (`pid`, `name`, `create_user_id`, `update_user_id`) select id, '资源规格管理', 1, 1 from permission where name='控制台';
+select @pid := @@IDENTITY;
+insert into `permission` (`pid`, `name`, `permission`, `create_user_id`, `update_user_id`) values (@pid, '创建资源规格', 'system:specs:create', 1, 1 );
+insert into `permission` (`pid`, `name`, `permission`, `create_user_id`, `update_user_id`) values (@pid, '修改资源规格', 'system:specs:edit', 1, 1);
+insert into `permission` (`pid`, `name`, `permission`, `create_user_id`, `update_user_id`) values (@pid, '删除资源规格', 'system:specs:delete', 1, 1);
+
 -- 删除无效预置算法
 delete from pt_train_algorithm where algorithm_name in ('OneFlow预置算法-resnet50','OneFlow预置算法-bert','OneFlow预置算法-alexnet','OneFlow预置算法-mobilenetv2','OneFlow预置算法-dcgan','OneFlow预置算法-vgg16','OneFlow预置算法-insightface','OneFlow预置算法-yolov3','OneFlow预置算法-deep_and_wide');
 
 
 
+-- 算法开发
+insert into `permission` (`pid`, `name`, `create_user_id`, `update_user_id`) VALUES (0, '算法开发', 1, 1);
+-- 算法开发-算法管理操作权限初始化
+insert into `permission` (`pid`, `name`, `create_user_id`, `update_user_id`) select id, '算法管理', 1, 1 from permission where name='算法开发';
+select @pid := @@IDENTITY;
+insert into `permission` (`pid`, `name`, `permission`, `create_user_id`, `update_user_id`) values (@pid, '创建算法', 'development:algorithm:create', 1, 1);
+insert into `permission` (`pid`, `name`, `permission`, `create_user_id`, `update_user_id`) values (@pid, '修改算法', 'development:algorithm:edit', 1, 1);
+insert into `permission` (`pid`, `name`, `permission`, `create_user_id`, `update_user_id`) values (@pid, '删除算法', 'development:algorithm:delete', 1, 1);
+-- 算法开发-notebook操作权限初始化
+insert into `permission` (`pid`, `name`, `create_user_id`, `update_user_id`) select id, 'notebook', 1, 1 from permission where name='算法开发';
+select @pid := @@IDENTITY;
+insert into `permission` (`pid`, `name`, `permission`, `create_user_id`, `update_user_id`) values (@pid, '创建notebook', 'notebook:create', 1, 1);
+insert into `permission` (`pid`, `name`, `permission`, `create_user_id`, `update_user_id`) values (@pid, '修改notebook', 'notebook:update', 1, 1);
+insert into `permission` (`pid`, `name`, `permission`, `create_user_id`, `update_user_id`) values (@pid, '打开notebook', 'notebook:open', 1, 1);
+insert into `permission` (`pid`, `name`, `permission`, `create_user_id`, `update_user_id`) values (@pid, '启动notebook', 'notebook:start', 1, 1);
+insert into `permission` (`pid`, `name`, `permission`, `create_user_id`, `update_user_id`) values (@pid, '停止notebook', 'notebook:stop', 1, 1);
+insert into `permission` (`pid`, `name`, `permission`, `create_user_id`, `update_user_id`) values (@pid, '删除notebook', 'notebook:delete', 1, 1);
 -- 修改训练主表字段
 -- alter table pt_train_job change out_path model_path varchar(128) default '' null comment '训练模型输出路径';
 -- alter table pt_train_job change log_path out_path varchar(128) default '' null comment '训练输出路径';
@@ -2687,10 +2761,79 @@ delete from pt_train_algorithm where algorithm_name in ('OneFlow预置算法-res
 -- alter table pt_train_algorithm change is_train_out is_train_model_out tinyint(1) default 1 null comment '是否输出训练结果:1是，0否';
 -- alter table pt_train_algorithm change is_train_log is_train_out tinyint(1) default 1 null comment '是否输出训练信息:1是，0否';
 
+-- 模型管理
+insert into `permission` (`pid`, `name`, `create_user_id`, `update_user_id`) VALUES (0, '模型管理', 1, 1);
+-- 模型管理-模型列表操作权限初始化
+insert into `permission` (`pid`, `name`, `create_user_id`, `update_user_id`) select id, '模型列表', 1, 1 from permission where name='模型管理';
+select @pid := @@IDENTITY;
+insert into `permission` (`pid`, `name`, `permission`, `create_user_id`, `update_user_id`) values (@pid, '模型列表-创建', 'model:model:create', 1, 1);
+insert into `permission` (`pid`, `name`, `permission`, `create_user_id`, `update_user_id`) values (@pid, '模型列表-修改', 'model:model:edit', 1, 1);
+insert into `permission` (`pid`, `name`, `permission`, `create_user_id`, `update_user_id`) values (@pid, '模型列表-删除', 'model:model:delete', 1, 1);
+-- 模型管理-模型优化操作权限初始化
+insert into `permission` (`pid`, `name`, `create_user_id`, `update_user_id`) select id, '模型优化', 1, 1 from permission where name='模型管理';
+select @pid := @@IDENTITY;
+insert into `permission` (`pid`, `name`, `permission`, `create_user_id`, `update_user_id`) values (@pid, '创建任务', 'model:optimize:createTask', 1, 1);
+insert into `permission` (`pid`, `name`, `permission`, `create_user_id`, `update_user_id`) values (@pid, '提交任务', 'model:optimize:submitTask', 1, 1);
+insert into `permission` (`pid`, `name`, `permission`, `create_user_id`, `update_user_id`) values (@pid, '修改任务', 'model:optimize:editTask', 1, 1);
+insert into `permission` (`pid`, `name`, `permission`, `create_user_id`, `update_user_id`) values (@pid, '删除任务', 'model:optimize:deleteTask', 1, 1);
+insert into `permission` (`pid`, `name`, `permission`, `create_user_id`, `update_user_id`) values (@pid, '提交任务实例', 'model:optimize:submitTaskInstance', 1, 1);
+insert into `permission` (`pid`, `name`, `permission`, `create_user_id`, `update_user_id`) values (@pid, '取消任务实例实例', 'model:optimize:cancelTaskInstance', 1, 1);
+insert into `permission` (`pid`, `name`, `permission`, `create_user_id`, `update_user_id`) values (@pid, '删除任务实例', 'model:optimize:deleteTaskInstance', 1, 1);
+-- 模型管理-模型列表历史版本-模型版本管理操作权限初始化
+insert into `permission` (`pid`, `name`, `create_user_id`, `update_user_id`) select id, '模型版本管理', 1, 1 from permission where name='模型管理';
+select @pid := @@IDENTITY;
+insert into `permission` (`pid`, `name`, `permission`, `create_user_id`, `update_user_id`) values (@pid, '模型版本管理-创建', 'model:branch:create', 1, 1);
+insert into `permission` (`pid`, `name`, `permission`, `create_user_id`, `update_user_id`) values (@pid, '模型版本管理-删除', 'model:branch:delete', 1, 1);
+insert into `permission` (`pid`, `name`, `permission`, `create_user_id`, `update_user_id`) values (@pid, '模型版本管理-转预置', 'model:branch:convertPreset', 1, 1);
+insert into `permission` (`pid`, `name`, `permission`, `create_user_id`, `update_user_id`) values (@pid, '模型版本管理-转onnx', 'model:branch:convertOnnx', 1, 1);
 
+-- 训练管理
+insert into `permission` (`pid`, `name`, `create_user_id`, `update_user_id`) VALUES (0, '训练管理', 1, 1);
+-- 训练管理-镜像管理操作权限初始化
+insert into `permission` (`pid`, `name`, `create_user_id`, `update_user_id`) select id, '镜像管理', 1, 1 from permission where name='训练管理';
+select @pid := @@IDENTITY;
+insert into `permission` (`pid`, `name`, `permission`, `create_user_id`, `update_user_id`) values (@pid, '上传镜像', 'training:image:upload', 1, 1);
+insert into `permission` (`pid`, `name`, `permission`, `create_user_id`, `update_user_id`) values (@pid, '修改镜像', 'training:image:edit', 1, 1);
+insert into `permission` (`pid`, `name`, `permission`, `create_user_id`, `update_user_id`) values (@pid, '删除镜像', 'training:image:delete', 1, 1);
+-- 训练管理-训练任务操作权限初始化
+insert into `permission` (`pid`, `name`, `create_user_id`, `update_user_id`) select id, '训练任务', 1, 1 from permission where name='训练管理';
+select @pid := @@IDENTITY;
+insert into `permission` (`pid`, `name`, `permission`, `create_user_id`, `update_user_id`) values (@pid, '创建训练', 'training:job:create', 1, 1);
+insert into `permission` (`pid`, `name`, `permission`, `create_user_id`, `update_user_id`) values (@pid, '修改训练', 'training:job:update', 1, 1);
+insert into `permission` (`pid`, `name`, `permission`, `create_user_id`, `update_user_id`) values (@pid, '删除训练', 'training:job:delete', 1, 1);
 
+-- 云端serving
+insert into `permission` (`pid`, `name`, `create_user_id`, `update_user_id`) VALUES (0, '云端serving', 1, 1);
+-- 云端serving-在线服务操作权限初始化
+insert into `permission` (`pid`, `name`, `create_user_id`, `update_user_id`) select id, '在线服务', 1, 1 from permission where name='云端serving';
+select @pid := @@IDENTITY;
+insert into `permission` (`pid`, `name`, `permission`, `create_user_id`, `update_user_id`) values (@pid, '创建服务', 'serving:online:create', 1, 1);
+insert into `permission` (`pid`, `name`, `permission`, `create_user_id`, `update_user_id`) values (@pid, '修改服务', 'serving:online:edit', 1, 1);
+insert into `permission` (`pid`, `name`, `permission`, `create_user_id`, `update_user_id`) values (@pid, '删除服务', 'serving:online:delete', 1, 1);
+insert into `permission` (`pid`, `name`, `permission`, `create_user_id`, `update_user_id`) values (@pid, '启动服务', 'serving:online:start', 1, 1);
+insert into `permission` (`pid`, `name`, `permission`, `create_user_id`, `update_user_id`) values (@pid, '停止服务', 'serving:online:stop', 1, 1);
+-- 云端serving-批量服务操作权限初始化
+insert into `permission` (`pid`, `name`, `create_user_id`, `update_user_id`) select id, '批量服务', 1, 1 from permission where name='云端serving';
+select @pid := @@IDENTITY;
+insert into `permission` (`pid`, `name`, `permission`, `create_user_id`, `update_user_id`) values (@pid, '创建批量任务', 'serving:batch:create', 1, 1);
+insert into `permission` (`pid`, `name`, `permission`, `create_user_id`, `update_user_id`) values (@pid, '修改批量服务', 'serving:batch:edit', 1, 1);
+insert into `permission` (`pid`, `name`, `permission`, `create_user_id`, `update_user_id`) values (@pid, '删除批量服务', 'serving:batch:delete', 1, 1);
+insert into `permission` (`pid`, `name`, `permission`, `create_user_id`, `update_user_id`) values (@pid, '启动批量服务', 'serving:batch:start', 1, 1);
+insert into `permission` (`pid`, `name`, `permission`, `create_user_id`, `update_user_id`) values (@pid, '停止批量服务', 'serving:batch:stop', 1, 1);
 
+-- 模型炼知
+insert into `permission` (`pid`, `name`, `create_user_id`, `update_user_id`) VALUES (0, '模型炼知', 1, 1);
+-- 模型炼知-度量管理操作权限初始化
+insert into `permission` (`pid`, `name`, `create_user_id`, `update_user_id`) select id, '度量管理', 1, 1 from permission where name='模型炼知';
+select @pid := @@IDENTITY;
+insert into `permission` (`pid`, `name`, `permission`, `create_user_id`, `update_user_id`) values (@pid, '创建度量', 'atlas:measure:create', 1, 1);
+insert into `permission` (`pid`, `name`, `permission`, `create_user_id`, `update_user_id`) values (@pid, '编辑度量', 'atlas:measure:edit', 1, 1);
+insert into `permission` (`pid`, `name`, `permission`, `create_user_id`, `update_user_id`) values (@pid, '删除度量', 'atlas:measure:delete', 1, 1);
 -- 修改任务参数模型输出路径、训练输出路径
 alter table pt_train_param change out_path model_path varchar(128) default '' null comment '模型输出路径';
 alter table pt_train_param change log_path out_path varchar(128) default '' null comment '输出路径';
+
+-- 管理员角色操作权限初始化
+insert into auth_permission (auth_id, permission_id) select 1, id from permission;
+INSERT INTO `roles_auth` (role_id, auth_id) values (1, 1);
 

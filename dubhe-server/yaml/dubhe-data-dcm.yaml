@@ -15,9 +15,6 @@ data:
   server:
     # 文件存储服务器用户名
     userName: root
-  #数据集训练配置
-  ptversion: http://127.0.0.1:8000/
-
 
 # 数据处理医学影像数据集dcm服务器配置，查看影像功能需要使用该服务
 dcm:
