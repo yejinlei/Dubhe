@@ -17,7 +17,7 @@
 <template>
   <div style="margin-top: 40px; overflow: auto;">
     <!--基本信息-->
-    <div class="title">基本信息</div>
+    <div class="title" tabindex="0">基本信息</div>
     <el-row class="row">
       <el-col :span="5">
         <div class="label">名称</div>

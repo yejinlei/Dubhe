@@ -25,6 +25,7 @@ let isMsgOn = false;
 
 // 全局未捕获异常处理（包括普通异常和 await 未被捕获的异常）
 Vue.config.errorHandler = (err) => {
+  if (!err) return;
   console.error(err);
   // 未授权只提示一次
   if (err.code === UNAUTHORIZED) {

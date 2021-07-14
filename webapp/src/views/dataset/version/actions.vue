@@ -71,6 +71,7 @@ import {
   annotationBy,
   dataTypeCodeMap,
   showOfRecord,
+  isCustomDataset,
 } from '@/views/dataset/util';
 import { toggleVersion, deleteVersion, shiftOfRecord } from '@/api/preparation/dataset';
 import { TableTooltip } from '@/hooks/tooltip';
@@ -160,12 +161,15 @@ export default {
       const prefixUrl = `dataset/${row.datasetId}/versionFile/${row.versionName}`;
       return downloadZipFromObjectPath(prefixUrl, `${row.datasetId}_${row.versionName}.zip`, {
         fileName: (file) => file.name.replace(`${prefixUrl}/`, ''),
-        filter: (result) =>
-          result.filter((item) => {
+        filter: (result) => {
+          // 自定义数据集没有固定目录结构，直接下载即可
+          if (isCustomDataset(row)) return result;
+          return result.filter((item) => {
             return ['annotation', 'origin'].some((str) =>
               item.name.startsWith(`${prefixUrl}/${str}`)
             );
-          }),
+          });
+        },
       });
     };
 
