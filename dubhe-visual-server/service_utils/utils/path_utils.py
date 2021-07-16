@@ -36,11 +36,12 @@ def id2logdir(uid, trainJobName):
 def get_file_path(uid, run, type, tag):
     _key = uid + '_' + run + '_' + type + '_' + tag
     try:
-        _path = Path(RedisInstance.get(_key))
+        _res = RedisInstance.get(_key)
+        _path = Path(_res)
     except TypeError:
         raise OSError('Redis key {} not found according to request '
-                      'parameters, please check the parameters'
-                      .format(_key))
+                      'parameters, please check the parameters\n _path={}'
+                      .format(_key, _res))
     return _path
 
 

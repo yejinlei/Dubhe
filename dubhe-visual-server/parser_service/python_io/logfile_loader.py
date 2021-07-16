@@ -17,6 +17,7 @@
 """
 import threading
 import time
+import json
 from io import BytesIO
 from pathlib import Path
 from tbparser import SummaryReader
@@ -168,12 +169,46 @@ class Trace_Thread(threading.Thread):
             self.set_redis_key(type="embedding", tag="sample_" + items.tag,
                                file_path=file_path)
 
+    def filter_graph(self, file):
+        variable_names = {}
+        graph = json.loads(file)
+        for sub_graph in graph:
+            cfg = sub_graph["config"]
+            # 拷贝一份，用于循环
+            cfg_copy = cfg["layers"].copy()
+            for layer in cfg_copy:
+                if layer["class_name"] == "variable":
+                    _name = layer["name"]
+                    variable_names[_name] = layer
+                    cfg["layers"].remove(layer)
+        # 第二遍循环，删除`variable_names`出现在`inbound_nodes`中的名字
+        for sub_graph in graph:
+            cfg = sub_graph["config"]
+            for layer in cfg["layers"]:
+                in_nodes = layer["inbound_nodes"]
+                in_nodes_copy = in_nodes.copy()
+                for node in in_nodes_copy:
+                    # 在里面则删除
+                    if node in variable_names.keys():
+                        in_nodes.remove(node)
+        graph_str = json.dumps(graph)
+        return graph_str
+
     def load_model_file(self, file):
         with open(file, "r") as f:
-            _content = f.read()
-            file_path = path_parser(self.cache_path, self.runname,
-                                    type="graph",
-                                    tag="s_graph")
-            CacheIO(file_path).set_cache(data=_content)
+            # 结构图内容
+            _cg_content = f.read()
+            _sg_content = self.filter_graph(_cg_content)
+            # caclulate_graph.json
+            sg_file_path = path_parser(self.cache_path, self.runname,
+                                       type="graph",
+                                       tag="s_graph")
+            cg_file_path = path_parser(self.cache_path, self.runname,
+                                       type="graph",
+                                       tag="c_graph")
+            CacheIO(sg_file_path).set_cache(data=_sg_content)
+            CacheIO(cg_file_path).set_cache(data=_cg_content)
             self.set_redis_key(type="graph", tag="s_graph",
-                               file_path=file_path)
+                               file_path=sg_file_path)
+            self.set_redis_key(type="graph", tag="c_graph",
+                               file_path=cg_file_path)

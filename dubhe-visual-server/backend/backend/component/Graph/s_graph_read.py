@@ -18,18 +18,36 @@
 import json
 from backend.component.Graph.parse_json import Proxy_json
 from backend.component.Graph.graph import Node
+from backend.component.Graph.graph_read import get_data
 
 # Base_RATE = 16
 # nodes保留每个节点的单独信息，以节点全称为key进行索引
+
 nodes = {}
 # edges_info保留每条线的维度信息，以起始节点+‘_’+目标节点为key进行索引
 edges_info = {}
 
 
+class Graph:
+    def __init__(self):
+        self.nodes = []
+
+    @property
+    def node(self):
+        return self.nodes
+
+    def add_node(self, node):
+        node["name"] = node["uid"].replace("-", "/")
+        for i in range(len(node["inputs"])):
+            node["inputs"][i] = node["inputs"][i].replace("-", "/")
+        self.nodes.append(node)
+
+
 # 同根同支，以短边的尽头为分叉点
 # 同根不同支，
 # 不同根
-def diff_index_find(small_len, node_edge_list, target_edge_list, same_root, same_branch):
+def diff_index_find(small_len, node_edge_list, target_edge_list, same_root,
+                    same_branch):
     # 遍历寻找分叉点
     for i in range(small_len):
 
@@ -101,7 +119,8 @@ def edge_deal(node):
             unique_sign = False
             duplication_sign = False
             if "_output_shapes" in nodes[target]["attrs"]:
-                target_output_shapes = nodes[target]["attrs"]["_output_shapes"]
+                target_output_shapes = nodes[target]["attrs"][
+                    "_output_shapes"]
             else:
                 target_output_shapes = [""]
             # 若有匹配
@@ -111,11 +130,13 @@ def edge_deal(node):
                 if duplication_sign:
                     break
                 for target_output_shape in target_output_shapes:
-                    if (output_shape == target_output_shape) & (unique_sign is False):
+                    if (output_shape == target_output_shape) & (
+                            unique_sign is False):
                         unique_sign = True
                         cur2targets_edge_info[i] = output_shape
                         break
-                    elif (output_shape == target_output_shape) & (unique_sign is True):
+                    elif (output_shape == target_output_shape) & (
+                            unique_sign is True):
                         duplication_sign = True
                         cur2targets_edge_info[i] = "{?}"
                         # candidate_list.append(target)
@@ -144,9 +165,13 @@ def edge_deal(node):
 
         # 寻找分叉点
         if node_edge_len < target_edge_len:
-            diff_index = diff_index_find(node_edge_len, node_edge_list, target_edge_list, same_root, same_branch)
+            diff_index = diff_index_find(node_edge_len, node_edge_list,
+                                         target_edge_list, same_root,
+                                         same_branch)
         else:
-            diff_index = diff_index_find(target_edge_len, node_edge_list, target_edge_list, same_root, same_branch)
+            diff_index = diff_index_find(target_edge_len, node_edge_list,
+                                         target_edge_list, same_root,
+                                         same_branch)
 
         # 构边与插入
         # 同支情况下由于展开父节点消失，故不进行边的构建
@@ -176,7 +201,7 @@ def edge_deal(node):
 # layer  节点当前所在的层级
 # targets 目标节点
 # attrs  属性
-def data_build(tree, graph, data, level, curr_path=None):
+def data_build(tree, graph, data, level, curr_path=None, Graph_=None):
     # parent用于存储父节点名称
     # curr_path用于存储当前路径，主要用于虚节点的构造上
     parent = curr_path
@@ -272,7 +297,9 @@ def data_build(tree, graph, data, level, curr_path=None):
             node["op"] = node_info.op
             node["layer"] = level + 1
             node["attrs"] = node_attr
-
+            node["inputs"] = node_info.input
+            Graph_.add_node(node)
+            # print(node_info)
             node2nodes = node.copy()
             # nodes中node的边不重复，且仅含当前节点的信息,构建时为空，在处理后添加
             node2nodes["targets"] = set()
@@ -282,10 +309,12 @@ def data_build(tree, graph, data, level, curr_path=None):
             node["sub_net"] = []
             if level == 0:
                 data.append(node)
-                data_build(tree.child[node_name], graph, data[i], level + 1, curr_path)
+                data_build(tree.child[node_name], graph, data[i],
+                           level + 1, curr_path)
             else:
                 data["sub_net"].append(node)
-                data_build(tree.child[node_name], graph, data["sub_net"][i], level + 1, curr_path)
+                data_build(tree.child[node_name], graph,
+                           data["sub_net"][i], level + 1, curr_path)
 
 
 def data_search(data, level=1, build=True):
@@ -329,10 +358,11 @@ def data_search(data, level=1, build=True):
                 data_search(sub_data, level + 1, build)
 
 
-def get_s_graph_data(s_data):
+def preprocess(s_data):
     s_data = s_data.replace('\n', '')
     data = json.loads(s_data)
     res = []
+    g = Graph()
     for d in data:
         proxy = Proxy_json(d)
         tree = proxy.tree
@@ -340,12 +370,22 @@ def get_s_graph_data(s_data):
         _data = []
         level = 0
         graph = proxy.graph
-        data_build(tree, graph, _data, level)
-
+        data_build(tree, graph, _data, level, Graph_=g)
         # 边的重新构造，存入nodes中
         data_search(_data, build=True)
         # 从nodes中取出边，赋值回data中
         data_search(_data, build=False)
         if _data:
             res.append(_data)
+    return [res, g]
+
+
+def get_s_graph_data(s_data):
+    res, g = preprocess(s_data)
+    return res
+
+
+def get_c_graph_data(c_data):
+    res, g = preprocess(c_data)
+    res = get_data(g)
     return res

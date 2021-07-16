@@ -50,7 +50,8 @@ class projector_reduction:
             raise ValueError('The dimension of the tsne method must be 2 or 3')
         _data = np.array(self.data)
         seed = np.random.RandomState(0)
-        data = bh_sne(_data, pca_d=True, d=self.dimension, perplexity=30, random_state=seed)
+        perplexity = _data.shape[0]//4 if _data.shape[0]-1 < 3*30 else 30 
+        data = bh_sne(_data, pca_d=True, d=self.dimension, perplexity=perplexity, random_state=seed)
         return data.tolist()
 
 

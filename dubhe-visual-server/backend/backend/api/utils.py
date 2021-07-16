@@ -17,6 +17,7 @@
 """
 import re
 import time
+import urllib.parse
 from pathlib import Path
 from django.http import HttpResponseNotAllowed, HttpResponseBadRequest, \
     JsonResponse, HttpResponse
@@ -228,9 +229,17 @@ def response_wrapper(fn):
                 })
             return res
         except Exception as e:
+            _tb = e.__traceback__
+            _str_tb = ""
+            while _tb:
+                _st = "in {}, at line {} \n".format(_tb.tb_frame.f_globals["__file__"],
+                                                    _tb.tb_lineno)
+                _str_tb += _st
+                _tb = _tb.tb_next
+            msg = "{}: Trace: {}".format(str(e), _str_tb)
             return JsonResponse({
                 'code': 500,
-                'msg': str(e),
+                'msg': msg,
                 'data': ""
             })
 
@@ -256,5 +265,9 @@ def get_api_params(request, params):
     params_key = res.keys()
     if 'uid' in params_key and 'trainJobName' in params_key:
         res['uid'] = res['uid'] + '_' + res['trainJobName']
-
-    return res.values()
+    ret = list(res.values())
+    for i, r in enumerate(ret):
+        ret[i] = urllib.parse.unquote(r)
+        if '%' in ret[i]:
+            ret[i] = urllib.parse.unquote(ret[i])
+    return ret

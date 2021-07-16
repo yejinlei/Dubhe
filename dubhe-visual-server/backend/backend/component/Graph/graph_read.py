@@ -183,34 +183,8 @@ def edge_deal(node, edges_info, edges_info_num, edges_info_list, edges_control_i
                     edge_id = i + "__" + j
                     if sign == 0:
                         edges_info_temp[edge_id] = output_shapes[0]
-                        # 若该边存在多条，则以；的形式对边信息进行划分
-                        # 其中若边信息为空，则以（）替代
-                        # if edge_id not in edges_info.keys():
-                        #     edges_info[edge_id] = output_shapes[0]
-                        #     edges_info_num[edge_id] = 1
-                        # else:
-                        #     if edges_info[edge_id] == '':
-                        #         edges_info[edge_id] = '()'
-                        #     if output_shapes[0] == '':
-                        #         edges_info[edge_id] = edges_info[edge_id] + ';' + '()'
-                        #     else:
-                        #         edges_info[edge_id] = edges_info[edge_id] + ';' + output_shapes[0]
-                        #     edges_info_num[edge_id] += 1
                     else:
                         edges_info_temp[edge_id] = cur2targets_edge_info[k]
-                        # 若该边存在多条，则以；的形式对边信息进行划分
-                        # 其中若边信息为空，则以（）替代
-                        # if edge_id not in edges_info.keys():
-                        #     edges_info[edge_id] = cur2targets_edge_info[k]
-                        #     edges_info_num[edge_id] = 1
-                        # else:
-                        #     if edges_info[edge_id] == '':
-                        #         edges_info[edge_id] = '()'
-                        #     if cur2targets_edge_info[k] == '':
-                        #         edges_info[edge_id] = edges_info[edge_id] + ';' + '()'
-                        #     else:
-                        #         edges_info[edge_id] = edges_info[edge_id] + ';' + cur2targets_edge_info[k]
-                        #     edges_info_num[edge_id] += 1
 
                     # 构造和存储每条边的控制信息
                     # 若对于一条边既存在实边也存在控制边，则绘制为实边
@@ -342,24 +316,7 @@ def data_build(tree, graph, data, level, curr_path=None):
                 if (key != "_output_shapes") & (key != "shape"):
                     node_attr[key] = str(node_info.attr[key]).replace('\n', '')
                 elif key == "shape":
-                    # shape处理成{1,1,1}形式的字符串
-                    # 每个shape都是一个protobuf,通过.来获取子层结构
-                    raw_dim = node_info.attr[key].shape.dim
-                    raw_dim_length = len(raw_dim)
-                    new_dim = ""
-                    for j, dim in enumerate(raw_dim):
-                        str_dim = ""
-                        if dim.size == -1:
-                            str_dim = "?"
-                        else:
-                            str_dim = str(dim.size)
-                        if j == 0:
-                            new_dim = '{' + str_dim
-                        else:
-                            new_dim += ',' + str_dim
-                        if j == raw_dim_length - 1:
-                            new_dim += '}'
-                    node_attr[key] = new_dim
+                    node_attr[key] = node_info.attr[key]
                 elif key == "_output_shapes":
                     # 在_output_shapes中用一个list存储当前节点到其他节点边的维度信息，每一个是一个shape
                     shape_list = node_info.attr[key].list.shape
@@ -488,6 +445,3 @@ def get_data(graph):
     # TODO
     # 放回data
     return data
-    # f = open('data_v1.txt', 'w')
-    # f.write(str(data))
-    # f.close()
