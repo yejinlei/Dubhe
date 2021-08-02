@@ -18,7 +18,7 @@ INSERT INTO user (id, email, enabled, nick_name, password, phone, sex, username)
 insert  into `menu` (`id`,`pid`,`type`,`name`,`icon`,`path`,`component`,`component_name`,`layout`,`permission`,`back_to`,`ext_config`,`hidden`,`cache`,`sort`,`create_user_id`,`update_user_id`,`deleted`) values
 (1,0,1,'概览','yibiaopan','dashboard','dashboard/dashboard','Dashboard','BaseLayout',NULL,NULL,NULL,'\0','\0',1,NULL,NULL,'\0'),
 (10,0,0,'数据管理','shujuguanli','data',NULL,NULL,NULL,'data',NULL,NULL,'\0','\0',2,NULL,NULL,'\0'),
-(11,10,1,'数据集管理','shujuguanli','datasets/list','dataset/list','Datasets','BaseLayout','data:dataset',NULL,NULL,'\0','\0',999,NULL,NULL,'\0'),
+(11,10,1,'数据集管理','shujuguanli','datasets/list','dataset/list','Datasets','BaseLayout','data:dataset',NULL,NULL,'\1','\0',999,NULL,NULL,'\0'),
 (12,10,1,'图像分类',NULL,'datasets/classify/:datasetId','dataset/classify','DatasetClassify','DetailLayout',NULL,NULL,NULL,'','\0',999,NULL,NULL,'\0'),
 (13,10,1,'目标检测',NULL,'datasets/annotate/:datasetId/file/:fileId','dataset/annotate','AnnotateDatasetFile','DetailLayout',NULL,NULL,NULL,'','\0',999,NULL,NULL,'\0'),
 (14,10,1,'目标检测',NULL,'datasets/annotate/:datasetId','dataset/annotate','AnnotateDataset','DetailLayout',NULL,NULL,NULL,'','\0',999,NULL,NULL,'\0'),
