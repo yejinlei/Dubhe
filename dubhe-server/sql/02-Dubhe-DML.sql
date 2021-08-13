@@ -16,68 +16,69 @@ SET SQL_SAFE_UPDATES = 0;
 INSERT INTO user (id, email, enabled, nick_name, password, phone, sex, username) VALUES (1, 'admin@tom.com', true, '系统管理员', '$2a$10$VhAWNoUtpJKr000UYmfMee4SONBXJuRWGus64bmomyFKEo4kiwHve', '18888888888', '男', 'admin');
 
 insert  into `menu` (`id`,`pid`,`type`,`name`,`icon`,`path`,`component`,`component_name`,`layout`,`permission`,`back_to`,`ext_config`,`hidden`,`cache`,`sort`,`create_user_id`,`update_user_id`,`deleted`) values
-(1,0,1,'概览','yibiaopan','dashboard','dashboard/dashboard','Dashboard','BaseLayout',NULL,NULL,NULL,'\0','\0',1,NULL,NULL,'\0'),
-(10,0,0,'数据管理','shujuguanli','data',NULL,NULL,NULL,'data',NULL,NULL,'\0','\0',2,NULL,NULL,'\0'),
-(11,10,1,'数据集管理','shujuguanli','datasets/list','dataset/list','Datasets','BaseLayout','data:dataset',NULL,NULL,'\1','\0',999,NULL,NULL,'\0'),
-(12,10,1,'图像分类',NULL,'datasets/classify/:datasetId','dataset/classify','DatasetClassify','DetailLayout',NULL,NULL,NULL,'','\0',999,NULL,NULL,'\0'),
-(13,10,1,'目标检测',NULL,'datasets/annotate/:datasetId/file/:fileId','dataset/annotate','AnnotateDatasetFile','DetailLayout',NULL,NULL,NULL,'','\0',999,NULL,NULL,'\0'),
-(14,10,1,'目标检测',NULL,'datasets/annotate/:datasetId','dataset/annotate','AnnotateDataset','DetailLayout',NULL,NULL,NULL,'','\0',999,NULL,NULL,'\0'),
-(15,10,1,'目标跟踪',NULL,'datasets/track/:datasetId/file/:fileId','dataset/annotate','TrackDatasetFile','DatasetLayout',NULL,NULL,NULL,'','\0',999,NULL,NULL,'\0'),
-(16,10,1,'目标跟踪',NULL,'datasets/track/:datasetId','dataset/annotate','TrackDataset','DatasetLayout',NULL,NULL,NULL,'','\0',999,NULL,NULL,'\0'),
-(17,10,1,'数据集版本管理',NULL,'datasets/:datasetId/version','dataset/version','DatasetVersion','SubpageLayout',NULL,NULL,NULL,'','\0',999,NULL,NULL,'\0'),
-(30,0,0,'算法开发','xunlianzhunbei','development',NULL,NULL,NULL,'development',NULL,NULL,'\0','\0',3,NULL,NULL,'\0'),
-(31,30,1,'Notebook','kaifahuanjing','development:notebook','development/notebook','Notebook','BaseLayout','notebook',NULL,NULL,'\0','\0',999,NULL,NULL,'\0'),
-(32,30,1,'算法管理','mobanguanli','algorithm','algorithm/index','Algorithm','BaseLayout','development:algorithm',NULL,NULL,'\0','\0',999,NULL,NULL,'\0'),
-(40,0,0,'训练管理','xunlianguocheng','training',NULL,NULL,NULL,'training',NULL,NULL,'\0','\0',4,NULL,NULL,'\0'),
-(41,40,1,'镜像管理','jingxiangguanli','image','trainingImage/index','TrainingImage','BaseLayout','training:image',NULL,NULL,'\0','\0',999,NULL,NULL,'\0'),
-(42,40,1,'训练任务','renwuguanli','job','trainingJob/index','TrainingJob','BaseLayout','training:job',NULL,NULL,'\0','\0',999,NULL,NULL,'\0'),
-(43,40,1,'任务详情',NULL,'jobDetail','trainingJob/detail','JobDetail','SubpageLayout',NULL,NULL,NULL,'','\0',999,NULL,NULL,'\0'),
-(44,40,1,'添加任务',NULL,'jobAdd','trainingJob/add','jobAdd','SubpageLayout',NULL,NULL,NULL,'','\0',999,NULL,NULL,'\0'),
-(45,40,1,'可视化任务','mobanguanli','visual','trainingJob/trainingVisualList','TrainVisual','BaseLayout','training:visual',NULL,NULL,'\0','\0',999,NULL,NULL,'\0'),
-(50,0,1,'模型管理','moxingguanli','model',NULL,NULL,NULL,'model',NULL,NULL,'\0','\0',5,NULL,NULL,'\0'),
-(51,50,1,'模型列表','zongshili','model','model/index','ModelModel','BaseLayout','model:model',NULL,NULL,'\0','\0',999,NULL,NULL,'\0'),
-(52,50,1,'模型优化','caidanguanli','optimize','modelOptimize/index','ModelOptimize','BaseLayout','model:optimize',NULL,NULL,'\0','\0',52,1,1,'\0'),
-(53,50,1,'模型版本管理',NULL,'version','model/version','ModelVersion','SubpageLayout','model:branch',NULL,NULL,'','\0',999,NULL,NULL,'\0'),
-(54,50,1,'模型优化执行记录',NULL,'optimize/record','modelOptimize/record','ModelOptRecord','SubpageLayout',NULL,NULL,NULL,'\0','\0',54,1,1,'\0'),
-(90,0,0,'控制台','kongzhitaixitongguanliyuankejian','system',NULL,NULL,NULL,'system',NULL,NULL,'\0','\0',999,NULL,NULL,'\0'),
-(91,90,1,'用户管理','yonghuguanli','user','system/user/index','SystemUser','BaseLayout','system:user',NULL,NULL,'\0','\0',999,NULL,NULL,'\0'),
-(92,90,1,'角色管理','jiaoseguanli','role','system/role/index','SystemRole','BaseLayout','system:role',NULL,NULL,'\0','\0',999,NULL,NULL,'\0'),
-(93,90,1,'菜单管理','caidanguanli','menu','system/menu/index','SystemMenu','BaseLayout','system:menu',NULL,NULL,'\0','\0',999,NULL,NULL,'\0'),
-(94,90,1,'字典管理','mobanguanli','dict','system/dict/index','SystemDict','BaseLayout','system:dict',NULL,NULL,'\0','\0',999,NULL,NULL,'\0'),
-(95,90,1,'集群状态','jiqunguanli','node','system/node/index','SystemNode','BaseLayout','system:node',NULL,NULL,'\0','\0',999,NULL,NULL,'\0'),
-(96,90,1,'回收站','shuju1','recycle','system/recycle/index','SystemRecycle','BaseLayout','system:recycle',NULL,NULL,'\0','\0',999,1,1,'\0'),
-(97,0,0,'模型炼知','icon_huabanfuben1','atlas',NULL,NULL,NULL,NULL,NULL,NULL,'\0','\0',70,1,1,'\0'),
-(100,10,1,'编辑标签组',NULL,'labelgroup/edit','labelGroup/labelGroupForm','LabelGroupEdit','SubpageLayout',NULL,NULL,NULL,'','\0',24,1,1,'\0'),
-(101,10,1,'标签组详情',NULL,'labelgroup/detail','labelGroup/labelGroupForm','LabelGroupDetail','SubpageLayout',NULL,NULL,NULL,'','\0',23,1,1,'\0'),
-(102,10,1,'创建标签组',NULL,'labelgroup/create','labelGroup/labelGroupForm','LabelGroupCreate','SubpageLayout',NULL,NULL,NULL,'','\0',22,1,1,'\0'),
-(103,10,1,'标签组管理','mobanguanli','labelgroup','labelGroup/index','LabelGroup','BaseLayout','',NULL,NULL,'\0','\0',21,1,1,'\0'),
-(1058,0,0,'云端Serving','shujumoxing','cloudserving',NULL,NULL,NULL,NULL,NULL,NULL,'\0','\0',60,1,1,'\0'),
-(1059,1058,1,'在线服务','shujumoxing','onlineserving','cloudServing','CloudServing','BaseLayout','serving:online',NULL,NULL,'\0','\0',61,1,1,'\0'),
-(1060,1058,1,'批量服务','shujumoxing','batchserving','cloudServing/batch','BatchServing','BaseLayout','serving:batch',NULL,NULL,'\0','\0',62,1,1,'\0'),
-(1061,1058,1,'部署详情',NULL,'onlineserving/detail','cloudServing/detail','CloudServingDetail','SubpageLayout','serving:online',NULL,NULL,'','\0',63,1,1,'\0'),
-(1062,1058,1,'部署详情',NULL,'batchserving/detail','cloudServing/batchDetail','BatchServingDetail','SubpageLayout','serving:batch',NULL,NULL,'','\0',64,1,1,'\0'),
-(1063,1058,1,'部署在线服务',NULL,'onlineserving/form','cloudServing/formPage','CloudServingForm','SubpageLayout','serving:online',NULL,NULL,'','\0',65,1,1,'\0'),
-(1064,97,1,'度量管理','icon_huabanfuben1','measure','atlas/measure','Measure','BaseLayout','atlas:measure',NULL,NULL,'\0','\0',71,1,1,'\0'),
-(1065,97,1,'图谱可视化','icon_huabanfuben1','graphvisual','atlas/graphVisual','AtlasGraphVisual','BaseLayout',NULL,NULL,NULL,'\0','\0',72,1,1,'\0'),
-(1066,97,1,'图谱列表','icon_huabanfuben1','graph','atlas/graphList','AtlasGraph','BaseLayout',NULL,NULL,NULL,'\0','\0',73,1,1,'\0'),
-(1067,10,1,'图像语义分割',NULL,'datasets/segmentation/:datasetId','dataset/annotate','SegmentationDataset','DatasetLayout',NULL,NULL,'{\"test\": 1}','','\0',19,1,1,'\0'),
-(1068,10,1,'图像语义分割',NULL,'datasets/segmentation/:datasetId/file/:fileId','dataset/annotate','SegmentationDatasetFile','DatasetLayout',NULL,NULL,NULL,'','\0',18,1,1,'\0'),
-(1069,10,1,'医学影像阅读','beauty','datasets/medical/viewer/:medicalId','dataset/medical/viewer','DatasetMedicalViewer','FullpageLayout',NULL,NULL,NULL,'','\0',999,1,1,'\0'),
-(1070,10,1,'数据集管理','shujuguanli','datasets','dataset/fork','DatasetFork','BaseLayout',NULL,NULL,NULL,'\0','\0',17,1,1,'\0'),
-(1071,10,1,'医疗影像数据集',NULL,'datasets/medical','dataset/medical/list','DatasetMedical','BaseLayout',NULL,NULL,NULL,'','\0',25,1,1,'\0'),
-(1072,10,1,'数据集场景选择',NULL,'datasets/entrance','dataset/entrance','Entrance','BaseLayout',NULL,NULL,NULL,'','\0',20,1,1,'\0'),
-(1073,10,1,'文本分类',NULL,'datasets/textclassify/:datasetId','dataset/nlp/textClassify','TextClassify','DetailLayout','',NULL,NULL,'','\0',26,1,1,'\0'),
-(1074,10,1,'文本标注',NULL,'datasets/text/annotation/:datasetId','dataset/nlp/annotation','TextAnnotation','DetailLayout',NULL,NULL,NULL,'','\0',27,1,1,'\0'),
-(1075,10,1,'导入表格',NULL,'datasets/table/import','dataset/tableImport','TableImport','DetailLayout',NULL,NULL,'{}','','\0',999,1,1,'\0'),
-(1076,90,1,'用户组管理','tuanduiguanli-tuanduiguanli','userGroup','system/userGroup','UserGroup','BaseLayout','system:userGroup',NULL,'{}','\0','\0',91,3,3,'\0'),
-(1077,90,1,'权限管理','fuwuguanli','authCode','system/authCode','AuthCode','BaseLayout','system:authCode',NULL,'{}','\0','\0',92,1,3,'\0'),
-(1078,10,1,'文本数据集',NULL,'datasets/text/list/:datasetId','dataset/nlp/list','TextList','DetailLayout',NULL,NULL,'{}','','\0',999,1,1,'\0'),
-(1079,10,1,'音频数据集',NULL,'datasets/audio/list/:datasetId','dataset/audio/list','AudioList','DetailLayout',NULL,NULL,'{}','','\0',999,1,1,'\0'),
-(1080,10,1,'音频标注',NULL,'datasets/audio/annotation/:datasetId','dataset/audio/annotation','AudioAnnotation','DetailLayout',NULL,NULL,'{}','','\0',999,1,1,'\0'),
-(1081,10,1,'自定义数据集',NULL,'datasets/custom/:datasetId','dataset/custom','CustomList','DetailLayout',NULL,NULL,'{}','','\0',999,1,1,'\0'),
-(1084,90,1,'资源规格管理','xunlianzhunbei','resources','system/resources','Resources','BaseLayout','system:specs',NULL,NULL,'\0','\0',999,NULL,NULL,'\0');
+(1,0,1,'概览','yibiaopan','dashboard','dashboard/dashboard','Dashboard','BaseLayout',NULL,NULL,NULL,b'0',b'0',1,NULL,NULL,b'0'),
+(10,0,0,'数据管理','shujuguanli','data',NULL,NULL,NULL,'data',NULL,NULL,b'0',b'0',2,NULL,NULL,b'0'),
+(11,10,1,'数据集管理','shujuguanli','datasets/list','dataset/list','Datasets','BaseLayout','data:dataset',NULL,NULL,b'1',b'0',999,NULL,NULL,b'0'),
+(12,10,1,'图像分类',NULL,'datasets/classify/:datasetId','dataset/classify','DatasetClassify','DetailLayout',NULL,NULL,NULL,b'1',b'0',999,NULL,NULL,b'0'),
+(13,10,1,'目标检测',NULL,'datasets/annotate/:datasetId/file/:fileId','dataset/annotate','AnnotateDatasetFile','DetailLayout',NULL,NULL,NULL,b'1',b'0',999,NULL,NULL,b'0'),
+(14,10,1,'目标检测',NULL,'datasets/annotate/:datasetId','dataset/annotate','AnnotateDataset','DetailLayout',NULL,NULL,NULL,b'1',b'0',999,NULL,NULL,b'0'),
+(15,10,1,'目标跟踪',NULL,'datasets/track/:datasetId/file/:fileId','dataset/annotate','TrackDatasetFile','DatasetLayout',NULL,NULL,NULL,b'1',b'0',999,NULL,NULL,b'0'),
+(16,10,1,'目标跟踪',NULL,'datasets/track/:datasetId','dataset/annotate','TrackDataset','DatasetLayout',NULL,NULL,NULL,b'1',b'0',999,NULL,NULL,b'0'),
+(17,10,1,'数据集版本管理',NULL,'datasets/:datasetId/version','dataset/version','DatasetVersion','SubpageLayout',NULL,NULL,NULL,b'1',b'0',999,NULL,NULL,b'0'),
+(30,0,0,'算法开发','xunlianzhunbei','development',NULL,NULL,NULL,'development',NULL,NULL,b'0',b'0',3,NULL,NULL,b'0'),
+(31,30,1,'Notebook','kaifahuanjing','development:notebook','development/notebook','Notebook','BaseLayout','notebook',NULL,NULL,b'0',b'0',999,NULL,NULL,b'0'),
+(32,30,1,'算法管理','mobanguanli','algorithm','algorithm/index','Algorithm','BaseLayout','development:algorithm',NULL,NULL,b'0',b'0',999,NULL,NULL,b'0'),
+(40,0,0,'训练管理','xunlianguocheng','training',NULL,NULL,NULL,'training',NULL,NULL,b'0',b'0',4,NULL,NULL,b'0'),
+(41,40,1,'镜像管理','jingxiangguanli','image','trainingImage/index','TrainingImage','BaseLayout','training:image',NULL,NULL,b'0',b'0',999,NULL,NULL,b'0'),
+(42,40,1,'训练任务','renwuguanli','job','trainingJob/index','TrainingJob','BaseLayout','training:job',NULL,NULL,b'0',b'0',999,NULL,NULL,b'0'),
+(43,40,1,'任务详情',NULL,'jobDetail','trainingJob/detail','JobDetail','SubpageLayout',NULL,NULL,NULL,b'1',b'0',999,NULL,NULL,b'0'),
+(44,40,1,'添加任务',NULL,'jobAdd','trainingJob/add','jobAdd','SubpageLayout',NULL,NULL,NULL,b'1',b'0',999,NULL,NULL,b'0'),
+(45,40,1,'可视化任务','mobanguanli','visual','trainingJob/trainingVisualList','TrainVisual','BaseLayout','training:visual',NULL,NULL,b'0',b'0',999,NULL,NULL,b'0'),
+(50,0,1,'模型管理','moxingguanli','model',NULL,NULL,NULL,'model',NULL,NULL,b'0',b'0',5,NULL,NULL,b'0'),
+(51,50,1,'模型列表','zongshili','model','model/index','ModelModel','BaseLayout','model:model',NULL,NULL,b'0',b'0',999,NULL,NULL,b'0'),
+(52,50,1,'模型优化','caidanguanli','optimize','modelOptimize/index','ModelOptimize','BaseLayout','model:optimize',NULL,NULL,b'0',b'0',52,1,1,b'0'),
+(53,50,1,'模型版本管理',NULL,'version','model/version','ModelVersion','SubpageLayout','model:branch',NULL,NULL,b'1',b'0',999,NULL,NULL,b'0'),
+(54,50,1,'模型优化执行记录',NULL,'optimize/record','modelOptimize/record','ModelOptRecord','SubpageLayout',NULL,NULL,NULL,b'0',b'0',54,1,1,b'0'),
+(90,0,0,'控制台','kongzhitaixitongguanliyuankejian','system',NULL,NULL,NULL,'system',NULL,NULL,b'0',b'0',999,NULL,NULL,b'0'),
+(91,90,1,'用户管理','yonghuguanli','user','system/user/index','SystemUser','BaseLayout','system:user',NULL,NULL,b'0',b'0',999,NULL,NULL,b'0'),
+(92,90,1,'角色管理','jiaoseguanli','role','system/role/index','SystemRole','BaseLayout','system:role',NULL,NULL,b'0',b'0',999,NULL,NULL,b'0'),
+(93,90,1,'菜单管理','caidanguanli','menu','system/menu/index','SystemMenu','BaseLayout','system:menu',NULL,NULL,b'0',b'0',999,NULL,NULL,b'0'),
+(94,90,1,'字典管理','mobanguanli','dict','system/dict/index','SystemDict','BaseLayout','system:dict',NULL,NULL,b'0',b'0',999,NULL,NULL,b'0'),
+(95,90,1,'集群状态','jiqunguanli','node','system/node/index','SystemNode','BaseLayout','system:node',NULL,NULL,b'0',b'0',999,NULL,NULL,b'0'),
+(96,90,1,'回收站','shuju1','recycle','system/recycle/index','SystemRecycle','BaseLayout','system:recycle',NULL,NULL,b'0',b'0',999,1,1,b'0'),
+(97,0,0,'模型炼知','icon_huabanfuben1','atlas',NULL,NULL,NULL,NULL,NULL,NULL,b'0',b'0',70,1,1,b'0'),
+(100,10,1,'编辑标签组',NULL,'labelgroup/edit','labelGroup/labelGroupForm','LabelGroupEdit','SubpageLayout',NULL,NULL,NULL,b'1',b'0',24,1,1,b'0'),
+(101,10,1,'标签组详情',NULL,'labelgroup/detail','labelGroup/labelGroupForm','LabelGroupDetail','SubpageLayout',NULL,NULL,NULL,b'1',b'0',23,1,1,b'0'),
+(102,10,1,'创建标签组',NULL,'labelgroup/create','labelGroup/labelGroupForm','LabelGroupCreate','SubpageLayout',NULL,NULL,NULL,b'1',b'0',22,1,1,b'0'),
+(103,10,1,'标签组管理','mobanguanli','labelgroup','labelGroup/index','LabelGroup','BaseLayout','',NULL,NULL,b'0',b'0',21,1,1,b'0'),
+(1058,0,0,'云端Serving','shujumoxing','cloudserving',NULL,NULL,NULL,NULL,NULL,NULL,b'0',b'0',60,1,1,b'0'),
+(1059,1058,1,'在线服务','shujumoxing','onlineserving','cloudServing','CloudServing','BaseLayout','serving:online',NULL,NULL,b'0',b'0',61,1,1,b'0'),
+(1060,1058,1,'批量服务','shujumoxing','batchserving','cloudServing/batch','BatchServing','BaseLayout','serving:batch',NULL,NULL,b'0',b'0',62,1,1,b'0'),
+(1061,1058,1,'部署详情',NULL,'onlineserving/detail','cloudServing/detail','CloudServingDetail','SubpageLayout','serving:online',NULL,NULL,b'1',b'0',63,1,1,b'0'),
+(1062,1058,1,'部署详情',NULL,'batchserving/detail','cloudServing/batchDetail','BatchServingDetail','SubpageLayout','serving:batch',NULL,NULL,b'1',b'0',64,1,1,b'0'),
+(1063,1058,1,'部署在线服务',NULL,'onlineserving/form','cloudServing/formPage','CloudServingForm','SubpageLayout','serving:online',NULL,NULL,b'1',b'0',65,1,1,b'0'),
+(1064,97,1,'度量管理','icon_huabanfuben1','measure','atlas/measure','Measure','BaseLayout','atlas:measure',NULL,NULL,b'0',b'0',71,1,1,b'0'),
+(1065,97,1,'图谱可视化','icon_huabanfuben1','graphvisual','atlas/graphVisual','AtlasGraphVisual','BaseLayout',NULL,NULL,NULL,b'0',b'0',72,1,1,b'0'),
+(1066,97,1,'图谱列表','icon_huabanfuben1','graph','atlas/graphList','AtlasGraph','BaseLayout',NULL,NULL,NULL,b'0',b'0',73,1,1,b'0'),
+(1067,10,1,'图像语义分割',NULL,'datasets/segmentation/:datasetId','dataset/annotate','SegmentationDataset','DatasetLayout',NULL,NULL,'{\"test\": 1}',b'1',b'0',19,1,1,b'0'),
+(1068,10,1,'图像语义分割',NULL,'datasets/segmentation/:datasetId/file/:fileId','dataset/annotate','SegmentationDatasetFile','DatasetLayout',NULL,NULL,NULL,b'1',b'0',18,1,1,b'0'),
+(1069,10,1,'医学影像阅读','beauty','datasets/medical/viewer/:medicalId','dataset/medical/viewer','DatasetMedicalViewer','FullpageLayout',NULL,NULL,NULL,b'1',b'0',999,1,1,b'0'),
+(1070,10,1,'数据集管理','shujuguanli','datasets','dataset/fork','DatasetFork','BaseLayout',NULL,NULL,NULL,b'0',b'0',17,1,1,b'0'),
+(1071,10,1,'医疗影像数据集',NULL,'datasets/medical','dataset/medical/list','DatasetMedical','BaseLayout',NULL,NULL,NULL,b'1',b'0',25,1,1,b'0'),
+(1072,10,1,'数据集场景选择',NULL,'datasets/entrance','dataset/entrance','Entrance','BaseLayout',NULL,NULL,NULL,b'1',b'0',20,1,1,b'0'),
+(1073,10,1,'文本分类',NULL,'datasets/textclassify/:datasetId','dataset/nlp/textClassify','TextClassify','DetailLayout','',NULL,NULL,b'1',b'0',26,1,1,b'0'),
+(1074,10,1,'文本标注',NULL,'datasets/text/annotation/:datasetId','dataset/nlp/annotation','TextAnnotation','DetailLayout',NULL,NULL,NULL,b'1',b'0',27,1,1,b'0'),
+(1075,10,1,'导入表格',NULL,'datasets/table/import','dataset/tableImport','TableImport','DetailLayout',NULL,NULL,'{}',b'1',b'0',999,1,1,b'0'),
+(1076,90,1,'用户组管理','tuanduiguanli-tuanduiguanli','userGroup','system/userGroup','UserGroup','BaseLayout','system:userGroup',NULL,'{}',b'0',b'0',91,3,3,b'0'),
+(1077,90,1,'权限管理','fuwuguanli','authCode','system/authCode','AuthCode','BaseLayout','system:authCode',NULL,'{}',b'0',b'0',92,1,3,b'0'),
+(1078,10,1,'文本数据集',NULL,'datasets/text/list/:datasetId','dataset/nlp/list','TextList','DetailLayout',NULL,NULL,'{}',b'1',b'0',999,1,1,b'0'),
+(1079,10,1,'音频数据集',NULL,'datasets/audio/list/:datasetId','dataset/audio/list','AudioList','DetailLayout',NULL,NULL,'{}',b'1',b'0',999,1,1,b'0'),
+(1080,10,1,'音频标注',NULL,'datasets/audio/annotation/:datasetId','dataset/audio/annotation','AudioAnnotation','DetailLayout',NULL,NULL,'{}',b'1',b'0',999,1,1,b'0'),
+(1081,10,1,'自定义数据集',NULL,'datasets/custom/:datasetId','dataset/custom','CustomList','DetailLayout',NULL,NULL,'{}',b'1',b'0',999,1,1,b'0'),
+(1084,90,1,'资源规格管理','xunlianzhunbei','resources','system/resources','Resources','BaseLayout','system:specs',NULL,NULL,b'0',b'0',999,NULL,NULL,b'0');
 
 insert into auth(id, auth_code, description, create_user_id, update_user_id) values (1, 'admin权限组', '默认全部操作权限', 1, 1);
+
 
 -- 初始化默认角色
 INSERT INTO `role`(`id`, `name`, `permission`) VALUES (1, '管理员', 'admin');
@@ -2593,12 +2594,6 @@ INSERT INTO `pt_model_suffix`(`model_type`, `model_suffix`) VALUES (14, '.caffem
 INSERT INTO `pt_model_suffix`(`model_type`, `model_suffix`) VALUES (15, '.params');
 INSERT INTO `pt_model_suffix`(`model_type`, `model_suffix`) VALUES (16, '.json');
 
--- 初始化镜像管理操作权限
-INSERT INTO `permission` VALUES (1, 0, '镜像管理', NULL, 1, 1, '2021-04-26 16:18:25', '2021-04-26 16:18:25', b'0');
-INSERT INTO `permission` VALUES (2, 1, '上传镜像', 'training:image:upload', 1, 1, '2021-04-26 16:19:37', '2021-04-26 16:19:37', b'0');
-INSERT INTO `permission` VALUES (3, 1, '修改镜像', 'training:image:edit', 1, 1, '2021-04-26 16:19:37', '2021-04-26 16:19:37', b'0');
-INSERT INTO `permission` VALUES (4, 1, '删除镜像', 'training:image:delete', 1, 1, '2021-04-26 16:19:37', '2021-04-26 16:19:37', b'0');
-
 
 -- 菜单新增资源规格相关路由
 
@@ -2672,8 +2667,6 @@ INSERT INTO resource_specs(specs_name,resources_pool_type,module,cpu_num,gpu_num
 ('16CPU128GB内存 4GPU',1,3,16,4,128000,50000);
 INSERT INTO resource_specs(specs_name,resources_pool_type,module,cpu_num,gpu_num,mem_num,workspace_request) value
 ('32CPU256GB内存 8GPU',1,3,32,8,256000,50000);
-
-
 
 -- 控制台
 insert into `permission` (`pid`, `name`, `create_user_id`, `update_user_id`) VALUES (0, '控制台', 1, 1);
@@ -2836,4 +2829,3 @@ alter table pt_train_param change log_path out_path varchar(128) default '' null
 -- 管理员角色操作权限初始化
 insert into auth_permission (auth_id, permission_id) select 1, id from permission;
 INSERT INTO `roles_auth` (role_id, auth_id) values (1, 1);
-
