@@ -22,17 +22,22 @@ import cn.hutool.crypto.asymmetric.KeyType;
 import cn.hutool.crypto.asymmetric.RSA;
 import com.alibaba.fastjson.JSONObject;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import org.dubhe.admin.client.AuthServiceClient;
+import org.dubhe.admin.client.ResourceQuotaClient;
 import org.dubhe.admin.dao.*;
 import org.dubhe.admin.domain.dto.*;
 import org.dubhe.admin.domain.entity.Role;
 import org.dubhe.admin.domain.entity.User;
 import org.dubhe.admin.domain.entity.UserAvatar;
+import org.dubhe.admin.domain.entity.UserConfig;
 import org.dubhe.admin.domain.entity.UserRole;
 import org.dubhe.admin.domain.vo.EmailVo;
+import org.dubhe.admin.domain.vo.UserConfigCreateVO;
+import org.dubhe.admin.domain.vo.UserConfigVO;
 import org.dubhe.admin.domain.vo.UserVO;
 import org.dubhe.admin.enums.UserMailCodeEnum;
 import org.dubhe.admin.event.EmailEventPublisher;
@@ -92,6 +97,18 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
     @Value("${initial_password}")
     private String initialPassword;
 
+    @Value("${user.config.notebook-delay-delete-time}")
+    private Integer defaultNotebookDelayDeleteTime;
+
+    @Value("${user.config.cpu-limit}")
+    private Integer cpuLimit;
+
+    @Value("${user.config.memory-limit}")
+    private Integer memoryLimit;
+
+    @Value("${user.config.gpu-limit}")
+    private Integer gpuLimit;
+
     @Autowired
     private UserMapper userMapper;
 
@@ -129,6 +146,13 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
 
     @Autowired
     private PermissionMapper permissionMapper;
+
+    @Autowired
+    private UserConfigMapper userConfigMapper;
+
+    @Autowired
+    ResourceQuotaClient resourceQuotaClient;
+
 
     /**
      * 测试标识 true:允许debug false:拒绝debug
@@ -224,7 +248,15 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         for (Role role : resources.getRoles()) {
             roleMapper.tiedUserRole(user.getId(), role.getId());
         }
-
+        UserConfigDTO userConfigDTO = new UserConfigDTO();
+        userConfigDTO.setUserId(user.getId());
+        userConfigDTO.setCpuLimit(cpuLimit);
+        userConfigDTO.setMemoryLimit(memoryLimit);
+        userConfigDTO.setGpuLimit(gpuLimit);
+        DataResponseBody dataResponseBody = resourceQuotaClient.updateResourceQuota(userConfigDTO);
+        if (!dataResponseBody.succeed()){
+            throw new BusinessException("用户配置更新失败");
+        }
         return userConvert.toDto(user);
     }
 
@@ -316,8 +348,22 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
                 return sysRoleDTO;
             }).collect(Collectors.toList()));
         }
+        //获取用户配置
+        SysUserConfigDTO sysUserConfigDTO = getUserConfig(user.getId());
+        dto.setUserConfig(sysUserConfigDTO);
         return dto;
 
+    }
+
+    private SysUserConfigDTO getUserConfig(Long userId) {
+        UserConfig userConfig = userConfigMapper.selectOne(new QueryWrapper<>(new UserConfig().setUserId(userId)));
+        SysUserConfigDTO sysUserConfigDTO= new SysUserConfigDTO();
+        if (userConfig == null){
+            return sysUserConfigDTO.setCpuLimit(cpuLimit).setMemoryLimit(memoryLimit)
+                        .setGpuLimit(gpuLimit).setNotebookDelayDeleteTime(defaultNotebookDelayDeleteTime);
+        }
+        BeanUtils.copyProperties(userConfig, sysUserConfigDTO);
+        return sysUserConfigDTO;
     }
 
 
@@ -695,6 +741,48 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         return userConvert.toDto(users);
     }
 
+    /**
+     * 根据用户 ID 查询用户配置
+     *
+     * @param userId 用户 ID
+     * @return org.dubhe.admin.domain.vo.UserConfigVO 用户配置 VO
+     */
+    @Override
+    public UserConfigVO findUserConfig(Long userId) {
+        // 查询用户配置
+        UserConfig userConfig = userConfigMapper.selectOne(new QueryWrapper<>(new UserConfig().setUserId(userId)));
+        UserConfigVO userConfigVO = new UserConfigVO();
+        // 如果用户配置为空，则返回
+        if (userConfig == null){
+            return userConfigVO.setUserId(userId).setCpuLimit(cpuLimit).setMemoryLimit(memoryLimit)
+                    .setGpuLimit(gpuLimit).setNotebookDelayDeleteTime(defaultNotebookDelayDeleteTime);
+        }
+       // 封装用户配置 VO
+        BeanUtils.copyProperties(userConfig, userConfigVO);
+        return userConfigVO;
+    }
+
+    /**
+     * 创建或更新用户配置
+     *
+     * @param userConfigDTO 用户配置
+     * @return org.dubhe.admin.domain.vo.UserConfigCreateVO 用户配置 VO
+     */
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public UserConfigCreateVO createOrUpdateUserConfig(UserConfigDTO userConfigDTO) {
+        DataResponseBody dataResponseBody = resourceQuotaClient.updateResourceQuota(userConfigDTO);
+        if (!dataResponseBody.succeed()){
+            throw new BusinessException("用户配置更新失败");
+        }
+        UserConfig userConfig = new UserConfig();
+        BeanUtils.copyProperties(userConfigDTO, userConfig);
+        userConfigMapper.insertOrUpdate(userConfig);
+        // 封装用户配置 VO
+        UserConfigCreateVO userConfigCreateVO = new UserConfigCreateVO().setId(userConfig.getId());
+        return userConfigCreateVO;
+    }
+
 
     /**
      * 校验验证码
@@ -900,8 +988,9 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
             }).collect(Collectors.toList());
             dto.setRoles(roleDTOS);
         }
-
-
+        //获取用户配置
+        SysUserConfigDTO sysUserConfigDTO = getUserConfig(user.getId());
+        dto.setUserConfig(sysUserConfigDTO);
         return DataResponseFactory.success(dto);
     }
 }

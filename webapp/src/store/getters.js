@@ -24,6 +24,7 @@ const getters = {
   user: (state) => state.user.user,
   isAdmin: (state) => state.user.isAdmin,
   permissions: (state) => state.user.permissions,
+  userConfig: (state) => state.user.user.userConfig,
   dataset: (state) => state.dataset,
   cloudServing: (state) => state.cloudServing,
   modelOptimize: (state) => state.modelOptimize,

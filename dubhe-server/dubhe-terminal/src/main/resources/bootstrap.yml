@@ -1,0 +1,31 @@
+server:
+  port: 8970
+
+spring:
+  application:
+    name: dubhe-terminal
+  profiles:
+    active: dev
+  cloud:
+    nacos:
+      config:
+        enabled: true
+        server-addr: 10.105.1.133:8848
+        namespace: 9a185fa2-991b-4465-bd4d-25f9f079c930
+        shared-configs[0]:
+          data-id: common-biz.yaml
+          group: dubhe
+          refresh: true  # 是否动态刷新，默认为false
+        shared-configs[1]:
+          data-id: common-k8s.yaml
+          group: dubhe
+          refresh: true
+        shared-configs[2]:
+          data-id: dubhe-terminal.yaml
+          group: dubhe
+          refresh: true
+      discovery:
+        enabled: true
+        namespace: 9a185fa2-991b-4465-bd4d-25f9f079c930
+        group: dubhe
+        server-addr: 10.105.1.133:8848

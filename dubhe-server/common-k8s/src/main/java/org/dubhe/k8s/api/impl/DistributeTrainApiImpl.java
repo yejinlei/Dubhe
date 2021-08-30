@@ -147,7 +147,7 @@ public class DistributeTrainApiImpl implements DistributeTrainApi {
     @Override
     public BizDistributeTrain create(DistributeTrainBO bo) {
         LogUtil.info(LogEnum.BIZ_K8S, "Params of creating DistributeTrain--create:{}", bo);
-        LimitsOfResourcesEnum limitsOfResources = resourceQuotaApi.reachLimitsOfResources(bo.getNamespace(), bo.getCpuNum() * bo.getSize(), bo.getMemNum() * bo.getSize(), bo.getGpuNum() * bo.getSize());
+        LimitsOfResourcesEnum limitsOfResources = resourceQuotaApi.reachLimitsOfResources(bo.getNamespace(), bo.getCpuNum() * bo.getSize(), bo.getMemNum() * bo.getSize(), bo.getGpuNum() == null?0:bo.getGpuNum() * bo.getSize());
         if (!LimitsOfResourcesEnum.ADEQUATE.equals(limitsOfResources)) {
             return new BizDistributeTrain().error(K8sResponseEnum.LACK_OF_RESOURCES.getCode(), limitsOfResources.getMessage());
         }
@@ -183,6 +183,7 @@ public class DistributeTrainApiImpl implements DistributeTrainApi {
         private Map<String, String> env;
         private Map<String, String> baseLabels;
         private String businessLabel;
+        private String taskIdentifyLabel;
         private Integer delayCreate;
         private Integer delayDelete;
         private TaskYamlBO taskYamlBO;
@@ -201,7 +202,8 @@ public class DistributeTrainApiImpl implements DistributeTrainApi {
             this.slaveCmd = bo.getSlaveCmd();
             this.env = bo.getEnv();
             this.businessLabel = bo.getBusinessLabel();
-            this.baseLabels = LabelUtils.getChildLabels(baseName, distributeTrainName, K8sKindEnum.DISTRIBUTETRAIN.getKind(), businessLabel);
+            this.taskIdentifyLabel = bo.getTaskIdentifyLabel();
+            this.baseLabels = LabelUtils.getChildLabels(baseName, distributeTrainName, K8sKindEnum.DISTRIBUTETRAIN.getKind(), businessLabel, taskIdentifyLabel);
             this.delayCreate = bo.getDelayCreateTime();
             this.delayDelete = bo.getDelayDeleteTime();
             this.taskYamlBO = new TaskYamlBO();

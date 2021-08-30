@@ -47,5 +47,4 @@ public interface AdminClient {
 
     @GetMapping(value = "/users/findByIds")
     DataResponseBody<List<UserDTO>> getUserList(@RequestParam(value = "ids") List<Long> ids);
-
 }

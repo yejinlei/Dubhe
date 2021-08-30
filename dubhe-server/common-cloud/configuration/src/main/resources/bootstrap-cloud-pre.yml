@@ -1,0 +1,9 @@
+spring:
+  cloud:
+    nacos:
+      config:
+        namespace: dubhe-server-cloud-pre
+        server-addr: 10.105.1.133:8848
+      discovery:
+        namespace: dubhe-server-cloud-pre
+        server-addr: 10.105.1.133:8848

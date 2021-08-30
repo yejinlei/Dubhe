@@ -20,7 +20,10 @@ package org.dubhe.k8s.domain.resource;
 import lombok.Data;
 import lombok.experimental.Accessors;
 import org.dubhe.biz.base.utils.MathUtils;
+import org.dubhe.biz.base.utils.StringUtils;
 import org.dubhe.k8s.annotation.K8sField;
+import org.dubhe.k8s.constant.K8sParamConstants;
+import org.dubhe.k8s.utils.UnitConvertUtils;
 
 /**
  * @description BizQuantity实体类
@@ -43,19 +46,28 @@ public class BizQuantity {
         this.format = format;
     }
 
-    public boolean isIllegal() {
-        return true;
-    }
-
     /**
-     * 单位相同时相减
+     * 不同单位相减
+     *
      * @param bizQuantity 减数
-     * @return
+     * @param limitsKey 类型
+     * @return BizQuantity
      */
-    public BizQuantity reduce(BizQuantity bizQuantity){
-        if (bizQuantity == null || !bizQuantity.getFormat().equals(format)){
+    public BizQuantity reduce(BizQuantity bizQuantity,String limitsKey){
+        if (bizQuantity == null || StringUtils.isAllEmpty(limitsKey)){
             return this;
         }
-        return new BizQuantity(MathUtils.reduce(amount,bizQuantity.getAmount()),format);
+        switch (limitsKey){
+            case K8sParamConstants.RESOURCE_QUOTA_CPU_LIMITS_KEY :
+                Long cpuDiff = UnitConvertUtils.cpuFormatToN(amount,format) - UnitConvertUtils.cpuFormatToN(bizQuantity.getAmount(),bizQuantity.getFormat());
+                return new BizQuantity(String.valueOf(cpuDiff),K8sParamConstants.CPU_UNIT_N);
+            case K8sParamConstants.RESOURCE_QUOTA_MEMORY_LIMITS_KEY :
+                Long memDiff = UnitConvertUtils.memFormatToMi(amount,format) - UnitConvertUtils.memFormatToMi(bizQuantity.getAmount(),bizQuantity.getFormat());
+                return new BizQuantity(String.valueOf(memDiff),K8sParamConstants.MEM_UNIT);
+            case K8sParamConstants.RESOURCE_QUOTA_GPU_LIMITS_KEY :
+                return new BizQuantity(MathUtils.reduce(amount,bizQuantity.getAmount()),format);
+            default:
+                return this;
+        }
     }
 }

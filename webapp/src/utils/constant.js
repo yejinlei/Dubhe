@@ -79,6 +79,33 @@ export const RESOURCES_POOL_TYPE_MAP = {
   [RESOURCES_POOL_TYPE_ENUM.GPU]: 'GPU',
 };
 
+// webSocket topic 枚举值
+export const WEB_SOCKET_TOPIC_ENUM = {
+  RESOURCE_MONITOR: 'resourceMonitor', // 用户资源监控
+};
+
+// K8S pod 业务标签枚举值
+export const K8S_BUSINESS_LABEL_ENUM = {
+  NOTEBOOK: 'notebook',
+  TRAINING: 'algorithm',
+  MODEL_OPTIMIZE: 'modelopt',
+  SERVING: 'serving',
+  BATCH_SERVING: 'batchserving',
+  TADL: 'tadl',
+  TERMINAL: 'terminal',
+};
+
+// K8S pod 业务标签与业务模块对应关系匹配
+export const K8S_BUSINESS_LABEL_MAP = {
+  [K8S_BUSINESS_LABEL_ENUM.NOTEBOOK]: '算法开发',
+  [K8S_BUSINESS_LABEL_ENUM.TRAINING]: '训练管理',
+  [K8S_BUSINESS_LABEL_ENUM.MODEL_OPTIMIZE]: '模型优化',
+  [K8S_BUSINESS_LABEL_ENUM.SERVING]: '云端 Serving 在线服务',
+  [K8S_BUSINESS_LABEL_ENUM.BATCH_SERVING]: '云端 Serving 批量服务',
+  [K8S_BUSINESS_LABEL_ENUM.TADL]: 'TADL',
+  [K8S_BUSINESS_LABEL_ENUM.TERMINAL]: '天枢专业版',
+};
+
 // 默认进度条颜色
 export const defaultProcessColors = [
   { color: '#909399', percentage: 40 },

@@ -19,6 +19,8 @@ package org.dubhe.k8s.cache;
 
 import cn.hutool.core.collection.CollectionUtil;
 import org.dubhe.biz.base.constant.MagicNumConstant;
+import org.dubhe.biz.base.constant.NumberConstant;
+import org.dubhe.biz.base.constant.StringConstant;
 import org.dubhe.biz.log.enums.LogEnum;
 import org.dubhe.biz.redis.utils.RedisUtils;
 import org.dubhe.k8s.api.PodApi;
@@ -33,6 +35,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.util.CollectionUtils;
 
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -189,6 +192,17 @@ public class ResourceCache {
     }
 
     /**
+     * 查询该 podName 缓存是否存在
+     *
+     * @param podName Pod的名称
+     * @return boolean true 存在 false 不存在
+     */
+    public boolean isPodNameCached(String podName){
+        String resourceName = (String) redisUtils.get(podNamePrefix +podName);
+        return StringUtils.isNotEmpty(resourceName);
+    }
+
+    /**
      * 删除pod名称缓存
      *
      * @param namespace 命名空间
@@ -234,5 +248,42 @@ public class ResourceCache {
             LogUtil.error(LogEnum.BIZ_K8S,"Delete cache exception, namespace: {}, podName: {}, exception information: {}",namespace,podName,e);
             return false;
         }
+    }
+
+    /**
+     * 添加任务身份标识缓存
+     *
+     * @param taskIdentify 任务身份标识
+     * @param taskId 任务 ID
+     * @param taskName 任务名称
+     * @param taskIdPrefix 任务 ID 前缀
+     * @return boolean true 添加成功 false添加失败
+     */
+    public boolean addTaskCache(String taskIdentify, Long taskId, String taskName, String taskIdPrefix){
+        return redisUtils.hmset(taskIdentify, new HashMap<String, Object>(){{
+            put(StringConstant.CACHE_TASK_ID, taskId);
+            put(StringConstant.CACHE_TASK_NAME, taskName);
+        }}, NumberConstant.MONTH_SECOND) && redisUtils.set(taskIdPrefix + String.valueOf(taskId), taskIdentify, NumberConstant.MONTH_SECOND);
+    }
+
+    /**
+     * 获取任务身份标识
+     *
+     * @param taskId 任务 ID
+     * @param taskName 任务名称
+     * @param taskIdPrefix 任务 ID 前缀
+     * @return String 任务身份标识
+     */
+    public String getTaskIdentify(Long taskId, String taskName, String taskIdPrefix){
+        String taskIdentify = (String) redisUtils.get(taskIdPrefix + String.valueOf(taskId));
+        if (taskIdentify == null){
+            taskIdentify = StringUtils.getUUID();
+            redisUtils.hmset(taskIdentify, new HashMap<String, Object>(){{
+                put(StringConstant.CACHE_TASK_ID, taskId);
+                put(StringConstant.CACHE_TASK_NAME, taskName);
+            }}, NumberConstant.MONTH_SECOND);
+            redisUtils.set(taskIdPrefix + taskId, taskIdentify, NumberConstant.MONTH_SECOND);
+        }
+        return taskIdentify;
     }
 }

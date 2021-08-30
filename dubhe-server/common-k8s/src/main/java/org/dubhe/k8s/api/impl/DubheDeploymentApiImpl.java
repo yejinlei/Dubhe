@@ -225,6 +225,7 @@ public class DubheDeploymentApiImpl implements DubheDeploymentApi {
         private Map<String, Quantity> resourcesLimitsMap;
         private Map<String, String> baseLabels;
         private String businessLabel;
+        private String taskIdentifyLabel;
         private Integer gpuNum;
 
 
@@ -249,6 +250,7 @@ public class DubheDeploymentApiImpl implements DubheDeploymentApi {
             Optional.ofNullable(bo.getGpuNum()).ifPresent(v -> resourcesLimitsMap.put(K8sParamConstants.GPU_RESOURCE_KEY, new Quantity(v.toString())));
             Optional.ofNullable(bo.getMemNum()).ifPresent(v -> resourcesLimitsMap.put(K8sParamConstants.QUANTITY_MEMORY_KEY, new Quantity(v.toString(), K8sParamConstants.MEM_UNIT)));
             this.businessLabel = bo.getBusinessLabel();
+            this.taskIdentifyLabel = bo.getTaskIdentifyLabel();
             this.baseLabels = LabelUtils.getBaseLabels(baseName, businessLabel);
 
             this.datasetReadOnly = true;
@@ -310,7 +312,7 @@ public class DubheDeploymentApiImpl implements DubheDeploymentApi {
          * @return Deployment Deployment 业务类
          */
         private Deployment buildDeployment() {
-            Map<String, String> childLabels = LabelUtils.getChildLabels(baseName, deploymentName, K8sKindEnum.DEPLOYMENT.getKind(), businessLabel);
+            Map<String, String> childLabels = LabelUtils.getChildLabels(baseName, deploymentName, K8sKindEnum.DEPLOYMENT.getKind(), businessLabel, taskIdentifyLabel);
             LabelSelector labelSelector = new LabelSelector();
             labelSelector.setMatchLabels(childLabels);
             return new DeploymentBuilder()

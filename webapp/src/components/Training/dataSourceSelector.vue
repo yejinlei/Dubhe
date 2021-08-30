@@ -53,9 +53,6 @@
         :label="item.versionName"
       />
     </el-select>
-    <el-tooltip effect="dark" :content="urlTooltip" placement="top">
-      <i class="el-icon-warning-outline primary f18 v-text-top" />
-    </el-tooltip>
     <el-tooltip
       effect="dark"
       :disabled="!dataSourceVersion"
@@ -105,7 +102,7 @@ export default {
       useOfRecord: false,
 
       result: {
-        dataSourceType: null,
+        algorithmUsage: null,
         dataSourceName: null,
         dataSourcePath: null,
         imageCounts: null,
@@ -122,19 +119,6 @@ export default {
     ofRecordDisabled() {
       return this.dataSourceVersion && this.dataSourceVersion.versionOfRecordUrl;
     },
-    urlTooltip() {
-      return this.type === 'verify'
-        ? '请确保代码中包含“val_data_url”参数用于传输数据集路径'
-        : '请确保代码中包含“data_url”参数用于传输数据集路径';
-    },
-  },
-  watch: {
-    result: {
-      deep: true,
-      handler(result) {
-        this.$emit('change', result);
-      },
-    },
   },
   mounted() {
     this.algoUsage = this.algoUsage || null;
@@ -145,6 +129,11 @@ export default {
     onAlgorithmUsageChange(annotateType, datasetInit = false) {
       // 模型类别修改之后，重新获取数据集列表，清空数据集结果
       this.getDataSetList(annotateType, datasetInit);
+      this.result.algorithmUsage = annotateType;
+      if (!datasetInit) {
+        // 在数据初始化时不抛出当前值
+        this.emitResult();
+      }
     },
     async onDataSourceChange(dataSource) {
       // 数据集选项发生变化时，获取版本列表，同时清空数据集版本、路径、OfRecord 相关信息
@@ -153,6 +142,7 @@ export default {
       this.result.dataSourcePath = null;
       this.dataSourceVersion = null;
       this.useOfRecord = false;
+      this.emitResult();
     },
     onDataSourceVersionChange(version) {
       // 选择数据集版本后，如果存在 OfRecordUrl，则默认勾选使用，否则禁用选择
@@ -165,11 +155,13 @@ export default {
         this.useOfRecord = false;
         this.result.dataSourcePath = version.versionUrl;
       }
+      this.emitResult();
     },
     onUseOfRecordChange(useOfRecord) {
       this.result.dataSourcePath = useOfRecord
         ? this.dataSourceVersion.versionOfRecordUrl
         : this.dataSourceVersion.versionUrl;
+      this.emitResult();
     },
     // getters
     getAlgorithmUsages() {
@@ -237,15 +229,20 @@ export default {
     },
     reset() {
       Object.assign(this.result, {
-        dataSourceType: null,
+        algorithmUsage: null,
         dataSourceName: null,
         dataSourcePath: null,
+        imageCounts: null,
       });
       this.algoUsage = null;
       this.dataSource = null;
       this.dataSourceVersion = null;
       this.useOfRecord = false;
       this.datasetVersionList = [];
+    },
+
+    emitResult() {
+      this.$emit('change', this.result);
     },
   },
 };

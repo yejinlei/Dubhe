@@ -20,6 +20,9 @@ package org.dubhe.k8s.domain.resource;
 import lombok.Data;
 import lombok.experimental.Accessors;
 import org.dubhe.k8s.annotation.K8sField;
+import org.springframework.util.CollectionUtils;
+
+import java.util.List;
 
 /**
  * @description Kubernetes Service
@@ -30,8 +33,25 @@ import org.dubhe.k8s.annotation.K8sField;
 public class BizService {
     @K8sField("metadata:name")
     private String name;
+
     @K8sField("metadata:namespace")
     private String namespace;
+
     @K8sField("metadata:uid")
     private String uid;
+
+    @K8sField("spec:ports")
+    private List<BizServicePort> ports;
+
+    public BizServicePort getServicePortByTargetPort(Integer targetPort){
+        if (CollectionUtils.isEmpty(ports) || targetPort == null){
+            return null;
+        }
+        for (BizServicePort port : ports) {
+            if (port.getTargetPort() != null && port.getTargetPort().equals(targetPort)){
+                return port;
+            }
+        }
+        return null;
+    }
 }

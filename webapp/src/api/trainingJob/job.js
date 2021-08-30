@@ -65,6 +65,15 @@ export function stop(data) {
   });
 }
 
+// 停止所有训练
+export function batchStop(data) {
+  return request({
+    url: `/${API_MODULE_NAME.TRAIN}/trainJob/batchStop`,
+    method: 'post',
+    data,
+  });
+}
+
 export function getJobList(params) {
   return request({
     url: `/${API_MODULE_NAME.TRAIN}/trainJob/trainJobVersionDetail`,

@@ -24,6 +24,7 @@ import io.fabric8.kubernetes.api.model.NamespaceList;
 import io.fabric8.kubernetes.api.model.ResourceQuota;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClientException;
+import org.dubhe.biz.base.service.UserContextService;
 import org.dubhe.biz.log.enums.LogEnum;
 import org.dubhe.k8s.annotation.K8sValidation;
 import org.dubhe.k8s.api.NamespaceApi;
@@ -60,13 +61,16 @@ public class NamespaceApiImpl implements NamespaceApi {
     @Autowired
     private ResourceQuotaApi resourceQuotaApi;
 
-    @Value("${k8s.namespace-limits.cpu}")
+    @Autowired
+    private UserContextService userContextService;
+
+    @Value("${user.config.cpu-limit}")
     private Integer cpuLimit;
 
-    @Value("${k8s.namespace-limits.memory}")
+    @Value("${user.config.memory-limit}")
     private Integer memoryLimit;
 
-    @Value("${k8s.namespace-limits.gpu}")
+    @Value("${user.config.gpu-limit}")
     private Integer gpuLimit;
 
 
@@ -110,7 +114,8 @@ public class NamespaceApiImpl implements NamespaceApi {
         if (StringUtils.isEmpty(namespace)) {
             return new BizNamespace().baseErrorBadRequest();
         }
-        return BizConvertUtils.toBizNamespace(client.namespaces().withName(namespace).get());
+        Namespace namespaceEntity = client.namespaces().withName(namespace).get();
+        return BizConvertUtils.toBizNamespace(namespaceEntity);
     }
 
     /**

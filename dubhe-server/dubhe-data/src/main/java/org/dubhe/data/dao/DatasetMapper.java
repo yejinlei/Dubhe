@@ -31,7 +31,7 @@ import org.dubhe.data.domain.entity.Dataset;
  * @description 数据集管理 Mapper 接口
  * @date 2020-04-10
  */
-@DataPermission(ignoresMethod = {"insert", "selectById", "selectCountByPublic"})
+@DataPermission(ignoresMethod = {"insert", "selectById", "selectCountByPublic", "selectList"})
 public interface DatasetMapper extends BaseMapper<Dataset> {
 
     /**

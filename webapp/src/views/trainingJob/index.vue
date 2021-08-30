@@ -23,12 +23,14 @@
           <el-button
             id="toAdd"
             :disabled="isParams"
-            class="filter-item"
             type="primary"
             icon="el-icon-plus"
             round
             @click="toAdd"
             >创建训练任务</el-button
+          >
+          <el-button :disabled="isParams" type="danger" round @click="batchStopTraining"
+            >一键停止</el-button
           >
         </span>
         <span class="cd-opts-right">
@@ -79,6 +81,8 @@
 </template>
 
 <script>
+import { batchStop } from '@/api/trainingJob/job';
+
 import jobList from './jobList';
 import jobParam from './jobParam';
 
@@ -164,6 +168,13 @@ export default {
         };
       }
       this.toQuery();
+    },
+    // 一键停止所有训练任务
+    batchStopTraining() {
+      this.$confirm('此操作将停止所有运行中的训练任务', '请确认').then(async () => {
+        await batchStop();
+        this.resetQuery();
+      });
     },
   },
 };

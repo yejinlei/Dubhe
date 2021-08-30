@@ -30,6 +30,7 @@ export const API_MODULE_NAME = {
   ATLAS: 'measure', // 模型炼知
   K8S: 'k8s', // K8S
   DCM: 'dcm', // 医学dcm
+  DUBHE_PRO: 'terminal', // 天枢专业版
 };
 
 // 登录、注册参数配置
@@ -51,7 +52,7 @@ export const algorithmConfig = {
 
 // 镜像管理参数配置
 export const imageConfig = {
-  allowUploadImage: process.env.NODE_ENV !== 'production', // 是否允许上传镜像
+  allowUploadImage: true, // 是否允许上传镜像
   uploadFileAcceptSize: 0, // 上传镜像文件大小限制，单位为 MB，0 表示不限制大小
 };
 

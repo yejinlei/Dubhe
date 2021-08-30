@@ -81,4 +81,13 @@ public class ApplicationNameConst {
      */
     public final static String SERVER_DATA_DCM = "dubhe-data-dcm";
 
+    /**
+     * k8s
+     */
+    public final static String SERVER_K8S = "dubhe-k8s";
+
+    /**
+     * 专业版终端
+     */
+    public final static String TERMINAL = "dubhe-terminal";
 }

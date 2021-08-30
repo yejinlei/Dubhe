@@ -24,6 +24,8 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
+import org.dubhe.biz.base.constant.NumberConstant;
+import org.dubhe.biz.base.constant.UserConstant;
 import org.dubhe.biz.db.entity.BaseEntity;
 import org.dubhe.data.domain.dto.DatasetVersionCreateDTO;
 
@@ -85,6 +87,17 @@ public class DatasetVersion extends BaseEntity {
         this.versionSource = versionSource;
         this.versionUrl = versionUrl;
         this.setCreateTime(new Timestamp(System.currentTimeMillis()));
+    }
+
+    public DatasetVersion(Long datasetId, String versionName, String versionNote) {
+        this.datasetId = datasetId;
+        this.versionName = versionName;
+        this.setCreateUserId(UserConstant.DEFAULT_CREATE_USER_ID);
+        this.setCreateTime(new Timestamp(System.currentTimeMillis()));
+        this.versionUrl = "dataset/"+datasetId +"/versionFile/"+versionName;
+        this.dataConversion = NumberConstant.NUMBER_2;
+        this.originUserId = UserConstant.DEFAULT_ORIGIN_USER_ID;
+        this.versionNote = versionNote;
     }
 
 }

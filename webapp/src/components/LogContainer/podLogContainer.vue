@@ -97,6 +97,7 @@ export default {
 
       autoFollow: false, // 自动跟随
       noRenderTag: false, // 自动跟随中点击清空时，对于下一次的结果不进行处理
+      loaded: false, // 记录是否获取过数据
     };
   },
   computed: {
@@ -104,7 +105,10 @@ export default {
       return { up: throttle(1000, this.mouseUp), down: throttle(1000, this.mouseDown) };
     },
     logTxt() {
-      return this.logList.length ? this.logList.join('\n') : '暂无日志\n';
+      if (this.logList.length) {
+        return this.logList.join('\n');
+      }
+      return this.loaded ? '暂无日志\n' : 'Loading...\n';
     },
     // 确保存放日志的数组上限至少为两倍日志请求行数。
     localLineLimit() {
@@ -142,6 +146,8 @@ export default {
         startLine,
         lines,
         ...this.options,
+      }).finally(() => {
+        this.loaded = true;
       });
     },
 
@@ -263,6 +269,7 @@ export default {
     // 重置日志组件
     reset() {
       this.autoFollow = false;
+      this.loaded = false;
       this.logList = [];
       this.logTopLine = this.logBottomLine = 0;
       this.$nextTick(() => {
@@ -307,6 +314,7 @@ export default {
       }
       await this.changeAutoFollow(true);
       // 开启自动跟随请求最底部日志之后，清空当前日志列表
+      this.loaded = false;
       this.logList = [];
       this.logTopLine = this.logBottomLine;
     },
@@ -318,6 +326,7 @@ export default {
         this.autoFollow = false;
         return;
       }
+      this.loaded = false;
       this.logList = [];
       const countObj = await countPodLogs(this.pod.namespace, [this.pod]); // 获取对应pod日志总行数
       const linesCount = countObj[this.pod.podName];
@@ -340,6 +349,14 @@ export default {
     // 停止跟随
     stopPolling() {
       this.autoFollow = false;
+    },
+    // 退出，清空 + 停止跟随
+    quit() {
+      this.stopPolling();
+      setTimeout(() => {
+        this.loaded = false;
+        this.logList = [];
+      }, 500);
     },
 
     // 判断在自动跟随滚轮是否向上

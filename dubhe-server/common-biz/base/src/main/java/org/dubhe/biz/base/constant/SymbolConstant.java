@@ -48,6 +48,8 @@ public class SymbolConstant {
 	public static final String EVENT_SEPARATOR = "&&";
 	public static final String POST = "POST";
 	public static final String HTTP_SLASH = "http://";
+	public static final String PORT = "port";
+	public static final String LOCAL_HOST = "localhost";
 
 	private SymbolConstant() {
 	}

@@ -18,10 +18,7 @@
 package org.dubhe.train.domain.entity;
 
 import com.alibaba.fastjson.JSONObject;
-import com.baomidou.mybatisplus.annotation.IdType;
-import com.baomidou.mybatisplus.annotation.TableField;
-import com.baomidou.mybatisplus.annotation.TableId;
-import com.baomidou.mybatisplus.annotation.TableName;
+import com.baomidou.mybatisplus.annotation.*;
 import com.baomidou.mybatisplus.extension.handlers.FastjsonTypeHandler;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -57,6 +54,18 @@ public class PtJobParam extends BaseEntity {
      */
     @TableField(value = "algorithm_id")
     private Long algorithmId;
+
+    /**
+     * 算法用途
+     */
+    @TableField(value = "algorithm_usage")
+    private String algorithmUsage;
+
+    /**
+     * 验证数据集算法用途
+     */
+    @TableField(value = "val_algorithm_usage")
+    private String valAlgorithmUsage;
 
     /**
      * 运行命令
@@ -112,4 +121,15 @@ public class PtJobParam extends BaseEntity {
     @TableField(value = "delay_delete_time")
     private Timestamp delayDeleteTime;
 
+    /**
+     * notebookId
+     */
+    @TableField(value = "notebook_id")
+    private Long notebookId;
+
+    /**
+     * notebook名称
+     */
+    @TableField(value = "notebook_name")
+    private String notebookName;
 }

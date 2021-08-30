@@ -19,10 +19,8 @@ import { userInfo, editUser } from '@/api/user';
 import { getToken, setToken, removeToken } from '@/utils/auth';
 import { bucketHost } from '@/utils/minIO';
 import { encrypt } from '@/utils/rsaEncrypt';
-import { ADMIN_ROLE_ID } from '@/utils';
+import { ADMIN_ROLE_ID, initWebSocket, closeWebSocket } from '@/utils';
 import defaultAvatar from '@/assets/images/avatar.png';
-
-// TODO: 平台权限系统需要改造，规划根据权限标识对页面、菜单和操作进行权限管理
 
 const user = {
   state: {
@@ -66,6 +64,7 @@ const user = {
         login(loginData)
           .then((res) => {
             setToken(res.token, rememberMe);
+            initWebSocket();
             commit('SET_TOKEN', res.token);
             commit('SET_USER', res.user);
             commit('SET_IS_ADMIN', res.user.roles.length && res.user.roles[0].id === ADMIN_ROLE_ID);
@@ -130,6 +129,7 @@ const user = {
             commit('SET_TOKEN', '');
             commit('SET_USER', {});
             commit('SET_PERMISSIONS', []);
+            closeWebSocket();
             removeToken();
             resolve();
           })

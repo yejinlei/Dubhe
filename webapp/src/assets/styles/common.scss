@@ -138,6 +138,8 @@
     }
 
     .dynamic {
+      display: flex;
+
       .label {
         vertical-align: top;
       }
@@ -288,6 +290,7 @@ pre {
 }
 
 .ts-tip {
+  padding: 12px 20px;
   color: $tipColor;
   background-color: $tipBgColor;
 }

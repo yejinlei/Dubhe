@@ -79,6 +79,9 @@ public final class StringConstant {
     public static final String RECYCLE_CALL_URI = "/api/recycle/call/";
     public static final String K8S_CALLBACK_PATH_DEPLOYMENT = "/api/k8s/callback/deployment";
     public static final String MULTIPART = "multipart/form-data";
+
+    public static final String PIP_SITE_PACKAGE ="pip-site-package";
+
     /**
      * 分页内容
      */
@@ -105,9 +108,10 @@ public final class StringConstant {
     public static final String STEP_LOW = "step";
 
     /**
-     * 测试环境
+     * 任务缓存
      */
-    public static final String PROFILE_ACTIVE_TEST = "test";
+    public static final String CACHE_TASK_ID ="task_id";
+    public static final String CACHE_TASK_NAME ="task_name";
 
 
     private StringConstant() {

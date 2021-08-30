@@ -65,10 +65,16 @@ public class PtJupyterJobBO {
     private GraphicsCardTypeEnum graphicsCardType;
     /**业务标签,用于标识业务模块**/
     private String businessLabel;
+    /**任务身份标签,用于标识任务身份**/
+    private String taskIdentifyLabel;
     /**延时创建时间，单位：分钟**/
     private Integer delayCreateTime;
     /**定时删除时间，相对于实际创建时间，单位：分钟**/
     private Integer delayDeleteTime;
+    /**pip包路径**/
+    private String pipSitePackagePath;
+    /**pip包挂载路径**/
+    private String pipSitePackageMountPath;
 
 
     public List<String> getDirList(){

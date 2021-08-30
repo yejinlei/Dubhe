@@ -202,7 +202,7 @@ import pagination from '@crud/Pagination';
 import datePickerMixin from '@/mixins/datePickerMixin';
 import openNotebookMixin, { OPEN_NOTEBOOK_HOOKS } from '@/mixins/openNotebookMixin';
 import { nanoid } from 'nanoid';
-import { downloadZipFromObjectPath } from '@/utils';
+import { downloadZipFromObjectPath, emitter } from '@/utils';
 import BaseModal from '@/components/BaseModal';
 import DropdownHeader from '@/components/DropdownHeader';
 import SaveModelDialog from '@/components/Training/saveModelDialog';
@@ -304,10 +304,12 @@ export default {
   async created() {
     this.getDetailDebounce = debounce(1000, this.getDetail);
     this.optimizeAlgorithms = await getOptimizeAlgorithms();
+    emitter.on('jumpToModelOptimizeRecord', this.onJumpIn);
   },
   beforeDestroy() {
     this.keepPoll = false;
     this.stopOpenNotebook();
+    emitter.off('jumpToModelOptimizeRecord', this.onJumpIn);
   },
   methods: {
     getPodLog,
@@ -461,6 +463,11 @@ export default {
       this.$router.push({
         name: 'Algorithm',
       });
+    },
+
+    onJumpIn() {
+      this.onResetQuery();
+      this.$nextTick(this.crud.refresh);
     },
   },
 };

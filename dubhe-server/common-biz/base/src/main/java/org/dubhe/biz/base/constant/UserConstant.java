@@ -91,4 +91,14 @@ public class UserConstant {
      */
     public final static int REGISTER_ROLE_ID = 2;
 
+    /**
+     * 默认资源用户ID
+     */
+    public final static Long DEFAULT_ORIGIN_USER_ID = 0L;
+
+    /**
+     * 默认创建人ID
+     */
+    public final static Long DEFAULT_CREATE_USER_ID = 0L;
+
 }

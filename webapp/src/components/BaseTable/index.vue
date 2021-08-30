@@ -211,7 +211,7 @@ export default {
     // 展示文本格式化
     const getContent = (column, row) => {
       if (typeof column.formatter === 'function') {
-        return column.formatter(row[column.prop]);
+        return column.formatter(row[column.prop], row);
       }
       return row[column.prop];
     };

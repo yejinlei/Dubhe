@@ -18,19 +18,25 @@
 package org.dubhe.notebook.service.impl;
 
 import cn.hutool.core.collection.CollUtil;
+import cn.hutool.core.date.DateBetween;
+import cn.hutool.core.date.DateUnit;
 import cn.hutool.core.util.RandomUtil;
 import cn.hutool.core.util.StrUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
-import org.apache.commons.lang3.StringUtils;
+import org.dubhe.biz.base.utils.StringUtils;
 import org.dubhe.biz.base.constant.HarborProperties;
 import org.dubhe.biz.base.constant.MagicNumConstant;
+import org.dubhe.biz.base.constant.NumberConstant;
+import org.dubhe.biz.base.constant.StringConstant;
 import org.dubhe.biz.base.constant.SymbolConstant;
+import org.dubhe.biz.base.context.UserContext;
 import org.dubhe.biz.base.dto.NoteBookAlgorithmQueryDTO;
 import org.dubhe.biz.base.dto.NoteBookAlgorithmUpdateDTO;
 import org.dubhe.biz.base.dto.PtImageQueryUrlDTO;
+import org.dubhe.biz.base.dto.SysUserConfigDTO;
 import org.dubhe.biz.base.enums.BizEnum;
 import org.dubhe.biz.base.enums.ImageSourceEnum;
 import org.dubhe.biz.base.enums.ImageTypeEnum;
@@ -38,6 +44,7 @@ import org.dubhe.biz.base.exception.BusinessException;
 import org.dubhe.biz.base.service.UserContextService;
 import org.dubhe.biz.base.utils.HttpUtils;
 import org.dubhe.biz.base.utils.NumberUtil;
+import org.dubhe.biz.base.utils.ResultUtil;
 import org.dubhe.biz.base.vo.DataResponseBody;
 import org.dubhe.biz.base.vo.DatasetVO;
 import org.dubhe.biz.db.utils.PageUtil;
@@ -46,9 +53,11 @@ import org.dubhe.biz.file.api.FileStoreApi;
 import org.dubhe.biz.file.enums.BizPathEnum;
 import org.dubhe.biz.log.enums.LogEnum;
 import org.dubhe.biz.log.utils.LogUtil;
+import org.dubhe.biz.redis.utils.RedisUtils;
 import org.dubhe.k8s.api.JupyterResourceApi;
 import org.dubhe.k8s.api.NamespaceApi;
 import org.dubhe.k8s.api.PodApi;
+import org.dubhe.k8s.cache.ResourceCache;
 import org.dubhe.k8s.domain.PtBaseResult;
 import org.dubhe.k8s.domain.resource.BizNamespace;
 import org.dubhe.k8s.domain.resource.BizPod;
@@ -58,19 +67,19 @@ import org.dubhe.k8s.utils.K8sNameTool;
 import org.dubhe.notebook.client.DatasetClient;
 import org.dubhe.notebook.client.ImageClient;
 import org.dubhe.notebook.config.NoteBookConfig;
+import org.dubhe.notebook.constants.NoteBookErrorConstant;
 import org.dubhe.notebook.convert.NoteBookConvert;
 import org.dubhe.notebook.convert.PtJupyterResourceConvert;
 import org.dubhe.notebook.dao.NoteBookMapper;
 import org.dubhe.notebook.domain.dto.NoteBookCreateDTO;
 import org.dubhe.notebook.domain.dto.NoteBookListQueryDTO;
-import org.dubhe.notebook.domain.dto.NoteBookStatusDTO;
 import org.dubhe.notebook.domain.dto.SourceNoteBookDTO;
 import org.dubhe.notebook.domain.entity.NoteBook;
 import org.dubhe.notebook.enums.NoteBookStatusEnum;
 import org.dubhe.notebook.service.NoteBookService;
 import org.dubhe.notebook.service.ProcessNotebookCommand;
 import org.dubhe.notebook.utils.NotebookUtil;
-import org.dubhe.notebook.domain.vo.NoteBookVO;
+import org.dubhe.biz.base.vo.NoteBookVO;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -111,8 +120,9 @@ public class NoteBookServiceImpl implements NoteBookService {
     @Autowired
     private UserContextService userContextService;
 
-    @Value("${delay.notebook.delete}")
-    private Integer notebookDelayDeleteTime;
+    @Value("${user.config.notebook-delay-delete-time}")
+    private Integer defaultNotebookDelayDeleteTime;
+
 
     @Autowired
     private ImageClient imageClient;
@@ -129,6 +139,15 @@ public class NoteBookServiceImpl implements NoteBookService {
 
     @Autowired
     private NoteBookConfig noteBookConfig;
+
+    @Autowired
+    private RedisUtils redisUtils;
+
+    @Autowired
+    private ResourceCache resourceCache;
+
+    @Value("Task:Notebook:"+"${spring.profiles.active}_notebook_id_")
+    private String notebookIdPrefix;
 
     /**
      * 分页查询所有 notebook 记录
@@ -287,12 +306,14 @@ public class NoteBookServiceImpl implements NoteBookService {
         }
         noteBook.setCreateResource(BizPathEnum.NOTEBOOK.getCreateResource());
         noteBook.setK8sMountPath(NotebookUtil.getK8sMountPath());
-        if (start(noteBook)) {
+        String taskIdentify = StringUtils.getUUID();
+        if (start(noteBook, taskIdentify)) {
             noteBook.setStatus(NoteBookStatusEnum.STARTING.getCode());
         } else {
             noteBook.setStatus(NoteBookStatusEnum.STOP.getCode());
         }
         noteBookMapper.insert(noteBook);
+        resourceCache.addTaskCache(taskIdentify,noteBook.getId(), noteBookName, notebookIdPrefix);
         return noteBookConvert.toDto(noteBook);
     }
 
@@ -352,6 +373,10 @@ public class NoteBookServiceImpl implements NoteBookService {
             for (NoteBook noteBook : noteBookList) {
                 noteBook.setStatus(NoteBookStatusEnum.DELETING.getCode());
                 noteBookMapper.updateById(noteBook);
+                String taskIdentify = (String) redisUtils.get(notebookIdPrefix + String.valueOf(noteBook.getId()));
+                if (StringUtils.isNotEmpty(taskIdentify)){
+                    redisUtils.del(taskIdentify, notebookIdPrefix + String.valueOf(noteBook.getId()));
+                }
             }
         }
     }
@@ -388,7 +413,8 @@ public class NoteBookServiceImpl implements NoteBookService {
             throw new BusinessException("notebook【" + noteBook.getName() + "】当前状态：" + NoteBookStatusEnum.getDescription(noteBook.getStatus()) + ",无法再次启动。");
         }
         String returnStr;
-        if (start(noteBook)) {
+        String taskIdentify = resourceCache.getTaskIdentify(noteBook.getId(), noteBook.getNoteBookName(), notebookIdPrefix);
+        if (start(noteBook, taskIdentify)) {
             noteBook.setStatus(NoteBookStatusEnum.STARTING.getCode());
             returnStr = NoteBookStatusEnum.STARTING.getDescription();
         } else {
@@ -423,15 +449,22 @@ public class NoteBookServiceImpl implements NoteBookService {
      * @param noteBook notebook
      * @return true 启动成功；false 启动失败
      */
-    private boolean start(NoteBook noteBook) {
+    private boolean start(NoteBook noteBook, String taskIdentify) {
+        Long curUserId = userContextService.getCurUserId();
+        if (StringUtils.isBlank(noteBook.getPipSitePackagePath())) {
+            String pipSitePackagePath = StringConstant.PIP_SITE_PACKAGE + SymbolConstant.SLASH + curUserId + SymbolConstant.SLASH + noteBook.getName() + SymbolConstant.SLASH;
+            noteBook.setPipSitePackagePath(pipSitePackagePath);
+        }
         // 添加启动时间
         noteBook.setLastStartTime(new Date());
         // 添加超时时间点
         noteBook.setLastOperationTimeout(NotebookUtil.getTimeoutSecondLong());
         if (initNameSpace(noteBook, null)) {
             try {
+                // 获取Notebook延迟删除时间，单位小时转化为分钟
+                int notebookDelayDeleteTime = getNotebookDelayDeleteTime() * 60;
                 //创建时不创建PVC
-                PtJupyterDeployVO result = jupyterResourceApi.create(PtJupyterResourceConvert.toPtJupyterResourceBo(noteBook, k8sNameTool, notebookDelayDeleteTime));
+                PtJupyterDeployVO result = jupyterResourceApi.create(PtJupyterResourceConvert.toPtJupyterResourceBo(noteBook, k8sNameTool, notebookDelayDeleteTime, taskIdentify));
                 noteBook.setK8sStatusCode(result.getCode() == null ? SymbolConstant.BLANK : result.getCode());
                 noteBook.setK8sStatusInfo(NotebookUtil.getK8sStatusInfo(result));
                 if (!result.isSuccess()) {
@@ -460,18 +493,17 @@ public class NoteBookServiceImpl implements NoteBookService {
     public String stopNoteBook(Long noteBookId) {
         NumberUtil.isNumber(noteBookId);
         NoteBook noteBook = noteBookMapper.selectById(noteBookId);
-        if (noteBook == null) {
-            throw new BusinessException(NotebookUtil.NOTEBOOK_NOT_EXISTS);
-        }
-        if (!NoteBookStatusEnum.RUN.getCode().equals(noteBook.getStatus())) {
-            throw new BusinessException("notebook没在运行,不能停止");
-        }
+        ResultUtil.notNull(noteBook, NoteBookErrorConstant.NOTEBOOK_NOT_EXISTS);
+        ResultUtil.isEquals(NoteBookStatusEnum.RUN.getCode(), noteBook.getStatus(),
+                NoteBookErrorConstant.INVALID_NOTEBOOK_STATUS);
+
         String returnStr;
         NoteBookStatusEnum statusEnum = getStatus(noteBook);
         if (NoteBookStatusEnum.STOP == statusEnum) {
             noteBook.setK8sStatusCode(SymbolConstant.BLANK);
             noteBook.setK8sStatusInfo(SymbolConstant.BLANK);
             noteBook.setUrl(SymbolConstant.BLANK);
+            noteBook.setStatus(NoteBookStatusEnum.STOP.getCode());
             returnStr = "已停止";
         } else {
             try {
@@ -502,6 +534,18 @@ public class NoteBookServiceImpl implements NoteBookService {
         }
         this.updateById(noteBook);
         return returnStr;
+    }
+
+    /**
+     * @see NoteBookService#batchStopNoteBooks()
+     */
+    @Override
+    public void batchStopNoteBooks() {
+        List<NoteBook> noteBooks = noteBookMapper.selectRunningList();
+        if (CollectionUtils.isEmpty(noteBooks)) {
+            return;
+        }
+        noteBooks.forEach(noteBook -> stopNoteBook(noteBook.getId()));
     }
 
     /**
@@ -566,6 +610,12 @@ public class NoteBookServiceImpl implements NoteBookService {
             noteBook.setK8sStatusCode(result.getCode() == null ? SymbolConstant.BLANK : result.getCode());
             noteBook.setK8sStatusInfo(NotebookUtil.getK8sStatusInfo(result));
             if (K8sResponseEnum.NOT_FOUND.getCode().equals(result.getCode())) {
+
+                long gap = new DateBetween(noteBook.getLastStartTime(), new Date()).between(DateUnit.MINUTE);
+                // 超时处理
+                if (gap < NumberConstant.NUMBER_2) {
+                    return null;
+                }
                 // 结果不存在当已停止
                 return NoteBookStatusEnum.STOP;
             } else if (!HttpUtils.isSuccess(result.getCode())) {
@@ -670,26 +720,6 @@ public class NoteBookServiceImpl implements NoteBookService {
         return null;
     }
 
-
-    /**
-     * 获取notebook所有状态
-     *
-     * @return List<NoteBookStatusDTO> notebook状态集合
-     */
-    @Override
-    public List<NoteBookStatusDTO> getNoteBookStatus() {
-        List<NoteBookStatusDTO> noteBookStatusDtoList = new ArrayList<>();
-        for (NoteBookStatusEnum noteBookStatusEnum : NoteBookStatusEnum.values()) {
-            if (noteBookStatusEnum != NoteBookStatusEnum.DELETED) {
-                NoteBookStatusDTO noteBookStatusDTO = new NoteBookStatusDTO();
-                noteBookStatusDTO.setStatusCode(noteBookStatusEnum.getCode());
-                noteBookStatusDTO.setStatusName(noteBookStatusEnum.getDescription());
-                noteBookStatusDtoList.add(noteBookStatusDTO);
-            }
-        }
-        return noteBookStatusDtoList;
-    }
-
     /**
      * 获取正在运行的notebook数量
      *
@@ -770,6 +800,20 @@ public class NoteBookServiceImpl implements NoteBookService {
     }
 
     /**
+     * 获取notebook详情
+     *
+     * @param noteBookId notebook id
+     * @return List<NoteBookVO> notebook vo 集合
+     */
+    @Override
+    public NoteBookVO getNotebookDetail(Long noteBookId) {
+        NoteBook noteBook = noteBookMapper.selectById(noteBookId);
+        return noteBookConvert.toDto(noteBook);
+    }
+
+
+
+    /**
      * 获取正在运行却没有URL的notebook
      *
      * @param page 分页信息
@@ -807,5 +851,22 @@ public class NoteBookServiceImpl implements NoteBookService {
             return Collections.emptyList();
         }
         return noteBookMapper.getNoteBookIdByAlgorithm(noteBookAlgorithmQueryDTO.getAlgorithmIdList());
+    }
+
+    /**
+     * 获取 Notebook 延时删除时间
+     */
+    private int getNotebookDelayDeleteTime() {
+
+        UserContext curUser = userContextService.getCurUser();
+        SysUserConfigDTO userConfig = curUser.getUserConfig();
+        // 查询该用户是否配置 Notebook 延时删除时间
+        Integer notebookDelayDeleteTime = userConfig.getNotebookDelayDeleteTime();
+        if (userConfig.getNotebookDelayDeleteTime() != null) {
+            return notebookDelayDeleteTime;
+        }
+
+        // 若该用户未配置 Notebook 延时删除时间，使用默认配置时间
+        return defaultNotebookDelayDeleteTime;
     }
 }

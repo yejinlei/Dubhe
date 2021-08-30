@@ -1,6 +1,6 @@
 {
   "name": "dubhe-web",
-  "version": "0.4.1",
+  "version": "2.0.0",
   "description": "之江天枢人工智能开源平台",
   "author": "zhejianglab",
   "keywords": [
@@ -16,6 +16,7 @@
     "serve": "vue-cli-service serve --host 0.0.0.0",
     "serve:test": "vue-cli-service serve --mode test --open",
     "build:prod": "vue-cli-service build",
+    "build:pre": "vue-cli-service build --mode pre",
     "build:test": "vue-cli-service build --mode test",
     "build:dev": "vue-cli-service build --mode development",
     "lint": "eslint --ext .js,.vue src",
@@ -71,6 +72,7 @@
     "json2csv": "^5.0.1",
     "lodash": "^4.17.15",
     "minio": "7.0.16",
+    "mitt": "^3.0.0",
     "nanoid": "^3.1.3",
     "normalize.css": "7.0.0",
     "nprogress": "0.2.0",

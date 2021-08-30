@@ -22,7 +22,6 @@ import io.swagger.annotations.ApiModelProperty;
 import lombok.Data;
 import lombok.experimental.Accessors;
 
-import java.io.Serializable;
 import java.sql.Timestamp;
 
 /**
@@ -31,9 +30,7 @@ import java.sql.Timestamp;
  */
 @Data
 @Accessors(chain = true)
-public class PtTrainJobDetailQueryVO implements Serializable {
-
-    private static final long serialVersionUID = 1L;
+public class PtTrainJobDetailQueryVO extends PtTrainJobDetailVO {
 
     @ApiModelProperty("训练作业名")
     private String trainName;
@@ -142,6 +139,9 @@ public class PtTrainJobDetailQueryVO implements Serializable {
 
     @ApiModelProperty("算法用途")
     private String algorithmUsage;
+
+    @ApiModelProperty("验证数据集算法用途")
+    private String valAlgorithmUsage;
 
     @ApiModelProperty("算法精度")
     private String accuracy;

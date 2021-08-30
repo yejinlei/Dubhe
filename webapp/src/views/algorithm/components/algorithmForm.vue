@@ -16,7 +16,7 @@
 
 <template>
   <el-form ref="formRef" :model="form" :rules="rules" label-width="100px">
-    <div v-if="isFork" class="tip fork-tip">
+    <div v-if="isFork" class="ts-tip fork-tip">
       以下操作将按照预置算法的配置生成一份您的算法，进而可以做后续配置。
     </div>
     <el-form-item label="名称" prop="algorithmName">
@@ -157,9 +157,11 @@
     <el-form-item v-show="!form.inference" label="可视化日志" prop="isVisualizedLog">
       <el-switch id="isVisualizedLog" v-model="form.isVisualizedLog" />
     </el-form-item>
-    <div class="tip">
+    <div class="ts-tip">
       <ol v-show="!form.inference">
         <li>请确保代码中包含“train_model_out”参数用于接收训练的模型输出路径</li>
+        <li>如需传入训练数据集，请确保代码中包含“data_url”参数用于传输训练数据集路径</li>
+        <li>如需传入验证数据集，请确保代码中包含“val_data_url”参数用于传输验证数据集路径</li>
         <li>
           如需断点续训或加载已有模型，请确保代码中包含“model_load_dir”参数用于接收训练模型路径
         </li>
@@ -342,7 +344,7 @@ export default {
     };
     // 获取镜像名列表
     const getImageNames = async (keepValue = false) => {
-      state.imageNameList = await getImageNameList({ projectType: IMAGE_PROJECT_TYPE.TRAIN });
+      state.imageNameList = await getImageNameList({ projectTypes: [IMAGE_PROJECT_TYPE.TRAIN] });
       if (!keepValue || !form.imageName) {
         form.imageTag = null;
       } else if (!state.imageNameList.includes(form.imageName)) {
@@ -498,11 +500,7 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-.tip {
-  padding: 12px 20px;
-  color: #f38900;
-  background: #ffe9cc;
-
+.ts-tip {
   ol {
     padding-left: 20px;
     margin: 14px 0;

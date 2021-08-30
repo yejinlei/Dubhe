@@ -32,6 +32,7 @@
       </el-select>
     </div>
     <div v-if="displayGpu" :id="gpuId" class="charts" />
+    <div v-if="displayGpu" :id="gpuMemId" class="charts" />
   </div>
 </template>
 
@@ -42,8 +43,9 @@ import echarts from 'echarts';
 import { parseTime, cpuPercentage, memNormalize, ONE_HOUR, toUnixTimestamp } from '@/utils';
 import { getMetrics, getHistoryMetrics } from '@/api/system/pod';
 
-import { defaultOption, cpuOption, memOption, gpuOption } from './util';
+import { defaultOption, cpuOption, memOption, gpuOption, getGpuMemOption } from './util';
 
+// TODO: 多卡异构 GPU 的情况需要重新设计
 export default {
   name: 'PodMonitor',
   props: {
@@ -95,7 +97,7 @@ export default {
       loadingHistory: false,
       polling: false, // 是否正在查询状态
 
-      cpuData: {}, // 以 pod 为键的一个对象
+      cpuData: {}, // 以 pod 为键的一个对象，详细数据示例见 ./util.js
       memData: {},
       gpuData: {},
 
@@ -107,9 +109,13 @@ export default {
       cpuChart: null, // CPU 折线图实例
       memChart: null, // 内存折线图实例
       gpuChart: null, // GPU 折线图实例
+      gpuMemChart: null, // GPU 显存折线图实例
 
       podNameSet: new Set(),
       selectedPod: null,
+
+      gpuMemUpperLimit: null,
+      gpuMemNeedRedraw: true, // GPU 显存 Y 轴坐标需要根据 GPU 显存上限计算百分比，因此当显存上限变动时需要重画显存
     };
   },
   computed: {
@@ -126,6 +132,9 @@ export default {
     },
     gpuId() {
       return `pod-monitor-gpu-${this.idTag}`;
+    },
+    gpuMemId() {
+      return `pod-monitor-gpu-mem-${this.idTag}`;
     },
     gpuPodList() {
       return Object.keys(this.gpuData);
@@ -146,6 +155,7 @@ export default {
     this.stop();
   },
   methods: {
+    // 获取当前监控信息
     async getMetrics(option = {}) {
       // 如果 namespace 不存在，或者 resourceName 和 podName 都不存在，则停止查询直接返回
       if (!this.namespace || (!this.resourceName && !this.usePodName)) {
@@ -156,16 +166,19 @@ export default {
 
       const datas = await getMetrics(this.monitorParam);
 
+      // 插入时间点
       this.pushTime();
 
       datas.forEach(this.parseData);
 
       this.drawCharts();
 
+      // 根据预设的时间定时查询
       setTimeout(() => {
         this.getMetrics(option);
       }, this.timeStep);
     },
+    // 获取历史监控数据
     async getHistoryMetrics() {
       if (!this.namespace) {
         this.$message.warning('命名空间为空，无法获取监控信息');
@@ -179,6 +192,7 @@ export default {
 
       const now = new Date().getTime();
 
+      // 查询历史返回为 4 小时
       params.startTime = toUnixTimestamp(now - 4 * ONE_HOUR);
       params.endTime = toUnixTimestamp(now - this.timeStep);
       params.step = Math.round(this.timeStep / 1000);
@@ -217,6 +231,7 @@ export default {
         this.gpuHistoryTimeArray.splice(0, gap);
       }
     },
+    // 历史数据解析方法
     parseHistoryData(pod) {
       const { podName } = pod;
 
@@ -260,11 +275,27 @@ export default {
 
           this.gpuData[podName].cardSet.add(card.accId);
           this.gpuData[podName][card.accId] = {};
-          card.values.forEach((data) => {
+          this.gpuData[podName][card.accId].totalMem = card.totalMemValues;
+          !this.gpuMemUpperLimit &&
+            (this.gpuMemUpperLimit = Math.round(memNormalize(card.totalMemValues, 'Ki') * 10) / 10);
+          // 插入 gpu 使用率数据
+          card.gpuMetricsValues.forEach((data) => {
             const time = parseTime(data.time, this.timeFormat);
             // 只针对第一张 GPU 卡插入时间点
             isFirstCard && this.gpuHistoryTimeArray.push(time);
-            this.gpuData[podName][card.accId][time] = data.value;
+            this.gpuData[podName][card.accId][time] = {};
+            this.gpuData[podName][card.accId][time].usage = data.value;
+          });
+          card.gpuMemValues.forEach((data) => {
+            const time = parseTime(data.time, this.timeFormat);
+            // 对于显存数据不再插入时间点，时间点应当为一致的
+            if (this.gpuData[podName][card.accId][time]) {
+              this.gpuData[podName][card.accId][time].gpuMem =
+                Math.round(memNormalize(data.value, 'Ki') * 10) / 10;
+              this.gpuData[podName][card.accId][time].memUsage = Math.round(
+                (data.value / this.gpuData[podName][card.accId].totalMem) * 100
+              );
+            }
           });
           isFirstCard && (isFirstCard = false);
         });
@@ -273,6 +304,7 @@ export default {
         );
       }
     },
+    // 实时数据解析方法
     parseData(data) {
       const {
         podName,
@@ -316,7 +348,13 @@ export default {
             this.gpuData[podName].cardSet.add(card.accId);
             this.gpuData[podName][card.accId] = {};
           }
-          this.gpuData[podName][card.accId][now] = card.usage;
+          this.gpuData[podName][card.accId][now] = {};
+          this.gpuData[podName][card.accId][now].usage = card.usage;
+          this.gpuData[podName][card.accId][now].gpuMem =
+            Math.round(memNormalize(card.gpuMemValue, 'Ki') * 10) / 10;
+          this.gpuData[podName][card.accId][now].memUsage = Math.round(
+            (card.gpuMemValue / card.gpuTotalMemValue) * 100
+          );
         });
       }
     },
@@ -327,9 +365,10 @@ export default {
       this.cpuChart && this.cpuChart.clear();
       this.memChart && this.memChart.clear();
       this.gpuChart && this.gpuChart.clear();
+      this.gpuMemChart && this.gpuMemChart.clear();
 
       this.podNameSet.clear();
-      this.cpuChart = this.memChart = this.gpuChart = null;
+      this.cpuChart = this.memChart = this.gpuChart = this.gpuMemChart = null;
       this.cpuHistoryTimeArray.length = 0;
       this.memHistoryTimeArray.length = 0;
       this.gpuHistoryTimeArray.length = 0;
@@ -378,6 +417,10 @@ export default {
       this.gpuChart = echarts.init(document.getElementById(this.gpuId));
       this.gpuChart.setOption(defaultOption);
       this.gpuChart.setOption(gpuOption);
+
+      this.gpuMemChart = echarts.init(document.getElementById(this.gpuMemId));
+      this.gpuMemChart.setOption(defaultOption);
+      this.gpuMemChart.setOption(getGpuMemOption());
     },
     drawCharts() {
       if (this.displayCpu) {
@@ -387,7 +430,7 @@ export default {
         this.drawMem();
       }
       if (this.displayGpu) {
-        this.drawGpu();
+        this.drawGpu(this.gpuMemNeedRedraw);
       }
     },
     drawCpu() {
@@ -446,6 +489,7 @@ export default {
       // 数据计算放在画图的地方来做，在不需要画图时就无需计算
       const timeArray = this.gpuHistoryTimeArray.concat(this.pollTimeArray);
       const seriesData = [];
+      const memSeriesData = [];
       const legendList = [];
       let name;
       Object.keys(this.gpuData).forEach((pod) => {
@@ -460,7 +504,14 @@ export default {
           seriesData.push({
             name,
             type: 'line',
-            data,
+            data: data.map((d) => d?.usage),
+            yAxisIndex: 0,
+          });
+          memSeriesData.push({
+            name,
+            type: 'line',
+            data: data.map((d) => d?.gpuMem),
+            yAxisIndex: 0,
           });
         });
       });
@@ -469,6 +520,11 @@ export default {
         this.gpuChart.clear();
         this.gpuChart.setOption(defaultOption);
         this.gpuChart.setOption(gpuOption);
+
+        this.gpuMemChart.clear();
+        this.gpuMemChart.setOption(defaultOption);
+        this.gpuMemChart.setOption(getGpuMemOption({ limit: this.gpuMemUpperLimit }));
+        this.gpuMemNeedRedraw = false;
       }
       this.gpuChart &&
         this.gpuChart.setOption({
@@ -478,6 +534,19 @@ export default {
             data: timeArray,
           },
           series: seriesData,
+          legend: {
+            data: legendList,
+          },
+        });
+
+      this.gpuMemChart &&
+        this.gpuMemChart.setOption({
+          xAxis: {
+            type: 'category',
+            boundaryGap: false,
+            data: timeArray,
+          },
+          series: memSeriesData,
           legend: {
             data: legendList,
           },

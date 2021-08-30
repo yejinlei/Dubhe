@@ -150,7 +150,7 @@
             :params="uploadParams"
             list-type="text"
             accept="unspecified"
-            :acceptSize="8"
+            :acceptSize="0"
             @uploadSuccess="uploadSuccess"
             @uploadError="uploadError"
           />

@@ -18,6 +18,7 @@ package org.dubhe.biz.base.context;
 
 import lombok.Data;
 import org.dubhe.biz.base.dto.SysRoleDTO;
+import org.dubhe.biz.base.dto.SysUserConfigDTO;
 
 import java.io.Serializable;
 import java.util.List;
@@ -72,5 +73,9 @@ public class UserContext  implements Serializable {
      * 头像路径
      */
     private String userAvatarPath;
+    /**
+     * 用户配置
+     */
+    private SysUserConfigDTO userConfig;
 
 }

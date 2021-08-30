@@ -20,6 +20,8 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.IService;
 import org.dubhe.admin.domain.dto.*;
 import org.dubhe.admin.domain.entity.User;
+import org.dubhe.admin.domain.vo.UserConfigCreateVO;
+import org.dubhe.admin.domain.vo.UserConfigVO;
 import org.dubhe.biz.base.dto.TeamDTO;
 import org.dubhe.biz.base.dto.UserDTO;
 import org.dubhe.biz.base.vo.DataResponseBody;
@@ -221,4 +223,20 @@ public interface UserService extends AdminUserService, IService<User> {
      * @return org.dubhe.domain.dto.UserDTO 用户信息DTO集合
      */
     List<UserDTO> getUserList(List<Long> ids);
+
+    /**
+     * 根据用户 ID 查询用户配置
+     *
+     * @param userId 用户 ID
+     * @return org.dubhe.admin.domain.vo.UserConfigVO 用户配置 VO
+     */
+    UserConfigVO findUserConfig(Long userId);
+
+    /**
+     * 创建或更新用户配置
+     *
+     * @param userConfigDTO 用户配置
+     * @return org.dubhe.admin.domain.vo.UserConfigCreateVO 用户配置 VO
+     */
+    UserConfigCreateVO createOrUpdateUserConfig(UserConfigDTO userConfigDTO);
 }

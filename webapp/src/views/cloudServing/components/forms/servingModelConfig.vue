@@ -540,7 +540,7 @@ export default {
     // 镜像选择
     // 获取镜像名称列表
     async getImageNames(keepValue = false) {
-      this.imageNameList = await getImageNameList({ projectType: IMAGE_PROJECT_TYPE.TRAIN });
+      this.imageNameList = await getImageNameList({ projectTypes: [IMAGE_PROJECT_TYPE.TRAIN] });
       if (!keepValue || !this.form.imageName) {
         this.form.imageTag = null;
       } else if (!this.imageNameList.includes(this.form.imageName)) {

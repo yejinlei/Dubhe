@@ -56,9 +56,13 @@ k8s:
     query: api/v1/query
     query-range: api/v1/query_range
     gpu-query-param: sum(container_accelerator_duty_cycle{pod="pod-name-placeholder"})by(pod,acc_id)
+    gpu-mem-total-query-param: sum(container_accelerator_memory_total_bytes{pod="pod-name-placeholder"})by(pod,acc_id)
+    gpu-mem-use-query-param: sum(container_accelerator_memory_used_bytes{pod="pod-name-placeholder"})by(pod,acc_id)
     cpu-range-query-param: sum(rate(container_cpu_usage_seconds_total{image!="",pod="pod-name-placeholder"}[1m])) by (pod) / (sum(container_spec_cpu_quota{image!=""}/100000) by (pod)) * 100
     mem-range-query-param: sum(container_memory_rss{image!="",pod="pod-name-placeholder"})
     gpu-range-query-param: sum(container_accelerator_duty_cycle{pod="pod-name-placeholder"}) by (pod,acc_id)
+    gpu-mem-total-range-query-param: sum(container_accelerator_memory_total_bytes{pod="pod-name-placeholder"}) by (pod,acc_id)
+    gpu-mem-use-range-query-param: sum(container_accelerator_memory_used_bytes{pod="pod-name-placeholder"}) by (pod,acc_id)
   nfs-storage-class-name: zjlab-nfs-storage
   namespace-limits:
     cpu: 10
@@ -79,3 +83,6 @@ minio:
   bucketName: dubhe-cloud-test
   presignedUrlExpiryTime: 300
   annotation: /annotation/
+
+docker:
+  remote-api-port: 2375

@@ -140,3 +140,10 @@ model:
       json: http://127.0.0.1:32760/model_measure/measure
   converter:
     url: http://127.0.0.1:32230/model_convert
+
+user:
+  config:
+    notebook-delay-delete-time: 8
+    cpu-limit: 10
+    memory-limit: 32
+    gpu-limit: 2

@@ -140,6 +140,9 @@ public class PtTrainJobDetailVO implements Serializable {
     @ApiModelProperty("算法用途")
     private String algorithmUsage;
 
+    @ApiModelProperty("验证数据集算法用途")
+    private String valAlgorithmUsage;
+
     @ApiModelProperty("算法精度")
     private String accuracy;
 
@@ -149,7 +152,7 @@ public class PtTrainJobDetailVO implements Serializable {
     @ApiModelProperty(value = "算法文件路径")
     private String algorithmCodeDir;
 
-    @ApiModelProperty("训练类型")
+    @ApiModelProperty("训练类型 0：普通训练，1：分布式训练")
     private Integer trainType;
 
     @ApiModelProperty("验证数据来源名称")
@@ -187,4 +190,10 @@ public class PtTrainJobDetailVO implements Serializable {
 
     @ApiModelProperty(value = "炼知学生模型ids,多个id之前用','隔开")
     private String studentModelIds;
+
+    @ApiModelProperty(value = "notebook名称")
+    private String notebookName;
+
+    @ApiModelProperty(value = "notebookId")
+    private Long notebookId;
 }

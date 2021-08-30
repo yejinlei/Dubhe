@@ -148,7 +148,7 @@ public class ModelServingApiImpl implements ModelServingApi {
 
             //标签生成
             Map<String, String> baseLabels = LabelUtils.getBaseLabels(bo.getResourceName(), bo.getBusinessLabel());
-            Map<String, String> podLabels = LabelUtils.getChildLabels(bo.getResourceName(), deploymentName, K8sKindEnum.DEPLOYMENT.getKind(), bo.getBusinessLabel());
+            Map<String, String> podLabels = LabelUtils.getChildLabels(bo.getResourceName(), deploymentName, K8sKindEnum.DEPLOYMENT.getKind(), bo.getBusinessLabel(), bo.getTaskIdentifyLabel());
 
             //部署deployment
             Deployment deployment = buildDeployment(bo, volumeVO, deploymentName);
@@ -266,7 +266,7 @@ public class ModelServingApiImpl implements ModelServingApi {
      * @return Deployment
      */
     private Deployment buildDeployment(ModelServingBO bo, VolumeVO volumeVO, String deploymentName) {
-        Map<String, String> childLabels = LabelUtils.getChildLabels(bo.getResourceName(), deploymentName, K8sKindEnum.DEPLOYMENT.getKind(), bo.getBusinessLabel());
+        Map<String, String> childLabels = LabelUtils.getChildLabels(bo.getResourceName(), deploymentName, K8sKindEnum.DEPLOYMENT.getKind(), bo.getBusinessLabel(),bo.getTaskIdentifyLabel());
         LabelSelector labelSelector = new LabelSelector();
         labelSelector.setMatchLabels(childLabels);
         return new DeploymentBuilder()
@@ -285,7 +285,7 @@ public class ModelServingApiImpl implements ModelServingApi {
                             .withNamespace(bo.getNamespace())
                         .endMetadata()
                         .withNewSpec()
-                            .addToNodeSelector(k8sUtils.gpuSelector(bo.getGpuNum()))
+                            .addToNodeSelector(K8sUtils.gpuSelector(bo.getGpuNum()))
                             .addToContainers(buildContainer(bo, volumeVO, deploymentName))
                             .addToVolumes(volumeVO.getVolumes().toArray(new Volume[0]))
                             .withRestartPolicy(RestartPolicyEnum.ALWAYS.getRestartPolicy())

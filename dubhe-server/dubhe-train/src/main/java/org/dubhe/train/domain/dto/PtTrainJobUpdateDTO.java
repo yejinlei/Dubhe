@@ -35,7 +35,7 @@ import javax.validation.constraints.*;
 @EqualsAndHashCode(callSuper = true)
 @Data
 @Accessors(chain = true)
-public class PtTrainJobUpdateDTO extends BaseImageDTO {
+public class PtTrainJobUpdateDTO extends PtTrainJobBaseDTO {
 
     @ApiModelProperty(value = "id", required = true)
     @NotNull(message = "id不能为null")
@@ -46,23 +46,19 @@ public class PtTrainJobUpdateDTO extends BaseImageDTO {
     @Length(max = MagicNumConstant.INTEGER_TWO_HUNDRED_AND_FIFTY_FIVE, message = "描述长度不能超过255个字符")
     private String description;
 
-    @ApiModelProperty("算法id")
-    @NotNull(message = "algorithmId不能为空")
-    @Min(value = MagicNumConstant.ONE, message = "algorithmId必须大于1")
-    private Long algorithmId;
+    @ApiModelProperty("算法用途，输入长度不能超过128个字符")
+    @Length(max = MagicNumConstant.ONE_HUNDRED_TWENTY_EIGHT, message = "算法用途-输入长度不能超过128个字符")
+    private String algorithmUsage;
 
-    @ApiModelProperty(value = "运行命令,输入长度不能超过128个字符", required = true)
-    @NotBlank(message = "运行命令不能为空")
-    @Length(max = MagicNumConstant.ONE_HUNDRED_TWENTY_EIGHT, message = "运行命令-输入长度不能超过128个字符")
-    private String runCommand;
+    @ApiModelProperty("验证数据集算法用途，输入长度不能超过128个字符")
+    @Length(max = MagicNumConstant.ONE_HUNDRED_TWENTY_EIGHT, message = "验证数据集算法用途-输入长度不能超过128个字符")
+    private String valAlgorithmUsage;
 
-    @ApiModelProperty(value = "数据集来源路径,输入长度不能超过127个字符", required = true)
-    @NotBlank(message = "数据集来源路径不能为空")
+    @ApiModelProperty(value = "数据集来源路径,输入长度不能超过127个字符")
     @Length(max = MagicNumConstant.ONE_HUNDRED_TWENTY_SEVEN, message = "数据集来源路径-输入长度不能超过127个字符")
     private String dataSourcePath;
 
-    @ApiModelProperty(value = "数据集来源名称,输入长度不能超过127个字符", required = true)
-    @NotBlank(message = "数据集来源名称不能为空")
+    @ApiModelProperty(value = "数据集来源名称,输入长度不能超过127个字符")
     @Length(max = MagicNumConstant.ONE_HUNDRED_TWENTY_SEVEN, message = "数据集来源名称-输入长度不能超过127个字符")
     private String dataSourceName;
 

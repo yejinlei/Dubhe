@@ -38,4 +38,7 @@ public class BizContainerStatus {
      */
     @K8sField("state:waiting")
     private BizContainerStateWaiting waiting;
+
+    @K8sField("containerID")
+    private String containerID;
 }

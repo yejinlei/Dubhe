@@ -26,7 +26,7 @@
     @cancel="visible = false"
     @ok="ok"
   >
-    <div v-if="tip" class="ts-tip mb-20 px-20 py-10">{{ tip }}</div>
+    <div v-if="tip" class="ts-tip mb-20">{{ tip }}</div>
     <div v-if="fetchDone && treeList.length" class="fontBold">{{ description }}</div>
     <div class="tree-container">
       <el-tree

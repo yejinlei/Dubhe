@@ -36,6 +36,7 @@
         <module>dubhe-data-dcm</module>
         <module>dubhe-serving</module>
         <module>dubhe-serving-gateway</module>
+        <module>dubhe-terminal</module>
     </modules>
 
 

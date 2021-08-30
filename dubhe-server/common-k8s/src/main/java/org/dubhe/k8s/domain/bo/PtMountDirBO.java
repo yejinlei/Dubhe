@@ -33,9 +33,9 @@ public class PtMountDirBO {
     private String dir;
     /**是否只读 ture:是 false:否**/
     private boolean readOnly;
-    /**是否回收  true:创建pv、pvc进行挂载,删除时同时删除数据 false:直接挂载**/
+    /**是否回收  true:创建pv、pvc进行挂载,删除时同时删除数据 false且request和limit均为空:直接挂载**/
     private boolean recycle;
-    /**存储配额 示例：500Mi 仅在pvc=true时生效**/
+    /**存储配额 示例：500Mi* 仅在pvc=true时生效*/
     private String request;
     /**存储限额 示例：500Mi 仅在pvc=true时生效**/
     private String limit;
@@ -47,5 +47,23 @@ public class PtMountDirBO {
     public PtMountDirBO(String dir, String request){
         this.dir = dir;
         this.request = request;
+    }
+
+    public PtMountDirBO(String dir, boolean readOnly){
+        this.dir = dir;
+        this.readOnly = readOnly;
+    }
+
+    public PtMountDirBO(String dir, String request,boolean readOnly){
+        this.dir = dir;
+        this.request = request;
+        this.readOnly = readOnly;
+    }
+
+    public PtMountDirBO(String dir, String request, String limit,boolean readOnly){
+        this.dir = dir;
+        this.request = request;
+        this.limit = limit;
+        this.readOnly = readOnly;
     }
 }

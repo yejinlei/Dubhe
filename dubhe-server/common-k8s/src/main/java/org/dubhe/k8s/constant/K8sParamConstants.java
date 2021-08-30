@@ -94,4 +94,9 @@ public class K8sParamConstants {
      */
     public static final String RESOURCE_QUOTA_GPU_LIMITS_KEY = "requests.nvidia.com/gpu";
 
+    //pod containerID 前缀
+    public static final String CONTAINER_ID_PREFIX = "docker://";
+
+    public static final String WAITING_REASON_CONTAINER_CREATING = "ContainerCreating";
+
 }

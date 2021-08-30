@@ -54,7 +54,9 @@ import org.dubhe.biz.log.enums.LogEnum;
 import org.dubhe.biz.log.utils.LogUtil;
 import org.dubhe.biz.permission.annotation.DataPermissionMethod;
 import org.dubhe.biz.permission.base.BaseService;
+import org.dubhe.biz.redis.utils.RedisUtils;
 import org.dubhe.k8s.api.MetricsApi;
+import org.dubhe.k8s.cache.ResourceCache;
 import org.dubhe.k8s.domain.dto.PodQueryDTO;
 import org.dubhe.k8s.domain.vo.PodVO;
 import org.dubhe.k8s.domain.vo.PtPodsVO;
@@ -114,6 +116,7 @@ import org.dubhe.serving.task.DeployServingAsyncTask;
 import org.dubhe.serving.utils.GrpcClient;
 import org.dubhe.serving.utils.ServingStatusDetailDescUtil;
 import org.springframework.beans.BeanUtils;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.redis.connection.stream.StreamRecords;
 import org.springframework.data.redis.connection.stream.StringRecord;
@@ -186,6 +189,12 @@ public class ServingServiceImpl implements ServingService {
     private RecycleService recycleService;
     @Resource
     private RecycleTool recycleTool;
+    @Autowired
+    private RedisUtils redisUtils;
+    @Autowired
+    private ResourceCache resourceCache;
+    @Value("Task:Serving:"+"${spring.profiles.active}_serving_id_")
+    private String servingIdPrefix;
 
     /**
      * 在线服务文件根路径
@@ -301,7 +310,8 @@ public class ServingServiceImpl implements ServingService {
         ServingInfo servingInfo = buildServingInfo(servingInfoCreateDTO);
         List<ServingModelConfig> modelConfigList = insertServing(servingInfoCreateDTO, user, servingInfo);
         // 异步部署容器
-        deployServingAsyncTask.deployServing(user, servingInfo, modelConfigList);
+        String taskIdentify = resourceCache.getTaskIdentify(servingInfo.getId(), servingInfo.getName(), servingIdPrefix);
+        deployServingAsyncTask.deployServing(user, servingInfo, modelConfigList, taskIdentify);
         return new ServingInfoCreateVO(servingInfo.getId(), servingInfo.getStatus());
     }
 
@@ -557,8 +567,9 @@ public class ServingServiceImpl implements ServingService {
             }
         }
         List<ServingModelConfig> modelConfigList = updateServing(servingInfoUpdateDTO, user, servingInfo);
+        String taskIdentify = resourceCache.getTaskIdentify(servingInfo.getId(), servingInfo.getName(),servingIdPrefix);
         // 异步部署容器
-        deployServingAsyncTask.deployServing(user, servingInfo, modelConfigList);
+        deployServingAsyncTask.deployServing(user, servingInfo, modelConfigList, taskIdentify);
         return new ServingInfoUpdateVO(servingInfo.getId(), servingInfo.getStatus());
     }
 
@@ -632,6 +643,10 @@ public class ServingServiceImpl implements ServingService {
         List<ServingModelConfig> modelConfigList = getModelConfigByServingId(servingInfo.getId());
         deployServingAsyncTask.deleteServing(user, servingInfo, modelConfigList);
         deleteServing(servingInfoDeleteDTO, user, servingInfo);
+        String taskIdentify = (String) redisUtils.get(servingIdPrefix + String.valueOf(servingInfo.getId()));
+        if (StringUtils.isNotEmpty(taskIdentify)){
+            redisUtils.del(taskIdentify, servingIdPrefix + String.valueOf(servingInfo.getId()));
+        }
         Map<String, Object> map = new HashMap<>(NumberConstant.NUMBER_2);
         map.put("serving_id", servingInfo.getId());
         if (!servingModelConfigService.removeByMap(map)) {
@@ -751,7 +766,8 @@ public class ServingServiceImpl implements ServingService {
         servingInfo.setStatusDetail(SymbolConstant.BRACKETS);
         updateServingStart(user, servingInfo, modelConfigList);
         // 异步部署容器
-        deployServingAsyncTask.deployServing(user, servingInfo, modelConfigList);
+        String taskIdentify = resourceCache.getTaskIdentify(servingInfo.getId(), servingInfo.getName(), servingIdPrefix);
+        deployServingAsyncTask.deployServing(user, servingInfo, modelConfigList, taskIdentify);
         return new ServingStartVO(servingInfo.getId(), servingInfo.getStatus());
     }
 

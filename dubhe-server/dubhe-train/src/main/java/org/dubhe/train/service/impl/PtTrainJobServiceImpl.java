@@ -21,6 +21,7 @@ import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.io.FileUtil;
 import cn.hutool.core.util.StrUtil;
 import com.alibaba.fastjson.JSONObject;
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
@@ -46,11 +47,12 @@ import org.dubhe.biz.log.enums.LogEnum;
 import org.dubhe.biz.log.utils.LogUtil;
 import org.dubhe.biz.permission.annotation.DataPermissionMethod;
 import org.dubhe.biz.permission.base.BaseService;
-import org.dubhe.biz.permission.util.SqlUtil;
+import org.dubhe.biz.redis.utils.RedisUtils;
 import org.dubhe.k8s.api.DistributeTrainApi;
 import org.dubhe.k8s.api.PersistentVolumeClaimApi;
 import org.dubhe.k8s.api.PodApi;
 import org.dubhe.k8s.api.TrainJobApi;
+import org.dubhe.k8s.cache.ResourceCache;
 import org.dubhe.k8s.domain.PtBaseResult;
 import org.dubhe.k8s.domain.resource.BizPod;
 import org.dubhe.k8s.utils.K8sNameTool;
@@ -178,6 +180,18 @@ public class PtTrainJobServiceImpl implements PtTrainJobService {
     @Autowired
     private UserContextService userContextService;
 
+    @Autowired
+    private RedisUtils redisUtils;
+
+    @Autowired
+    private ResourceCache resourceCache;
+
+    @Autowired
+    private NoteBookClient noteBookClient;
+
+    @Value("Task:Train:" + "${spring.profiles.active}_train_job_id_")
+    private String trainIdPrefix;
+
     public final static List<String> FIELD_NAMES;
 
     static {
@@ -187,38 +201,26 @@ public class PtTrainJobServiceImpl implements PtTrainJobService {
     /**
      * 作业列表展示
      *
-     * @param ptTrainQueryDTO       查询作业列表参数
+     * @param ptTrainQueryDTO 查询作业列表参数
      * @return Map<String, Object>  作业列表分页信息
      **/
     @Override
     @DataPermissionMethod(dataType = DatasetTypeEnum.PUBLIC)
     public Map<String, Object> getTrainJob(@NonNull PtTrainQueryDTO ptTrainQueryDTO) {
-        Page<PtTrainVO> pageTrainResult;
         Page page = ptTrainQueryDTO.toPage();
-        String order;
-        String sort;
-        try {
-            //排序方式
-            order = StringConstant.SORT_ASC.equalsIgnoreCase(ptTrainQueryDTO.getOrder()) ? StringConstant.SORT_ASC : StringConstant.SORT_DESC;
-            //排序字段
-            String sortField = FIELD_NAMES.contains(ptTrainQueryDTO.getSort()) ? ptTrainQueryDTO.getSort() : StringConstant.ID;
-            sort = StringUtils.humpToLine(sortField);
-            //设置管理员可以查询所有数据
-            Long userId = userContextService.getCurUserId();
-            if (BaseService.isAdmin(userContextService.getCurUser())) {
-                userId = null;
-            }
-            pageTrainResult = ptTrainJobMapper.getPageTrain(page, userId, ptTrainQueryDTO.getTrainStatus(), ptTrainQueryDTO.getTrainName(), sort, order);
-        } catch (Exception e) {
-            LogUtil.error(LogEnum.BIZ_TRAIN, " ptTrainQueryDTO is {},query job list shows exception {}", ptTrainQueryDTO, e);
-            throw new BusinessException("查询作业列表展示异常");
+        //排序方式
+        String order = StringConstant.SORT_ASC.equalsIgnoreCase(ptTrainQueryDTO.getOrder()) ? StringConstant.SORT_ASC : StringConstant.SORT_DESC;
+        //排序字段
+        String sortField = FIELD_NAMES.contains(ptTrainQueryDTO.getSort()) ? ptTrainQueryDTO.getSort() : StringConstant.ID;
+        String sort = StringUtils.humpToLine(sortField);
+        //设置管理员可以查询所有数据
+        Long userId = userContextService.getCurUserId();
+        if (BaseService.isAdmin(userContextService.getCurUser())) {
+            userId = null;
         }
+        Page<PtTrainVO> pageTrainResult = ptTrainJobMapper.getPageTrain(page, userId, ptTrainQueryDTO.getTrainStatus(), ptTrainQueryDTO.getTrainName(), sort, order);
         List<PtTrainVO> trainResult = pageTrainResult.getRecords();
-        if (CollectionUtils.isNotEmpty(trainResult)) {
-            LogUtil.info(LogEnum.BIZ_TRAIN, "The user {} query job list is displayed and the result is as follows {}.", userContextService.getCurUser().getUsername(), trainResult);
-        }
         return PageUtil.toPage(page, trainResult);
-
     }
 
     /**
@@ -255,23 +257,36 @@ public class PtTrainJobServiceImpl implements PtTrainJobService {
         queryJobParamWrapper.in("train_job_id", jobIds);
         //找出所有训练参数
         List<PtJobParam> ptJobParams = ptJobParamMapper.selectList(queryJobParamWrapper);
-        Set<Long> algorithmIds = null;
-        if (CollectionUtils.isNotEmpty(ptJobParams)) {
-            algorithmIds = ptJobParams.stream().map(PtJobParam::getAlgorithmId).collect(Collectors.toSet());
-        }
-        TrainAlgorithmSelectAllBatchIdDTO trainAlgorithmSelectAllBatchIdDTO = new TrainAlgorithmSelectAllBatchIdDTO();
-        trainAlgorithmSelectAllBatchIdDTO.setIds(algorithmIds);
-        DataResponseBody<List<TrainAlgorithmQureyVO>> dataResponseBody = algorithmClient.selectAllBatchIds(trainAlgorithmSelectAllBatchIdDTO);
         List<TrainAlgorithmQureyVO> ptTrainAlgorithms = null;
-        if (dataResponseBody.succeed()) {
-            ptTrainAlgorithms = dataResponseBody.getData();
+        if (CollectionUtils.isNotEmpty(ptJobParams)) {
+            Set<Long> algorithmIds = ptJobParams.stream().map(PtJobParam::getAlgorithmId).filter(x -> x != null).collect(Collectors.toSet());
+            ptTrainAlgorithms = selectAllBatchIds(algorithmIds);
         }
         //获取训练信息
         PtTrain ptTrain = ptTrainMapper.selectById(ptTrainJobVersionQueryDTO.getTrainId());
         //结果集处理
-        List<PtTrainJobDetailVO> list = getTrainJobDetail(ptTrainJobs, ptJobParams, ptTrainAlgorithms, ptTrain);
-        LogUtil.info(LogEnum.BIZ_TRAIN, "User {} query different version of job list display completed, return result {}", userContextService.getCurUser().getUsername(), list);
-        return list;
+        return getTrainJobDetail(ptTrainJobs, ptJobParams, ptTrainAlgorithms, ptTrain);
+    }
+
+    /**
+     * 查询算法
+     *
+     * @param algorithmIds 算法id集合
+     * @return
+     */
+    public List<TrainAlgorithmQureyVO> selectAllBatchIds(Set<Long> algorithmIds) {
+        if (CollectionUtils.isEmpty(algorithmIds)) {
+            return Collections.emptyList();
+        }
+        TrainAlgorithmSelectAllBatchIdDTO trainAlgorithmSelectAllBatchIdDTO = new TrainAlgorithmSelectAllBatchIdDTO();
+        trainAlgorithmSelectAllBatchIdDTO.setIds(algorithmIds);
+        DataResponseBody<List<TrainAlgorithmQureyVO>> dataResponseBody = algorithmClient.selectAllBatchIds(trainAlgorithmSelectAllBatchIdDTO);
+        if (dataResponseBody.succeed()) {
+            return dataResponseBody.getData();
+        } else {
+            LogUtil.info(LogEnum.BIZ_TRAIN, "Fail to query algorithm. data response body is {}", dataResponseBody);
+            throw new BusinessException("算法服务调用失败，请稍后重试~");
+        }
     }
 
     /**
@@ -284,67 +299,94 @@ public class PtTrainJobServiceImpl implements PtTrainJobService {
      * @return List<PtTrainJobDetailVO> 训练版本查询详情集合
      */
     private List<PtTrainJobDetailVO> getTrainJobDetail(List<PtTrainJob> ptTrainJobs, List<PtJobParam> ptJobParams, List<TrainAlgorithmQureyVO> ptTrainAlgorithms, PtTrain ptTrain) {
+        Map<Long, TrainAlgorithmQureyVO> algorithmMap = new HashedMap<>();
+
+        if (CollectionUtils.isNotEmpty(ptTrainAlgorithms)) {
+            ptTrainAlgorithms.forEach(x -> algorithmMap.put(x.getId(), x));
+        }
+
         List<PtTrainJobDetailVO> list = new ArrayList<>();
-        Map<Long, Integer> jobParamMap = new HashedMap<>();
+        Map<Long, PtTrainJobDetailVO> jobParamMap = new HashedMap<>();
+
         ptTrainJobs.forEach(x -> {
             PtTrainJobDetailVO ptTrainJobDetailVO = new PtTrainJobDetailVO();
             BeanUtil.copyProperties(x, ptTrainJobDetailVO);
             list.add(ptTrainJobDetailVO);
-            jobParamMap.put(x.getId(), list.size());
+            jobParamMap.put(x.getId(), ptTrainJobDetailVO);
         });
 
+
         ptJobParams.forEach(x -> {
-            PtTrainJobDetailVO ptTrainJobDetailVO = list.get(jobParamMap.get(x.getTrainJobId()) - 1);
+            PtTrainJobDetailVO ptTrainJobDetailVO = jobParamMap.get(x.getTrainJobId());
             if (null != ptTrainJobDetailVO) {
 
-                ptTrainJobDetailVO.setAlgorithmId(x.getAlgorithmId()).setRunCommand(x.getRunCommand()).setImageName(x.getImageName())
+                ptTrainJobDetailVO.setAlgorithmId(x.getAlgorithmId())
+                        .setAlgorithmUsage(x.getAlgorithmUsage())
+                        .setValAlgorithmUsage(x.getValAlgorithmUsage())
+                        .setRunCommand(x.getRunCommand())
+                        .setImageName(x.getImageName())
                         .setRunParams(x.getRunParams())
-                        .setParamF1(x.getParamF1()).setParamCallback(x.getParamCallback())
-                        .setParamPrecise(x.getParamPrecise()).setParamAccuracy(x.getParamAccuracy());
+                        .setParamF1(x.getParamF1())
+                        .setParamCallback(x.getParamCallback())
+                        .setNotebookId(x.getNotebookId())
+                        .setNotebookName(x.getNotebookName())
+                        .setParamPrecise(x.getParamPrecise())
+                        .setParamAccuracy(x.getParamAccuracy());
                 long nowTime = System.currentTimeMillis();
                 //获取训练延时启动倒计时（分钟）
-                if (x.getDelayCreateTime() != null && nowTime < x.getDelayCreateTime().getTime() && TrainJobStatusEnum.checkRunStatus(ptTrainJobDetailVO.getTrainStatus())) {
+                if (x.getDelayCreateTime() != null
+                        && nowTime < x.getDelayCreateTime().getTime()
+                        && TrainJobStatusEnum.checkRunStatus(ptTrainJobDetailVO.getTrainStatus())) {
                     ptTrainJobDetailVO.setDelayCreateCountDown(TrainUtil.getCountDown(x.getDelayCreateTime().getTime()));
                 }
                 //获取训练自动停止倒计时（分钟）
-                if (x.getDelayDeleteTime() != null && nowTime < x.getDelayDeleteTime().getTime() && TrainJobStatusEnum.checkRunStatus(ptTrainJobDetailVO.getTrainStatus())) {
+                if (x.getDelayDeleteTime() != null
+                        && nowTime < x.getDelayDeleteTime().getTime()
+                        && TrainJobStatusEnum.checkRunStatus(ptTrainJobDetailVO.getTrainStatus())) {
                     ptTrainJobDetailVO.setDelayDeleteCountDown(TrainUtil.getCountDown(x.getDelayDeleteTime().getTime()));
                 }
-                //image信息拼装
-                if (StringUtils.isNotBlank(x.getImageName())) {
-                    String imageNameSuffix = x.getImageName().substring(x.getImageName().lastIndexOf(StrUtil.SLASH) + MagicNumConstant.ONE);
-                    String[] imageNameSuffixArray = imageNameSuffix.split(StrUtil.COLON);
-                    ptTrainJobDetailVO.setImageName(imageNameSuffixArray[0]);
-                    ptTrainJobDetailVO.setImageTag(imageNameSuffixArray[1]);
-                }
+                buildImageAndTagInfo(x, ptTrainJobDetailVO);
             }
         });
 
-        Map<Long, TrainAlgorithmQureyVO> algorithmMap = new HashedMap<>();
-        ptTrainAlgorithms.forEach(x -> algorithmMap.put(x.getId(), x));
-
         for (PtTrainJobDetailVO ptTrainJobDetailVO : list) {
+            ptTrainJobDetailVO.setTrainName(ptTrain.getTrainName());
             TrainAlgorithmQureyVO ptTrainAlgorithm = algorithmMap.get(ptTrainJobDetailVO.getAlgorithmId());
             if (null != ptTrainAlgorithm) {
                 ptTrainJobDetailVO.setAlgorithmName(ptTrainAlgorithm.getAlgorithmName())
                         .setAlgorithmSource(ptTrainAlgorithm.getAlgorithmSource())
-                        .setAlgorithmUsage(ptTrainAlgorithm.getAlgorithmUsage())
                         .setAccuracy(ptTrainAlgorithm.getAccuracy())
                         .setP4InferenceSpeed(ptTrainAlgorithm.getP4InferenceSpeed());
+                //1为我的算法，2为预置算法
                 if (ptTrainAlgorithm.getAlgorithmSource() == MagicNumConstant.ONE) {
                     ptTrainJobDetailVO.setAlgorithmCodeDir(ptTrainAlgorithm.getCodeDir());
                 }
             }
         }
 
-        list.forEach(x -> x.setTrainName(ptTrain.getTrainName()));
         return list;
+    }
+
+    /**
+     * 构建镜像信息
+     *
+     * @param ptJobParam
+     * @param ptTrainJobDetailVO
+     */
+    public void buildImageAndTagInfo(PtJobParam ptJobParam, PtTrainJobDetailVO ptTrainJobDetailVO) {
+        //image信息拼装
+        if (StringUtils.isNotBlank(ptJobParam.getImageName())) {
+            String imageNameSuffix = ptJobParam.getImageName().substring(ptJobParam.getImageName().lastIndexOf(StrUtil.SLASH) + MagicNumConstant.ONE);
+            String[] imageNameSuffixArray = imageNameSuffix.split(StrUtil.COLON);
+            ptTrainJobDetailVO.setImageName(imageNameSuffixArray[0]);
+            ptTrainJobDetailVO.setImageTag(imageNameSuffixArray[1]);
+        }
     }
 
     /**
      * 校验请求不同版本job所传参数是否合法
      *
-     * @param trainId     训练ID
+     * @param trainId 训练ID
      */
     private void checkTrainId(Long trainId) {
         if (null == trainId || trainId < 1) {
@@ -353,6 +395,27 @@ public class PtTrainJobServiceImpl implements PtTrainJobService {
         PtTrain ptTrain = ptTrainMapper.selectById(trainId);
         if (null == ptTrain) {
             throw new BusinessException("查询对象不存在或已被删除");
+        }
+    }
+
+    /**
+     * 获取notebook
+     *
+     * @param id
+     * @return
+     */
+    private NoteBookVO getNoteBook(Long id) {
+        DataResponseBody<NoteBookVO> dataResponseBody = noteBookClient.getNoteBook(id);
+        if (dataResponseBody.succeed()) {
+            NoteBookVO data = dataResponseBody.getData();
+            if (data == null) {
+                LogUtil.info(LogEnum.BIZ_TRAIN, "There is no such notebook, id is ", id);
+                throw new BusinessException("无此NoteBook");
+            }
+            return dataResponseBody.getData();
+        } else {
+            LogUtil.info(LogEnum.BIZ_TRAIN, "NoteBook service unreachable! Msg is {}", dataResponseBody.getMsg());
+            throw new BusinessException("NoteBook服务调用失败，请稍后重试~");
         }
     }
 
@@ -366,21 +429,18 @@ public class PtTrainJobServiceImpl implements PtTrainJobService {
     @Transactional(rollbackFor = Exception.class)
     @DataPermissionMethod(dataType = DatasetTypeEnum.PUBLIC)
     public List<Long> createTrainJobVersion(PtTrainJobCreateDTO ptTrainJobCreateDTO) {
-        LogUtil.info(LogEnum.BIZ_TRAIN, "User {} creates a training job and receives {} as an argument", userContextService.getCurUser().getUsername(), ptTrainJobCreateDTO);
+
+        validatePtTrainJobCreateDTO(ptTrainJobCreateDTO);
 
         // 判断当前trainName是否已经存在
         checkTrainName(ptTrainJobCreateDTO.getTrainName(), userContextService.getCurUserId());
+
         // 校验trainParamName是否存在
         if (ptTrainJobCreateDTO.getSaveParams() != null && ptTrainJobCreateDTO.getSaveParams()) {
             checkTrainParamName(ptTrainJobCreateDTO, userContextService.getCurUserId());
             // 保存任务参数到数据库
             saveParamToDb(ptTrainJobCreateDTO, userContextService.getCurUser());
         }
-        // 获取镜像和算法目录
-        PtImageAndAlgorithmVO ptImageAndAlgorithmVO = getPtImageByAlgorithmId(ptTrainJobCreateDTO.getAlgorithmId());
-        //使用用户创建训练时提供的镜像与运行命令
-        String images = imageUtil.getImageUrl(ptTrainJobCreateDTO, userContextService.getCurUser());
-        ptImageAndAlgorithmVO.setImageName(trainHarborConfig.getAddress() + StrUtil.SLASH + images).setRunCommand(ptTrainJobCreateDTO.getRunCommand());
 
         //jobKey
         String trainKey = KeyUtil.generateTrainKey(userContextService.getCurUserId());
@@ -390,17 +450,104 @@ public class PtTrainJobServiceImpl implements PtTrainJobService {
         //生成k8s 的job名称
         String jobName = trainKey + trainJobConfig.getSeparator() + version;
 
+        // 获取镜像和算法目录
+        PtImageAndAlgorithmVO ptImageAndAlgorithmVO = buildPtImageAndAlgorithmVO(ptTrainJobCreateDTO);
+
+        //生成任务识别标识
+        String taskIdentify = StringUtils.getUUID();
         BaseTrainJobDTO baseTrainJobDTO = new BaseTrainJobDTO();
         BeanUtil.copyProperties(ptTrainJobCreateDTO, baseTrainJobDTO);
-        baseTrainJobDTO.setJobName(jobName).setTrainJobSpecsName(ptTrainJobCreateDTO.getTrainJobSpecsName()).setResourcesPoolType(ptTrainJobCreateDTO.getResourcesPoolType())
-                .setCpuNum(ptTrainJobCreateDTO.getCpuNum()).setGpuNum(ptTrainJobCreateDTO.getGpuNum()).setMemNum(ptTrainJobCreateDTO.getMemNum()).setWorkspaceRequest(ptTrainJobCreateDTO.getWorkspaceRequest());
-        //保存用户自定义imageName
-        String userImageName = images.split(StrUtil.SLASH)[0] + StrUtil.SLASH + ptTrainJobCreateDTO.getImageName() + StrUtil.COLON + ptTrainJobCreateDTO.getImageTag();
+        baseTrainJobDTO.setJobName(jobName)
+                .setPipSitePackagePath(ptImageAndAlgorithmVO.getPipSitePackagePath())
+                .setTrainJobSpecsName(ptTrainJobCreateDTO.getTrainJobSpecsName())
+                .setResourcesPoolType(ptTrainJobCreateDTO.getResourcesPoolType())
+                .setCpuNum(ptTrainJobCreateDTO.getCpuNum())
+                .setGpuNum(ptTrainJobCreateDTO.getGpuNum())
+                .setMemNum(ptTrainJobCreateDTO.getMemNum())
+                .setWorkspaceRequest(ptTrainJobCreateDTO.getWorkspaceRequest())
+                .setTaskIdentify(taskIdentify);
+
+        //例如：  将harbor.dubhe.ai/notebook/notebook:v1 去掉 harbor地址
+        String userImageName = trimHarborAddress(ptImageAndAlgorithmVO.getImageName());
         //结果集处理
         PtTrainJob ptTrainJob = saveTrainJobTableData(ptTrainJobCreateDTO, userContextService.getCurUser(), userImageName, trainKey, baseTrainJobDTO);
+        //添加任务缓存
+        resourceCache.addTaskCache(taskIdentify, ptTrainJob.getTrainId(), ptTrainJobCreateDTO.getTrainName(), trainIdPrefix);
         // 提交job
         asyncManager.execute(baseTrainJobDTO, userContextService.getCurUserId(), ptImageAndAlgorithmVO, ptTrainJob);
         return Collections.singletonList(ptTrainJob.getTrainId());
+    }
+
+    /**
+     * 去掉harbor地址
+     *
+     * @param imageName
+     * @return
+     */
+    private String trimHarborAddress(String imageName) {
+        return StringUtils.isBlank(imageName) ? StringUtils.EMPTY : imageName.replace(trainHarborConfig.getAddress() + StrUtil.SLASH, StringUtils.EMPTY);
+    }
+
+    /**
+     * 构建镜像和算法目录VO 考虑到无算法创建
+     *
+     * @param ptTrainJobBaseDTO
+     * @return
+     */
+    private PtImageAndAlgorithmVO buildPtImageAndAlgorithmVO(PtTrainJobBaseDTO ptTrainJobBaseDTO) {
+        PtImageAndAlgorithmVO ptImageAndAlgorithmVO;
+        //没有算法id则以notebook为主
+        if (ptTrainJobBaseDTO.getAlgorithmId() == null) {
+            ptImageAndAlgorithmVO = new PtImageAndAlgorithmVO();
+            //notebook 信息
+            NoteBookVO noteBook = getNoteBook(ptTrainJobBaseDTO.getNotebookId());
+            ptImageAndAlgorithmVO.setPipSitePackagePath(noteBook.getPipSitePackagePath());
+
+            ptImageAndAlgorithmVO.setImageName(noteBook.getK8sImageName());
+            ptImageAndAlgorithmVO.setIsTrainOut(true);
+            ptImageAndAlgorithmVO.setIsTrainModelOut(true);
+            //默认可视化输出不输出 python 文件中可以不用接受这个参数
+            ptImageAndAlgorithmVO.setIsVisualizedLog(false);
+            ptImageAndAlgorithmVO.setCodeDir(noteBook.getK8sPvcPath());
+        } else {
+            //使用用户创建训练时提供的镜像与运行命令
+            String imageUrl = imageUtil.getImageUrl(ptTrainJobBaseDTO, userContextService.getCurUser());
+            String userImageName = imageUrl.split(StrUtil.SLASH)[0] + StrUtil.SLASH + ptTrainJobBaseDTO.getImageName() + StrUtil.COLON + ptTrainJobBaseDTO.getImageTag();
+            ptImageAndAlgorithmVO = getPtImageByAlgorithmId(ptTrainJobBaseDTO.getAlgorithmId());
+            String imageName = trainHarborConfig.getAddress() + StrUtil.SLASH + userImageName;
+            ptImageAndAlgorithmVO.setImageName(imageName);
+
+        }
+        ptImageAndAlgorithmVO.setRunCommand(ptTrainJobBaseDTO.getRunCommand());
+        return ptImageAndAlgorithmVO;
+    }
+
+    /**
+     * 参数校验
+     *
+     * @param ptTrainJobCreateDTO
+     */
+    private void validatePtTrainJobCreateDTO(PtTrainJobCreateDTO ptTrainJobCreateDTO) {
+        if (ptTrainJobCreateDTO.getAlgorithmId() == null && ptTrainJobCreateDTO.getNotebookId() == null) {
+            LogUtil.error(LogEnum.BIZ_TRAIN, "Neither algorithm's id  nor notebook's id can be null  at the same time");
+            throw new BusinessException("算法ID或者notebookId不能同时为空！");
+        }
+        //带算法创建(非notebook发起训练)时校验参数
+        if (ptTrainJobCreateDTO.getNotebookId() == null) {
+            validateCreateTrainJobWithAlgorithm(ptTrainJobCreateDTO);
+        }
+    }
+
+    /**
+     * 参数校验
+     *
+     * @param ptTrainJobCreateDTO
+     */
+    private void validateCreateTrainJobWithAlgorithm(PtTrainJobCreateDTO ptTrainJobCreateDTO) {
+        if (ptTrainJobCreateDTO.getAlgorithmId() == null) {
+            LogUtil.error(LogEnum.BIZ_TRAIN, "Algorithm id is null");
+            throw new BusinessException("算法ID不能为空~");
+        }
     }
 
     /**
@@ -429,9 +576,17 @@ public class PtTrainJobServiceImpl implements PtTrainJobService {
         //检查模型是否合法,合法则保存其路径地址
         checkModelAndSavePath(currentUser, baseTrainJobDTO);
 
+        // 保存job参数
+        PtJobParam ptJobParam = new PtJobParam();
+
         // 添加train_job表
         PtTrainJob ptTrainJob = new PtTrainJob();
         BeanUtil.copyProperties(ptTrainJobCreateDTO, ptTrainJob);
+        if (ptTrainJobCreateDTO.getNotebookId() != null) {
+            NoteBookVO noteBook = getNoteBook(ptTrainJobCreateDTO.getNotebookId());
+            ptJobParam.setNotebookName(noteBook.getNoteBookName());
+            ptJobParam.setNotebookId(noteBook.getId());
+        }
         ptTrainJob.setTrainId(ptTrain.getId())
                 .setTrainVersion(trainJobConfig.getVersionLabel().toUpperCase() + String.format(TrainUtil.FOUR_DECIMAL, MagicNumConstant.ONE))
                 .setJobName(baseTrainJobDTO.getJobName())
@@ -442,14 +597,21 @@ public class PtTrainJobServiceImpl implements PtTrainJobService {
             throw new BusinessException("内部错误");
         }
 
-        // 保存job参数
-        PtJobParam ptJobParam = new PtJobParam();
+
         ptJobParam.setTrainJobId(ptTrainJob.getId())
                 .setAlgorithmId(ptTrainJobCreateDTO.getAlgorithmId())
                 .setRunCommand(ptTrainJobCreateDTO.getRunCommand())
                 .setImageName(imageName)
                 .setRunParams(ptTrainJobCreateDTO.getRunParams())
                 .setCreateUserId(currentUser.getId());
+        //保存算法用途
+        if (ptTrainJobCreateDTO.getAlgorithmUsage() != null) {
+            ptJobParam.setAlgorithmUsage(ptTrainJobCreateDTO.getAlgorithmUsage());
+        }
+        //保存验证数据集算法用途
+        if (ptTrainJobCreateDTO.getValAlgorithmUsage() != null) {
+            ptJobParam.setValAlgorithmUsage(ptTrainJobCreateDTO.getValAlgorithmUsage());
+        }
         //保存训练延时启动时间
         if (ptTrainJobCreateDTO.getDelayCreateTime() != null && ptTrainJobCreateDTO.getDelayCreateTime() > 0) {
             ptJobParam.setDelayCreateTime(TrainUtil.getDelayTime(ptTrainJobCreateDTO.getDelayCreateTime()));
@@ -473,8 +635,8 @@ public class PtTrainJobServiceImpl implements PtTrainJobService {
     /**
      * 检查模型是否合法,合法则保存其路径地址
      *
-     * @param currentUser         用户
-     * @param baseTrainJobDTO     基础训练参数
+     * @param currentUser     用户
+     * @param baseTrainJobDTO 基础训练参数
      */
     private void checkModelAndSavePath(UserContext currentUser, BaseTrainJobDTO baseTrainJobDTO) {
 
@@ -589,7 +751,7 @@ public class PtTrainJobServiceImpl implements PtTrainJobService {
     /**
      * 调整模型地址
      *
-     * @param modelUrl  模型地址
+     * @param modelUrl 模型地址
      * @return 模型地址
      */
     private String adjustmentUrl(String modelUrl) {
@@ -619,8 +781,8 @@ public class PtTrainJobServiceImpl implements PtTrainJobService {
         PtTrainParam ptTrainParam = new PtTrainParam();
         BeanUtil.copyProperties(ptTrainJobCreateDTO, ptTrainParam);
         //获取镜像url
-        String images = imageUtil.getImageUrl(ptTrainJobCreateDTO, currentUser);
-        ptTrainParam.setImageName(images);
+        String image = imageUtil.getImageUrl(ptTrainJobCreateDTO, currentUser);
+        ptTrainParam.setImageName(image);
         ptTrainParam.setParamName(ptTrainJobCreateDTO.getTrainParamName())
                 .setDescription(ptTrainJobCreateDTO.getTrainParamDesc())
                 .setRunParams(ptTrainJobCreateDTO.getRunParams())
@@ -635,8 +797,7 @@ public class PtTrainJobServiceImpl implements PtTrainJobService {
     /**
      * 获取镜像和算法目录
      *
-     * @param algorithmId            算法ID
-     * @param userId                 用户ID
+     * @param algorithmId 算法
      * @return PtImageAndAlgorithmVO 镜像
      */
     private PtImageAndAlgorithmVO getPtImageByAlgorithmId(Long algorithmId) {
@@ -711,35 +872,45 @@ public class PtTrainJobServiceImpl implements PtTrainJobService {
     /**
      * 修改训练job
      *
-     * @param ptTrainJobUpdateDTO   修改训练job参数
+     * @param ptTrainJobUpdateDTO 修改训练job参数
      * @return List<Long>           id集合
      **/
     @Override
     @Transactional(rollbackFor = Exception.class)
     @DataPermissionMethod(dataType = DatasetTypeEnum.PUBLIC)
     public List<Long> updateTrainJob(PtTrainJobUpdateDTO ptTrainJobUpdateDTO) {
+        if (ptTrainJobUpdateDTO.getNotebookId() == null && ptTrainJobUpdateDTO.getAlgorithmId() == null) {
+            LogUtil.error(LogEnum.BIZ_TRAIN, "Neither algorithm's id  nor notebook's id can be null  at the same time");
+            throw new BusinessException("算法ID或者notebookId不能同时为空！");
+        }
         PtTrainJob existPtTrainJob = ptTrainJobMapper.selectById(ptTrainJobUpdateDTO.getId());
         if (null == existPtTrainJob) {
             LogUtil.error(LogEnum.BIZ_TRAIN, "It is illegal for a user {} to modify a training job, jobId, to {}", userContextService.getCurUser().getUsername(), ptTrainJobUpdateDTO.getId());
             throw new BusinessException("您输入的id不存在或已被删除");
         }
-        //获取算法
-        PtImageAndAlgorithmVO ptImageAndAlgorithmVO = getPtImageByAlgorithmId(ptTrainJobUpdateDTO.getAlgorithmId());
-        //使用用户修改训练时提供的镜像与运行命令
-        //获取镜像url
-        String images = imageUtil.getImageUrl(ptTrainJobUpdateDTO, userContextService.getCurUser());
-        ptImageAndAlgorithmVO.setImageName(trainHarborConfig.getAddress() + StrUtil.SLASH + images).setRunCommand(ptTrainJobUpdateDTO.getRunCommand());
+
 
         PtTrain ptTrain = ptTrainMapper.selectById(existPtTrainJob.getTrainId());
 
         String jobName = buildVersion(ptTrain);
 
+
+        PtImageAndAlgorithmVO ptImageAndAlgorithmVO = buildPtImageAndAlgorithmVO(ptTrainJobUpdateDTO);
+
         BaseTrainJobDTO baseTrainJobDTO = new BaseTrainJobDTO();
         BeanUtil.copyProperties(ptTrainJobUpdateDTO, baseTrainJobDTO);
-        baseTrainJobDTO.setJobName(jobName).setTrainJobSpecsName(ptTrainJobUpdateDTO.getTrainJobSpecsName()).setResourcesPoolType(ptTrainJobUpdateDTO.getResourcesPoolType())
-                .setCpuNum(ptTrainJobUpdateDTO.getCpuNum()).setGpuNum(ptTrainJobUpdateDTO.getGpuNum()).setMemNum(ptTrainJobUpdateDTO.getMemNum()).setWorkspaceRequest(ptTrainJobUpdateDTO.getWorkspaceRequest());
-        //保存用户自定义imageName
-        String userImageName = images.split(StrUtil.SLASH)[0] + StrUtil.SLASH + ptTrainJobUpdateDTO.getImageName() + StrUtil.COLON + ptTrainJobUpdateDTO.getImageTag();
+        String taskIdentify = resourceCache.getTaskIdentify(ptTrain.getId(), ptTrain.getTrainName(), trainIdPrefix);
+        baseTrainJobDTO.setJobName(jobName)
+                .setTrainJobSpecsName(ptTrainJobUpdateDTO.getTrainJobSpecsName())
+                .setPipSitePackagePath(ptImageAndAlgorithmVO.getPipSitePackagePath())
+                .setResourcesPoolType(ptTrainJobUpdateDTO.getResourcesPoolType())
+                .setCpuNum(ptTrainJobUpdateDTO.getCpuNum())
+                .setGpuNum(ptTrainJobUpdateDTO.getGpuNum())
+                .setMemNum(ptTrainJobUpdateDTO.getMemNum())
+                .setWorkspaceRequest(ptTrainJobUpdateDTO.getWorkspaceRequest())
+                .setTaskIdentify(taskIdentify);
+
+        String userImageName = trimHarborAddress(ptImageAndAlgorithmVO.getImageName());
         //结果集处理
         PtTrainJob ptTrainJob = updateTrainJobTableData(ptTrainJobUpdateDTO, userContextService.getCurUser(), existPtTrainJob, userImageName, ptTrain, baseTrainJobDTO);
         //提交job
@@ -764,12 +935,23 @@ public class PtTrainJobServiceImpl implements PtTrainJobService {
 
         //检查模型是否合法,合法则保存其路径地址
         checkModelAndSavePath(currentUser, baseTrainJobDTO);
-
+        //保存job参数
+        PtJobParam ptJobParam = new PtJobParam();
         //添加train_job表
         PtTrainJob ptTrainJob = new PtTrainJob();
         BeanUtil.copyProperties(ptTrainJobUpdateDTO, ptTrainJob);
-        ptTrainJob.setTrainId(ptTrain.getId()).setTrainVersion(trainJobConfig.getVersionLabel().toUpperCase() + String.format(TrainUtil.FOUR_DECIMAL, ptTrain.getTotalNum() + 1))
-                .setJobName(baseTrainJobDTO.getJobName()).setParentTrainVersion(existPtTrainJob.getTrainVersion())
+
+        if (ptTrainJobUpdateDTO.getNotebookId() != null) {
+            NoteBookVO noteBook = getNoteBook(ptTrainJobUpdateDTO.getNotebookId());
+            ptJobParam.setNotebookName(noteBook.getNoteBookName());
+            ptJobParam.setNotebookId(noteBook.getId());
+        }
+
+        ptTrainJob.setTrainId(ptTrain.getId())
+                .setTrainVersion(trainJobConfig.getVersionLabel().toUpperCase() + String.format(TrainUtil.FOUR_DECIMAL, ptTrain.getTotalNum() + 1))
+                .setJobName(baseTrainJobDTO.getJobName())
+                .setParentTrainVersion(existPtTrainJob.getTrainVersion())
+                .setOriginUserId(ptTrain.getCreateUserId())
                 .setCreateUserId(ptTrain.getCreateUserId());
         int jobResult = ptTrainJobMapper.insert(ptTrainJob);
         if (jobResult < 1) {
@@ -777,14 +959,21 @@ public class PtTrainJobServiceImpl implements PtTrainJobService {
             throw new BusinessException("内部错误");
         }
 
-        //保存job参数
-        PtJobParam ptJobParam = new PtJobParam();
+
         ptJobParam.setTrainJobId(ptTrainJob.getId())
                 .setAlgorithmId(ptTrainJobUpdateDTO.getAlgorithmId())
                 .setRunCommand(ptTrainJobUpdateDTO.getRunCommand())
                 .setImageName(imageName)
                 .setRunParams(ptTrainJobUpdateDTO.getRunParams())
                 .setCreateUserId(ptTrain.getCreateUserId());
+        //保存算法用途
+        if (ptTrainJobUpdateDTO.getAlgorithmUsage() != null) {
+            ptJobParam.setAlgorithmUsage(ptTrainJobUpdateDTO.getAlgorithmUsage());
+        }
+        //保存验证数据集算法用途
+        if (ptTrainJobUpdateDTO.getValAlgorithmUsage() != null) {
+            ptJobParam.setValAlgorithmUsage(ptTrainJobUpdateDTO.getValAlgorithmUsage());
+        }
         //保存训练延时启动时间
         if (ptTrainJobUpdateDTO.getDelayCreateTime() != null && ptTrainJobUpdateDTO.getDelayCreateTime() > 0) {
             ptJobParam.setDelayCreateTime(TrainUtil.getDelayTime(ptTrainJobUpdateDTO.getDelayCreateTime()));
@@ -829,6 +1018,7 @@ public class PtTrainJobServiceImpl implements PtTrainJobService {
         PtTrain ptTrain = checkAndReturnPtTrain(ptTrainJobDeleteDTO, userContextService.getCurUser(), jobList);
 
         Collection<Long> jobIdList = new ArrayList<>();
+        String taskIdentify = (String) redisUtils.get(trainIdPrefix + String.valueOf(ptTrain.getId()));
         if (null != ptTrainJobDeleteDTO.getId()) {
 
             //要删除的训练任务
@@ -853,6 +1043,9 @@ public class PtTrainJobServiceImpl implements PtTrainJobService {
 
             if (ptTrain.getVersionNum() == 1) {
                 int trainResult = ptTrainMapper.deleteById(ptTrain.getId());
+                if (StringUtils.isNotEmpty(taskIdentify)) {
+                    redisUtils.del(taskIdentify, trainIdPrefix + String.valueOf(ptTrain.getId()));
+                }
                 if (trainResult < 1) {
                     LogUtil.error(LogEnum.BIZ_TRAIN, "User {} deleted training job, pt Train table deleted data failed", userContextService.getCurUser().getUsername());
                     throw new BusinessException("训练任务已删除或参数不合法");
@@ -867,7 +1060,9 @@ public class PtTrainJobServiceImpl implements PtTrainJobService {
 
         } else {
             deleteTrainAndJob(ptTrainJobDeleteDTO, userContextService.getCurUser(), jobList, ptTrain, jobIdList);
-
+            if (StringUtils.isNotEmpty(taskIdentify)) {
+                redisUtils.del(taskIdentify, trainIdPrefix + String.valueOf(ptTrain.getId()));
+            }
         }
 
         //删除pt_job_param表中相关数据
@@ -1017,7 +1212,7 @@ public class PtTrainJobServiceImpl implements PtTrainJobService {
                 }
             }
         } catch (Exception e) {
-            LogUtil.error(LogEnum.BIZ_TRAIN, "User {} delete training job, k8s delete failed,exception:{}",currentUser.getUsername(), e);
+            LogUtil.error(LogEnum.BIZ_TRAIN, "User {} delete training job, k8s delete failed,exception:{}", currentUser.getUsername(), e);
             throw new BusinessException("内部错误");
         }
     }
@@ -1074,15 +1269,11 @@ public class PtTrainJobServiceImpl implements PtTrainJobService {
     @DataPermissionMethod(dataType = DatasetTypeEnum.PUBLIC)
     public PtTrainJobStatisticsMineVO statisticsMine() {
         // 获取运行中的任务
-        Integer runCount = ptTrainJobMapper.selectCountByStatus(userContextService.getCurUserId(),
-                SqlUtil.integerlistToString(new Integer[]{TrainJobStatusEnum.RUNNING.getStatus()}));
-
+        Integer runCount = ptTrainJobMapper.selectCount(new LambdaQueryWrapper<PtTrainJob>().eq(PtTrainJob::getTrainStatus, TrainJobStatusEnum.RUNNING.getStatus()));
         // 已经完成的任务
-        Integer finishCount = ptTrainJobMapper.selectCountByStatus(userContextService.getCurUserId(),
-                SqlUtil.integerlistToString(
-                        new Integer[]{TrainJobStatusEnum.FAILED.getStatus(), TrainJobStatusEnum.STOP.getStatus(),
-                                TrainJobStatusEnum.SUCCEEDED.getStatus(), TrainJobStatusEnum.UNKNOWN.getStatus()}));
-
+        Integer finishCount = ptTrainJobMapper.selectCount(new LambdaQueryWrapper<PtTrainJob>().in(PtTrainJob::getTrainStatus, TrainJobStatusEnum.FAILED.getStatus(),
+                TrainJobStatusEnum.STOP.getStatus(),
+                TrainJobStatusEnum.SUCCEEDED.getStatus(), TrainJobStatusEnum.UNKNOWN.getStatus()));
         PtTrainJobStatisticsMineVO vo = new PtTrainJobStatisticsMineVO();
         vo.setRunJobCount(runCount);
         vo.setFinishJobCount(finishCount);
@@ -1188,17 +1379,20 @@ public class PtTrainJobServiceImpl implements PtTrainJobService {
         QueryWrapper<PtJobParam> jobParamQuery = new QueryWrapper<>();
         jobParamQuery.eq("train_job_id", ptTrainJob.getId());
         PtJobParam ptJobParam = ptJobParamMapper.selectOne(jobParamQuery);
-        if (ptJobParam == null || ptJobParam.getAlgorithmId() < MagicNumConstant.ONE) {
+        if (ptJobParam == null || ptJobParam.getAlgorithmId() != null && ptJobParam.getAlgorithmId() < MagicNumConstant.ONE) {
             LogUtil.error(LogEnum.BIZ_TRAIN, "The algorithm ID corresponding to the jobId is {} query by the user {} does not exist", userContextService.getCurUser().getUsername(), ptTrainJobDetailQueryDTO.getId());
             throw new BusinessException("您查询的jobId对应的算法id不存在或已被删除");
         }
         //获取算法参数
         TrainAlgorithmQureyVO ptTrainAlgorithm = null;
-        TrainAlgorithmSelectAllByIdDTO trainAlgorithmSelectAllByIdDTO = new TrainAlgorithmSelectAllByIdDTO();
-        trainAlgorithmSelectAllByIdDTO.setId(ptJobParam.getAlgorithmId());
-        DataResponseBody<TrainAlgorithmQureyVO> dataResponseBody = algorithmClient.selectAllById(trainAlgorithmSelectAllByIdDTO);
-        if (dataResponseBody.succeed()) {
-            ptTrainAlgorithm = dataResponseBody.getData();
+        if (ptJobParam.getAlgorithmId() != null) {
+
+            TrainAlgorithmSelectAllByIdDTO trainAlgorithmSelectAllByIdDTO = new TrainAlgorithmSelectAllByIdDTO();
+            trainAlgorithmSelectAllByIdDTO.setId(ptJobParam.getAlgorithmId());
+            DataResponseBody<TrainAlgorithmQureyVO> dataResponseBody = algorithmClient.selectAllById(trainAlgorithmSelectAllByIdDTO);
+            if (dataResponseBody.succeed()) {
+                ptTrainAlgorithm = dataResponseBody.getData();
+            }
         }
         //结果集处理
         PtTrainJobDetailQueryVO ptTrainJobDetailQueryVO = new PtTrainJobDetailQueryVO();
@@ -1206,7 +1400,10 @@ public class PtTrainJobServiceImpl implements PtTrainJobService {
         BeanUtils.copyProperties(ptTrainJob, ptTrainJobDetailQueryVO);
         ptTrainJobDetailQueryVO.setTrainName(ptTrain.getTrainName()).setAlgorithmId(ptJobParam.getAlgorithmId()).setRunCommand(ptJobParam.getRunCommand())
                 .setRunParams(ptJobParam.getRunParams()).setParamF1(ptJobParam.getParamF1()).setParamCallback(ptJobParam.getParamCallback())
-                .setParamPrecise(ptJobParam.getParamPrecise()).setParamAccuracy(ptJobParam.getParamAccuracy());
+                .setParamPrecise(ptJobParam.getParamPrecise()).setParamAccuracy(ptJobParam.getParamAccuracy())
+                .setNotebookId(ptJobParam.getNotebookId())
+                .setNotebookName(ptJobParam.getNotebookName())
+                .setAlgorithmUsage(ptJobParam.getAlgorithmUsage()).setValAlgorithmUsage(ptJobParam.getValAlgorithmUsage());
         long nowTime = System.currentTimeMillis();
         //获取训练延时启动倒计时（分钟）
         if (ptJobParam.getDelayCreateTime() != null && nowTime < ptJobParam.getDelayCreateTime().getTime() && TrainJobStatusEnum.checkRunStatus(ptTrainJob.getTrainStatus())) {
@@ -1237,7 +1434,6 @@ public class PtTrainJobServiceImpl implements PtTrainJobService {
         if (ptTrainAlgorithm != null) {
             ptTrainJobDetailQueryVO.setAlgorithmName(ptTrainAlgorithm.getAlgorithmName())
                     .setAlgorithmSource(ptTrainAlgorithm.getAlgorithmSource())
-                    .setAlgorithmUsage(ptTrainAlgorithm.getAlgorithmUsage())
                     .setAccuracy(ptTrainAlgorithm.getAccuracy())
                     .setP4InferenceSpeed(ptTrainAlgorithm.getP4InferenceSpeed());
             if (ptTrainAlgorithm.getAlgorithmSource() == MagicNumConstant.ONE) {
@@ -1263,38 +1459,47 @@ public class PtTrainJobServiceImpl implements PtTrainJobService {
             LogUtil.error(LogEnum.BIZ_TRAIN, "It is illegal for user {} to resume training job and jobId to be {}", userContextService.getCurUser().getUsername(), ptTrainJobResumeDTO.getId());
             throw new BusinessException("您输入的id不存在或已被删除");
         }
+
         // 获取算法id和运行参数
         QueryWrapper<PtJobParam> jobParamQuery = new QueryWrapper<>();
         jobParamQuery.eq("train_job_id", ptTrainJob.getId());
         PtJobParam ptJobParam = ptJobParamMapper.selectOne(jobParamQuery);
-        if (ptJobParam == null || ptJobParam.getAlgorithmId() < MagicNumConstant.ONE) {
+        if (ptJobParam == null || ptJobParam.getAlgorithmId() != null && ptJobParam.getAlgorithmId() < MagicNumConstant.ONE) {
             LogUtil.error(LogEnum.BIZ_TRAIN, "The algorithm ID corresponding to the jobId is {} query by the user {} does not exist", userContextService.getCurUser().getUsername(), ptTrainJobResumeDTO.getId());
             throw new BusinessException("您查询的jobId对应的算法id不存在");
         }
-        //获取镜像
-        PtImageAndAlgorithmVO ptImageAndAlgorithmVO = getPtImageByAlgorithmId(ptJobParam.getAlgorithmId());
-        //使用用户训练时提供的镜像与运行命令
-        ptImageAndAlgorithmVO.setImageName(trainHarborConfig.getAddress() + StrUtil.SLASH + ptJobParam.getImageName()).setRunCommand(ptJobParam.getRunCommand());
+        BaseTrainJobDTO baseTrainJobDTO = new BaseTrainJobDTO();
+        BeanUtil.copyProperties(ptTrainJob, baseTrainJobDTO);
+
+        //获取算法
+        PtTrainJobBaseDTO ptTrainJobBaseDTO = convertPtTrainJobBaseDTO(ptJobParam);
+
+        PtImageAndAlgorithmVO ptImageAndAlgorithmVO = buildPtImageAndAlgorithmVO(ptTrainJobBaseDTO);
+
         String[] codeDirResult = ptImageAndAlgorithmVO.getCodeDir().split(StrUtil.SLASH);
         String codeDirName = codeDirResult[codeDirResult.length - 1];
-
         //处理目录问题
         String noEnvPath = StrUtil.SLASH + trainJobConfig.getManage() + StrUtil.SLASH + ptTrainJob.getCreateUserId() + StrUtil.SLASH
                 + ptTrainJob.getJobName();
         String commonPath = fileStoreApi.getBucket() + noEnvPath.substring(1);
-        String outPath = commonPath + StrUtil.SLASH + trainJobConfig.getOutPath();
+        String outPath = commonPath + StrUtil.SLASH + trainJobConfig.getModelPath();
         String loadPath = commonPath + StrUtil.SLASH + trainJobConfig.getLoadPath();
         String codePath = commonPath + StrUtil.SLASH + codeDirName;
-        String noEnvOut = noEnvPath + StrUtil.SLASH + trainJobConfig.getOutPath();
+        String noEnvOut = noEnvPath + StrUtil.SLASH + trainJobConfig.getModelPath();
         String path = ptTrainJobResumeDTO.getPath();
         if (!path.startsWith(noEnvOut)) {
             LogUtil.error(LogEnum.BIZ_TRAIN, "path: {}", path);
             throw new BusinessException("内部错误");
         }
         String modelLoadDir = path.substring(noEnvOut.length());
-        FileUtil.del(fileStoreApi.getRootDir() + loadPath);
-        FileUtil.del(fileStoreApi.getRootDir() + codePath);
-        FileUtil.rename(new File(fileStoreApi.getRootDir() + outPath), fileStoreApi.getRootDir() + loadPath, false, true);
+        String codeAbsolutePath = fileStoreApi.getRootDir() + codePath;
+        String loadAbsolutePath = fileStoreApi.getRootDir() + loadPath;
+        String outAbsolutePath = fileStoreApi.getRootDir() + outPath;
+
+        FileUtil.del(loadAbsolutePath);
+        FileUtil.del(codeAbsolutePath);
+
+        FileUtil.rename(new File(outAbsolutePath), loadAbsolutePath, false, true);
         //获取训练规格信息
         QueryResourceSpecsDTO queryResourceSpecsDTO = new QueryResourceSpecsDTO();
         queryResourceSpecsDTO.setModule(2).setSpecsName(ptTrainJob.getTrainJobSpecsName());
@@ -1305,22 +1510,23 @@ public class PtTrainJobServiceImpl implements PtTrainJobService {
         }
         // 拼load路径
         JSONObject runParams = ptJobParam.getRunParams();
-        runParams.put(trainJobConfig.getLoadKey(), trainJobConfig.getDockerTrainPath() + StrUtil.SLASH +
-                trainJobConfig.getLoadPath() + modelLoadDir);
-        BaseTrainJobDTO baseTrainJobDTO = new BaseTrainJobDTO();
-        BeanUtil.copyProperties(ptTrainJob, baseTrainJobDTO);
-        baseTrainJobDTO.setTrainJobSpecsName(queryResourceSpecsVO.getSpecsName()).setCpuNum(queryResourceSpecsVO.getCpuNum())
-                .setGpuNum(queryResourceSpecsVO.getGpuNum()).setMemNum(queryResourceSpecsVO.getMemNum()).setWorkspaceRequest(queryResourceSpecsVO.getWorkspaceRequest());
-        if (queryResourceSpecsVO.getResourcesPoolType()) {
-            baseTrainJobDTO.setResourcesPoolType(MagicNumConstant.ONE);
-        } else {
-            baseTrainJobDTO.setResourcesPoolType(MagicNumConstant.ZERO);
-        }
+        runParams.put(trainJobConfig.getLoadKey(),
+                trainJobConfig.getDockerTrainPath() + StrUtil.SLASH + trainJobConfig.getLoadPath() + modelLoadDir);
+        PtTrain ptTrain = ptTrainMapper.selectById(ptTrainJob.getTrainId());
+        baseTrainJobDTO.setTrainJobSpecsName(queryResourceSpecsVO.getSpecsName())
+                .setPipSitePackagePath(ptImageAndAlgorithmVO.getPipSitePackagePath())
+                .setCpuNum(queryResourceSpecsVO.getCpuNum())
+                .setGpuNum(queryResourceSpecsVO.getGpuNum())
+                .setMemNum(queryResourceSpecsVO.getMemNum())
+                .setWorkspaceRequest(queryResourceSpecsVO.getWorkspaceRequest())
+                .setTaskIdentify(resourceCache.getTaskIdentify(ptTrain.getId(), ptTrain.getTrainName(), trainIdPrefix));
+        baseTrainJobDTO.setResourcesPoolType(queryResourceSpecsVO.getResourcesPoolType() ? MagicNumConstant.ONE : MagicNumConstant.ZERO);
         baseTrainJobDTO.setRunParams(runParams);
 
         // 初始化训练时间和状态
         PtTrainJob updatePtTrainJob = new PtTrainJob();
-        updatePtTrainJob.setId(ptTrainJob.getId()).setRuntime(TrainUtil.INIT_RUNTIME)
+        updatePtTrainJob.setId(ptTrainJob.getId())
+                .setRuntime(TrainUtil.INIT_RUNTIME)
                 .setTrainStatus(TrainJobStatusEnum.PENDING.getStatus())
                 .setUpdateTime(new Timestamp(System.currentTimeMillis()));
         int updateResult = ptTrainJobMapper.updateById(updatePtTrainJob);
@@ -1335,9 +1541,30 @@ public class PtTrainJobServiceImpl implements PtTrainJobService {
     }
 
     /**
+     * PtJobParam转换PtTrainJobBaseDTO
+     *
+     * @param ptJobParam
+     * @return
+     */
+    private PtTrainJobBaseDTO convertPtTrainJobBaseDTO(PtJobParam ptJobParam) {
+        PtTrainJobBaseDTO ptTrainJobBaseDTO = new PtTrainJobBaseDTO();
+        ptTrainJobBaseDTO.setAlgorithmId(ptJobParam.getAlgorithmId());
+        ptTrainJobBaseDTO.setNotebookId(ptJobParam.getNotebookId());
+        ptTrainJobBaseDTO.setRunCommand(ptJobParam.getRunCommand());
+        if (ptJobParam != null) {
+            String[] infos = ptJobParam.getImageName().split(StrUtil.SLASH);
+            if (infos.length == 2) {
+                ptTrainJobBaseDTO.setImageName(infos[0]);
+                ptTrainJobBaseDTO.setImageTag(infos[1]);
+            }
+        }
+        return ptTrainJobBaseDTO;
+    }
+
+    /**
      * 获取job在grafana监控的地址
      *
-     * @param jobId                        任务ID
+     * @param jobId 任务ID
      * @return List<PtJobMetricsGrafanaVO> grafana监控的地址信息
      */
     @Override
@@ -1374,7 +1601,7 @@ public class PtTrainJobServiceImpl implements PtTrainJobService {
     /**
      * 获取训练使用的模型信息
      *
-     * @param  ptTrainModelDTO
+     * @param ptTrainModelDTO
      * @return PtTrainJobModelVO
      */
     @Override
@@ -1494,7 +1721,7 @@ public class PtTrainJobServiceImpl implements PtTrainJobService {
     /**
      * 回收训练任务
      * @param recyclePath 文件路径
-     * @param id    训练id
+     * @param id          训练id
      */
     public void recycleTaskWithTrain(String recyclePath, long id) {
         //创建已删除训练任务的无效文件回收任务
@@ -1571,5 +1798,22 @@ public class PtTrainJobServiceImpl implements PtTrainJobService {
             }).collect(Collectors.toList());
         }
         return PageUtil.toPage(page, visualTrainQueryVOs);
+    }
+
+    /**
+     * 一键停止所有训练job
+     *
+     */
+    @Override
+    public void batchStopTrainJob() {
+        //查询所有处于待处理或运行中的训练
+        QueryWrapper<PtTrainJob> queryTrainJobWrapper = new QueryWrapper<>();
+        queryTrainJobWrapper.in("train_status", TrainJobStatusEnum.PENDING.getStatus(), TrainJobStatusEnum.RUNNING.getStatus());
+        List<PtTrainJob> ptTrainJobs = ptTrainJobMapper.selectList(queryTrainJobWrapper);
+        if (ptTrainJobs.size() < 1) {
+            throw new BusinessException("没有待停止的job");
+        }
+        //停止job
+        stopTrainJobAsync.stopJobs(userContextService.getCurUser(), ptTrainJobs);
     }
 }

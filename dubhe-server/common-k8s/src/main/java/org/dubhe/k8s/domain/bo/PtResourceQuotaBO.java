@@ -57,7 +57,7 @@ public class PtResourceQuotaBO {
     }
 
     /**
-     * 添加cpu 限制
+     * 添加memory限制
      * @param amount 值
      * @param format 单位
      */

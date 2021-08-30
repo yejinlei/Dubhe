@@ -150,7 +150,7 @@ public class K8sUtils implements ApplicationContextAware {
      * @param gpuNum
      * @return
      */
-    public Map<String, String> gpuSelector(Integer gpuNum) {
+    public static Map<String, String> gpuSelector(Integer gpuNum) {
         Map<String, String> gpuSelector = new HashMap<>(2);
         if (gpuNum != null && gpuNum > 0) {
             gpuSelector.put(K8sLabelConstants.NODE_GPU_LABEL_KEY, K8sLabelConstants.NODE_GPU_LABEL_VALUE);

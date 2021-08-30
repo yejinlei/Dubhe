@@ -231,7 +231,7 @@ export default {
     onModelBuiltInChange() {
       // 手动切换优化类型后，清空其他所有表单内容
       const { id, name, description, isBuiltIn } = this.form;
-      this.form = { ...this.defaultForm, id, name, description, isBuiltIn };
+      Object.assign(this.form, { ...this.defaultForm, id, name, description, isBuiltIn });
       if (isBuiltIn) {
         this.$refs.builtInForm.reset();
       } else {

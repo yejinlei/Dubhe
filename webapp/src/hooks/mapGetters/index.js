@@ -14,6 +14,8 @@
  * =============================================================
  */
 
+import { reactive } from '@vue/composition-api';
+
 import store from '@/store';
 
 /**
@@ -22,7 +24,7 @@ import store from '@/store';
  * @param {Array<String>} getters getters 列表，对应 mapGetters 的数组
  */
 export function useMapGetters(getters) {
-  const map = {};
+  const map = reactive({});
   for (const getter of getters) {
     map[getter] = store.getters[getter];
   }

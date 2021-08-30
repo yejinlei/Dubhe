@@ -24,7 +24,7 @@ import org.dubhe.biz.file.enums.BizPathEnum;
 import org.dubhe.notebook.domain.dto.*;
 import org.dubhe.notebook.domain.entity.NoteBook;
 import org.dubhe.notebook.enums.NoteBookStatusEnum;
-import org.dubhe.notebook.domain.vo.NoteBookVO;
+import org.dubhe.biz.base.vo.NoteBookVO;
 
 import java.util.List;
 import java.util.Map;
@@ -94,6 +94,13 @@ public interface NoteBookService {
     String stopNoteBook(Long noteBookId);
 
     /**
+     * 一键停止所有notebook
+     *
+     * @return
+     */
+    void batchStopNoteBooks();
+
+    /**
      * 更新notebook
      *
      * @param noteBook 即将更新的notebook
@@ -143,13 +150,6 @@ public interface NoteBookService {
     String getAddress(Long noteBookId);
 
     /**
-     * 获取notebook所有状态
-     *
-     * @return List<NoteBookStatusDTO> notebook状态集合
-     */
-    List<NoteBookStatusDTO> getNoteBookStatus();
-
-    /**
      * 获取正在运行的notebook数量
      *
      * @return int notebook数量
@@ -182,6 +182,14 @@ public interface NoteBookService {
      * @return List<NoteBookVO> notebook vo 集合
      */
     List<NoteBookVO> getNotebookDetail(Set<Long> noteBookIds);
+
+    /**
+     * 获取notebook详情
+     *
+     * @param noteBookId notebook id 集合
+     * @return NoteBookVO notebook 详情
+     */
+    NoteBookVO getNotebookDetail(Long noteBookId);
 
     /**
      * 获取正在运行却没有URL的notebook

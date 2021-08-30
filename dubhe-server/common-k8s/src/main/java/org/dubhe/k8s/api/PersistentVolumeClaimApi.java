@@ -104,6 +104,14 @@ public interface PersistentVolumeClaimApi {
     boolean deletePv(String pvName);
 
     /**
+     * 删除PV
+     *
+     * @param resourceName 资源名称
+     * @return boolean true成功 false失败
+     */
+    boolean deletePvByResourceName(String resourceName);
+
+    /**
      * 查询PV
      *
      * @param pvName PV 名称

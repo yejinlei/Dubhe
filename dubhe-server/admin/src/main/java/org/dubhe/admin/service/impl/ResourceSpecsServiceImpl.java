@@ -67,7 +67,7 @@ public class ResourceSpecsServiceImpl implements ResourceSpecsService {
     public Map<String, Object> getResourceSpecs(ResourceSpecsQueryDTO resourceSpecsQueryDTO) {
         Page page = resourceSpecsQueryDTO.toPage();
         //排序字段
-        String sort = null == resourceSpecsQueryDTO.getSort() ? StringConstant.CREATE_TIME_SQL : resourceSpecsQueryDTO.getSort();
+        String sort = null == resourceSpecsQueryDTO.getSort() ? StringConstant.ID : resourceSpecsQueryDTO.getSort();
         QueryWrapper<ResourceSpecs> queryResourceSpecsWrapper = new QueryWrapper<>();
         queryResourceSpecsWrapper.like(resourceSpecsQueryDTO.getSpecsName() != null, "specs_name", resourceSpecsQueryDTO.getSpecsName())
                 .eq(resourceSpecsQueryDTO.getResourcesPoolType() != null, "resources_pool_type", resourceSpecsQueryDTO.getResourcesPoolType())

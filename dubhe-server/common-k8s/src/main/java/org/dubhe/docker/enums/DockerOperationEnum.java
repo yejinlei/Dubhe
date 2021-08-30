@@ -1,10 +1,11 @@
-/** Copyright 2020 Tianshu AI Platform. All Rights Reserved.
+/**
+ * Copyright 2020 Tianshu AI Platform. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -14,8 +15,26 @@
  * =============================================================
  */
 
-import store from '@/store';
+package org.dubhe.docker.enums;
 
-export function hasPermission(permission) {
-  return store.getters.permissions.includes(permission);
+/**
+ * @description docker操作枚举
+ * @date 2021-07-27
+ */
+public enum DockerOperationEnum {
+    /**
+     * 推送
+     */
+    PUSH("push"),
+    ;
+
+    private String operation;
+
+    DockerOperationEnum(String operation) {
+        this.operation = operation;
+    }
+
+    public String getType() {
+        return operation;
+    }
 }

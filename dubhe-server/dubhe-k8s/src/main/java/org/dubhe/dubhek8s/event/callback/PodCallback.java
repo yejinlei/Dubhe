@@ -27,6 +27,7 @@ import org.dubhe.biz.base.utils.StringUtils;
 import org.dubhe.biz.base.vo.DataResponseBody;
 import org.dubhe.biz.log.enums.LogEnum;
 import org.dubhe.biz.log.utils.LogUtil;
+import org.dubhe.dubhek8s.handler.WebSocketServer;
 import org.dubhe.k8s.cache.ResourceCache;
 import org.dubhe.k8s.constant.K8sLabelConstants;
 import org.dubhe.k8s.domain.dto.BaseK8sPodCallbackCreateDTO;
@@ -35,6 +36,7 @@ import org.dubhe.k8s.enums.PodPhaseEnum;
 import org.dubhe.k8s.enums.WatcherActionEnum;
 import org.dubhe.k8s.service.K8sResourceService;
 import org.dubhe.k8s.utils.K8sCallBackTool;
+import org.dubhe.k8s.utils.K8sNameTool;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
@@ -42,7 +44,6 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
-
 import java.util.Observable;
 
 
@@ -60,6 +61,10 @@ public class PodCallback extends Observable {
     private ResourceCache resourceCache;
     @Autowired
     private RestTemplate restTemplate;
+    @Autowired
+    private WebSocketServer webSocketServer;
+    @Autowired
+    private K8sNameTool k8sNameTool;
 
 
     private static final String POD_CONDITION_STATUS_FALSE = "False";
@@ -77,9 +82,14 @@ public class PodCallback extends Observable {
             if (pod == null){
                 return;
             }
+            // 推送集群资源监控信息
+            Long userId = k8sNameTool.getUserIdFromNamespace(pod.getNamespace());
+            if (userId != null){
+                webSocketServer.sendToClient(userId);
+            }
             String businessLabel = pod.getBusinessLabel();
             LogUtil.info(LogEnum.BIZ_K8S,"watch pod {} action:{} phase:{}",pod.getName(),watcherActionEnum.getAction(),pod.getPhase());
-            dealWithAdded(watcherActionEnum,pod);
+            cachePod(watcherActionEnum,pod);
             String waitingReason = dealWithWaiting(watcherActionEnum, pod);
             setChanged();
             notifyObservers(pod);
@@ -113,9 +123,13 @@ public class PodCallback extends Observable {
      * @param watcherActionEnum 监控枚举类
      * @param pod Pod对象
      */
-    private void dealWithAdded(WatcherActionEnum watcherActionEnum, BizPod pod) {
+    private void cachePod(WatcherActionEnum watcherActionEnum, BizPod pod) {
         if (WatcherActionEnum.ADDED.getAction().equals(watcherActionEnum.getAction())){
             resourceCache.cachePod(pod.getLabel(K8sLabelConstants.BASE_TAG_SOURCE),pod.getName());
+        } else if (PodPhaseEnum.RUNNING.getPhase().equals(pod.getPhase())) {
+            if(!resourceCache.isPodNameCached(pod.getName())) {
+                resourceCache.cachePod(pod.getLabel(K8sLabelConstants.BASE_TAG_SOURCE),pod.getName());
+            }
         }
     }
 
@@ -136,7 +150,7 @@ public class PodCallback extends Observable {
             String waitingReason = pod.getContainerStatuses().get(MagicNumConstant.ZERO).getWaiting().getReason();
             waitingMessgae = pod.getContainerStatuses().get(MagicNumConstant.ZERO).getWaiting().getMessage();
             if(waitingReason == null || "ContainerCreating".equals(waitingReason)){
-                return "Container is being created";
+                return "任务已下发到 kubernetes";
             }
 
             // 将 Phase 置为 FAILED
@@ -150,7 +164,7 @@ public class PodCallback extends Observable {
                 waitingMessgae = pod.getConditions().get(MagicNumConstant.ZERO).getMessage();
                 return waitingMessgae;
             }
-            return "Container is being created";
+            return "任务已下发到 kubernetes";
         }
         return waitingMessgae;
     }

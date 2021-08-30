@@ -159,5 +159,10 @@ public class DatasetController {
         return new DataResponseBody(datasetService.getConvertInfoByDatasetId(datasetId));
     }
 
+    @ApiOperation("获取预置数据集列表")
+    @GetMapping(value = "/getPresetDataset")
+    public DataResponseBody getPresetDataset() {
+        return new DataResponseBody(datasetService.getPresetDataset());
+    }
 
 }

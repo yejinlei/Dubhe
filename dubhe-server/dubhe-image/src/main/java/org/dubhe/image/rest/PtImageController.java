@@ -21,11 +21,7 @@ import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import org.dubhe.biz.base.constant.Permissions;
 import org.dubhe.biz.base.vo.DataResponseBody;
-import org.dubhe.image.domain.dto.PtImageDeleteDTO;
-import org.dubhe.image.domain.dto.PtImageQueryDTO;
-import org.dubhe.image.domain.dto.PtImageQueryUrlDTO;
-import org.dubhe.image.domain.dto.PtImageUpdateDTO;
-import org.dubhe.image.domain.dto.PtImageUploadDTO;
+import org.dubhe.image.domain.dto.*;
 import org.dubhe.image.service.PtImageService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -60,8 +56,8 @@ public class PtImageController {
 
     @ApiOperation("通过projectName查询镜像")
     @GetMapping
-    public DataResponseBody getTagsByImageName(@RequestParam Integer projectType, @RequestParam String imageName) {
-        return new DataResponseBody(ptImageService.searchImages(projectType, imageName));
+    public DataResponseBody getTagsByImageName(@Validated PtImageQueryImageDTO ptImageQueryImageDTO) {
+        return new DataResponseBody(ptImageService.searchImages(ptImageQueryImageDTO));
     }
 
     @PostMapping("uploadImage")
@@ -90,8 +86,8 @@ public class PtImageController {
 
     @GetMapping("/imageNameList")
     @ApiOperation("获取镜像名称列表")
-    public DataResponseBody getImageNameList(@RequestParam Integer projectType) {
-        return new DataResponseBody(ptImageService.getImageNameList(projectType));
+    public DataResponseBody getImageNameList(@Validated PtImageQueryNameDTO ptImageQueryNameDTO) {
+        return new DataResponseBody(ptImageService.getImageNameList(ptImageQueryNameDTO));
     }
 
     @PutMapping("/imageResource")
@@ -105,5 +101,11 @@ public class PtImageController {
     @ApiOperation("查询镜像url")
     public DataResponseBody<String> getImageUrl(@Validated PtImageQueryUrlDTO ptImageQueryUrlDTO) {
         return new DataResponseBody(ptImageService.getImageUrl(ptImageQueryUrlDTO));
+    }
+
+    @GetMapping("/terminalImageList")
+    @ApiOperation("获取终端镜像列表")
+    public DataResponseBody getTerminalImageList() {
+        return new DataResponseBody(ptImageService.getTerminalImageList());
     }
 }

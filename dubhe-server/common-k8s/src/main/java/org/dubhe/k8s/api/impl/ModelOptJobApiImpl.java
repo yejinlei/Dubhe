@@ -212,6 +212,7 @@ public class ModelOptJobApiImpl implements ModelOptJobApi {
         private List<VolumeMount> volumeMounts;
         private List<Volume> volumes;
         private String businessLabel;
+        private String taskIdentifyLabel;
         private Integer gpuNum;
 
         private String errCode;
@@ -231,6 +232,7 @@ public class ModelOptJobApiImpl implements ModelOptJobApi {
             Optional.ofNullable(bo.getGpuNum()).ifPresent(v -> resourcesLimitsMap.put(K8sParamConstants.GPU_RESOURCE_KEY, new Quantity(v.toString())));
             Optional.ofNullable(bo.getMemNum()).ifPresent(v -> resourcesLimitsMap.put(K8sParamConstants.QUANTITY_MEMORY_KEY, new Quantity(v.toString(), K8sParamConstants.MEM_UNIT)));
             this.businessLabel = bo.getBusinessLabel();
+            this.taskIdentifyLabel = bo.getTaskIdentifyLabel();
             this.fsMounts = bo.getFsMounts();
             this.baseLabels = LabelUtils.getBaseLabels(baseName, businessLabel);
 
@@ -372,7 +374,7 @@ public class ModelOptJobApiImpl implements ModelOptJobApi {
          * @return Job 任务job类
          */
         private Job buildJob() {
-            Map<String, String> childLabels = LabelUtils.getChildLabels(baseName, jobName, K8sKindEnum.JOB.getKind(), businessLabel);
+            Map<String, String> childLabels = LabelUtils.getChildLabels(baseName, jobName, K8sKindEnum.JOB.getKind(), businessLabel, taskIdentifyLabel);
             return new JobBuilder()
                     .withNewMetadata()
                         .withName(jobName)

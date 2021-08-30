@@ -37,8 +37,11 @@
           @change="handleDataTypeChange"
         />
       </el-form-item>
-      <el-form-item label="标注类型" prop="annotateType">
-        <div class="image-select flex flex-wrap">
+      <el-form-item label="模型类型" prop="annotateType">
+        <div
+          v-if="state.form.dataType !== dataTypeCodeMap.CUSTOM"
+          class="image-select flex flex-wrap"
+        >
           <div
             v-for="item in annotationList"
             :key="item.code"
@@ -51,6 +54,19 @@
               <i class="check-icon" />
             </span>
           </div>
+        </div>
+        <div v-else>
+          <el-select
+            v-model="state.customAnnotationType"
+            @change="(val) => selectCustomAnnotationType(val)"
+          >
+            <el-option
+              v-for="item in allAnnotationList"
+              :key="item.value"
+              :label="item.label"
+              :value="item.value"
+            />
+          </el-select>
         </div>
         <el-input :value="state.form.annotateType" class="dn" />
       </el-form-item>
@@ -145,6 +161,7 @@ import {
   annotationBy,
   enableLabelGroup,
   dataTypeCodeMap,
+  annotationMap,
 } from '@/views/dataset/util';
 import BaseModal from '@/components/BaseModal';
 import InfoRadio from '@/components/InfoRadio';
@@ -214,6 +231,7 @@ export default {
       formKey: 1,
       visible: props.visible,
       loading: false, // 数据集创建进行中
+      customAnnotationType: null,
     });
 
     const labelGroupOptions = ref(initialLabelGroupOptions);
@@ -233,7 +251,10 @@ export default {
     };
 
     // 是否展示标签组
-    const showlabelGroup = computed(() => enableLabelGroup(state.form.annotateType));
+    const showlabelGroup = computed(
+      () =>
+        enableLabelGroup(state.form.annotateType) && state.form.dataType !== dataTypeCodeMap.CUSTOM
+    );
 
     const setForm = (params) =>
       Object.assign(state, {
@@ -266,6 +287,14 @@ export default {
     };
 
     const annotationList = computed(() => annotationByDataType(state.form.dataType));
+
+    const allAnnotationList = computed(() => {
+      return Object.keys(annotationMap).map((d) => ({
+        label: annotationMap[d].name,
+        value: annotationMap[d].code,
+        code: annotationMap[d].code,
+      }));
+    });
 
     const transformOptions = (list) => {
       return list.map((d) => ({
@@ -319,6 +348,10 @@ export default {
         labelGroupId: null,
       });
       updateLabelGroup();
+    };
+
+    const selectCustomAnnotationType = (val) => {
+      setForm({ annotateType: val });
     };
 
     const handleDataTypeChange = () => {
@@ -399,7 +432,9 @@ export default {
       formRef,
       VUE_APP_DOCS_URL: process.env.VUE_APP_DOCS_URL,
       dataTypeList: transformMapToList(dataTypeMap),
+      dataTypeCodeMap,
       selectAnnotationType,
+      selectCustomAnnotationType,
       handleDataTypeChange,
       handleGroupChange,
       transformOptions,
@@ -407,6 +442,7 @@ export default {
       getImageKlass,
       getImgUrl,
       annotationList,
+      allAnnotationList,
       handleClose,
       handleOk,
       rules,

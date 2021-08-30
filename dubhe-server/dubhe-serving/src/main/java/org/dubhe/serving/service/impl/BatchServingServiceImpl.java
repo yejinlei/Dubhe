@@ -51,7 +51,9 @@ import org.dubhe.biz.log.enums.LogEnum;
 import org.dubhe.biz.log.utils.LogUtil;
 import org.dubhe.biz.permission.annotation.DataPermissionMethod;
 import org.dubhe.biz.permission.base.BaseService;
+import org.dubhe.biz.redis.utils.RedisUtils;
 import org.dubhe.cloud.authconfig.service.AdminClient;
+import org.dubhe.k8s.cache.ResourceCache;
 import org.dubhe.k8s.domain.dto.PodQueryDTO;
 import org.dubhe.k8s.domain.vo.PodVO;
 import org.dubhe.k8s.enums.PodPhaseEnum;
@@ -81,6 +83,7 @@ import org.dubhe.serving.service.BatchServingService;
 import org.dubhe.serving.task.DeployServingAsyncTask;
 import org.dubhe.serving.utils.ServingStatusDetailDescUtil;
 import org.springframework.beans.BeanUtils;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -134,6 +137,12 @@ public class BatchServingServiceImpl extends ServiceImpl<BatchServingMapper, Bat
     private TrainHarborConfig trainHarborConfig;
     @Resource
     private AlgorithmClient algorithmClient;
+    @Autowired
+    private RedisUtils redisUtils;
+    @Autowired
+    private ResourceCache resourceCache;
+    @Value("Task:BatchServing:"+"${spring.profiles.active}_batch_serving_id_")
+    private String batchServingIdPrefix;
     /**
      * 批量服务文件根路径
      */
@@ -252,7 +261,8 @@ public class BatchServingServiceImpl extends ServiceImpl<BatchServingMapper, Bat
         String outputPath = ServingConstant.OUTPUT_NFS_PATH + user.getId() + File.separator + StringUtils.getTimestamp() + File.separator;
         batchServing.setOutputPath(outputPath);
         saveBatchServing(user, batchServing);
-        deployServingAsyncTask.deployBatchServing(user, batchServing);
+        String taskIdentify = resourceCache.getTaskIdentify(batchServing.getId(), batchServing.getName(), batchServingIdPrefix);
+        deployServingAsyncTask.deployBatchServing(user, batchServing, taskIdentify);
         return new BatchServingCreateVO(batchServing.getId(), batchServing.getStatus());
     }
 
@@ -423,7 +433,8 @@ public class BatchServingServiceImpl extends ServiceImpl<BatchServingMapper, Bat
         String outputPath = ServingConstant.OUTPUT_NFS_PATH + user.getId() + File.separator + StringUtils.getTimestamp() + File.separator;
         batchServing.setOutputPath(outputPath);
         updateBatchServing(user, batchServing);
-        deployServingAsyncTask.deployBatchServing(user, batchServing);
+        String taskIdentify = resourceCache.getTaskIdentify(batchServing.getId(), batchServing.getName(), batchServingIdPrefix);
+        deployServingAsyncTask.deployBatchServing(user, batchServing, taskIdentify);
         return new BatchServingUpdateVO(batchServing.getId(), batchServing.getStatus());
     }
 
@@ -545,6 +556,10 @@ public class BatchServingServiceImpl extends ServiceImpl<BatchServingMapper, Bat
         BatchServing batchServing = checkBatchServingExist(batchServingDeleteDTO.getId(), user.getId());
         checkBatchServingStatus(batchServing.getStatus());
         deleteBatchServing(batchServingDeleteDTO, user);
+        String taskIdentify = (String) redisUtils.get(batchServingIdPrefix + String.valueOf(batchServing.getId()));
+        if (StringUtils.isNotEmpty(taskIdentify)){
+            redisUtils.del(taskIdentify, batchServingIdPrefix + String.valueOf(batchServing.getId()));
+        }
         String sourcePath = k8sNameTool.getAbsolutePath(batchRootPath + batchServing.getCreateUserId() + File.separator + batchServing.getId() + File.separator);
         String recyclePath = k8sNameTool.getAbsolutePath(batchServing.getInputPath()) + StrUtil.COMMA + k8sNameTool.getAbsolutePath(batchServing.getOutputPath()) + StrUtil.COMMA + sourcePath;
         createRecycleTask(batchServing, recyclePath, true);
@@ -593,7 +608,8 @@ public class BatchServingServiceImpl extends ServiceImpl<BatchServingMapper, Bat
         //对重新运行的详情数据清空
         batchServing.setStatusDetail(SymbolConstant.BRACKETS);
         updateBatchServing(user, batchServing);
-        deployServingAsyncTask.deployBatchServing(user, batchServing);
+        String taskIdentify = resourceCache.getTaskIdentify(batchServing.getId(), batchServing.getName(), batchServingIdPrefix);
+        deployServingAsyncTask.deployBatchServing(user, batchServing, taskIdentify);
         return new BatchServingStartVO(batchServing.getId(), batchServing.getStatus(), batchServing.getProgress());
     }
 

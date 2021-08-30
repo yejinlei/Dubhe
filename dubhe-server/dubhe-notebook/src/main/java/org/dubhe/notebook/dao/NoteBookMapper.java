@@ -48,6 +48,14 @@ public interface NoteBookMapper extends BaseMapper<NoteBook> {
     int selectRunNoteBookNum( @Param("status") Integer status);
 
     /**
+     * 查询正在运行的notebook列表
+     *
+     * @return
+     */
+    @Select("select * from notebook where status = 0 and deleted = 0 and (url is not null or url != '')")
+    List<NoteBook> selectRunningList();
+
+    /**
      * 根据namespace + resourceName查询
      *
      * @param namespace

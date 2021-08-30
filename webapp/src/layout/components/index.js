@@ -19,3 +19,4 @@ export { default as Navbar } from './Navbar';
 export { default as Sidebar } from './Sidebar';
 export { default as Guideline } from './Guideline';
 export { default as Feedback } from './Feedback';
+export { default as ResourceMonitoring } from './ResourceMonitoring';

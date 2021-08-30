@@ -35,6 +35,7 @@ public class BaseTrainJobDTO implements Serializable {
 
     private JSONObject runParams;
     private String jobName;
+    private String taskIdentify;
     private String dataSourcePath;
     private String trainModelPath;
     private String trainOutPath;
@@ -94,4 +95,9 @@ public class BaseTrainJobDTO implements Serializable {
      * 模型路径
      */
     private String modelLoadPathDir;
+
+    /**
+     * pip包路径
+     */
+    private String pipSitePackagePath;
 }

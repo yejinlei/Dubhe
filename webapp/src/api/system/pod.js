@@ -65,3 +65,12 @@ export function getHistoryMetrics(params) {
     params,
   });
 }
+
+// 根据用户 Id 查询用户当前资源占用情况
+export function getUserResourceInfo(userId) {
+  return request({
+    url: `/${API_MODULE_NAME.K8S}/namespace/findNamespace`,
+    method: 'get',
+    params: { userId },
+  });
+}

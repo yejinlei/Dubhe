@@ -57,4 +57,8 @@ public class PtJobBO {
      * 业务标签,用于标识业务模块
      **/
     private String businessLabel;
+    /**
+     * 任务身份标签，用于标识任务身份
+     **/
+    private String taskIdentifyLabel;
 }

@@ -16,6 +16,9 @@ data:
     # 文件存储服务器用户名
     userName: root
 
+  #数据集训练配置
+  ptversion: http://127.0.0.1:8000/
+
 # 资源回收
 recycle:
   # 超时时间
@@ -36,4 +39,4 @@ es:
   serverPort: 9200
   transportPort: 9300
   clusterName: docker-cluster
-  index: dataset_text_prod
+  index: dataset_text_test

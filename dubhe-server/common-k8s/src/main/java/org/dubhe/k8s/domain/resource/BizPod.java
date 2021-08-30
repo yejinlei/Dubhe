@@ -18,12 +18,18 @@
 package org.dubhe.k8s.domain.resource;
 
 import cn.hutool.core.util.StrUtil;
+import com.alibaba.fastjson.JSON;
+import org.dubhe.biz.base.constant.MagicNumConstant;
+import org.dubhe.biz.base.utils.StringUtils;
 import org.dubhe.k8s.annotation.K8sField;
+import org.dubhe.k8s.constant.K8sParamConstants;
 import org.dubhe.k8s.domain.PtBaseResult;
 import com.google.common.collect.Maps;
 import lombok.Data;
 import lombok.experimental.Accessors;
 import org.dubhe.k8s.constant.K8sLabelConstants;
+import org.dubhe.k8s.enums.PodPhaseEnum;
+import org.springframework.util.CollectionUtils;
 
 import java.util.List;
 import java.util.Map;
@@ -59,6 +65,8 @@ public class BizPod extends PtBaseResult<BizPod> {
     private String podIp;
     @K8sField("spec:volumes")
     private List<BizVolume> volumes;
+    @K8sField("status:hostIP")
+    private String hostIP;
 
     /**
      * Pending:待处理
@@ -90,8 +98,18 @@ public class BizPod extends PtBaseResult<BizPod> {
      */
     private String completedTime;
 
+    /**
+     * 获取业务标签
+     */
     public String getBusinessLabel() {
         return labels.get(K8sLabelConstants.BASE_TAG_BUSINESS);
+    }
+
+    /**
+     * 获取任务身份标识
+     */
+    public String getTaskIdentifyLabel() {
+        return labels.get(K8sLabelConstants.BASE_TAG_TASK_IDENTIFY);
     }
 
     /**
@@ -114,15 +132,40 @@ public class BizPod extends PtBaseResult<BizPod> {
         if (containerStatuses == null) {
             return null;
         }
-        containerStatuses.stream().map(obj -> {
+        containerStatuses.forEach(obj -> {
             if (obj.getTerminated() != null) {
                 messages.append(StrUtil.format(CONTAINER_STATE_MESSAGE, name, phase, obj.getTerminated().getReason(), obj.getTerminated().getMessage()));
             }
             if (obj.getWaiting() != null) {
                 messages.append(StrUtil.format(CONTAINER_STATE_MESSAGE, name, phase, obj.getWaiting().getReason(), obj.getWaiting().getMessage()));
             }
-            return null;
         });
         return messages.toString();
+    }
+
+    //获取 容器镜像id
+    public String getContainerId(){
+        String containerID = null;
+        if (!CollectionUtils.isEmpty(containerStatuses)){
+            for (BizContainerStatus bizContainerStatus : containerStatuses){
+                if (StringUtils.isNotEmpty(bizContainerStatus.getContainerID())){
+                    containerID = bizContainerStatus.getContainerID();
+                }
+            }
+        }
+        if (StringUtils.isNotEmpty(containerID)){
+            return containerID.replace(K8sParamConstants.CONTAINER_ID_PREFIX,"");
+        }
+        return containerID;
+    }
+
+    public String getRealPodPhase(){
+        if (PodPhaseEnum.RUNNING.getPhase().equals(phase) && !CollectionUtils.isEmpty(containerStatuses) && containerStatuses.get(MagicNumConstant.ZERO).getWaiting() != null){
+            String waitingReason = containerStatuses.get(MagicNumConstant.ZERO).getWaiting().getReason();
+            if(waitingReason != null && !K8sParamConstants.WAITING_REASON_CONTAINER_CREATING.equals(waitingReason)){
+                return PodPhaseEnum.FAILED.getPhase();
+            }
+        }
+        return phase;
     }
 }

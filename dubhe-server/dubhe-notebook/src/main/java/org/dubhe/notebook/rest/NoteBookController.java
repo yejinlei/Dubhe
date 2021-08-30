@@ -67,6 +67,12 @@ public class NoteBookController {
         return new DataResponseBody(noteBookService.getNoteBookList(page, noteBookListQueryDTO));
     }
 
+    @ApiOperation("根据id查询notebook")
+    @GetMapping("/detail/{id}")
+    @PreAuthorize(Permissions.NOTEBOOK)
+    public DataResponseBody getNoteBook(@PathVariable Long id) {
+        return  DataResponseFactory.success(noteBookService.getNotebookDetail(id));
+    }
 
     @ApiOperation("修改notebook算法ID")
     @PutMapping(value = "/algorithm")
@@ -111,6 +117,13 @@ public class NoteBookController {
                 , resultInfo);
     }
 
+    @ApiOperation("一键停止所有notebook")
+    @PutMapping(value = "/batchStop")
+    @PreAuthorize(Permissions.NOTEBOOK_STOP)
+    public DataResponseBody batchStopNotebook() {
+        noteBookService.batchStopNoteBooks();
+        return new DataResponseBody();
+    }
 
     @ApiOperation("打开notebook")
     @GetMapping(value = "/{id}")
@@ -137,14 +150,6 @@ public class NoteBookController {
     public DataResponseBody getAddress(@PathVariable(name = "id") Long noteBookId) {
         return new DataResponseBody(noteBookService.getAddress(noteBookId));
     }
-
-    @ApiOperation("获取状态")
-    @GetMapping(value = "/status")
-    @PreAuthorize(Permissions.NOTEBOOK)
-    public DataResponseBody getNoteBookStatus() {
-        return new DataResponseBody(noteBookService.getNoteBookStatus());
-    }
-
 
     @ApiOperation("获取正在运行的notebook数量")
     @GetMapping(value = "/run-number")

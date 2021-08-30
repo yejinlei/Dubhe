@@ -74,6 +74,8 @@ public class TrainJobConfig {
 
     private String dockerValDatasetPath;
 
+    private String dockerPipSitePackagePath;
+
     private String loadValDatasetKey;
 
     private String dockerVisualizedLogPath;

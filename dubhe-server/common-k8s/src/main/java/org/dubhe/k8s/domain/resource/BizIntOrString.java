@@ -34,4 +34,12 @@ public class BizIntOrString {
     private Integer Kind;
     @K8sField("StrVal")
     private String StrVal;
+
+    public boolean equals(Integer value){
+        return IntVal != null && IntVal.equals(value);
+    }
+
+    public boolean equals(String value){
+        return StrVal != null && StrVal.equals(value);
+    }
 }

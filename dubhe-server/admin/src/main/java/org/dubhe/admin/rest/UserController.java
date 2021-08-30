@@ -19,6 +19,7 @@ package org.dubhe.admin.rest;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
+import org.dubhe.admin.domain.dto.UserConfigDTO;
 import org.dubhe.admin.domain.dto.UserCreateDTO;
 import org.dubhe.admin.domain.dto.UserDeleteDTO;
 import org.dubhe.admin.domain.dto.UserQueryDTO;
@@ -30,6 +31,7 @@ import org.dubhe.biz.base.dto.UserDTO;
 import org.dubhe.biz.base.vo.DataResponseBody;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletResponse;
@@ -82,6 +84,19 @@ public class UserController {
     public DataResponseBody delete(@Valid @RequestBody UserDeleteDTO userDeleteDTO) {
         userService.delete(userDeleteDTO.getIds());
         return new DataResponseBody();
+    }
+
+    @ApiOperation("根据用户ID查询用户配置")
+    @GetMapping(value = "/getUserConfig")
+    public DataResponseBody getUserConfig(@RequestParam(value = "userId") Long userId) {
+        return new DataResponseBody(userService.findUserConfig(userId));
+    }
+
+    @ApiOperation("新增或修改用户配置")
+    @PutMapping(value = "/setUserConfig")
+    @PreAuthorize(Permissions.USER_CONFIG_EDIT)
+    public DataResponseBody setUserConfig(@Validated @RequestBody UserConfigDTO userConfigDTO) {
+        return new DataResponseBody(userService.createOrUpdateUserConfig(userConfigDTO));
     }
 
     /**

@@ -148,4 +148,10 @@ public interface PtTrainJobService {
      * @return Map<String, Object> 可视化训练列表及分页信息
      */
     Map<String, Object> getVisualTrainList(VisualTrainQueryDTO visualTrainQueryDTO);
+
+    /**
+     * 一键停止所有训练job
+     *
+     */
+    void batchStopTrainJob();
 }

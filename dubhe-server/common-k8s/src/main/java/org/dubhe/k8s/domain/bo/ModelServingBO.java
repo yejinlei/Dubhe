@@ -82,6 +82,10 @@ public class ModelServingBO {
     @K8sValidation(ValidationTypeEnum.K8S_RESOURCE_NAME)
     private String businessLabel;
     /**
+     * 任务身份标签,用于标识任务身份
+     **/
+    private String taskIdentifyLabel;
+    /**
      * http服务端口，null则不开放http服务
      */
     private Integer httpPort;

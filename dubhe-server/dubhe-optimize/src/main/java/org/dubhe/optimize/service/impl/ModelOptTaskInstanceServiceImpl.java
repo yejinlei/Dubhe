@@ -44,7 +44,9 @@ import org.dubhe.biz.file.enums.BizPathEnum;
 import org.dubhe.biz.file.utils.MinioUtil;
 import org.dubhe.biz.log.enums.LogEnum;
 import org.dubhe.biz.log.utils.LogUtil;
+import org.dubhe.biz.redis.utils.RedisUtils;
 import org.dubhe.k8s.api.ModelOptJobApi;
+import org.dubhe.k8s.cache.ResourceCache;
 import org.dubhe.k8s.domain.bo.PtModelOptimizationJobBO;
 import org.dubhe.k8s.domain.dto.PodQueryDTO;
 import org.dubhe.k8s.domain.resource.BizJob;
@@ -71,6 +73,7 @@ import org.dubhe.optimize.enums.DistillCommandEnum;
 import org.dubhe.optimize.enums.OptimizeTypeEnum;
 import org.dubhe.optimize.service.ModelOptTaskInstanceService;
 import org.springframework.beans.BeanUtils;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -79,6 +82,7 @@ import javax.annotation.Resource;
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -117,6 +121,15 @@ public class ModelOptTaskInstanceServiceImpl extends ServiceImpl<ModelOptTaskIns
 
     @Resource
     private UserContextService userContextService;
+
+    @Autowired
+    private RedisUtils redisUtils;
+
+    @Autowired
+    private ResourceCache resourceCache;
+
+    @Value("Task:ModelOpt:"+"${spring.profiles.active}_model_opt_id_")
+    private String modelOptIdPrefix;
 
     /**
      * 分页查询任务执行记录实例列表
@@ -361,6 +374,7 @@ public class ModelOptTaskInstanceServiceImpl extends ServiceImpl<ModelOptTaskIns
         String outputModelDir = SymbolConstant.SLASH + BizPathEnum.MODEL_OPT.getBizPath() + SymbolConstant.SLASH + curUser.getId() + SymbolConstant.SLASH + instance.getTaskId() + SymbolConstant.SLASH + instance.getId() + ModelOptConstant.OPTIMIZE_MODEL;
         String optResultJsonPathBefore = SymbolConstant.SLASH + BizPathEnum.MODEL_OPT.getBizPath() + SymbolConstant.SLASH + curUser.getId() + SymbolConstant.SLASH + instance.getTaskId() + SymbolConstant.SLASH + instance.getId() + ModelOptConstant.OPTIMIZE_JSON_BEFORE;
         String optResultJsonPathAfter = SymbolConstant.SLASH + BizPathEnum.MODEL_OPT.getBizPath() + SymbolConstant.SLASH + curUser.getId() + SymbolConstant.SLASH + instance.getTaskId() + SymbolConstant.SLASH + instance.getId() + ModelOptConstant.OPTIMIZE_JSON_AFTER;
+        String taskIdentify = resourceCache.getTaskIdentify(instance.getTaskId(), instance.getTaskName(), modelOptIdPrefix);
         jobBo.setNamespace(namespace);
         jobBo.setName(k8sNameTool.generateResourceName(BizEnum.MODEL_OPT, instance.getId().toString()));
         jobBo.setCpuNum(ModelOptConstant.CPU_NUM);
@@ -376,6 +390,7 @@ public class ModelOptTaskInstanceServiceImpl extends ServiceImpl<ModelOptTaskIns
         jobBo.putNfsMounts(ModelOptConstant.OUTPUT_RESULT_AFTER_MOUNT_PATH, k8sNameTool.getAbsolutePath(optResultJsonPathAfter));
         jobBo.setBusinessLabel(k8sNameTool.getPodLabel(BizEnum.MODEL_OPT));
         jobBo.setImage(optimizeImage);
+        jobBo.setTaskIdentifyLabel(taskIdentify);
 
         // 调用k8s接口
         BizJob bizJob = modelOptJobApi.create(jobBo);
@@ -492,6 +507,10 @@ public class ModelOptTaskInstanceServiceImpl extends ServiceImpl<ModelOptTaskIns
     public int deleteByTaskId(Long taskId) {
         LambdaQueryWrapper<ModelOptTaskInstance> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(ModelOptTaskInstance::getTaskId, taskId);
+        String taskIdentify = (String) redisUtils.get(modelOptIdPrefix + String.valueOf(taskId));
+        if (org.dubhe.biz.base.utils.StringUtils.isNotEmpty(taskIdentify)){
+            redisUtils.del(taskIdentify, modelOptIdPrefix + String.valueOf(taskId));
+        }
         return modelOptTaskInstanceMapper.delete(wrapper);
     }
 

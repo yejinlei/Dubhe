@@ -37,12 +37,21 @@ public class BuildServiceBO {
     private Map<String, String> labels;
     private Map<String, String> selector;
     private List<ServicePort> ports;
+    private String type;
 
     public BuildServiceBO(String namespace, String name, Map<String, String> labels, Map<String, String> selector){
         this.namespace = namespace;
         this.name = name;
         this.labels = labels;
         this.selector = selector;
+    }
+
+    public BuildServiceBO(String namespace, String name, Map<String, String> labels, Map<String, String> selector,String type){
+        this.namespace = namespace;
+        this.name = name;
+        this.labels = labels;
+        this.selector = selector;
+        this.type = type;
     }
 
     /**

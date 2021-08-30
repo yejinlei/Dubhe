@@ -624,6 +624,13 @@ public class DatasetServiceImpl extends ServiceImpl<DatasetMapper, Dataset> impl
             }
         }
         dataset.setUri(fileUtil.getDatasetAbsPath(dataset.getId()));
+        if (datasetCreateDTO.getDataType().equals(DatatypeEnum.AUTO_IMPORT.getValue())) {
+            //自定义数据集处理 1.生成版本数据并设计数据集当前版本 2.数据集状态修改为标注完成
+            datasetVersionService.insertOne(new DatasetVersion(dataset.getId(), DEFAULT_VERSION,
+                    DatatypeEnum.getEnumValue(datasetCreateDTO.getDataType()).getMsg()));
+            dataset.setStatus(DataStateCodeConstant.ANNOTATION_COMPLETE_STATE);
+            dataset.setCurrentVersionName(DEFAULT_VERSION);
+        }
         updateById(dataset);
         return dataset.getId();
     }
@@ -1643,4 +1650,18 @@ public class DatasetServiceImpl extends ServiceImpl<DatasetMapper, Dataset> impl
             );
         }
     }
+
+    /**
+     * 获取预置数据集列表
+     *
+     * @return Map<String, Object> 数据集详情
+     */
+    @Override
+    public List<Dataset> getPresetDataset() {
+        QueryWrapper<Dataset> queryWrapper = new QueryWrapper<>();
+        queryWrapper.eq("type", MagicNumConstant.TWO)
+        .ne("deleted", MagicNumConstant.ONE);
+        return baseMapper.selectList(queryWrapper);
+    }
+
 }

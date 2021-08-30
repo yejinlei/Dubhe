@@ -450,6 +450,7 @@ export function cpuPercentage(used, usedUnit, total, totalUnit) {
 
 // 内存单位归一化，目前支持单位为 Ki/Mi/Gi
 export function memNormalize(num, fromUnit, toUnit = 'Gi') {
+  num = Number(num); // 支持传入字符串类型
   const memUnitList = ['Ki', 'Mi', 'Gi']; // 内存单位数组，按顺序排列
 
   let fromIndex = memUnitList.indexOf(fromUnit);
@@ -474,6 +475,11 @@ export function memNormalize(num, fromUnit, toUnit = 'Gi') {
     fromIndex += 1;
   }
   return num;
+}
+
+// 根据内存值、单位、目标单位、保留小数进行内存值格式化
+export function memFormatter(num, fromUnit = 'Mi', toUnit = 'Gi', fractionDigits = 1) {
+  return `${memNormalize(num, fromUnit, toUnit).toFixed(fractionDigits)}${toUnit}`;
 }
 
 // 内存使用量计算
@@ -560,4 +566,20 @@ export function durationTrans(time) {
   s = s < 10 ? `0${s}` : s;
   duration += `${m}:${s}`;
   return duration;
+}
+
+// 跳转到锚点位置
+const defaultScrollIntoViewOptions = {
+  behavior: 'smooth',
+  block: 'center',
+  inline: 'nearest',
+};
+export function moveToAnchor(anchor, option = {}) {
+  const el = document.querySelector(anchor);
+  if (el) {
+    el.scrollIntoView({
+      ...defaultScrollIntoViewOptions,
+      ...option,
+    });
+  }
 }

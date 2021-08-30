@@ -20,7 +20,6 @@ import io.swagger.annotations.ApiModelProperty;
 import lombok.Data;
 import lombok.experimental.Accessors;
 
-import javax.validation.constraints.NotBlank;
 import java.io.Serializable;
 
 /**
@@ -34,11 +33,9 @@ public class BaseImageDTO implements Serializable {
     private static final long serialVersionUID = 1L;
 
     @ApiModelProperty(value = "镜像版本", required = true)
-    @NotBlank(message = "镜像版本不能为空")
     private String imageTag;
 
     @ApiModelProperty(value = "镜像名称", required = true)
-    @NotBlank(message = "镜像名称不能为空")
     private String imageName;
 
 }

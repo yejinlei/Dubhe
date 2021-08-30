@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <parent>
+        <artifactId>server</artifactId>
+        <groupId>org.dubhe</groupId>
+        <version>0.0.1-SNAPSHOT</version>
+    </parent>
+    <modelVersion>4.0.0</modelVersion>
+    <version>0.0.1-SNAPSHOT</version>
+    <artifactId>dubhe-terminal</artifactId>
+    <name>专业版终端服务</name>
+    <description>Dubhe terminal</description>
+
+    <dependencies>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-web</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.cloud</groupId>
+            <artifactId>spring-cloud-context</artifactId>
+        </dependency>
+        <!-- 统一Rest返回工具结构 -->
+        <dependency>
+            <groupId>org.dubhe.biz</groupId>
+            <artifactId>data-response</artifactId>
+            <version>${org.dubhe.biz.data-response.version}</version>
+        </dependency>
+        <!-- k8s 通用模块 -->
+        <dependency>
+            <groupId>org.dubhe</groupId>
+            <artifactId>common-k8s</artifactId>
+            <version>${org.dubhe.common-k8s.version}</version>
+        </dependency>
+        <!-- 远程调用 -->
+        <dependency>
+            <groupId>org.dubhe.cloud</groupId>
+            <artifactId>remote-call</artifactId>
+            <version>${org.dubhe.cloud.remote-call.version}</version>
+        </dependency>
+        <!-- 注册中心 -->
+        <dependency>
+            <groupId>org.dubhe.cloud</groupId>
+            <artifactId>registration</artifactId>
+            <version>${org.dubhe.cloud.registration.version}</version>
+        </dependency>
+        <!-- 配置中心 -->
+        <dependency>
+            <groupId>org.dubhe.cloud</groupId>
+            <artifactId>configuration</artifactId>
+            <version>${org.dubhe.cloud.configuration.version}</version>
+        </dependency>
+        <!-- 统一权限配置 -->
+        <dependency>
+            <groupId>org.dubhe.cloud</groupId>
+            <artifactId>auth-config</artifactId>
+            <version>${org.dubhe.cloud.auth-config.version}</version>
+        </dependency>
+        <!-- log依赖-->
+        <dependency>
+            <groupId>org.dubhe.biz</groupId>
+            <artifactId>log</artifactId>
+            <version>${org.dubhe.biz.log.version}</version>
+        </dependency>
+        <!-- junit -->
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-maven-plugin</artifactId>
+                <configuration>
+                    <skip>false</skip>
+                    <fork>true</fork>
+                    <classifier>exec</classifier>
+                </configuration>
+            </plugin>
+            <!-- 跳过单元测试 -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <configuration>
+                    <skipTests>true</skipTests>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+
+</project>

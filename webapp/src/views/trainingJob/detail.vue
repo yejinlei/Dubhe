@@ -186,7 +186,7 @@ import { mapGetters } from 'vuex';
 import { debounce } from 'throttle-debounce';
 
 import CRUD, { presenter, header, crud } from '@crud/crud';
-import { Constant, generateMap } from '@/utils';
+import { Constant, generateMap, emitter } from '@/utils';
 import crudJob, {
   getJobList,
   stop as stopJob,
@@ -275,9 +275,11 @@ export default {
     this.id = this.$route.query.id;
     this.refetch = debounce(1000, this.getJobList);
     this.getJobList();
+    emitter.on('jumpToTrainingDetail', this.onJumpIn);
   },
   beforeDestroy() {
     this.keepPool = false;
+    emitter.off('jumpToTrainingDetail', this.onJumpIn);
   },
   methods: {
     // handle 操作
@@ -358,7 +360,6 @@ export default {
         if (dialogType === 'saveParams') {
           item.paramName = item.jobName;
         }
-        item.valAlgorithmUsage = item.algorithmUsage;
         this.showDialog = true;
         this.$nextTick(() => {
           this.$refs.jobFormEdit.initForm(item);
@@ -468,6 +469,13 @@ export default {
 
     messageText(trainStatus) {
       return trainStatus ? '暂无提示信息' : '容器正在启动中';
+    },
+
+    onJumpIn() {
+      this.$nextTick(() => {
+        this.id = this.$route.query.id;
+        this.getJobList();
+      });
     },
   },
 };

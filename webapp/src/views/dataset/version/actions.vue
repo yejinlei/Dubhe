@@ -29,8 +29,12 @@
       </div>
       <el-button slot="reference" type="text">详情</el-button>
     </el-popover>
-    <el-button v-if="isCurrent && !publishing" type="text" @click="gotoDetail">查看标注</el-button>
-    <el-button v-if="isPreset" type="text" @click="convert(row)">生成预置数据集</el-button>
+    <el-button v-if="isCurrent && !publishing" type="text" @click="gotoDetail">
+      {{ isCustom ? '查看文件' : '查看标注' }}
+    </el-button>
+    <el-button v-if="isPreset && !publishing" type="text" @click="convert(row)">
+      生成预置数据集
+    </el-button>
     <el-dropdown placement="bottom">
       <el-button type="text" style="margin-left: 10px;" @click.stop="() => {}">
         更多<i class="el-icon-arrow-down el-icon--right" />
@@ -72,6 +76,7 @@ import {
   dataTypeCodeMap,
   showOfRecord,
   isCustomDataset,
+  annotationCodeMap,
 } from '@/views/dataset/util';
 import { toggleVersion, deleteVersion, shiftOfRecord } from '@/api/preparation/dataset';
 import { TableTooltip } from '@/hooks/tooltip';
@@ -102,7 +107,7 @@ export default {
       () => props.row.presetFlag && props.row.dataType !== dataTypeCodeMap.CUSTOM
     );
     const isOfRecord = computed(() => props.row.isOfRecord);
-    const isCustom = computed(() => props.row.dataType === dataTypeCodeMap.CUSTOM);
+    const isCustom = computed(() => isCustomDataset(props.row));
     const title = computed(() => `${props.row.name}(${props.row.versionName})`);
 
     const calculate = (vo = {}) => {
@@ -126,8 +131,16 @@ export default {
 
     const gotoDetail = () => {
       const { annotateType } = props.row;
+      if (isCustomDataset(props.row)) {
+        const customUrlPrefix = annotationByCode(annotationCodeMap.CUSTOM, 'urlPrefix');
+        $router.push({
+          path: `/data/datasets/${customUrlPrefix}/${props.row.datasetId}`,
+        });
+        return false;
+      }
       const urlPrefix = annotationByCode(annotateType, 'urlPrefix');
       $router.push({ path: `/data/datasets/${urlPrefix}/${props.row.datasetId}` });
+      return false;
     };
 
     // 设置为当前版本

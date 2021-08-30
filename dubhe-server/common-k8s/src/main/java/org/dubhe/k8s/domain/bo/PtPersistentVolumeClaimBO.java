@@ -23,6 +23,7 @@ import org.dubhe.k8s.domain.resource.BizQuantity;
 import lombok.Data;
 import lombok.experimental.Accessors;
 import org.dubhe.k8s.enums.AccessModeEnum;
+import org.dubhe.k8s.enums.PvReclaimPolicyEnum;
 
 import java.util.HashMap;
 import java.util.HashSet;
@@ -79,6 +80,11 @@ public class PtPersistentVolumeClaimBO {
      **/
     private String path;
 
+    /**
+     * 回收策略
+     */
+    private String reclaimPolicy;
+
     public PtPersistentVolumeClaimBO() {
 
     }
@@ -107,5 +113,10 @@ public class PtPersistentVolumeClaimBO {
             add(AccessModeEnum.READ_WRITE_ONCE.getType());
         }};
         this.setPvcName(resourceName+"-"+RandomUtil.randomString(MagicNumConstant.FIVE));
+        if (bo.isRecycle()){
+            this.reclaimPolicy = PvReclaimPolicyEnum.RECYCLE.getPolicy();
+        }else {
+            this.reclaimPolicy = PvReclaimPolicyEnum.RETAIN.getPolicy();
+        }
     }
 }

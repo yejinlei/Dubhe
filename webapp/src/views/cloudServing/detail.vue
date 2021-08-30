@@ -151,7 +151,7 @@ import {
   getPredictParam,
 } from '@/api/cloudServing';
 import MsgPopover from '@/components/MsgPopover';
-import { generateMap } from '@/utils';
+import { generateMap, emitter } from '@/utils';
 import {
   SERVING_STATUS_ENUM,
   ONLINE_SERVING_STATUS_MAP,
@@ -210,6 +210,8 @@ export default {
         deployment: false,
       },
       serviceTypeMap,
+
+      timeoutId: null, // 用于记录当前轮询 timeoutId
     };
   },
   computed: {
@@ -272,7 +274,8 @@ export default {
     this.doStartDebounce = debounce(1000, this.doStart);
     this.doStopDebounce = debounce(1000, this.doStop);
     this.doRefreshDebounce = debounce(1000, this.doRefresh);
-    await this.getServingDetail(this.serviceId);
+    emitter.on('jumpToServingDetail', this.onJumpIn);
+    await this.getServingDetail();
     const { target } = this.$route.params;
     if (target) {
       this.activeDetailTabName = target;
@@ -280,20 +283,21 @@ export default {
   },
   beforeDestroy() {
     this.keepPoll = false;
+    emitter.off('jumpToServingDetail', this.onJumpIn);
   },
   methods: {
     // Getters
-    async getServingDetail(id) {
-      this.item = await getServingDetail(id);
-      this.predictParam = { ...(await getPredictParam(id)), id };
+    async getServingDetail() {
+      this.item = await getServingDetail(this.serviceId);
+      this.predictParam = { ...(await getPredictParam(this.serviceId)), id: this.serviceId };
       if (
         this.keepPoll &&
         [SERVING_STATUS_ENUM.IN_DEPLOYMENT, SERVING_STATUS_ENUM.WORKING].indexOf(
           this.item.status
         ) !== -1
       ) {
-        setTimeout(() => {
-          this.refetch(id);
+        this.timeoutId = setTimeout(() => {
+          this.refetch();
         }, 1000);
       }
     },
@@ -342,7 +346,7 @@ export default {
       });
     },
     doRefresh() {
-      this.getServingDetail(this.serviceId);
+      this.getServingDetail();
       this.refreshMap = {
         guide: true,
         predict: true,
@@ -358,6 +362,14 @@ export default {
     // Handlers
     onReseted() {
       this.refreshMap[this.activeDetailTabName] = false;
+    },
+    onJumpIn() {
+      this.$nextTick(() => {
+        this.serviceId = Number(this.$route.query.id);
+        clearTimeout(this.timeoutId);
+        this.activeDetailTabName = 'guide';
+        this.doRefresh();
+      });
     },
   },
 };

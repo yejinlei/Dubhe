@@ -406,3 +406,29 @@ export function validateJSON(rule, value, callback) {
   }
   callback();
 }
+
+// 镜像 tag 规则校验
+export const validateImageTag = (rule, value, callback) => {
+  if (value === '' || value == null) {
+    callback();
+  } else if (value.length > 32) {
+    callback(new Error('长度不超过 32 个字符'));
+  } else if (!/^[A-Za-z0-9_\-.]+$/.test(value)) {
+    callback(new Error('只支持英文、数字、下划线、英文横杠和英文.号'));
+  } else {
+    callback();
+  }
+};
+
+// 镜像名称规则校验
+export const validateImageName = (rule, value, callback) => {
+  if (value === '' || value == null) {
+    callback();
+  } else if (value.length > 64) {
+    callback(new Error('长度不超过 64 个字符'));
+  } else if (!/^[a-z0-9_\-.]+$/.test(value)) {
+    callback(new Error('只支持小写英文、数字、下划线、英文横杠和英文.号'));
+  } else {
+    callback();
+  }
+};

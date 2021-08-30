@@ -77,7 +77,9 @@ public enum LogEnum {
     //度量
     MEASURE,
     //云端Serving
-    SERVING;
+    SERVING,
+    //专业版终端
+    TERMINAL;
 
     /**
      * 判断日志类型不能为空

@@ -22,6 +22,6 @@ spring:
           refresh: true
       discovery:
         enabled: true
-        namespace: dubhe-server-cloud-prod
+        namespace: dubhe-server-cloud-dev
         group: dubhe
         server-addr: 127.0.0.1:8848

@@ -140,6 +140,8 @@ public final class Permissions {
     public static final String USER_EDIT = "hasAuthority('ROLE_system:user:edit')";
     public static final String USER_DELETE = "hasAuthority('ROLE_system:user:delete')";
     public static final String USER_DOWNLOAD = "hasAuthority('ROLE_system:user:download')";
+    public static final String USER_CONFIG_EDIT = "hasAuthority('ROLE_system:user:configEdit')";
+    public static final String USER_RESOURCE_INFO = "hasAuthority('ROLE_system:user:resourceInfo')";
 
     /**
      * 控制台：角色管理
@@ -199,6 +201,16 @@ public final class Permissions {
     public static final String SPECS_CREATE = "hasAuthority('ROLE_system:specs:create')";
     public static final String SPECS_EDIT = "hasAuthority('ROLE_system:specs:edit')";
     public static final String SPECS_DELETE = "hasAuthority('ROLE_system:specs:delete')";
+
+    /**
+     * 专业版：终端
+     */
+    public static final String TERMINAL_CREATE = "hasAuthority('ROLE_terminal:specs:create')";
+    public static final String TERMINAL_RESTART = "hasAuthority('ROLE_terminal:specs:restart')";
+    public static final String TERMINAL_PRESAVE = "hasAuthority('ROLE_terminal:specs:save')";
+    public static final String TERMINAL_DELETE = "hasAuthority('ROLE_terminal:specs:delete')";
+    public static final String TERMINAL_DETAIL = "hasAuthority('ROLE_terminal:specs:detail')";
+    public static final String TERMINAL_LIST = "hasAuthority('ROLE_terminal:specs:list')";
 
     private Permissions() {
     }

@@ -58,6 +58,18 @@ public class PtTrainParam extends BaseEntity {
     private Long algorithmId;
 
     /**
+     * 算法用途
+     */
+    @TableField(value = "algorithm_usage")
+    private String algorithmUsage;
+
+    /**
+     * 验证数据集算法用途
+     */
+    @TableField(value = "val_algorithm_usage")
+    private String valAlgorithmUsage;
+
+    /**
      * 运行命令
      */
     @TableField(value = "run_command")

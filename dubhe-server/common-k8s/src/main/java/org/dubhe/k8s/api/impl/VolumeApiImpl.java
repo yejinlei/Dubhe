@@ -61,7 +61,7 @@ public class VolumeApiImpl implements VolumeApi {
             for (Map.Entry<String, PtMountDirBO> mount : bo.getFsMounts().entrySet()) {
                 boolean availableMount = (mount != null && StringUtils.isNotEmpty(mount.getKey()) && mount.getValue() != null && StringUtils.isNotEmpty(mount.getValue().getDir()));
                 if (availableMount){
-                    boolean success = mount.getValue().isRecycle()?buildFsPvcVolumes(bo,volumeVO,mount.getKey(),mount.getValue(),i):buildFsVolumes(volumeVO,mount.getKey(),mount.getValue(),i);
+                    boolean success = (mount.getValue().isRecycle() || (StringUtils.isNotEmpty(mount.getValue().getLimit()) || StringUtils.isNotEmpty(mount.getValue().getRequest())))?buildFsPvcVolumes(bo,volumeVO,mount.getKey(),mount.getValue(),i):buildFsVolumes(volumeVO,mount.getKey(),mount.getValue(),i);
                     if (!success){
                         break;
                     }

@@ -56,7 +56,12 @@ public enum BizEnum {
     /**
      * 度量管理
      */
-    MEASURE("度量管理", "measure", 5);
+    MEASURE("度量管理", "measure", 5),
+    /**
+     * 专业版终端
+     */
+    TERMINAL("专业版终端", "terminal", 7),
+    ;
 
     /**
      * 业务模块名称

@@ -15,7 +15,10 @@
  */
 
 import './errorHandle';
+import { initWebSocket } from '@/utils';
 
 const allSettled = require('promise.allsettled');
 
 allSettled.shim();
+
+initWebSocket();

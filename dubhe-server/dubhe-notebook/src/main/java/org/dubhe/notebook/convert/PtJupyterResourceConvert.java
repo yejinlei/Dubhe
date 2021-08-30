@@ -42,7 +42,7 @@ public class PtJupyterResourceConvert {
      * @param notebookDelayDeleteTime
      * @return PtJupyterResourceBO
      */
-    public static PtJupyterResourceBO toPtJupyterResourceBo(NoteBook noteBook, K8sNameTool k8sNameTool, Integer notebookDelayDeleteTime) {
+    public static PtJupyterResourceBO toPtJupyterResourceBo(NoteBook noteBook, K8sNameTool k8sNameTool, Integer notebookDelayDeleteTime, String taskIdentify) {
         if (noteBook == null) {
             return null;
         }
@@ -55,7 +55,6 @@ public class PtJupyterResourceConvert {
                 .setImage(noteBook.getK8sImageName())
                 .setWorkspaceDir(k8sNameTool.getAbsolutePath(noteBook.getK8sPvcPath()))
                 .setWorkspaceMountPath(noteBook.getK8sMountPath())
-                .setDatasetDir(noteBook.getDataSourcePath())
                 // request和limit先一致
                 .setWorkspaceRequest(noteBook.getDiskMemNum() + "Mi")
                 .setWorkspaceLimit(noteBook.getDiskMemNum() + "Mi")
@@ -64,6 +63,8 @@ public class PtJupyterResourceConvert {
                 .setDatasetMountPath(k8sNameTool.getDatasetPath())
                 .setDatasetReadOnly(true)
                 .setDelayDeleteTime(notebookDelayDeleteTime)
+                .setPipSitePackageDir(k8sNameTool.getAbsolutePath(noteBook.getPipSitePackagePath()))
+                .setTaskIdentifyLabel(taskIdentify)
         ;
         return bo;
     }

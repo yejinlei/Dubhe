@@ -27,6 +27,7 @@ import org.dubhe.biz.base.utils.StringUtils;
 import org.dubhe.biz.log.enums.LogEnum;
 import org.dubhe.biz.log.utils.LogUtil;
 import org.dubhe.k8s.api.PersistentVolumeClaimApi;
+import org.dubhe.k8s.constant.K8sLabelConstants;
 import org.dubhe.k8s.constant.K8sParamConstants;
 import org.dubhe.k8s.domain.PtBaseResult;
 import org.dubhe.k8s.domain.bo.PtPersistentVolumeClaimBO;
@@ -137,7 +138,7 @@ public class PersistentVolumeClaimApiImpl implements PersistentVolumeClaimApi {
                 //创建pv
                 PersistentVolume pv = new PersistentVolumeBuilder()
                         .withNewMetadata().addToLabels(pvLabels).withName(bo.getPvcName() + PV_SUFFIX).endMetadata()
-                        .withNewSpec().addToCapacity(STORAGE, new Quantity(bo.getRequest())).addNewAccessMode(AccessModeEnum.READ_WRITE_ONCE.getType()).withNewPersistentVolumeReclaimPolicy(PvReclaimPolicyEnum.RECYCLE.getPolicy())
+                        .withNewSpec().addToCapacity(STORAGE, new Quantity(bo.getRequest())).addNewAccessMode(AccessModeEnum.READ_WRITE_ONCE.getType()).withNewPersistentVolumeReclaimPolicy(StringUtils.isNotEmpty(bo.getReclaimPolicy())?PvReclaimPolicyEnum.RECYCLE.getPolicy():bo.getReclaimPolicy())
                         .withNewHostPath().withNewPath(bo.getPath()).withType(K8sParamConstants.HOST_PATH_TYPE).endHostPath()
                         .endSpec()
                         .build();
@@ -354,6 +355,17 @@ public class PersistentVolumeClaimApiImpl implements PersistentVolumeClaimApi {
     @Override
     public boolean deletePv(String pvName) {
         return client.persistentVolumes().withName(pvName).delete();
+    }
+
+    /**
+     * 删除PV
+     *
+     * @param resourceName 资源名称
+     * @return boolean true成功 false失败
+     */
+    @Override
+    public boolean deletePvByResourceName(String resourceName) {
+        return client.persistentVolumes().withLabel(K8sLabelConstants.BASE_TAG_SOURCE,resourceName).delete();
     }
 
     /**

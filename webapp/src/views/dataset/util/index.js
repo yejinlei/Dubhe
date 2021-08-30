@@ -536,8 +536,8 @@ export const publishStateMap = {
 // 发布中
 export const isPublishDataset = (row) => publishStateMap[row.dataConversion] === 'PUBLISHING';
 
-// 自定义数据类型的数据集
-export const isCustomDataset = (row) => annotationCodeMap.CUSTOM === row.annotateType;
+// 自定义数据类型的数据集要根据数据类型判断，因为现在允许有图片/视频等标注类型等自定义数据集
+export const isCustomDataset = (row) => dataTypeCodeMap.CUSTOM === row.dataType;
 
 // 数据增强类型
 export const dataEnhanceMap = {

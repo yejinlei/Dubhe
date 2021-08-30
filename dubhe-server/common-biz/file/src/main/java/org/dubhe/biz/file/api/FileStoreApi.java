@@ -57,7 +57,7 @@ public interface FileStoreApi {
      */
     default String formatPath(String path) {
         if (!StringUtils.isEmpty(path)) {
-            return path.replaceAll("///*", File.separator);
+            return path.replaceAll("///*", "/");
         }
         return path;
     }

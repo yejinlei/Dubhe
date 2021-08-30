@@ -300,4 +300,12 @@ public interface DatasetService {
      * @param versionFiles  原版本列表
      */
     void backupDatasetDBAndMinioData(Dataset originDataset, Dataset targetDataset, List<DatasetVersionFile> versionFiles);
+
+    /**
+     * 获取预置数据集列表
+     *
+     * @return Map<String, Object> 数据集详情
+     */
+    List<Dataset> getPresetDataset();
+
 }

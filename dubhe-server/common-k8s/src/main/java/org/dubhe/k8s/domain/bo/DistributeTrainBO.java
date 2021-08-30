@@ -85,6 +85,10 @@ public class DistributeTrainBO {
      **/
     private String businessLabel;
     /**
+     * 任务身份标签,用于标识任务身份
+     */
+    private String taskIdentifyLabel;
+    /**
      * 延时创建时间，单位：分钟
      ***/
     private Integer delayCreateTime;

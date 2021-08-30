@@ -40,9 +40,9 @@ public class PodRangeMetricsVO {
      */
     List<MetricsDataResultValueVO> cpuMetrics;
     /**
-     * gpu 监控指标 value为使用百分比
+     * gpu 监控指标
      */
-    List<MetricsDataResultVO> gpuMetrics;
+    List<GpuMetricsDataResultVO> gpuMetrics;
     /**
      * 内存 监控指标 value为占用内存 单位 Ki
      */

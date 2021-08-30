@@ -42,7 +42,13 @@ public enum ImageTypeEnum {
     /**
      * Serving镜像
      */
-    SERVING("Serving镜像", "serving", 2);
+    SERVING("Serving镜像", "serving", 2),
+
+    /**
+     * terminal镜像
+     */
+    TERMINAL("terminal镜像", "terminal", 3)
+    ;
 
     /**
      * 镜像项目名称

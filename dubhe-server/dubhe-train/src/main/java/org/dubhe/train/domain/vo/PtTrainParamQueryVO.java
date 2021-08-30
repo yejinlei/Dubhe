@@ -34,8 +34,6 @@ import java.sql.Timestamp;
 @Data
 public class PtTrainParamQueryVO extends BaseVO implements Serializable {
 
-    private static final long serialVersionUID = 1L;
-
     @ApiModelProperty("任务参数ID")
     private Long id;
 
@@ -65,6 +63,12 @@ public class PtTrainParamQueryVO extends BaseVO implements Serializable {
 
     @ApiModelProperty("算法来源(1为我的算法，2为预置算法)")
     private Integer algorithmSource;
+
+    @ApiModelProperty("算法用途")
+    private String algorithmUsage;
+
+    @ApiModelProperty("验证数据集算法用途")
+    private String valAlgorithmUsage;
 
     @ApiModelProperty("数据来源路径")
     private String dataSourcePath;

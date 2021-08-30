@@ -620,21 +620,37 @@ public class PtTrainAlgorithmServiceImpl implements PtTrainAlgorithmService {
      */
     @Override
     public List<PtTrainAlgorithmQueryVO> getInferenceAlgorithm() {
+        //获取用户信息
+        UserContext user = userContext.getCurUser();
         QueryWrapper<PtTrainAlgorithm> wrapper = new QueryWrapper<>();
         wrapper.eq("inference", true).orderByDesc("id");
         List<PtTrainAlgorithm> ptTrainAlgorithms = ptTrainAlgorithmMapper.selectList(wrapper);
-        if (CollectionUtils.isEmpty(ptTrainAlgorithms)) {
-            return null;
+        List<PtTrainAlgorithmQueryVO> ptTrainAlgorithmQueryResult = new ArrayList<>();
+        if (CollectionUtils.isNotEmpty(ptTrainAlgorithms)) {
+            ptTrainAlgorithmQueryResult = ptTrainAlgorithms.stream().map(x -> {
+                PtTrainAlgorithmQueryVO ptTrainAlgorithmQueryVO = new PtTrainAlgorithmQueryVO();
+                BeanUtils.copyProperties(x, ptTrainAlgorithmQueryVO);
+                //获取镜像名称与版本
+                getImageNameAndImageTag(x, ptTrainAlgorithmQueryVO);
+                return ptTrainAlgorithmQueryVO;
+            }).collect(Collectors.toList());
         }
-        List<PtTrainAlgorithmQueryVO> ptTrainAlgorithmQueryResult = ptTrainAlgorithms.stream().map(x -> {
-            PtTrainAlgorithmQueryVO ptTrainAlgorithmQueryVO = new PtTrainAlgorithmQueryVO();
-            BeanUtils.copyProperties(x, ptTrainAlgorithmQueryVO);
-            //获取镜像名称与版本
-            getImageNameAndImageTag(x, ptTrainAlgorithmQueryVO);
-            return ptTrainAlgorithmQueryVO;
-        }).collect(Collectors.toList());
+
+        //非管理员用户查询可推理预置算法
+        if (!BaseService.isAdmin(user)) {
+            List<PtTrainAlgorithm> preAlgorithms = ptTrainAlgorithmMapper.selectPreAlgorithm();
+            List<PtTrainAlgorithmQueryVO> preAlgorithmQueryResult = preAlgorithms.stream().map(x -> {
+                PtTrainAlgorithmQueryVO ptTrainAlgorithmQueryVO = new PtTrainAlgorithmQueryVO();
+                BeanUtils.copyProperties(x, ptTrainAlgorithmQueryVO);
+                //获取镜像名称与版本
+                getImageNameAndImageTag(x, ptTrainAlgorithmQueryVO);
+                return ptTrainAlgorithmQueryVO;
+            }).collect(Collectors.toList());
+            if (CollectionUtils.isNotEmpty(preAlgorithmQueryResult)) {
+                ptTrainAlgorithmQueryResult.addAll(preAlgorithmQueryResult);
+            }
+        }
         return ptTrainAlgorithmQueryResult;
     }
-
 
 }

@@ -64,11 +64,13 @@ export const IMAGE_RESOURCE_ENUM = {
   CUSTOM: '0', // 训练镜像
   PRESET: '1', // 训练预置镜像
   NOTEBOOK: '2', // notebook镜像
+  TERMINAL: '3', // 终端镜像
 };
 
 export const IMAGE_PROJECT_TYPE = {
   TRAIN: 1, // 训练镜像和预置镜像类型
   NOTEBOOK: 0, // notebook镜像类型
+  TERMINAL: 3, // 终端镜像
 };
 
 // 训练可视化列表页查询项

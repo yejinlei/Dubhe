@@ -17,7 +17,7 @@
 <template>
   <BaseModal
     :visible.sync="showDialog"
-    :disabled="btnDisabled"
+    :loading="submitting"
     title="创建Notebook"
     width="800px"
     @open="onDialogOpen"
@@ -175,7 +175,7 @@ export default {
       datasetIdList: [],
       datasetVersionList: [],
       specsList: [],
-      btnDisabled: false,
+      submitting: false,
     };
   },
   methods: {
@@ -208,7 +208,9 @@ export default {
       }
     },
     async getHarborProjects() {
-      this.harborProjectList = await getImageNameList({ projectType: IMAGE_PROJECT_TYPE.NOTEBOOK });
+      this.harborProjectList = await getImageNameList({
+        projectTypes: [IMAGE_PROJECT_TYPE.NOTEBOOK],
+      });
       if (
         this.form.imageName &&
         !this.harborProjectList.some((project) => project === this.form.imageName)
@@ -298,7 +300,7 @@ export default {
     onSubmit() {
       this.$refs.form.validate((valid) => {
         if (valid) {
-          this.btnDisabled = true;
+          this.submitting = true;
           const selectedSpecs = this.specsList.find(
             (specs) => specs.specsName === this.form.resourcesPoolSpecs
           );
@@ -313,15 +315,16 @@ export default {
                 message: '创建成功',
                 type: 'success',
               });
-              this.btnDisabled = false;
               this.showDialog = false;
             })
             .catch((err) => {
-              this.btnDisabled = false;
               this.$message({
                 message: err.message,
                 type: 'error',
               });
+            })
+            .finally(() => {
+              this.submitting = false;
             });
           return true;
         }

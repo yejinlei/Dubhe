@@ -144,6 +144,7 @@ import {
   parseTime,
   downloadZipFromObjectPath,
   RESOURCES_POOL_TYPE_MAP,
+  emitter,
 } from '@/utils';
 import {
   SERVING_STATUS_ENUM,
@@ -179,6 +180,8 @@ export default {
       parseTime,
       batchServingProgressColor,
       RESOURCES_POOL_TYPE_MAP,
+
+      timeoutId: null, // 用于记录当前轮询 timeoutId
     };
   },
   computed: {
@@ -259,26 +262,28 @@ export default {
     this.doStopDebounce = debounce(1000, this.doStop);
     this.doRefreshDebounce = debounce(1000, this.doRefresh);
     this.doDownloadDebounce = debounce(1000, this.doDownload);
-    this.getServingDetail(this.serviceId);
+    this.getServingDetail();
     this.$on('dictReady', () => {
       this.dictReady = true;
     });
+    emitter.on('jumpToBatchServingDetail', this.onJumpIn);
   },
   beforeDestroy() {
     this.keepPoll = false;
+    emitter.off('jumpToBatchServingDetail', this.onJumpIn);
   },
   methods: {
     parseObj,
-    async getServingDetail(id) {
-      this.item = await detail(id);
+    async getServingDetail() {
+      this.item = await detail(this.serviceId);
       if (
         this.keepPoll &&
         [SERVING_STATUS_ENUM.IN_DEPLOYMENT, SERVING_STATUS_ENUM.WORKING].indexOf(
           this.item.status
         ) !== -1
       ) {
-        setTimeout(() => {
-          this.refetch(id);
+        this.timeoutId = setTimeout(() => {
+          this.refetch();
         }, 5000);
       }
     },
@@ -334,7 +339,7 @@ export default {
       });
     },
     doRefresh() {
-      this.getServingDetail(this.serviceId);
+      this.getServingDetail();
       this.refreshMap = {
         log: true,
       };
@@ -351,6 +356,14 @@ export default {
         flat: true,
       });
       this.$message.success('请查看下载文件');
+    },
+
+    onJumpIn() {
+      this.$nextTick(() => {
+        this.serviceId = Number(this.$route.query.id);
+        clearTimeout(this.timeoutId);
+        this.getServingDetail();
+      });
     },
   },
 };

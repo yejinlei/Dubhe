@@ -150,36 +150,11 @@ public class NoteBook extends BaseEntity {
     @ApiModelProperty(hidden = true)
     private Long algorithmId;
 
-    @Override
-    public String toString() {
-        return "NoteBook{" +
-                "id=" + id +
-                ", originUserId=" + originUserId +
-                ", name='" + name + '\'' +
-                ", noteBookName='" + noteBookName + '\'' +
-                ", description='" + description + '\'' +
-                ", url='" + url + '\'' +
-                ", totalRunMin=" + totalRunMin +
-                ", cpuNum=" + cpuNum +
-                ", gpuNum=" + gpuNum +
-                ", memNum=" + memNum +
-                ", diskMemNum=" + diskMemNum +
-                ", status=" + status +
-                ", lastStartTime=" + lastStartTime +
-                ", lastOperationTimeout=" + lastOperationTimeout +
-                ", createResource=" + createResource +
-                ", k8sStatusCode='" + k8sStatusCode + '\'' +
-                ", k8sStatusInfo='" + k8sStatusInfo + '\'' +
-                ", k8sNamespace='" + k8sNamespace + '\'' +
-                ", k8sResourceName='" + k8sResourceName + '\'' +
-                ", k8sImageName='" + k8sImageName + '\'' +
-                ", k8sMountPath='" + k8sMountPath + '\'' +
-                ", k8sPvcPath='" + k8sPvcPath + '\'' +
-                ", dataSourceName='" + dataSourceName + '\'' +
-                ", dataSourcePath='" + dataSourcePath + '\'' +
-                ", algorithmId=" + algorithmId +
-                '}';
-    }
+
+    @TableField(value = "pip_site_package_path")
+    @Size(max = 255, message = "pip包路径")
+    @ApiModelProperty(hidden = true)
+    private String pipSitePackagePath;
 
     /**
      * put 键值

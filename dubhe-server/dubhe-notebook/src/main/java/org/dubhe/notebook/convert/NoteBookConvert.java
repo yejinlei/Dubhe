@@ -18,9 +18,10 @@
 package org.dubhe.notebook.convert;
 
 
+import org.dubhe.biz.base.vo.NoteBookVO;
 import org.dubhe.biz.db.base.BaseConvert;
 import org.dubhe.notebook.domain.entity.NoteBook;
-import org.dubhe.notebook.domain.vo.NoteBookVO;
+
 import org.mapstruct.Mapper;
 import org.mapstruct.ReportingPolicy;
 

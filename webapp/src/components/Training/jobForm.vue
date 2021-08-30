@@ -21,14 +21,10 @@
       ref="form"
       :model="form"
       :rules="rules"
-      label-width="120px"
+      label-width="150px"
       :style="`width: ${widthPercent}%; margin-top: 20px;`"
     >
-      <el-form-item
-        v-if="type === 'add' || type === 'paramsAdd' || type === 'algoAdd'"
-        label="任务名称"
-        prop="trainName"
-      >
+      <el-form-item v-if="type === 'add' || type === 'paramsAdd'" label="任务名称" prop="trainName">
         <el-input v-model="form.trainName" />
       </el-form-item>
       <el-form-item v-if="type === 'edit'" label="任务名称" prop="jobName">
@@ -47,7 +43,21 @@
       <el-divider />
       <!--可编辑-->
       <template v-if="type !== 'saveParams'">
-        <el-form-item label="选用算法类型" prop="algorithmSource">
+        <el-form-item label="创建方式">
+          <el-radio-group v-model="notebookCreate" @change="onNotebookCreateChange">
+            <el-radio :label="false" border>常规创建</el-radio>
+            <el-radio :label="true" border class="w-200">启动 Notebook 保存环境</el-radio>
+          </el-radio-group>
+          <el-tooltip
+            effect="dark"
+            content="训练任务的创建方式可以是常规创建，即依次选择算法、镜像或数据集后开始训练，亦可直接启动用户自己创建的Notebook进行训练。"
+            placement="top"
+          >
+            <i class="el-icon-warning-outline primary f18 v-text-top" />
+          </el-tooltip>
+        </el-form-item>
+        <el-divider />
+        <el-form-item v-if="!notebookCreate" label="选用算法类型" prop="algorithmSource">
           <el-radio-group v-model="form.algorithmSource" @change="onAlgorithmSourceChange">
             <el-radio id="algorithm_tab_0" :label="ALGORITHM_RESOURCE_ENUM.CUSTOM" border
               >我的算法</el-radio
@@ -57,7 +67,7 @@
             >
           </el-radio-group>
         </el-form-item>
-        <el-form-item ref="algorithmId" label="选用算法" prop="algorithmId">
+        <el-form-item v-if="!notebookCreate" ref="algorithmId" label="选用算法" prop="algorithmId">
           <el-select
             id="algorithmId"
             v-model="form.algorithmId"
@@ -75,7 +85,7 @@
             />
           </el-select>
         </el-form-item>
-        <el-form-item ref="imageTag" label="镜像选择" prop="imageTag">
+        <el-form-item v-if="!notebookCreate" ref="imageTag" label="镜像选择" prop="imageTag">
           <el-select
             id="imageName"
             v-model="form.imageName"
@@ -101,6 +111,21 @@
               :key="index"
               :label="item.imageTag"
               :value="item.imageTag"
+            />
+          </el-select>
+        </el-form-item>
+        <el-form-item v-if="notebookCreate" label="选择 Notebook 环境" prop="notebookId">
+          <el-select
+            v-model="form.notebookId"
+            placeholder="请选择 Notebook 任务"
+            class="w270"
+            filterable
+          >
+            <el-option
+              v-for="item in notebookList"
+              :key="item.id"
+              :value="item.id"
+              :label="item.noteBookName"
             />
           </el-select>
         </el-form-item>
@@ -405,6 +430,8 @@
 </template>
 
 <script>
+import { isNil, isObjectLike } from 'lodash';
+
 import {
   validateNameWithHyphen,
   getQueueMessage,
@@ -416,10 +443,12 @@ import { list as getAlgorithmList } from '@/api/algorithm/algorithm';
 import { getModelByResource } from '@/api/model/model';
 import { list as getModelBranchs } from '@/api/model/modelVersion';
 import { getTrainModel } from '@/api/trainingJob/job';
-import { getImageNameList, getImageTagList } from '@/api/trainingImage/index';
+import { getImageNameList, getImageTagList } from '@/api/trainingImage';
 import { list as getSpecsNames } from '@/api/system/resources';
+import { list as getNotebooks } from '@/api/development/notebook';
 import { trainConfig } from '@/config';
 import { IMAGE_PROJECT_TYPE } from '@/views/trainingJob/utils';
+import { NOTEBOOK_STATUS_ENUM } from '@/views/development/utils';
 
 import RunParamForm from './runParamForm';
 import DataSourceSelector from './dataSourceSelector';
@@ -445,6 +474,7 @@ const defaultForm = {
   valAlgorithmUsage: null,
   imageTag: null,
   imageName: null,
+  notebookId: null,
   dataSourceName: null,
   dataSourcePath: null,
   valDataSourceName: null,
@@ -475,7 +505,7 @@ export default {
   props: {
     type: {
       type: String,
-      default: 'add', // add: 新增训练任务; paramsAdd: 任务参数创建训练任务; algoAdd: 算法创建训练任务; edit: 修改训练任务; saveParams: 保存训练参数模板; paramsEdit: 修改训练参数模板。
+      default: 'add', // add: 新增训练任务; paramsAdd: 任务参数创建训练任务; edit: 修改训练任务; saveParams: 保存训练参数模板; paramsEdit: 修改训练参数模板。
     },
     widthPercent: {
       type: Number,
@@ -511,7 +541,10 @@ export default {
       trainModelList: [],
       teacherModelList: [],
       studentModelList: [],
+
       specsList: [],
+      notebookCreate: false,
+      notebookList: [],
 
       form: { ...defaultForm },
       rules: {
@@ -527,8 +560,8 @@ export default {
         ],
         algorithmSource: [{ required: true, message: '请选择算法', trigger: 'change' }],
         algorithmId: [{ required: true, message: '请选择算法', trigger: 'manual' }],
+        notebookId: [{ required: true, message: '请选择 Notebook 任务', trigger: 'change' }],
         imageTag: [{ required: true, message: '请选择镜像', trigger: 'manual' }],
-        dataSourcePath: [{ required: true, message: '请选择数据集', trigger: 'manual' }],
         trainJobSpecsName: [{ required: true, message: '请选择节点规格', trigger: 'change' }],
         runCommand: [{ required: true, message: '请输入运行命令', trigger: ['blur', 'change'] }],
       },
@@ -552,8 +585,8 @@ export default {
         str += this.selectedAlgorithm.isVisualizedLog
           ? ' --train_visualized_log=/workspace/visualizedlog'
           : '';
-        str += ' --data_url=/dataset';
       }
+      str += this.form.dataSourceName && this.form.dataSourcePath ? ' --data_url=/dataset' : '';
       str +=
         this.form.valDataSourceName && this.form.valDataSourcePath
           ? ' --val_data_url=/valdataset'
@@ -562,6 +595,9 @@ export default {
       if (this.form.resourcesPoolType) {
         // eslint-disable-next-line no-template-curly-in-string
         str += ' --gpu_num_per_node=${gpu_num}';
+      }
+      if (this.form.resourcesPoolNode > 1) {
+        str += ` --num_nodes=${this.form.resourcesPoolNode} --node_ips=\${node_ips}`;
       }
       return str;
     },
@@ -591,13 +627,15 @@ export default {
     initForm(form) {
       const newForm = form || {};
       Object.keys(this.form).forEach((item) => {
-        if (newForm[item] !== null && newForm[item] !== undefined) {
+        if (!isNil(newForm[item])) {
           this.form[item] = newForm[item];
         }
       });
+      this.notebookCreate = Boolean(this.form.notebookId);
       setTimeout(async () => {
         this.delayCreateDelete = this.form.delayCreateTime !== 0 && this.form.delayDeleteTime !== 0;
         this.getAlgorithmList();
+        this.getNotebookList(true);
         if (!this.isSaveParams) {
           this.getHarborProjects().then(() => {
             this.resetProject();
@@ -621,7 +659,7 @@ export default {
           this.teacherModelList = teacherModelList;
           this.studentModelList = studentModelList;
         }
-        this.onResourcesPoolTypeChange(!['add', 'algoAdd'].includes(this.type));
+        this.onResourcesPoolTypeChange(!['add'].includes(this.type));
 
         // 根据 modelResource 的值来判断是否使用了模型
         this.useModel = this.form.modelResource !== null;
@@ -678,7 +716,7 @@ export default {
       this.$refs.form.validate(async (valid) => {
         if (valid) {
           const params = { ...this.form };
-          params.runParams = { ...this.runParamObj };
+          params.runParams = { ...this.runParamObj }; // 提交时由 runParamObj 确定对象值
           if (this.formSpecs) {
             const { cpuNum, gpuNum, memNum, workspaceRequest } = this.formSpecs;
             Object.assign(params, { cpuNum, gpuNum, memNum, workspaceRequest });
@@ -699,7 +737,7 @@ export default {
         if (this.harborProjectList.some((project) => project === 'oneflow')) {
           this.form.imageName = 'oneflow';
         } else if (this.harborProjectList.length) {
-          Object.assign(this.form, { imageName: this.harborProjectList[0] });
+          this.form.imageName = this.harborProjectList[0].imageName;
         } else {
           this.$message.warning('镜像项目列表为空');
           return;
@@ -710,6 +748,7 @@ export default {
     reset() {
       this.$refs.trainDataSourceSelector.reset();
       this.form = { ...defaultForm };
+      this.form.runParams = {};
       this.runParamObj = {};
       this.selectedAlgorithm = null;
       this.delayCreateDelete = false;
@@ -733,8 +772,26 @@ export default {
         this.$refs.runParamComp.reset();
       }, 0);
     },
+    // 用于恢复指定字段的表单值为默认值
+    partialReset(keys) {
+      keys.forEach((key) => {
+        if (defaultForm[key] !== undefined) {
+          if (isObjectLike(defaultForm[key])) {
+            this.form[key] = { ...defaultForm[key] };
+          } else {
+            this.form[key] = defaultForm[key];
+          }
+        }
+      });
+    },
     async getHarborProjects() {
-      this.harborProjectList = await getImageNameList({ projectType: IMAGE_PROJECT_TYPE.TRAIN });
+      this.harborProjectList = await getImageNameList({
+        projectTypes: [
+          IMAGE_PROJECT_TYPE.TRAIN,
+          IMAGE_PROJECT_TYPE.NOTEBOOK,
+          IMAGE_PROJECT_TYPE.TERMINAL,
+        ],
+      });
       if (
         this.form.imageName &&
         !this.harborProjectList.some((project) => project === this.form.imageName)
@@ -763,7 +820,6 @@ export default {
       }
       return getImageTagList({
         imageName: this.form.imageName,
-        projectType: IMAGE_PROJECT_TYPE.TRAIN,
       }).then((res) => {
         this.harborImageList = res;
       });
@@ -772,7 +828,9 @@ export default {
     // saveModel 用于表示是否需要根据模型列表匹配模型/版本/教师模型/学生模型
     async getModels(saveModel = false) {
       // modelResource 不存在时，获取 我的模型 的模型列表
-      this.modelList = await getModelByResource(this.form.modelResource || 0);
+      this.modelList = await getModelByResource(
+        this.form.modelResource || MODEL_RESOURCE_ENUM.CUSTOM
+      );
 
       // 如果不保留则不进行其余任何操作
       if (!saveModel) {
@@ -781,7 +839,7 @@ export default {
 
       switch (this.form.modelResource) {
         // 我的模型
-        case 0:
+        case MODEL_RESOURCE_ENUM.CUSTOM:
           if (!this.form.modelId) {
             return;
           }
@@ -792,9 +850,8 @@ export default {
           }
           this.getModelBranchs(this.form.modelId, saveModel);
           break;
-
         // 预训练模型
-        case 1:
+        case MODEL_RESOURCE_ENUM.PRESET:
           if (!this.form.modelId) {
             return;
           }
@@ -803,9 +860,8 @@ export default {
             this.form.modelId = null;
           }
           break;
-
         // 炼知模型
-        case 2:
+        case MODEL_RESOURCE_ENUM.ATLAS:
           this.pushModel(this.teacherModelIds, this.form.teacherModelIds, '教师');
           this.pushModel(this.studentModelIds, this.form.studentModelIds, '学生');
           break;
@@ -1002,13 +1058,14 @@ export default {
     onTrainDataSourceChange(dataSourceResult) {
       this.form.dataSourceName = dataSourceResult.dataSourceName;
       this.form.dataSourcePath = dataSourceResult.dataSourcePath;
-      dataSourceResult.dataSourcePath && this.$refs.trainDataSource.validate('manual');
+      this.form.algorithmUsage = dataSourceResult.algorithmUsage;
       // 如果在运行参数中包含了 image_counts 字段，则自动把数据集图片数量填充至该字段。
       this.$refs.runParamComp.updateParam('image_counts', dataSourceResult.imageCounts);
     },
     onVerifyDataSourceChange(result) {
       this.form.valDataSourceName = result.dataSourceName;
       this.form.valDataSourcePath = result.dataSourcePath;
+      this.form.valAlgorithmUsage = result.algorithmUsage;
     },
     async onAlgorithmChange(id) {
       // 选用算法变更时，需要对自动填充的表单项进行验证
@@ -1073,10 +1130,7 @@ export default {
       } else {
         // 打开训练数据集时获取相应值
         this.$nextTick(() => {
-          this.$refs.verifyDataSourceSelector.updateAlgorithmUsage(
-            this.form.valAlgorithmUsage,
-            false
-          );
+          this.$refs.verifyDataSourceSelector.onAlgorithmUsageChange(this.form.valAlgorithmUsage);
         });
       }
     },
@@ -1086,24 +1140,24 @@ export default {
       this.currentAlgPage = 1;
       this.noMoreLoadAlg = false;
       this.selectedAlgorithm = null;
-      this.form = Object.assign(this.form, {
-        algorithmId: null,
-        algorithmUsage: null,
-        dataSourceName: null,
-        dataSourcePath: null,
-        valAlgorithmUsage: null,
-        valDataSourceName: null,
-        valDataSourcePath: null,
-        imageTag: null,
-        imageName: null,
-        runCommand: '',
-        resourcesPoolType: 0,
-        valType: 0,
-        runParams: {},
-        modelResource: null,
-        modelId: null,
-        modelBranchId: null,
-      });
+      this.partialReset([
+        'algorithmId',
+        'algorithmUsage',
+        'dataSourceName',
+        'dataSourcePath',
+        'valAlgorithmUsage',
+        'valDataSourceName',
+        'valDataSourcePath',
+        'imageTag',
+        'imageName',
+        'runCommand',
+        'resourcesPoolType',
+        'valType',
+        'modelResource',
+        'modelId',
+        'modelBranchId',
+        'runParams',
+      ]);
       this.getAlgorithmList();
       this.$refs.trainDataSourceSelector.reset();
       // 切换算法时去获取相应内容
@@ -1127,6 +1181,45 @@ export default {
     },
     onResourcesPoolNodeChange(node) {
       this.form.trainType = node > 1 ? 1 : 0;
+    },
+
+    // 选择 Notebook 创建训练
+    onNotebookCreateChange() {
+      this.partialReset([
+        'algorithmSource',
+        'algorithmId',
+        'algorithmUsage',
+        'dataSourceName',
+        'dataSourcePath',
+        'valAlgorithmUsage',
+        'valDataSourceName',
+        'valDataSourcePath',
+        'imageTag',
+        'imageName',
+        'runCommand',
+        'resourcesPoolType',
+        'valType',
+        'modelResource',
+        'modelId',
+        'modelBranchId',
+        'runParams',
+      ]);
+    },
+    async getNotebookList(keepValue = false) {
+      this.notebookList = (
+        await getNotebooks({
+          status: NOTEBOOK_STATUS_ENUM.STOPPED,
+          current: 1,
+          size: 500,
+        })
+      ).result;
+      if (keepValue && this.form.notebookId) {
+        const notebook = this.notebookList.find((n) => n.id === this.form.notebookId);
+        if (!notebook) {
+          this.$message.warning('原 Notebook 环境不存在，请重新选择');
+          this.form.notebookId = null;
+        }
+      }
     },
   },
 };
@@ -1157,5 +1250,9 @@ export default {
   height: 35px;
   padding: 10px 0;
   text-align: center;
+
+  &.w-200 {
+    width: 200px;
+  }
 }
 </style>

@@ -90,7 +90,7 @@ public class ResourceQuotaApiImpl implements ResourceQuotaApi {
                 resourceQuota = new ResourceQuotaBuilder().withNewMetadata().withName(bo.getName()).endMetadata()
                         .withNewSpec().withHard(hard).endSpec().build();
             }
-            BizResourceQuota bizResourceQuota = BizConvertUtils.toBizResourceQuota(client.resourceQuotas().inNamespace(bo.getNamespace()).create(resourceQuota));
+            BizResourceQuota bizResourceQuota = BizConvertUtils.toBizResourceQuota(client.resourceQuotas().inNamespace(bo.getNamespace()).createOrReplace(resourceQuota));
                 LogUtil.info(LogEnum.BIZ_K8S,"Output {}", bizResourceQuota);
                 return bizResourceQuota;
         } catch (KubernetesClientException e) {
@@ -217,7 +217,7 @@ public class ResourceQuotaApiImpl implements ResourceQuotaApi {
             }
 
             BizQuantity memRemainder = remainder.get(K8sParamConstants.RESOURCE_QUOTA_MEMORY_LIMITS_KEY);
-            if (memRemainder != null && memRemainder != null){
+            if (memRemainder != null && memNum != null){
                 if (UnitConvertUtils.memFormatToMi(memRemainder.getAmount(),memRemainder.getFormat()) < memNum){
                     return LimitsOfResourcesEnum.LIMITS_OF_MEM;
                 }

@@ -48,7 +48,6 @@ public class ImageUtil {
      **/
     public String getImageUrl(BaseImageDTO baseImageDTO, UserContext user) {
         PtImageQueryUrlDTO ptImageQueryUrlDTO = new PtImageQueryUrlDTO();
-        ptImageQueryUrlDTO.setProjectType(ImageTypeEnum.TRAIN.getType());
         ptImageQueryUrlDTO.setImageTag(baseImageDTO.getImageTag());
         ptImageQueryUrlDTO.setImageName(baseImageDTO.getImageName());
         DataResponseBody<String> dataResponseBody = imageClient.getImageUrl(ptImageQueryUrlDTO);

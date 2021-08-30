@@ -147,13 +147,13 @@ public class DeployServingAsyncTask {
      */
     @Async("servingExecutor")
     @Transactional(rollbackFor = Exception.class)
-    public void deployServing(UserContext user, ServingInfo servingInfo, List<ServingModelConfig> modelConfigList) {
+    public void deployServing(UserContext user, ServingInfo servingInfo, List<ServingModelConfig> modelConfigList, String taskIdentify) {
         boolean flag = false;
         //去除可能因为上次部署时程序异常被捕获的异常信息
         servingInfo.removeStatusDetail(ServingStatusDetailDescUtil.getServingStatusDetailKey(ServingStatusDetailDescUtil.CONTAINER_DEPLOYMENT_EXCEPTION, servingInfo.getName()));
         for (ServingModelConfig servingModelConfig : modelConfigList) {
             try {
-                ModelServingBO bo = buildModelServingBO(user, servingInfo, servingModelConfig);
+                ModelServingBO bo = buildModelServingBO(user, servingInfo, servingModelConfig, taskIdentify);
                 if (bo == null) {
                     LogUtil.error(LogEnum.SERVING, "User {} build the parameter failed.The id of servingModelConfig is {}", user.getUsername(), servingModelConfig.getId());
                     continue;
@@ -173,6 +173,19 @@ public class DeployServingAsyncTask {
                         servingModelConfig.setUrl(url);
                         flag = true;
                         servingInfo.removeStatusDetail(statusDetailKey);
+                        if (servingModelConfigService.updateById(servingModelConfig)) {
+                            LogUtil.info(LogEnum.SERVING, "User {} deploy the model SUCCESS. servingModelConfigId = {}, resourceInfo = {}", user.getUsername(), servingModelConfig.getId(), servingModelConfig.getResourceInfo());
+                        } else {
+                            LogUtil.error(LogEnum.SERVING, "User {} failed saving online service model config. Database update FAILED, service model config id={}, resourceInfo = {}", user.getUsername(), servingModelConfig.getId(), servingModelConfig.getResourceInfo());
+                            // 数据库修改失败，但pod创建成功时，修改状态已异常，并删除成功创建的pod
+                            if (StringUtils.isNotBlank(servingModelConfig.getUrl())) {
+                                flag = false;
+                                // 删除已创建的pod
+                                List<ServingModelConfig> deleteList = new ArrayList<>();
+                                deleteList.add(servingModelConfig);
+                                deleteServing(user, servingInfo, deleteList);
+                            }
+                        }
                     } else {
                         servingInfo.putStatusDetail(statusDetailKey, "pod对应的url为空");
                     }
@@ -185,18 +198,7 @@ public class DeployServingAsyncTask {
                 servingInfo.putStatusDetail(statusDetailKey, e.getMessage());
                 LogUtil.error(LogEnum.SERVING, "User {} create serving failed.The name of serving is {}", user.getUsername(), servingInfo.getName(), e);
             }
-            if (!servingModelConfigService.updateById(servingModelConfig)) {
-                LogUtil.error(LogEnum.SERVING, "User {} failed saving online service model config. Database update FAILED, service model config id={}", user.getUsername(), servingModelConfig.getId());
-                // 数据库修改失败，但pod创建成功时，修改状态已异常，并删除成功创建的pod
-                if (StringUtils.isNotBlank(servingModelConfig.getUrl())) {
-                    flag = false;
-                    // 删除已创建的pod
-                    List<ServingModelConfig> deleteList = new ArrayList<>();
-                    deleteList.add(servingModelConfig);
-                    deleteServing(user, servingInfo, deleteList);
-                }
 
-            }
         }
 
         //修改服务状态
@@ -225,7 +227,7 @@ public class DeployServingAsyncTask {
      * @param servingModelConfig 在线服务模型部署信息
      * @return ModelServingBO 返回构建后对象
      */
-    private ModelServingBO buildModelServingBO(UserContext user, ServingInfo servingInfo, ServingModelConfig servingModelConfig) {
+    private ModelServingBO buildModelServingBO(UserContext user, ServingInfo servingInfo, ServingModelConfig servingModelConfig, String taskIdentify) {
         ModelServingBO bo = new ModelServingBO();
         //容器端口
         if (ServingTypeEnum.GRPC.getType().equals(servingInfo.getType())) {
@@ -260,7 +262,8 @@ public class DeployServingAsyncTask {
                 .setFsMounts(new HashMap<String, PtMountDirBO>(NumberConstant.NUMBER_4) {{
                     put(ServingConstant.MODEL_PATH, new PtMountDirBO(k8sNameTool.getAbsolutePath(servingModelConfig.getModelAddress())));
                     put(ServingConstant.DUBHE_SERVING_PATH, new PtMountDirBO(servingPath));
-                }});
+                }})
+                .setTaskIdentifyLabel(taskIdentify);
         bo.setBusinessLabel(k8sNameTool.getPodLabel(BizEnum.SERVING));
         return bo;
     }
@@ -328,7 +331,13 @@ public class DeployServingAsyncTask {
                 if (!ServingConstant.SUCCESS_CODE.equals(ptBaseResult.getCode())) {
                     servingInfo.putStatusDetail(statusDetailKey, ptBaseResult.getMessage());
                     flag = false;
+                } else {
+                    servingModelConfig.setResourceInfo(null);
+                    if (servingModelConfigService.updateById(servingModelConfig)) {
+                        LogUtil.info(LogEnum.SERVING, "User {} delete the service SUCCESS, namespace:{}, resourceName:{}", user.getUsername(), namespace, resourceName);
+                    }
                 }
+
             }
         } catch (KubernetesClientException e) {
             servingInfo.putStatusDetail(ServingStatusDetailDescUtil.getServingStatusDetailKey(ServingStatusDetailDescUtil.CONTAINER_DELETION_EXCEPTION, servingInfo.getName()), e.getMessage());
@@ -358,10 +367,10 @@ public class DeployServingAsyncTask {
      */
     @Async("servingExecutor")
     @Transactional(rollbackFor = Exception.class)
-    public void deployBatchServing(UserContext user, BatchServing batchServing) {
+    public void deployBatchServing(UserContext user, BatchServing batchServing, String taskIdentify) {
         if (batchServing.getResourcesPoolNode() == NumberConstant.NUMBER_1) {
             //单节点
-            PtJupyterJobBO ptJupyterJobBO = buildJobBo(user, batchServing);
+            PtJupyterJobBO ptJupyterJobBO = buildJobBo(user, batchServing, taskIdentify);
             if (ptJupyterJobBO != null) {
                 PtJupyterJobVO vo = trainJobApi.create(ptJupyterJobBO);
                 //添加状态详情信息
@@ -380,7 +389,7 @@ public class DeployServingAsyncTask {
 
         } else {
             //多节点分布式
-            DistributeTrainBO distributeTrainBO = buildDistributeTrainBO(user, batchServing);
+            DistributeTrainBO distributeTrainBO = buildDistributeTrainBO(user, batchServing, taskIdentify);
             if (distributeTrainBO != null) {
                 BizDistributeTrain distribute = distributeTrainApi.create(distributeTrainBO);
 
@@ -443,7 +452,7 @@ public class DeployServingAsyncTask {
      * @param batchServing 批量服务信息
      * @return PtJupyterJobBO 返回构建后对象
      */
-    public PtJupyterJobBO buildJobBo(UserContext user, BatchServing batchServing) {
+    public PtJupyterJobBO buildJobBo(UserContext user, BatchServing batchServing, String taskIdentify) {
         String platform = ServingFrameTypeEnum.getFrameName(batchServing.getFrameType());
         if (batchServing.getUseScript()) {
             platform = SymbolConstant.BLANK;
@@ -469,7 +478,8 @@ public class DeployServingAsyncTask {
                     put(ServingConstant.DUBHE_SERVING_PATH, new PtMountDirBO(servingPath));
                 }})
                 .setImage(batchServing.getImage())
-                .setBusinessLabel(k8sNameTool.getPodLabel(BizEnum.BATCH_SERVING));
+                .setBusinessLabel(k8sNameTool.getPodLabel(BizEnum.BATCH_SERVING))
+                .setTaskIdentifyLabel(taskIdentify);
         return bo;
     }
 
@@ -480,7 +490,7 @@ public class DeployServingAsyncTask {
      * @param batchServing 批量服务信息
      * @return DistributeTrainBO 返回构建后对象
      */
-    public DistributeTrainBO buildDistributeTrainBO(UserContext user, BatchServing batchServing) {
+    public DistributeTrainBO buildDistributeTrainBO(UserContext user, BatchServing batchServing, String taskIdentify) {
         String platform = ServingFrameTypeEnum.getFrameName(batchServing.getFrameType());
         if (batchServing.getUseScript()) {
             platform = SymbolConstant.BLANK;
@@ -511,7 +521,8 @@ public class DeployServingAsyncTask {
                     put(ServingConstant.INPUT_PATH, new PtMountDirBO(k8sNameTool.getAbsolutePath(batchServing.getInputPath())));
                     put(ServingConstant.OUTPUT_PATH, new PtMountDirBO(k8sNameTool.getAbsolutePath(batchServing.getOutputPath())));
                     put(ServingConstant.DUBHE_SERVING_PATH, new PtMountDirBO(servingPath));
-                }});
+                }})
+                .setTaskIdentifyLabel(taskIdentify);
         return bo;
     }
 

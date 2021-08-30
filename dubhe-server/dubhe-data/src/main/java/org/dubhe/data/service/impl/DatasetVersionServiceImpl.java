@@ -1019,4 +1019,15 @@ public class DatasetVersionServiceImpl extends ServiceImpl<DatasetVersionMapper,
             baseMapper.updateById(datasetVersion);
         }
     }
+
+    /**
+     * 生成版本数据
+     *
+     * @param datasetVersion  版本详情
+     */
+    @Override
+    public void insertOne(DatasetVersion datasetVersion) {
+        baseMapper.insert(datasetVersion);
+    }
+
 }

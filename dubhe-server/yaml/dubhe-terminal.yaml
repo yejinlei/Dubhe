@@ -1,0 +1,13 @@
+# 专业版终端配置
+terminal:
+  # 专业版终端模块目录
+  terminal-dir: "/terminal"
+  # 用户workspace目录
+  workspace-dir: "/workspace"
+  # ssh主机
+  ssh-host: 10.5.26.91
+
+# 可匿名访问路径
+security:
+  permitAll:
+    matchers: /api/k8s/callback/pod/terminal,/api/docker/callback/push

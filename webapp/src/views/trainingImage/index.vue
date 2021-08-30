@@ -36,7 +36,8 @@
     <el-tabs v-model="active" class="eltabs-inlineblock" @tab-click="handleClick">
       <el-tab-pane id="tab_0" label="我的镜像" :name="IMAGE_RESOURCE_ENUM.CUSTOM" />
       <el-tab-pane id="tab_1" label="预置镜像" :name="IMAGE_RESOURCE_ENUM.PRESET" />
-      <el-tab-pane id="tab_1" label="Notebook 镜像" :name="IMAGE_RESOURCE_ENUM.NOTEBOOK" />
+      <el-tab-pane id="tab_2" label="Notebook 镜像" :name="IMAGE_RESOURCE_ENUM.NOTEBOOK" />
+      <el-tab-pane id="tab_4" label="终端镜像" :name="IMAGE_RESOURCE_ENUM.TERMINAL" />
     </el-tabs>
     <!--表格渲染-->
     <el-table
@@ -48,13 +49,7 @@
       @selection-change="crud.selectionChangeHandler"
       @sort-change="crud.sortChange"
     >
-      <el-table-column
-        v-if="!judgeTabs.preset"
-        prop="id"
-        label="ID"
-        sortable="custom"
-        width="80px"
-      />
+      <el-table-column v-if="!isPreset" prop="id" label="ID" sortable="custom" width="80px" />
       <el-table-column prop="imageName" label="镜像名称" sortable="custom" />
       <el-table-column prop="imageTag" label="镜像版本号" sortable="custom" />
       <el-table-column prop="imageStatus" label="状态" width="160px">
@@ -78,12 +73,7 @@
           <span>{{ parseTime(scope.row.createTime) }}</span>
         </template>
       </el-table-column>
-      <el-table-column
-        v-if="judgeTabs.notebook"
-        prop="imageResource"
-        label="是否为默认"
-        align="center"
-      >
+      <el-table-column v-if="isNotebook" prop="imageResource" label="是否为默认" align="center">
         <template slot-scope="scope">
           <i
             :class="resourceObj(scope.row.imageResource).icon"
@@ -91,10 +81,10 @@
           ></i>
         </template>
       </el-table-column>
-      <el-table-column v-if="!operationProps.disabled" label="操作" width="200px" fixed="right">
+      <el-table-column v-if="isAdmin || isCustom" label="操作" width="200px" fixed="right">
         <template slot-scope="scope">
           <el-tooltip
-            v-if="isAdmin && judgeTabs.notebook"
+            v-if="isAdmin && isNotebook"
             effect="dark"
             content="设为在线编辑算法时创建nootbook的默认镜像"
             placement="top"
@@ -109,7 +99,7 @@
             </el-button>
           </el-tooltip>
           <el-button
-            v-if="hasPermission('training:image:edit') && judgeTabs.train"
+            v-if="hasPermission('training:image:edit') && isCustom"
             :id="`doEdit_` + scope.$index"
             type="text"
             @click.stop="doEdit(scope.row)"
@@ -117,7 +107,7 @@
             编辑
           </el-button>
           <el-button
-            v-if="hasPermission('training:image:delete') && (!judgeTabs.preset || isAdmin)"
+            v-if="hasPermission('training:image:delete') && (!isPreset || isAdmin)"
             :id="`doDelete_` + scope.$index"
             type="text"
             @click.stop="doDelete(scope.row.id)"
@@ -239,12 +229,15 @@ import {
   invalidFileNameChar,
   ADMIN_ROLE_ID,
   hasPermission,
+  validateImageName,
+  validateImageTag,
 } from '@/utils';
 import BaseModal from '@/components/BaseModal';
 import UploadInline from '@/components/UploadForm/inline';
 import DropdownHeader from '@/components/DropdownHeader';
 import UploadProgress from '@/components/UploadProgress';
 import { imageConfig } from '@/config';
+
 import { IMAGE_RESOURCE_ENUM, IMAGE_PROJECT_TYPE } from '../trainingJob/utils';
 
 const defaultForm = {
@@ -293,28 +286,6 @@ export default {
   },
   mixins: [presenter(), header(), form(defaultForm), crud()],
   data() {
-    const validateImageTag = (rule, value, callback) => {
-      if (value === '' || value == null) {
-        callback();
-      } else if (value.length > 32) {
-        callback(new Error('长度不超过 32 个字符'));
-      } else if (!/^[A-Za-z0-9_\-.]+$/.test(value)) {
-        callback(new Error('只支持英文、数字、下划线、英文横杠和英文.号'));
-      } else {
-        callback();
-      }
-    };
-    const validateImageName = (rule, value, callback) => {
-      if (value === '' || value == null) {
-        callback();
-      } else if (value.length > 64) {
-        callback(new Error('长度不超过 64 个字符'));
-      } else if (!/^[a-z0-9_-]+$/.test(value)) {
-        callback(new Error('只支持小写英文、数字、下划线和横杠'));
-      } else {
-        callback();
-      }
-    };
     return {
       active: IMAGE_RESOURCE_ENUM.CUSTOM,
       localQuery: { ...defaultQuery },
@@ -370,16 +341,25 @@ export default {
       const { roles } = this.user;
       return roles && roles.length && roles[0].id === ADMIN_ROLE_ID;
     },
-    judgeTabs() {
-      return {
-        train: this.active === IMAGE_RESOURCE_ENUM.CUSTOM,
-        preset: this.active === IMAGE_RESOURCE_ENUM.PRESET,
-        notebook: this.active === IMAGE_RESOURCE_ENUM.NOTEBOOK,
-      };
+    isCustom() {
+      return this.active === IMAGE_RESOURCE_ENUM.CUSTOM;
+    },
+    isPreset() {
+      return this.active === IMAGE_RESOURCE_ENUM.PRESET;
+    },
+    isNotebook() {
+      return this.active === IMAGE_RESOURCE_ENUM.NOTEBOOK;
+    },
+    isTerminal() {
+      return this.active === IMAGE_RESOURCE_ENUM.TERMINAL;
+    },
+    disableAdd() {
+      if (this.isAdmin) return this.isTerminal; // 管理员只有在终端镜像处无法点击上传
+      return !this.isCustom; // 其他角色只有在我的镜像处可以点击上传
     },
     operationProps() {
       return {
-        disabled: !this.isAdmin && !this.judgeTabs.train, // 非管理员只能上传我的镜像；管理员可以上传预置镜像和 Notebook 镜像
+        disabled: this.disableAdd,
       };
     },
     imageStatusList() {
@@ -446,9 +426,9 @@ export default {
     [CRUD.HOOK.beforeToAdd]() {
       this.isEdit = true;
       this.formType = 'add';
-      if (this.judgeTabs.preset) {
+      if (this.isPreset) {
         this.form.imageResource = Number(IMAGE_RESOURCE_ENUM.PRESET);
-      } else if (this.judgeTabs.notebook) {
+      } else if (this.isNotebook) {
         this.form.projectType = IMAGE_PROJECT_TYPE.NOTEBOOK;
       }
     },
@@ -463,6 +443,9 @@ export default {
         case IMAGE_RESOURCE_ENUM.NOTEBOOK:
           this.crud.query.projectType = IMAGE_PROJECT_TYPE.NOTEBOOK;
           break;
+        case IMAGE_RESOURCE_ENUM.TERMINAL:
+          this.crud.query.projectType = IMAGE_PROJECT_TYPE.TERMINAL;
+          break;
         // no default
       }
     },
@@ -470,7 +453,7 @@ export default {
       this.isEdit = false;
     },
     async getImageNameList() {
-      this.harborProjectList = await getImageNameList({ projectType: this.form.projectType });
+      this.harborProjectList = await getImageNameList({ projectTypes: [this.form.projectType] });
     },
     onImageTypeChange() {
       this.form.imageName = null;

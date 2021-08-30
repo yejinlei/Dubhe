@@ -39,7 +39,7 @@
         <div class="label">状态</div>
       </el-col>
       <el-col :span="19">
-        <div class="text">{{ notebookStatus[itemObj.status] }}</div>
+        <div class="text">{{ notebookNameMap[itemObj.status] }}</div>
       </el-col>
     </el-row>
     <el-row class="row">
@@ -118,16 +118,14 @@
 </template>
 
 <script>
-import { parseTime } from '@/utils/index';
+import { parseTime, generateMap } from '@/utils';
+
+import { NOTEBOOK_STATUS_MAP } from '../utils';
 
 export default {
   name: 'NotebookDetail',
   props: {
     itemObj: {
-      type: Object,
-      default: () => {},
-    },
-    notebookStatus: {
       type: Object,
       default: () => {},
     },
@@ -143,6 +141,9 @@ export default {
         return `${dataSourceName}:${dataSourceVersion}`;
       }
       return null;
+    },
+    notebookNameMap() {
+      return generateMap(NOTEBOOK_STATUS_MAP, 'name');
     },
   },
   methods: {

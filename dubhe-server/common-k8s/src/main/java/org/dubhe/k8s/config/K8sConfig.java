@@ -23,8 +23,38 @@ import org.apache.http.HttpHost;
 import org.apache.http.client.config.RequestConfig;
 import org.dubhe.biz.log.enums.LogEnum;
 import org.dubhe.biz.log.utils.LogUtil;
-import org.dubhe.k8s.api.*;
-import org.dubhe.k8s.api.impl.*;
+import org.dubhe.k8s.api.DistributeTrainApi;
+import org.dubhe.k8s.api.DubheDeploymentApi;
+import org.dubhe.k8s.api.JupyterResourceApi;
+import org.dubhe.k8s.api.LimitRangeApi;
+import org.dubhe.k8s.api.LogMonitoringApi;
+import org.dubhe.k8s.api.MetricsApi;
+import org.dubhe.k8s.api.ModelOptJobApi;
+import org.dubhe.k8s.api.ModelServingApi;
+import org.dubhe.k8s.api.NamespaceApi;
+import org.dubhe.k8s.api.NativeResourceApi;
+import org.dubhe.k8s.api.NodeApi;
+import org.dubhe.k8s.api.PersistentVolumeClaimApi;
+import org.dubhe.k8s.api.PodApi;
+import org.dubhe.k8s.api.ResourceQuotaApi;
+import org.dubhe.k8s.api.TerminalApi;
+import org.dubhe.k8s.api.TrainJobApi;
+import org.dubhe.k8s.api.impl.DistributeTrainApiImpl;
+import org.dubhe.k8s.api.impl.DubheDeploymentApiImpl;
+import org.dubhe.k8s.api.impl.JupyterResourceApiImpl;
+import org.dubhe.k8s.api.impl.LimitRangeApiImpl;
+import org.dubhe.k8s.api.impl.LogMonitoringApiImpl;
+import org.dubhe.k8s.api.impl.MetricsApiImpl;
+import org.dubhe.k8s.api.impl.ModelOptJobApiImpl;
+import org.dubhe.k8s.api.impl.ModelServingApiImpl;
+import org.dubhe.k8s.api.impl.NamespaceApiImpl;
+import org.dubhe.k8s.api.impl.NativeResourceApiImpl;
+import org.dubhe.k8s.api.impl.NodeApiImpl;
+import org.dubhe.k8s.api.impl.PersistentVolumeClaimApiImpl;
+import org.dubhe.k8s.api.impl.PodApiImpl;
+import org.dubhe.k8s.api.impl.ResourceQuotaApiImpl;
+import org.dubhe.k8s.api.impl.TerminalApiImpl;
+import org.dubhe.k8s.api.impl.TrainJobApiImpl;
 import org.dubhe.k8s.cache.ResourceCache;
 import org.dubhe.k8s.properties.ClusterProperties;
 import org.dubhe.k8s.utils.K8sUtils;
@@ -37,6 +67,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.web.socket.server.standard.ServerEndpointExporter;
 
 import java.io.IOException;
 
@@ -166,7 +197,6 @@ public class K8sConfig {
             public RequestConfig.Builder customizeRequestConfig(RequestConfig.Builder builder) {
                 builder.setSocketTimeout(TEN_THOUSAND);
                 return builder;
-
             }
         }));
     }
@@ -175,4 +205,16 @@ public class K8sConfig {
     public ModelServingApi modelServingApi(K8sUtils k8sUtils){
         return new ModelServingApiImpl(k8sUtils);
     }
+
+    @Bean
+    public ServerEndpointExporter handlerAdapter() {
+            return new ServerEndpointExporter();
+        }
+
+
+    @Bean
+    public TerminalApi terminalApi(K8sUtils k8sUtils){
+        return new TerminalApiImpl(k8sUtils);
+    }
+
 }

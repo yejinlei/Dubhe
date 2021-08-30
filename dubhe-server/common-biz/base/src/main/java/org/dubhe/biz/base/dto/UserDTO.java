@@ -59,5 +59,10 @@ public class UserDTO implements Serializable {
      */
     private List<SysRoleDTO> roles;
 
+    /**
+     * 用户配置
+     */
+    private SysUserConfigDTO userConfig;
+
 
 }

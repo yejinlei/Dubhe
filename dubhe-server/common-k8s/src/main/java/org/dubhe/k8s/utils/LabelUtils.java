@@ -94,10 +94,13 @@ public class LabelUtils {
      * @param labels 可变参数标签Map
      * @return
      */
-    public static Map<String, String> getChildLabels(String resourceName, String pName, String pKind, String business, Map<String, String>... labels) {
+    public static Map<String, String> getChildLabels(String resourceName, String pName, String pKind, String business, String taskIdentify, Map<String, String>... labels) {
         Map<String, String> labelMap = getChildLabels(resourceName, pName, pKind, labels);
         if (null != business) {
             labelMap.put(K8sLabelConstants.BASE_TAG_BUSINESS, business);
+        }
+        if (null != taskIdentify){
+            labelMap.put(K8sLabelConstants.BASE_TAG_TASK_IDENTIFY, taskIdentify);
         }
         return labelMap;
     }

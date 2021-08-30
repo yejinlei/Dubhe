@@ -73,4 +73,11 @@ export function setPrecast(params) {
   });
 }
 
+export function getTerminalImageList() {
+  return request({
+    url: `/${API_MODULE_NAME.IMAGE}/ptImage/terminalImageList`,
+    method: 'get',
+  });
+}
+
 export default { list, add, edit };

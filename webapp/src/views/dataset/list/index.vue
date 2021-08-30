@@ -124,7 +124,7 @@
                     当前数据集为外部导入数据集<br />点击复制数据集 ID<br /><a
                       class="mt-10 db primary"
                       target="_blank"
-                      :href="`${VUE_APP_DOCS_URL}module/dataset/import-dataset`"
+                      :href="`${VUE_APP_DOCS_URL}module/dataset/util#2-导入数据集`"
                       >使用文档</a
                     >
                   </div>
@@ -346,6 +346,7 @@ import {
   annotationCodeMap,
   isPublishDataset,
   isPresetDataset,
+  isCustomDataset,
   annotationBy,
 } from '@/views/dataset/util';
 import Edit from '@/components/InlineTableEdit';
@@ -732,6 +733,14 @@ export default {
     },
     // 查看标注
     async goDetail(row) {
+      // 自定义数据类型的数据集 不论标注类型 都是查看文件
+      if (isCustomDataset(row)) {
+        const customUrlPrefix = annotationByCode(annotationCodeMap.CUSTOM, 'urlPrefix');
+        this.$router.push({
+          path: `/data/datasets/${customUrlPrefix}/${row.id}`,
+        });
+        return false;
+      }
       // 版本切换中
       if (isPublishDataset(row)) {
         Message.error('版本切换中，请稍后');
@@ -973,13 +982,13 @@ export default {
     },
     // 判断数据集能否被选中
     canSelect(row) {
-      // 预置数据集 若从普通数据集转换生成的是可以删除的
+      // 判断预置数据集标签页，上面所有的预置数据集都是可以删除的
       if (isPresetDataset(this.activePanel)) {
-        return !isNil(row.sourceId);
+        return true;
       }
-      // 普通数据集状态为自动标注中、采样中、数据增强中不能被选中
-      // 数据集导入中允许删除
+      // 普通数据集标签页上 专门为了自定义导入而创建的数据集是允许删除的，因为无论导不导入，导入什么，都不会处于进行时态
       if (row.import) return true;
+      // 普通数据集标签页上 其余普通方式创建的数据集 状态为自动标注中、采样中、数据增强中不能被选中
       return !(
         row.pollIng ||
         isIncludeStatus(row, ['AUTO_ANNOTATING', 'SAMPLING', 'ENHANCING', 'TRACKING'])

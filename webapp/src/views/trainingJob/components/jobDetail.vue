@@ -41,7 +41,7 @@
         <div class="label">验证数据集</div>
         <div class="text">{{ item.valDataSourceName }}</div>
       </el-col>
-      <el-col :xl="12" :span="24">
+      <el-col v-if="!useNotebook" :xl="12" :span="24">
         <div class="label">算法</div>
         <div class="text">
           <div class="dib">{{ item.algorithmName }}</div>
@@ -59,13 +59,17 @@
           <i v-if="editLoading" class="el-icon-loading" />
         </div>
       </el-col>
-      <el-col :xl="12" :span="24">
+      <el-col v-if="!useNotebook" :xl="12" :span="24">
         <div class="label">镜像名称</div>
         <div class="text">{{ item.imageName }}</div>
       </el-col>
-      <el-col :xl="12" :span="24">
+      <el-col v-if="!useNotebook" :xl="12" :span="24">
         <div class="label">镜像版本</div>
         <div class="text">{{ item.imageTag }}</div>
+      </el-col>
+      <el-col v-if="useNotebook" :xl="12" :span="24">
+        <div class="label">Notebook 信息</div>
+        <div class="text">{{ item.notebookName }}</div>
       </el-col>
       <el-col
         v-if="[MODEL_RESOURCE_ENUM.CUSTOM, MODEL_RESOURCE_ENUM.PRESET].includes(item.modelResource)"
@@ -252,6 +256,9 @@ export default {
     studentModelNames() {
       return this.studentModelList.map((model) => model.name).join(', ');
     },
+    useNotebook() {
+      return Boolean(this.item.notebookId);
+    },
   },
   watch: {
     item: {
@@ -377,7 +384,7 @@ export default {
 <style lang="scss" scoped>
 .job-detail-container {
   .label {
-    width: 90px;
+    width: 110px;
   }
 }
 </style>

@@ -98,7 +98,19 @@ public class PtJupyterResourceBO {
      **/
     private String businessLabel;
     /**
+     * 任务身份标签,用于标识任务唯一身份
+     **/
+    private String taskIdentifyLabel;
+    /**
      * 定时删除时间，单位：分钟
      **/
     private Integer delayDeleteTime;
+    /**
+     * pip包路径
+     */
+    private String pipSitePackageDir;
+    /**
+     * k8s内pip包路径
+     */
+    private String pipSitePackageMountPath;
 }

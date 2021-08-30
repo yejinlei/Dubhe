@@ -48,6 +48,10 @@ public enum BusinessLabelServiceNameEnum {
      * 批量服务
      */
     BATCH_SERVING(BizEnum.BATCH_SERVING.getBizCode(), ApplicationNameConst.SERVER_SERVING),
+    /**
+     * 专业版终端
+     */
+    TERMINAL(BizEnum.TERMINAL.getBizCode(), ApplicationNameConst.TERMINAL),
     ;
     /**
      * 业务标签

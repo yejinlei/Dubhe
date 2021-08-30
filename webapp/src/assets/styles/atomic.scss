@@ -48,6 +48,10 @@
   vertical-align: text-top;
 }
 
+.v-text-bottom {
+  vertical-align: text-bottom;
+}
+
 .v-bottom {
   vertical-align: bottom;
 }
@@ -58,6 +62,10 @@
 
 .flex-between {
   justify-content: space-between;
+}
+
+.flex-around {
+  justify-content: space-around;
 }
 
 .flex-vertical-align {
@@ -225,6 +233,11 @@
 .my-10 {
   margin-top: 10px;
   margin-bottom: 10px;
+}
+
+.my-20 {
+  margin-top: 20px;
+  margin-bottom: 20px;
 }
 
 .mx-auto {

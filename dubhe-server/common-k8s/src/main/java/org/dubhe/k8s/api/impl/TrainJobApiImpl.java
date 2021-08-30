@@ -151,7 +151,7 @@ public class TrainJobApiImpl implements TrainJobApi {
     /**
      * 根据命名空间和资源名删除Job
      *
-     * @param namespace 命名空间
+     * @param namespace    命名空间
      * @param resourceName 资源名称
      * @return Boolean true成功 false失败
      */
@@ -224,6 +224,7 @@ public class TrainJobApiImpl implements TrainJobApi {
         private List<VolumeMount> volumeMounts;
         private List<Volume> volumes;
         private String businessLabel;
+        private String taskIdentifyLabel;
         private Integer delayCreate;
         private Integer delayDelete;
         private TaskYamlBO taskYamlBO;
@@ -249,6 +250,7 @@ public class TrainJobApiImpl implements TrainJobApi {
 
             this.fsMounts = bo.getFsMounts();
             businessLabel = bo.getBusinessLabel();
+            this.taskIdentifyLabel = bo.getTaskIdentifyLabel();
             this.baseLabels = LabelUtils.getBaseLabels(baseName,bo.getBusinessLabel());
 
             this.volumeMounts = new ArrayList<>();
@@ -345,8 +347,8 @@ public class TrainJobApiImpl implements TrainJobApi {
          * 挂载存储
          *
          * @param mountPath 挂载路径
-         * @param dirBO 挂载路径参数
-         * @param num 名称序号
+         * @param dirBO     挂载路径参数
+         * @param num       名称序号
          * @return boolean true成功 false失败
          */
         private boolean buildFsVolumes(String mountPath,PtMountDirBO dirBO,int num){
@@ -369,8 +371,8 @@ public class TrainJobApiImpl implements TrainJobApi {
          * 按照存储资源声明挂载存储
          *
          * @param mountPath 挂载路径
-         * @param dirBO 挂载路径参数
-         * @param i 名称序号
+         * @param dirBO     挂载路径参数
+         * @param i         名称序号
          * @return boolean true成功 false失败
          */
         private boolean buildFsPvcVolumes(String mountPath,PtMountDirBO dirBO,int i){
@@ -456,7 +458,7 @@ public class TrainJobApiImpl implements TrainJobApi {
                         .withNewTemplate()
                             .withNewMetadata()
                                 .withName(jobName)
-                                .addToLabels(LabelUtils.getChildLabels(baseName, jobName, K8sKindEnum.JOB.getKind(),businessLabel))
+                                .addToLabels(LabelUtils.getChildLabels(baseName, jobName, K8sKindEnum.JOB.getKind(),businessLabel, taskIdentifyLabel))
                                 .withNamespace(namespace)
                             .endMetadata()
                             .withNewSpec()

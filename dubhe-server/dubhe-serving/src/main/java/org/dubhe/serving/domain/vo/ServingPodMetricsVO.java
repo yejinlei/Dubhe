@@ -19,7 +19,7 @@ package org.dubhe.serving.domain.vo;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import org.dubhe.k8s.domain.vo.GpuUsageVO;
+import org.dubhe.k8s.domain.vo.GpuValueVO;
 
 import java.io.Serializable;
 import java.util.List;
@@ -96,7 +96,7 @@ public class ServingPodMetricsVO implements Serializable {
     /**
      * gpu使用百分比
      */
-    private List<GpuUsageVO> gpuUsagePersent;
+    private List<GpuValueVO> gpuUsagePersent;
     /**
      * grafana地址
      */

@@ -49,12 +49,12 @@ public interface PtImageService {
 
 
     /**
-     * 根据镜像获取信息
+     * 获取镜像信息
      *
-     * @param imageName 镜像名
+     * @param ptImageQueryImageDTO 查询条件
      * @return List<String>  镜像集合
      */
-    List<PtImage> searchImages(Integer projectType, String imageName);
+    List<PtImage> searchImages(PtImageQueryImageDTO ptImageQueryImageDTO);
 
     /**
      * 删除镜像
@@ -73,10 +73,10 @@ public interface PtImageService {
 
     /**
      * 获取镜像名称列表
-     * @param projectType 镜像项目类型
+     * @param ptImageQueryNameDTO 获取镜像名称列表查询条件
      * @return Set<String> 镜像列表
      */
-    Set<String> getImageNameList(Integer projectType);
+    Set<String> getImageNameList(PtImageQueryNameDTO ptImageQueryNameDTO);
 
     /**
      * 修改镜像来源(notebook定制)
@@ -100,4 +100,10 @@ public interface PtImageService {
      */
     void recycleRollback(RecycleCreateDTO dto);
 
+    /**
+     * 获取终端镜像列表
+     *
+     * @return List<PtImage>
+     */
+    List<PtImage> getTerminalImageList();
 }

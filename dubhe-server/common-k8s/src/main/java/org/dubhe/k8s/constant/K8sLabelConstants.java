@@ -39,6 +39,10 @@ public class K8sLabelConstants {
      */
     public final static String BASE_TAG_BUSINESS = "platform/business";
     /**
+     * 任务身份标签，用于标识任务身份，由业务层传入
+     */
+    public final static String BASE_TAG_TASK_IDENTIFY = "platform/task-identify";
+    /**
      * 运行环境标签，用于对不同环境回调进行分流
      */
     public final static String PLATFORM_RUNTIME_ENV = "platform/runtime-env";

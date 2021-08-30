@@ -8,11 +8,6 @@ notebook-specs:
   mem-num: 1024
   # 工作空间配额（m）
   disk-mem-num: 1024
-# 延时全局配置
-delay:
-  notebook:
-    #模型开发延时关闭时间
-    delete: 240
 
 # 可匿名访问路径
 security:

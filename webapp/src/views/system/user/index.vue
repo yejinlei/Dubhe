@@ -1,9 +1,18 @@
-/* * Copyright 2019-2020 Zheng Jie * * Licensed under the Apache License, Version 2.0 (the
-"License"); * you may not use this file except in compliance with the License. * You may obtain a
-copy of the License at * * http://www.apache.org/licenses/LICENSE-2.0 * * Unless required by
-applicable law or agreed to in writing, software * distributed under the License is distributed on
-an "AS IS" BASIS, * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. * See
-the License for the specific language governing permissions and * limitations under the License. */
+/*
+* Copyright 2019-2020 Zheng Jie
+*
+* Licensed under the Apache License, Version 2.0 (the "License");
+* you may not use this file except in compliance with the License.
+* You may obtain a copy of the License at
+*
+* http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS,
+* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+* See the License for the specific language governing permissions and
+* limitations under the License.
+*/
 
 <template>
   <div class="app-container">
@@ -146,7 +155,7 @@ the License for the specific language governing permissions and * limitations un
           <span>{{ parseTime(scope.row.createTime) }}</span>
         </template>
       </el-table-column>
-      <el-table-column label="操作" width="120" fixed="right">
+      <el-table-column label="操作" width="240" fixed="right">
         <template slot-scope="scope">
           <udOperation
             :data="scope.row"
@@ -155,16 +164,86 @@ the License for the specific language governing permissions and * limitations un
             :disabled-edit="isDisabledEdit(scope.row.id)"
             :disabled-dle="isDisabled(scope.row.id)"
           />
+          <el-button
+            v-if="hasPermission('system:user:configEdit')"
+            type="text"
+            class="ml-10"
+            @click="doEditUserConfig(scope.row)"
+            >修改配置</el-button
+          >
+          <el-button
+            v-if="hasPermission('system:user:resourceInfo')"
+            type="text"
+            class="ml-10"
+            @click="doCheckUserResourceInfo(scope.row.id)"
+            >资源监控</el-button
+          >
         </template>
       </el-table-column>
     </el-table>
     <!--分页组件-->
     <pagination />
+    <!-- 修改用户配置弹窗 -->
+    <BaseModal
+      :visible.sync="userConfigVisible"
+      title="修改用户配置"
+      :loading="userConfigLoading"
+      width="600px"
+      @ok="onUserConfigSubmit"
+      @cancel="userConfigVisible = false"
+      @close="onUserConfigClose"
+    >
+      <el-form
+        ref="userConfigForm"
+        :model="userConfigForm"
+        :rules="userConfigRules"
+        label-width="180px"
+        @submit.native.prevent
+      >
+        <el-form-item prop="notebookDelayDeleteTime" label="Notebook 自动关闭时间">
+          <el-input-number
+            v-model="userConfigForm.notebookDelayDeleteTime"
+            :min="1"
+            :max="24"
+            step-strictly
+          />&nbsp;小时
+          <el-tooltip effect="dark" content="Notebook 自动关闭时间限制为 1-24 小时" placement="top">
+            <i class="el-icon-warning-outline primary f18 v-text-top" />
+          </el-tooltip>
+        </el-form-item>
+        <el-form-item prop="cpuLimit" label="CPU 资源限制">
+          <el-input-number v-model="userConfigForm.cpuLimit" :min="1" step-strictly />&nbsp;核
+        </el-form-item>
+        <el-form-item prop="gpuLimit" label="GPU 资源限制">
+          <el-input-number v-model="userConfigForm.gpuLimit" :min="1" step-strictly />&nbsp;卡
+        </el-form-item>
+        <el-form-item prop="memoryLimit" label="内存资源限制">
+          <el-input-number v-model="userConfigForm.memoryLimit" :min="1" step-strictly />&nbsp;Gi
+        </el-form-item>
+      </el-form>
+    </BaseModal>
+    <!-- 用户资源监控弹窗 -->
+    <BaseModal
+      :visible.sync="userResourceInfoVisible"
+      title="用户资源监控"
+      width="1200px"
+      :show-ok="false"
+      cancel-text="关闭"
+      @cancel="userResourceInfoVisible = false"
+      @close="onUserResourceInfoClose"
+    >
+      <UserResourceMonitor
+        v-loading="userResourceInfoLoading"
+        :resource-info="userResourceInfo"
+        type="system"
+      />
+    </BaseModal>
   </div>
 </template>
 
 <script>
 import { mapGetters } from 'vuex';
+import { isNil } from 'lodash';
 
 import CRUD, { presenter, header, form, crud } from '@crud/crud';
 import rrOperation from '@crud/RR.operation';
@@ -172,11 +251,13 @@ import cdOperation from '@crud/CD.operation';
 import udOperation from '@crud/UD.operation';
 import pagination from '@crud/Pagination';
 import { validateName, validateAccount, hasPermission } from '@/utils';
-import crudUser from '@/api/system/user';
+import crudUser, { getUserConfig, submitUserConfig } from '@/api/system/user';
 import { getAll } from '@/api/system/role';
+import { getUserResourceInfo } from '@/api/system/pod';
 import BaseModal from '@/components/BaseModal';
 import DropdownHeader from '@/components/DropdownHeader';
 import datePickerMixin from '@/mixins/datePickerMixin';
+import UserResourceMonitor from '@/components/UserResourceMonitor';
 
 const ADMIN_USER_ID = 1; // 系统管理员ID
 
@@ -192,9 +273,27 @@ const defaultForm = {
   roles: [],
   roleId: '',
 };
+
+// 用户配置默认值
+const defaultUserConfigForm = {
+  userId: null,
+  notebookDelayDeleteTime: null,
+  cpuLimit: null,
+  memoryLimit: null,
+  gpuLimit: null,
+};
+
 export default {
   name: 'User',
-  components: { BaseModal, cdOperation, rrOperation, udOperation, pagination, DropdownHeader },
+  components: {
+    BaseModal,
+    cdOperation,
+    rrOperation,
+    udOperation,
+    pagination,
+    DropdownHeader,
+    UserResourceMonitor,
+  },
   cruds() {
     return CRUD({
       title: '用户',
@@ -242,6 +341,24 @@ export default {
         enabled: [{ required: true, message: '请选择状态', trigger: 'change' }],
         roleId: [{ required: true, message: '请选择角色', trigger: 'change' }],
       },
+
+      // 用户配置
+      userConfigVisible: false,
+      userConfigLoading: false,
+      userConfigForm: { ...defaultUserConfigForm },
+      userConfigRules: {
+        notebookDelayDeleteTime: [
+          { required: true, message: '请输入 Notebook 自动关闭时间', trigger: 'change' },
+        ],
+        cpuLimit: [{ required: true, message: '请输入 CPU 资源限额', trigger: 'change' }],
+        gpuLimit: [{ required: true, message: '请输入 GPU 资源限额', trigger: 'change' }],
+        memoryLimit: [{ required: true, message: '请输入内存资源限额', trigger: 'change' }],
+      },
+
+      // 用户资源监控
+      userResourceInfo: null,
+      userResourceInfoVisible: false,
+      userResourceInfoLoading: false,
     };
   },
   computed: {
@@ -322,6 +439,47 @@ export default {
     filterByRoles(id) {
       this.crud.query.roleId = id;
       this.crud.refresh();
+    },
+
+    async doEditUserConfig({ id }) {
+      const userConfig = await getUserConfig(id);
+      // 然后根据用户配置对象生成用户配置表单值
+      Object.keys(defaultUserConfigForm).forEach((key) => {
+        this.userConfigForm[key] = isNil(userConfig[key])
+          ? defaultUserConfigForm[key]
+          : userConfig[key];
+      });
+      this.userConfigVisible = true;
+    },
+    onUserConfigSubmit() {
+      this.$refs.userConfigForm.validate((valid) => {
+        if (valid) {
+          this.userConfigLoading = true;
+          submitUserConfig({
+            ...this.userConfigForm,
+          })
+            .then(() => {
+              this.userConfigVisible = false;
+            })
+            .finally(() => {
+              this.userConfigLoading = false;
+            });
+        }
+      });
+    },
+    onUserConfigClose() {
+      Object.assign(this.userConfigForm, defaultUserConfigForm);
+    },
+
+    async doCheckUserResourceInfo(userId) {
+      this.userResourceInfoVisible = true;
+      this.userResourceInfoLoading = true;
+      this.userResourceInfo = await getUserResourceInfo(userId).finally(() => {
+        this.userResourceInfoLoading = false;
+      });
+    },
+    onUserResourceInfoClose() {
+      this.userResourceInfo = null;
     },
   },
 };

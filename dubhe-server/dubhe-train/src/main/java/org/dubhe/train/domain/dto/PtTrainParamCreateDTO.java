@@ -52,18 +52,24 @@ public class PtTrainParamCreateDTO extends BaseImageDTO {
     @Min(value = MagicNumConstant.ONE, message = "算法id不能小于1")
     private Long algorithmId;
 
+    @ApiModelProperty("算法用途，输入长度不能超过128个字符")
+    @Length(max = MagicNumConstant.ONE_HUNDRED_TWENTY_EIGHT, message = "算法用途-输入长度不能超过128个字符")
+    private String algorithmUsage;
+
+    @ApiModelProperty("验证数据集算法用途，输入长度不能超过128个字符")
+    @Length(max = MagicNumConstant.ONE_HUNDRED_TWENTY_EIGHT, message = "验证数据集算法用途-输入长度不能超过128个字符")
+    private String valAlgorithmUsage;
+
     @ApiModelProperty(value = "运行命令,输入长度不能超过128个字符", required = true)
     @NotBlank(message = "运行命令不能为空")
     @Length(max = MagicNumConstant.ONE_HUNDRED_TWENTY_EIGHT, message = "运行命令-输入长度不能超过128个字符")
     private String runCommand;
 
-    @ApiModelProperty(value = "数据集来源路径,输入长度不能超过127个字符", required = true)
-    @NotBlank(message = "数据集来源路径不能为空")
+    @ApiModelProperty(value = "数据集来源路径,输入长度不能超过127个字符")
     @Length(max = MagicNumConstant.ONE_HUNDRED_TWENTY_SEVEN, message = "数据集来源路径-输入长度不能超过127个字符")
     private String dataSourcePath;
 
-    @ApiModelProperty(value = "数据集来源名称,输入长度不能超过127个字符", required = true)
-    @NotBlank(message = "数据集来源名称不能为空")
+    @ApiModelProperty(value = "数据集来源名称,输入长度不能超过127个字符")
     @Length(max = MagicNumConstant.ONE_HUNDRED_TWENTY_SEVEN, message = "数据集来源名称-输入长度不能超过127个字符")
     private String dataSourceName;
 

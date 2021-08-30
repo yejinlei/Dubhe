@@ -40,23 +40,27 @@ export default {
   },
   created() {
     const from = this.$route.params.from || 'job';
-    if (from === 'algorithm') {
-      const { params } = this.$route.params;
-      this.formType = 'algoAdd';
-      this.$nextTick(() => {
-        this.$refs.jobForm.initForm(params);
-      });
-    } else if (from === 'param') {
-      const { paramsInfo } = this.$route.params;
-      paramsInfo.trainName = paramsInfo.paramName;
-      this.formType = 'paramsAdd';
-      this.$nextTick(() => {
-        this.$refs.jobForm.initForm(paramsInfo);
-      });
+    const { params, paramsInfo } = this.$route.params;
+    switch (from) {
+      case 'algorithm':
+      case 'notebook':
+        this.formType = 'add';
+        this.$nextTick(() => {
+          this.$refs.jobForm.initForm(params);
+        });
+        break;
+      case 'param':
+        paramsInfo.trainName = paramsInfo.paramName;
+        this.formType = 'paramsAdd';
+        this.$nextTick(() => {
+          this.$refs.jobForm.initForm(paramsInfo);
+        });
+        break;
+      default:
+        this.$nextTick(() => {
+          this.$refs.jobForm.initForm();
+        });
     }
-    this.$nextTick(() => {
-      this.$refs.jobForm.initForm();
-    });
   },
   methods: {
     save() {

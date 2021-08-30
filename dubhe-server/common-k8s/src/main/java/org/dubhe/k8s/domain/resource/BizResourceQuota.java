@@ -68,7 +68,7 @@ public class BizResourceQuota extends PtBaseResult<BizResourceQuota> {
         if (!CollectionUtils.isEmpty(hard)){
             for (Map.Entry<String, BizQuantity> entry : hard.entrySet()) {
                 if (used.get(entry.getKey()) != null){
-                    remainder.put(entry.getKey(),entry.getValue().reduce(used.get(entry.getKey())));
+                    remainder.put(entry.getKey(),entry.getValue().reduce(used.get(entry.getKey()),entry.getKey()));
                 }
             }
         }

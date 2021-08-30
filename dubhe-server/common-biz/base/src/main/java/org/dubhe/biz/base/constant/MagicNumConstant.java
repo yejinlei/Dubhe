@@ -39,6 +39,7 @@ public final class MagicNumConstant {
     public static final int ELEVEN = 11;
     public static final int SIXTEEN = 16;
     public static final int TWENTY = 20;
+    public static final int TWENTY_TWO = 22;
     public static final int THIRTY_TWO = 32;
     public static final int FIFTY = 50;
     public static final int SIXTY = 60;

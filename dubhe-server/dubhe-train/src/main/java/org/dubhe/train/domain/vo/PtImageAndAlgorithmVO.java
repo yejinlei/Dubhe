@@ -17,6 +17,7 @@
 
 package org.dubhe.train.domain.vo;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import io.swagger.annotations.ApiModelProperty;
 import lombok.Data;
 import lombok.experimental.Accessors;
@@ -36,9 +37,6 @@ public class PtImageAndAlgorithmVO implements Serializable {
     @ApiModelProperty("镜像名称")
     private String imageName;
 
-    @ApiModelProperty("镜像地址")
-    private String imageUrl;
-
     @ApiModelProperty("代码目录")
     private String codeDir;
 
@@ -53,5 +51,9 @@ public class PtImageAndAlgorithmVO implements Serializable {
 
     @ApiModelProperty("输出可视化日志")
     private Boolean isVisualizedLog;
+
+    @JsonIgnore
+    @ApiModelProperty(value = "pip包路径",hidden = true)
+    private String pipSitePackagePath;
 
 }

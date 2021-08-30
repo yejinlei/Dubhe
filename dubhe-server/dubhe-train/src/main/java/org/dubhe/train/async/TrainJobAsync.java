@@ -214,10 +214,13 @@ public class TrainJobAsync {
                 .setMasterCmd(wholeCommand)
                 .setMemNum(baseTrainJobDTO.getMemNum())
                 .setCpuNum(baseTrainJobDTO.getCpuNum() * MagicNumConstant.ONE_THOUSAND)
-                .putFsMounts(TrainConstant.DATASET_VOLUME_MOUNTS, k8sNameTool.getAbsolutePath(baseTrainJobDTO.getDataSourcePath()))
                 .putFsMounts(TrainConstant.WORKSPACE_VOLUME_MOUNTS, fileStoreApi.formatPath(fileStoreApi.getRootDir() + basePath))
                 .putFsMounts(TrainConstant.MODEL_VOLUME_MOUNTS, k8sNameTool.getAbsolutePath(relativePath + StrUtil.SLASH + trainJobConfig.getOutPath()))
-                .setBusinessLabel(k8sNameTool.getPodLabel(BizEnum.ALGORITHM));
+                .setBusinessLabel(k8sNameTool.getPodLabel(BizEnum.ALGORITHM))
+                .setTaskIdentifyLabel(baseTrainJobDTO.getTaskIdentify());
+        if (StringUtils.isNotBlank(baseTrainJobDTO.getDataSourcePath())) {
+            distributeTrainBO.putFsMounts(TrainConstant.DATASET_VOLUME_MOUNTS, k8sNameTool.getAbsolutePath(baseTrainJobDTO.getDataSourcePath()));
+        }
         if (StringUtils.isNotBlank(valDataSourcePath)) {
             distributeTrainBO.putFsMounts(trainJobConfig.getDockerValDatasetPath(), fileStoreApi.formatPath(fileStoreApi.getRootDir() + fileStoreApi.getBucket() + valDataSourcePath));
         }
@@ -391,12 +394,33 @@ public class TrainJobAsync {
         jobBo.setNamespace(namespace)
                 .setName(baseTrainJobDTO.getJobName())
                 .setImage(ptImageAndAlgorithmVO.getImageName())
-                .putFsMounts(trainJobConfig.getDockerDatasetPath(), fileStoreApi.getRootDir() + fileStoreApi.getBucket().substring(1) + baseTrainJobDTO.getDataSourcePath())
                 .setCmdLines(list)
                 .putFsMounts(trainJobConfig.getDockerTrainPath(), fileStoreApi.getRootDir() + commonPath.substring(1))
-                .setBusinessLabel(k8sNameTool.getPodLabel(BizEnum.ALGORITHM));
+                .setBusinessLabel(k8sNameTool.getPodLabel(BizEnum.ALGORITHM))
+                .setTaskIdentifyLabel(baseTrainJobDTO.getTaskIdentify());
+        if (StringUtils.isNotBlank(baseTrainJobDTO.getDataSourcePath())) {
+            jobBo.putFsMounts(trainJobConfig.getDockerDatasetPath(), fileStoreApi.getRootDir() + fileStoreApi.getBucket().substring(1) + baseTrainJobDTO.getDataSourcePath());
+        }
         if (StringUtils.isNotBlank(valDataSourcePath)) {
             jobBo.putFsMounts(trainJobConfig.getDockerValDatasetPath(), fileStoreApi.formatPath(fileStoreApi.getRootDir() + fileStoreApi.getBucket() + valDataSourcePath));
+        }
+        //挂载pip路径
+        if (StringUtils.isNotBlank(baseTrainJobDTO.getPipSitePackagePath())) {
+            String formatPath = fileStoreApi.formatPath(fileStoreApi.getRootDir() + fileStoreApi.getBucket() + baseTrainJobDTO.getPipSitePackagePath());
+            jobBo.putFsMounts(trainJobConfig.getDockerPipSitePackagePath(), formatPath);
+            //检测pip包依赖路径
+            int startIndex = -1;
+            List<String> cmdLines = jobBo.getCmdLines();
+            for (int i = 0; i < cmdLines.size(); i++) {
+                //bash -c 这种情况
+                if ("-c".equals(cmdLines.get(i))) {
+                    startIndex = i;
+                }
+            }
+            String cmdLine = cmdLines.get(startIndex + 1);
+            String appendPythonPath = " export PYTHONPATH=" + trainJobConfig.getDockerPipSitePackagePath() + " && ";
+            cmdLine = appendPythonPath + cmdLine;
+            cmdLines.set(startIndex + 1, cmdLine);
         }
         //延时启动，单位为分钟
         if (baseTrainJobDTO.getDelayCreateTime() != null && baseTrainJobDTO.getDelayCreateTime() > 0) {

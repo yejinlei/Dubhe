@@ -119,12 +119,7 @@
             <div>1. 请按照格式要求提交 json 格式标签文件</div>
             <div>
               2. 格式参考
-              <a
-                target="_blank"
-                :href="
-                  `${VUE_APP_DOCS_URL}module/dataset/dataset-util/#21-%E6%A0%87%E7%AD%BE%E6%96%87%E4%BB%B6`
-                "
-              >
+              <a target="_blank" :href="`${VUE_APP_DOCS_URL}module/dataset/labelGroup`">
                 标签组模版文件
               </a>
             </div>

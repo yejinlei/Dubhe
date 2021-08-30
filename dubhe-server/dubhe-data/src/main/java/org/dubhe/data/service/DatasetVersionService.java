@@ -190,4 +190,12 @@ public interface DatasetVersionService {
      * @param fileNameMap           文件列表
      */
     void insertEsData(String versionSource, String versionTarget, Long datasetId, Long datasetIdTarget, Map<String, Long> fileNameMap);
+
+    /**
+     * 生成版本数据
+     *
+     * @param datasetVersion  版本详情
+     */
+    void insertOne(DatasetVersion datasetVersion);
+
 }

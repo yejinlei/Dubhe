@@ -43,6 +43,7 @@ public class NumberConstant {
     public final static int HOUR_SECOND = 60 * 60;
     public final static int DAY_SECOND = 60 * 60 * 24;
     public final static int WEEK_SECOND = 60 * 60 * 24 * 7;
+    public final static int MONTH_SECOND = 60 * 60 * 24 * 30;
     public final static int MAX_PAGE_SIZE = 2000;
     public final static int MAX_MESSAGE_LENGTH = 1024 * 1024 * 1024;
 }

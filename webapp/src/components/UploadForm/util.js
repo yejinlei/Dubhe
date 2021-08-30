@@ -16,7 +16,7 @@
 
 import { bucketHost, bucketName } from '@/utils/minIO';
 import { isValidVideo } from '@/utils/validate';
-import { generateUuid, performanceTiming } from '@/utils';
+import { generateUuid } from '@/utils';
 
 const pMap = require('p-map');
 
@@ -42,7 +42,7 @@ export const hashName = (name) => {
   const isVideo = isValidVideo(extname);
   // 避免重复添加后缀
   const filterBaseName = isVideo ? generateUuid(10) : basename.replace(/_ts\d+$/, '');
-  return `${filterBaseName}_ts${performanceTiming()}${extname}`;
+  return `${filterBaseName}_ts${generateUuid(10)}${extname}`;
 };
 
 // minio 上传导致 chrome crash，自定义实现上传

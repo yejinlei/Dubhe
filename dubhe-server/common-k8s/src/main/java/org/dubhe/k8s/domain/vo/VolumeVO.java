@@ -17,10 +17,15 @@
 
 package org.dubhe.k8s.domain.vo;
 
+import io.fabric8.kubernetes.api.model.EmptyDirVolumeSource;
+import io.fabric8.kubernetes.api.model.Quantity;
 import io.fabric8.kubernetes.api.model.Volume;
+import io.fabric8.kubernetes.api.model.VolumeBuilder;
 import io.fabric8.kubernetes.api.model.VolumeMount;
+import io.fabric8.kubernetes.api.model.VolumeMountBuilder;
 import lombok.Data;
 import lombok.experimental.Accessors;
+import org.dubhe.k8s.constant.K8sParamConstants;
 import org.dubhe.k8s.domain.PtBaseResult;
 
 import java.util.ArrayList;
@@ -56,5 +61,20 @@ public class VolumeVO extends PtBaseResult<VolumeVO> {
             volumes = new ArrayList<>();
         }
         volumes.add(volume);
+    }
+
+    /**
+     * 添加shm
+     */
+    public void addShmFsVolume(Quantity shmMemory){
+        addVolumeMount(new VolumeMountBuilder()
+                    .withName(K8sParamConstants.SHM_NAME)
+                    .withMountPath(K8sParamConstants.SHM_MOUNTPATH)
+                    .build());
+
+        addVolume(new VolumeBuilder()
+                    .withName(K8sParamConstants.SHM_NAME)
+                    .withEmptyDir(new EmptyDirVolumeSource(K8sParamConstants.SHM_MEDIUM, shmMemory))
+                    .build());
     }
 }

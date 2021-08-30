@@ -57,4 +57,22 @@ export function findByNickName() {
   });
 }
 
+// 获取用户配置信息
+export function getUserConfig(userId) {
+  return request({
+    url: `/${API_MODULE_NAME.ADMIN}/users/getUserConfig`,
+    method: 'get',
+    params: { userId },
+  });
+}
+
+// 更改用户配置信息
+export function submitUserConfig(data) {
+  return request({
+    url: `/${API_MODULE_NAME.ADMIN}/users/setUserConfig`,
+    method: 'put',
+    data,
+  });
+}
+
 export default { list, add, edit, del };

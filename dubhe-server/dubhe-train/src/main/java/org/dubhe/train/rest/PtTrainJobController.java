@@ -145,6 +145,14 @@ public class PtTrainJobController {
         return new DataResponseBody(ptTrainJobService.stopTrainJob(ptTrainJobStopDTO));
     }
 
+    @PostMapping("/batchStop")
+    @ApiOperation("一键停止所有训练任务")
+    @PreAuthorize(Permissions.TRAINING_JOB_UPDATE)
+    public DataResponseBody batchStopTrainJob() {
+        ptTrainJobService.batchStopTrainJob();
+        return new DataResponseBody();
+    }
+
     @PostMapping("/resume")
     @ApiOperation("恢复训练任务")
     @PreAuthorize(Permissions.TRAINING_JOB_UPDATE)

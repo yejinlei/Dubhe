@@ -252,4 +252,12 @@ export function count(datasetId, params) {
   });
 }
 
+// 查询所有带有版本的预置数据集
+export function getPresetDataset() {
+  return request({
+    url: `/${API_MODULE_NAME.DATA}/datasets/getPresetDataset`,
+    method: 'get',
+  });
+}
+
 export default { list, add, del };

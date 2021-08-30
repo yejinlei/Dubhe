@@ -21,7 +21,10 @@ import { computed } from '@vue/composition-api';
 
 export default {
   props: {
-    show: Boolean,
+    show: {
+      type: Boolean,
+      default: true,
+    },
     statusDetail: {
       type: String,
       require: true,

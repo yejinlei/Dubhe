@@ -64,13 +64,6 @@ export function open(id) {
   });
 }
 
-export function getStatus() {
-  return request({
-    url: `/${API_MODULE_NAME.NOTEBOOK}/notebooks/status`,
-    method: 'get',
-  });
-}
-
 export function getModels() {
   return request({
     url: `/${API_MODULE_NAME.NOTEBOOK}/notebooks/notebook-model`,
@@ -105,6 +98,14 @@ export function detail(data) {
     url: `/${API_MODULE_NAME.NOTEBOOK}/notebooks/detail`,
     method: 'post',
     data,
+  });
+}
+
+// 一键停止所有 Notebook
+export function batchStopNotebook() {
+  return request({
+    url: `/${API_MODULE_NAME.NOTEBOOK}/notebooks/batchStop`,
+    method: 'put',
   });
 }
 

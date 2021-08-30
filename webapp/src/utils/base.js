@@ -168,14 +168,6 @@ export const toFixed = (num, scale = 2, length = 2) => {
   return Math.floor(num * Math.pow(10, scale + length)) / Math.pow(10, length);
 };
 
-// 生成精准时间戳（正常情况下 Date.now() 能满足，只有需要绝对精准的时候才启用）
-export const performanceTiming = () => {
-  if (window.performance.now) {
-    return toFixed(window.performance.timing.navigationStart + window.performance.now(), 3, 3);
-  }
-  return Date.now();
-};
-
 // 日期格式化
 export const formatDateTime = (datetime, formatter = 'yyyy-MM-dd HH:mm:ss') => {
   const input = isDate(datetime) ? datetime : parseISO(datetime);

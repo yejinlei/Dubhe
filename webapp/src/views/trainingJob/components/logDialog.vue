@@ -212,7 +212,7 @@ export default {
       }
     },
     onDialogClose() {
-      this.$refs.podLogContainer && this.$refs.podLogContainer.stopPolling();
+      this.$refs.podLogContainer && this.$refs.podLogContainer.quit();
     },
     onLogChange() {
       if (!this.activeLogTab) {

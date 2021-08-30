@@ -21,8 +21,8 @@ import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Select;
 import org.apache.ibatis.annotations.Update;
-import org.dubhe.biz.base.annotation.DataPermission;
 import org.dubhe.algorithm.domain.entity.PtTrainAlgorithm;
+import org.dubhe.biz.base.annotation.DataPermission;
 
 import java.util.List;
 import java.util.Set;
@@ -31,7 +31,7 @@ import java.util.Set;
  * @description 训练算法Mapper
  * @date 2020-04-27
  */
-@DataPermission(ignoresMethod = {"insert"})
+@DataPermission(ignoresMethod = {"insert", "selectPreAlgorithm"})
 public interface PtTrainAlgorithmMapper extends BaseMapper<PtTrainAlgorithm> {
 
     /**
@@ -67,4 +67,11 @@ public interface PtTrainAlgorithmMapper extends BaseMapper<PtTrainAlgorithm> {
      */
     @Update("update pt_train_algorithm set deleted = #{deleteFlag} where id = #{id}")
     int updateStatusById(@Param("id") Long id, @Param("deleteFlag") boolean deleteFlag);
+
+    /**
+     * 查询可推理预置算法
+     * @return List<PtTrainAlgorithmQueryVO> 返回可推理预置算法集合
+     */
+    @Select("select * from pt_train_algorithm where deleted = 0 and inference=1 and algorithm_source=2 order by id desc")
+    List<PtTrainAlgorithm> selectPreAlgorithm();
 }

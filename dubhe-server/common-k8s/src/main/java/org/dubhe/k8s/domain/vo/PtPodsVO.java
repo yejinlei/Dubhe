@@ -24,10 +24,8 @@ import org.dubhe.biz.base.constant.MagicNumConstant;
 import org.dubhe.biz.base.utils.MathUtils;
 import org.dubhe.biz.base.utils.StringUtils;
 import org.dubhe.k8s.utils.UnitConvertUtils;
-import org.springframework.util.CollectionUtils;
 
 import java.io.Serializable;
-import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -98,9 +96,9 @@ public class PtPodsVO implements Serializable {
      **/
     private String gpuUsed;
     /**
-     * gpu使用百分比
+     * gpu实时监控数据
      */
-    private List<GpuUsageVO> gpuUsagePersent;
+    private List<GpuValueVO> gpuUsagePersent;
 
     public PtPodsVO(String namespace,String podName,String cpuRequestAmount,String cpuUsageAmount,String cpuRequestFormat,String cpuUsageFormat,String memoryRequestAmount,String memoryUsageAmount,String memoryRequestFormat,String memoryUsageFormat,String nodeName,String status,String gpuUsed){
         this.namespace = namespace;
@@ -142,10 +140,4 @@ public class PtPodsVO implements Serializable {
         }
     }
 
-    public void addGpuUsage(String accId,Float usage){
-        if (CollectionUtils.isEmpty(gpuUsagePersent)){
-            gpuUsagePersent = new ArrayList<>();
-        }
-        gpuUsagePersent.add(new GpuUsageVO(accId,usage));
-    }
 }

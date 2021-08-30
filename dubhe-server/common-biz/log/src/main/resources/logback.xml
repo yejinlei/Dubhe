@@ -25,10 +25,10 @@
     <!-- 滚动记录文件，先将日志记录到指定文件，复合条件后日志将记录到其他文件 -->
     <appender name="info_file"
               class="ch.qos.logback.core.rolling.RollingFileAppender">
-        <file>logs/${log.path}/info/dubhe-info.log</file>
+        <file>/data/logs/${log.path}/info/dubhe-info.log</file>
         <rollingPolicy
                 class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
-            <fileNamePattern>logs/${log.path}/info/dubhe-${app.active}-info-%d{yyyy-MM-dd}.%i.log
+            <fileNamePattern>/data/logs/${log.path}/info/dubhe-${app.active}-info-%d{yyyy-MM-dd}.%i.log
             </fileNamePattern>
             <!-- 单个日志文件最多50MB, 14天的日志周期，最大不能超过250MB -->
             <maxFileSize>50MB</maxFileSize>
@@ -52,10 +52,10 @@
     <!-- 滚动记录文件，先将日志记录到指定文件，复合条件后日志将记录到其他文件 -->
     <appender name="debug_info"
               class="ch.qos.logback.core.rolling.RollingFileAppender">
-        <file>logs/${log.path}/debug/dubhe-debug.log</file>
+        <file>/data/logs/${log.path}/debug/dubhe-debug.log</file>
         <rollingPolicy
                 class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
-            <fileNamePattern>logs/${log.path}/debug/dubhe-${app.active}-debug-%d{yyyy-MM-dd}.%i.log
+            <fileNamePattern>/data/logs/${log.path}/debug/dubhe-${app.active}-debug-%d{yyyy-MM-dd}.%i.log
             </fileNamePattern>
             <!-- 单个日志文件最多50MB, 14天的日志周期，最大不能超过250MB -->
             <maxFileSize>50MB</maxFileSize>
@@ -79,10 +79,10 @@
     <!-- 滚动记录文件，先将日志记录到指定文件，复合条件后日志将记录到其他文件 -->
     <appender name="error_file"
               class="ch.qos.logback.core.rolling.RollingFileAppender">
-        <file>logs/${log.path}/error/dubhe-error.log</file>
+        <file>/data/logs/${log.path}/error/dubhe-error.log</file>
         <rollingPolicy
                 class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
-            <fileNamePattern>logs/${log.path}/error/dubhe-${app.active}-error-%d{yyyy-MM-dd}.%i.log
+            <fileNamePattern>/data/logs/${log.path}/error/dubhe-${app.active}-error-%d{yyyy-MM-dd}.%i.log
             </fileNamePattern>
             <!-- 单个日志文件最多50MB, 14天的日志周期，最大不能超过250MB -->
             <maxFileSize>50MB</maxFileSize>
@@ -106,10 +106,10 @@
     <!-- 滚动记录文件，先将日志记录到指定文件，复合条件后日志将记录到其他文件 -->
     <appender name="warn_file"
               class="ch.qos.logback.core.rolling.RollingFileAppender">
-        <file>logs/${log.path}/warn/dubhe-warn.log</file>
+        <file>/data/logs/${log.path}/warn/dubhe-warn.log</file>
         <rollingPolicy
                 class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
-            <fileNamePattern>logs/${log.path}/warn/dubhe-${app.active}-warn-%d{yyyy-MM-dd}.%i.log
+            <fileNamePattern>/data/logs/${log.path}/warn/dubhe-${app.active}-warn-%d{yyyy-MM-dd}.%i.log
             </fileNamePattern>
             <!-- 单个日志文件最多50MB, 14天的日志周期，最大不能超过250MB -->
             <maxFileSize>50MB</maxFileSize>
@@ -134,10 +134,10 @@
     <!-- 滚动记录文件，先将日志记录到指定文件，复合条件后日志将记录到其他文件 -->
     <appender name="trace_file"
               class="ch.qos.logback.core.rolling.RollingFileAppender">
-        <file>logs/${log.path}/trace/dubhe-trace.log</file>
+        <file>/data/logs/${log.path}/trace/dubhe-trace.log</file>
         <rollingPolicy
                 class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
-            <fileNamePattern>logs/${log.path}/trace/dubhe-${app.active}-trace-%d{yyyy-MM-dd}.%i.log
+            <fileNamePattern>/data/logs/${log.path}/trace/dubhe-${app.active}-trace-%d{yyyy-MM-dd}.%i.log
             </fileNamePattern>
             <!-- 单个日志文件最多50MB, 14天的日志周期，最大不能超过250MB -->
             <maxFileSize>50MB</maxFileSize>
@@ -162,10 +162,10 @@
     <!-- 滚动记录文件，先将日志记录到指定文件，复合条件后日志将记录到其他文件 -->
     <appender name="schedule_file"
               class="ch.qos.logback.core.rolling.RollingFileAppender">
-        <file>logs/${log.path}/info/dubhe-schedule.log</file>
+        <file>/data/logs/${log.path}/info/dubhe-schedule.log</file>
         <rollingPolicy
                 class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
-            <fileNamePattern>logs/${log.path}/info/dubhe-${app.active}-schedule-%d{yyyy-MM-dd}.%i.log
+            <fileNamePattern>/data/logs/${log.path}/info/dubhe-${app.active}-schedule-%d{yyyy-MM-dd}.%i.log
             </fileNamePattern>
             <!-- 单个日志文件最多50MB, 14天的日志周期，最大不能超过250MB -->
             <maxFileSize>50MB</maxFileSize>
@@ -189,10 +189,10 @@
     <!-- 滚动记录文件，先将日志记录到指定文件，复合条件后日志将记录到其他文件 -->
     <appender name="global_request_file"
               class="ch.qos.logback.core.rolling.RollingFileAppender">
-        <file>logs/${log.path}/info/dubhe-request.log</file>
+        <file>/data/logs/${log.path}/info/dubhe-request.log</file>
         <rollingPolicy
                 class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
-            <fileNamePattern>logs/${log.path}/info/dubhe-${app.active}-request-%d{yyyy-MM-dd}.%i.log
+            <fileNamePattern>/data/logs/${log.path}/info/dubhe-${app.active}-request-%d{yyyy-MM-dd}.%i.log
             </fileNamePattern>
             <!-- 单个日志文件最多50MB, 14天的日志周期，最大不能超过250MB -->
             <maxFileSize>50MB</maxFileSize>

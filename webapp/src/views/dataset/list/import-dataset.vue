@@ -29,7 +29,7 @@
       <el-alert class="info-alert" type="warning" show-icon :closable="false">
         <div slot="title" class="slot-content">
           <div>数据集创建完毕后，需要使用脚本工具上传本地已有数据集</div>
-          <a :href="`${VUE_APP_DOCS_URL}module/dataset/dataset-util`" target="_blank">使用文档</a>
+          <a :href="`${VUE_APP_DOCS_URL}module/dataset/util`" target="_blank">使用文档</a>
         </div>
       </el-alert>
       <el-form-item label="数据集名称" prop="name">
@@ -66,6 +66,14 @@
           width="200px"
         />
       </el-form-item>
+      <el-form-item v-else label="模型类型" prop="annotateType">
+        <InfoSelect
+          v-model="state.form.annotateType"
+          placeholder="模型类型"
+          :dataSource="allAnnotationList"
+          width="200px"
+        />
+      </el-form-item>
       <el-form-item label="数据集描述">
         <el-input
           v-model="state.form.remark"
@@ -95,8 +103,8 @@ import {
   dataTypeMap,
   dataTypeCodeMap,
   annotationCodeMap,
+  annotationMap,
   transformMapToList,
-  extDataAnnotationByCode,
 } from '@/views/dataset/util';
 
 import { add } from '@/api/preparation/dataset';
@@ -127,7 +135,7 @@ export default {
     const initialForm = {
       name: '',
       dataType: 0,
-      annotateType: 2,
+      annotateType: null,
       remark: '',
       loading: false,
       sourceType: 0,
@@ -157,7 +165,7 @@ export default {
       ],
       sourceType: [{ required: true, message: '请选择数据集来源', trigger: 'change' }],
       dataType: [{ required: true, message: '请选择数据类型', trigger: 'change' }],
-      annotateType: [{ required: true, message: '请选择标注类型', trigger: ['change', 'blur'] }],
+      annotateType: [{ required: true, message: '请选择模型类型', trigger: ['change', 'blur'] }],
     };
 
     const state = reactive({
@@ -199,6 +207,14 @@ export default {
           label: d.name,
         }))
     );
+
+    const allAnnotationList = computed(() => {
+      return Object.keys(annotationMap).map((d) => ({
+        label: annotationMap[d].name,
+        value: annotationMap[d].code,
+        code: annotationMap[d].code,
+      }));
+    });
 
     const setForm = (params) =>
       Object.assign(state, {
@@ -259,16 +275,20 @@ export default {
     const handleOk = () => {
       formRef.value.validate((valid) => {
         if (!valid) return;
-        const params = { type: 0, import: true, name: state.form.name, remark: state.form.remark };
+        const params = {
+          type: 0,
+          import: true,
+          name: state.form.name,
+          remark: state.form.remark,
+          annotateType: state.form.annotateType,
+        };
         // 区分自定义数据集、标注数据集
         state.form.sourceType === 0
           ? Object.assign(params, {
               dataType: dataTypeCodeMap.CUSTOM,
-              annotateType: extDataAnnotationByCode(dataTypeCodeMap.CUSTOM)[0],
             })
           : Object.assign(params, {
               dataType: state.form.dataType,
-              annotateType: state.form.annotateType,
             });
         setLoading(true);
         add(params)
@@ -309,6 +329,7 @@ export default {
       sourceByCustom,
       dataTypeList,
       annotationList,
+      allAnnotationList,
       transformOptions,
       handleDataTypeChange,
       selectAnnotationType,

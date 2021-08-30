@@ -178,7 +178,6 @@ export default {
     },
     goTraining(item) {
       this.$router.push({
-        path: '/training/jobadd',
         name: 'jobAdd',
         params: {
           from: 'algorithm',

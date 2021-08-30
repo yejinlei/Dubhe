@@ -232,17 +232,19 @@ public class PtImageServiceImpl implements PtImageService {
     }
 
     /**
-     * 根据镜像获取信息
+     * 获取镜像信息
      *
-     * @param imageName      镜像名
+     * @param ptImageQueryImageDTO      查询条件
      * @return List<String>  通过imageName查询所含镜像版本信息
      */
     @Override
     @DataPermissionMethod(dataType = DatasetTypeEnum.PUBLIC)
-    public List<PtImage> searchImages(Integer projectType, String imageName) {
+    public List<PtImage> searchImages(PtImageQueryImageDTO ptImageQueryImageDTO) {
         LambdaQueryWrapper<PtImage> queryWrapper = new LambdaQueryWrapper<>();
-        queryWrapper.eq(PtImage::getProjectName, resourcetoName(projectType))
-                .eq(PtImage::getImageName, imageName)
+        if (ptImageQueryImageDTO.getProjectType() != null) {
+            queryWrapper.eq(PtImage::getProjectName, resourcetoName(ptImageQueryImageDTO.getProjectType()));
+        }
+        queryWrapper.eq(PtImage::getImageName, ptImageQueryImageDTO.getImageName())
                 .eq(PtImage::getImageStatus, ImageStateEnum.SUCCESS.getCode());
         List<PtImage> ptImages = ptImageMapper.selectList(queryWrapper);
         List<PtImage> list = new ArrayList<>();
@@ -335,14 +337,17 @@ public class PtImageServiceImpl implements PtImageService {
 
     /**
      * 获取镜像名称列表
-     * @param projectType 镜像项目类型
+     * @param ptImageQueryNameDTO 获取镜像名称列表查询条件
      * @return Set<String> 镜像列表
      */
     @Override
     @DataPermissionMethod(dataType = DatasetTypeEnum.PUBLIC)
-    public Set<String> getImageNameList(Integer projectType) {
+    public Set<String> getImageNameList(PtImageQueryNameDTO ptImageQueryNameDTO) {
+        List<String> projectTypes = new ArrayList<>();
+        ptImageQueryNameDTO.getProjectTypes().forEach(x ->
+                projectTypes.add(ImageTypeEnum.getType(x)));
         List<PtImage> imageList = ptImageMapper.selectList(new LambdaQueryWrapper<PtImage>()
-                .eq(PtImage::getProjectName, ImageTypeEnum.getType(projectType))
+                .in(PtImage::getProjectName, projectTypes)
                 .eq(PtImage::getImageStatus, ImageStateEnum.SUCCESS.getCode()));
         Set<String> imageNames = new HashSet<>();
         imageList.forEach(image -> {
@@ -397,10 +402,6 @@ public class PtImageServiceImpl implements PtImageService {
     @Override
     @DataPermissionMethod(dataType = DatasetTypeEnum.PUBLIC)
     public String getImageUrl(PtImageQueryUrlDTO imageQueryUrlDTO) {
-
-        if (imageQueryUrlDTO.getProjectType().equals(ImageTypeEnum.NOTEBOOK.getType())) {
-            DataContext.set(CommonPermissionDataDTO.builder().type(true).build());
-        }
         LambdaQueryWrapper<PtImage> queryWrapper = new LambdaQueryWrapper<>();
         if (imageQueryUrlDTO.getProjectType() != null && ImageTypeEnum.NOTEBOOK.getType().equals(imageQueryUrlDTO.getProjectType())) {
             DataContext.set(CommonPermissionDataDTO.builder().type(true).build());
@@ -414,8 +415,10 @@ public class PtImageServiceImpl implements PtImageService {
         if (StrUtil.isNotEmpty(imageQueryUrlDTO.getImageTag())) {
             queryWrapper.eq(PtImage::getImageTag, imageQueryUrlDTO.getImageTag());
         }
-        queryWrapper.eq(PtImage::getProjectName, resourcetoName(imageQueryUrlDTO.getProjectType()))
-                .eq(PtImage::getImageStatus, ImageStateEnum.SUCCESS.getCode());
+        if (imageQueryUrlDTO.getProjectType() != null) {
+            queryWrapper.eq(PtImage::getProjectName, resourcetoName(imageQueryUrlDTO.getProjectType()));
+        }
+        queryWrapper.eq(PtImage::getImageStatus, ImageStateEnum.SUCCESS.getCode());
         List<PtImage> imageList = ptImageMapper.selectList(queryWrapper);
 
         if (CollUtil.isEmpty(imageList)) {
@@ -437,6 +440,31 @@ public class PtImageServiceImpl implements PtImageService {
         ptImageMapper.updateDeletedById(Long.valueOf(imageId), false);
     }
 
+    @Override
+    @DataPermissionMethod(dataType = DatasetTypeEnum.PUBLIC)
+    public List<PtImage> getTerminalImageList() {
+        UserContext user = userContextService.getCurUser();
+        LambdaQueryWrapper<PtImage> queryTerminalWrapper = new LambdaQueryWrapper<>();
+        queryTerminalWrapper.eq(PtImage::getProjectName, ImageTypeEnum.TERMINAL.getCode())
+                .eq(PtImage::getImageStatus, ImageStateEnum.SUCCESS.getCode());
+        if (user != null && !BaseService.isAdmin()) {
+            queryTerminalWrapper.and(wrapper -> wrapper.eq(PtImage::getCreateUserId, user.getId()).or().eq(PtImage::getImageResource, ImageSourceEnum.PRE.getCode()));
+        }
+
+        List<PtImage> terminalImages = ptImageMapper.selectList(queryTerminalWrapper);
+
+        List<PtImage> list = new ArrayList<>();
+        if (CollUtil.isEmpty(terminalImages)) {
+            return new ArrayList<>();
+        }
+
+        terminalImages.stream().forEach(ptImage -> {
+            ptImage.setImageUrl(ptImage.getImageUrl());
+            list.add(ptImage);
+        });
+        return list;
+    }
+
 
     /**
      * @param ptImageUploadDTO  镜像上传逻辑校验
@@ -448,8 +476,7 @@ public class PtImageServiceImpl implements PtImageService {
 
         LambdaQueryWrapper<PtImage> queryWrapper = new LambdaQueryWrapper<>();
 
-        queryWrapper.eq(PtImage::getProjectName, resourcetoName(ptImageUploadDTO.getProjectType()))
-                .eq(PtImage::getImageName, ptImageUploadDTO.getImageName())
+        queryWrapper.eq(PtImage::getImageName, ptImageUploadDTO.getImageName())
                 .eq(PtImage::getImageTag, ptImageUploadDTO.getImageTag())
                 .eq(PtImage::getImageResource, source);
 

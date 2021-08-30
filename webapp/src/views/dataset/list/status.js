@@ -60,9 +60,10 @@ export default {
                 borderColor: status.bgColor,
               },
             };
+          const statusName = row.dataType === 100 ? '导入完成' : status.name;
           return (
             <el-tag type={status.type} {...colorProps}>
-              {status.name}
+              {statusName}
             </el-tag>
           );
         },
