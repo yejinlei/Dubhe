@@ -1,3 +1,5 @@
+use `dubhe-cloud-prod`;
+
 INSERT INTO pt_image (project_name, image_resource, image_status, image_name, image_url
 	, image_tag, remark, create_user_id, update_user_id, deleted
 	, origin_user_id)
