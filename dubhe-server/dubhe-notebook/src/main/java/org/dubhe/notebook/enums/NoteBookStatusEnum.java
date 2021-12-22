@@ -35,10 +35,6 @@ public enum NoteBookStatusEnum {
      */
     STOP(1, "停止"),
     /**
-     * 删除
-     */
-    DELETED(2, "删除"),
-    /**
      * 启动中
      */
     STARTING(3, "启动中"),
@@ -46,10 +42,6 @@ public enum NoteBookStatusEnum {
      * 停止中
      */
     STOPPING(4, "停止中"),
-    /**
-     * 删除中
-     */
-    DELETING(5, "删除中"),
     /**
      * 运行异常
      */

@@ -81,6 +81,11 @@ public class PtModelInfoQueryVO implements Serializable {
     private Integer totalNum;
 
     /**
+     * 有效版本数量
+     */
+    private Integer versionNum;
+
+    /**
      * 团队ID
      */
     private Integer teamId;
@@ -89,6 +94,12 @@ public class PtModelInfoQueryVO implements Serializable {
      * 创建人ID
      */
     private Long createUserId;
+
+    /**
+     * 创建人用户名
+     */
+    private String createUserName;
+
 
     /**
      * 修改人ID

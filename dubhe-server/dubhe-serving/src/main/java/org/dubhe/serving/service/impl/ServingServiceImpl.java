@@ -35,6 +35,7 @@ import org.dubhe.biz.base.dto.PtModelBranchQueryByIdDTO;
 import org.dubhe.biz.base.dto.PtModelInfoQueryByIdDTO;
 import org.dubhe.biz.base.dto.PtModelStatusQueryDTO;
 import org.dubhe.biz.base.dto.TrainAlgorithmSelectByIdDTO;
+import org.dubhe.biz.base.dto.UserDTO;
 import org.dubhe.biz.base.enums.BizEnum;
 import org.dubhe.biz.base.enums.DatasetTypeEnum;
 import org.dubhe.biz.base.enums.ImageTypeEnum;
@@ -54,10 +55,11 @@ import org.dubhe.biz.log.enums.LogEnum;
 import org.dubhe.biz.log.utils.LogUtil;
 import org.dubhe.biz.permission.annotation.DataPermissionMethod;
 import org.dubhe.biz.permission.base.BaseService;
-import org.dubhe.biz.redis.utils.RedisUtils;
+import org.dubhe.cloud.authconfig.service.AdminClient;
 import org.dubhe.k8s.api.MetricsApi;
-import org.dubhe.k8s.cache.ResourceCache;
+import org.dubhe.k8s.dao.K8sTaskIdentifyMapper;
 import org.dubhe.k8s.domain.dto.PodQueryDTO;
+import org.dubhe.k8s.domain.entity.K8sTaskIdentify;
 import org.dubhe.k8s.domain.vo.PodVO;
 import org.dubhe.k8s.domain.vo.PtPodsVO;
 import org.dubhe.k8s.enums.PodPhaseEnum;
@@ -81,7 +83,6 @@ import org.dubhe.serving.dao.ServingInfoMapper;
 import org.dubhe.serving.dao.ServingModelConfigMapper;
 import org.dubhe.serving.domain.dto.PredictParamDTO;
 import org.dubhe.serving.domain.dto.ServingInfoCreateDTO;
-import org.dubhe.serving.domain.dto.ServingInfoDeleteDTO;
 import org.dubhe.serving.domain.dto.ServingInfoDetailDTO;
 import org.dubhe.serving.domain.dto.ServingInfoQueryDTO;
 import org.dubhe.serving.domain.dto.ServingInfoUpdateDTO;
@@ -96,7 +97,6 @@ import org.dubhe.serving.domain.entity.ServingModelConfig;
 import org.dubhe.serving.domain.vo.PredictParamVO;
 import org.dubhe.serving.domain.vo.ServingConfigMetricsVO;
 import org.dubhe.serving.domain.vo.ServingInfoCreateVO;
-import org.dubhe.serving.domain.vo.ServingInfoDeleteVO;
 import org.dubhe.serving.domain.vo.ServingInfoDetailVO;
 import org.dubhe.serving.domain.vo.ServingInfoQueryVO;
 import org.dubhe.serving.domain.vo.ServingInfoUpdateVO;
@@ -123,6 +123,8 @@ import org.springframework.data.redis.connection.stream.StringRecord;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronizationAdapter;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 import org.springframework.web.multipart.MultipartFile;
 
 import javax.annotation.Resource;
@@ -187,14 +189,12 @@ public class ServingServiceImpl implements ServingService {
     private RecycleConfig recycleConfig;
     @Resource
     private RecycleService recycleService;
+
     @Resource
-    private RecycleTool recycleTool;
+    private AdminClient adminClient;
+
     @Autowired
-    private RedisUtils redisUtils;
-    @Autowired
-    private ResourceCache resourceCache;
-    @Value("Task:Serving:"+"${spring.profiles.active}_serving_id_")
-    private String servingIdPrefix;
+    private K8sTaskIdentifyMapper k8sTaskIdentifyMapper;
 
     /**
      * 在线服务文件根路径
@@ -272,6 +272,16 @@ public class ServingServiceImpl implements ServingService {
             throw new BusinessException(ServingErrorEnum.INTERNAL_SERVER_ERROR);
         }
         IPage<ServingInfo> servingInfos = servingInfoMapper.selectPage(page, wrapper);
+
+        Map<Long, String> idUserNameMap = new HashMap<>();
+        List<Long> userIds = servingInfos.getRecords().stream().map(ServingInfo::getCreateUserId).filter(Objects::nonNull).distinct().collect(Collectors.toList());
+        if (org.apache.commons.collections4.CollectionUtils.isNotEmpty(userIds)) {
+            DataResponseBody<List<UserDTO>> result = adminClient.getUserList(userIds);
+            if (result.getData() != null) {
+                idUserNameMap = result.getData().stream().collect(Collectors.toMap(UserDTO::getId, UserDTO::getUsername, (o, n) -> n));
+            }
+        }
+        Map<Long, String> finalIdUserNameMap = idUserNameMap;
         List<ServingInfoQueryVO> queryList = servingInfos.getRecords().stream().map(servingInfo -> {
             ServingInfoQueryVO servingInfoQueryVO = new ServingInfoQueryVO();
             BeanUtils.copyProperties(servingInfo, servingInfoQueryVO);
@@ -279,6 +289,10 @@ public class ServingServiceImpl implements ServingService {
             Map<String, String> statistics = servingLuaScriptService.countCallsByServingInfoId(servingInfo.getId());
             servingInfoQueryVO.setTotalNum(statistics.getOrDefault("callCount", SymbolConstant.ZERO));
             servingInfoQueryVO.setFailNum(statistics.getOrDefault("failedCount", SymbolConstant.ZERO));
+            //获取任务创建人用户名
+            if (BaseService.isAdmin(user) && servingInfo.getCreateUserId() != null) {
+                servingInfoQueryVO.setCreateUserName(finalIdUserNameMap.getOrDefault(servingInfo.getCreateUserId(), null));
+            }
             return servingInfoQueryVO;
         }).collect(Collectors.toList());
         LogUtil.info(LogEnum.SERVING, "User {} queried online service list, online service count = {}",
@@ -310,8 +324,12 @@ public class ServingServiceImpl implements ServingService {
         ServingInfo servingInfo = buildServingInfo(servingInfoCreateDTO);
         List<ServingModelConfig> modelConfigList = insertServing(servingInfoCreateDTO, user, servingInfo);
         // 异步部署容器
-        String taskIdentify = resourceCache.getTaskIdentify(servingInfo.getId(), servingInfo.getName(), servingIdPrefix);
-        deployServingAsyncTask.deployServing(user, servingInfo, modelConfigList, taskIdentify);
+        K8sTaskIdentify taskIdentify = new K8sTaskIdentify();
+        taskIdentify.setTaskId(servingInfo.getId());
+        taskIdentify.setTaskName(servingInfo.getName());
+        k8sTaskIdentifyMapper.insert(taskIdentify);
+
+        deployServingAsyncTask.deployServing(user, servingInfo, modelConfigList, String.valueOf(taskIdentify.getId()));
         return new ServingInfoCreateVO(servingInfo.getId(), servingInfo.getStatus());
     }
 
@@ -526,6 +544,7 @@ public class ServingServiceImpl implements ServingService {
     @DataPermissionMethod(dataType = DatasetTypeEnum.PUBLIC)
     public ServingInfoUpdateVO update(ServingInfoUpdateDTO servingInfoUpdateDTO) {
         UserContext user = userContextService.getCurUser();
+        K8sTaskIdentify taskIdentify;
         if (user == null) {
             throw new BusinessException("当前用户信息已失效");
         }
@@ -553,7 +572,7 @@ public class ServingServiceImpl implements ServingService {
                 throw new BusinessException(ServingErrorEnum.INTERNAL_SERVER_ERROR);
             }
             servingInfo.setStatusDetail(SymbolConstant.BRACKETS);
-            deployServingAsyncTask.deleteServing(user, servingInfo, oldModelConfigList);
+            deployServingAsyncTask.deleteServing(servingInfo, oldModelConfigList);
             // 删除拷贝的文件
             for (ServingModelConfig oldModelConfig : oldModelConfigList) {
                 String recyclePath = k8sNameTool.getAbsolutePath(onlineRootPath + servingInfo.getCreateUserId() + File.separator + servingInfo.getId() + File.separator + oldModelConfig.getId());
@@ -567,9 +586,19 @@ public class ServingServiceImpl implements ServingService {
             }
         }
         List<ServingModelConfig> modelConfigList = updateServing(servingInfoUpdateDTO, user, servingInfo);
-        String taskIdentify = resourceCache.getTaskIdentify(servingInfo.getId(), servingInfo.getName(),servingIdPrefix);
+
+
+        taskIdentify = k8sTaskIdentifyMapper.getInfoByTaskId(servingInfo.getId());
+        if (taskIdentify == null) {
+            taskIdentify = new K8sTaskIdentify();
+            taskIdentify.setTaskId(servingInfo.getId());
+            taskIdentify.setTaskName(servingInfo.getName());
+            k8sTaskIdentifyMapper.insert(taskIdentify);
+        } else {
+            k8sTaskIdentifyMapper.updateNameByTaskId(servingInfo.getId(), servingInfo.getName());
+        }
         // 异步部署容器
-        deployServingAsyncTask.deployServing(user, servingInfo, modelConfigList, taskIdentify);
+        deployServingAsyncTask.deployServing(user, servingInfo, modelConfigList, String.valueOf(taskIdentify.getId()));
         return new ServingInfoUpdateVO(servingInfo.getId(), servingInfo.getStatus());
     }
 
@@ -629,30 +658,38 @@ public class ServingServiceImpl implements ServingService {
     /**
      * 在线服务删除
      *
-     * @param servingInfoDeleteDTO 服务对象删除
+     * @param  ids
      * @return ServingInfoDeleteVO 返回删除对象的id
      */
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public ServingInfoDeleteVO delete(ServingInfoDeleteDTO servingInfoDeleteDTO) {
+    public void delete(Set<Long> ids) {
+        for (Long id : ids) {
+            this.delete(id);
+        }
+    }
+
+    /**
+     * 在线服务删除
+     *
+     * @param id
+     */
+    public void delete(Long id) {
         UserContext user = userContextService.getCurUser();
         if (user == null) {
             throw new BusinessException("当前用户信息已失效");
         }
-        ServingInfo servingInfo = checkServingInfoExist(servingInfoDeleteDTO.getId(), user.getId());
+        ServingInfo servingInfo = checkServingInfoExist(id, user.getId());
         List<ServingModelConfig> modelConfigList = getModelConfigByServingId(servingInfo.getId());
-        deployServingAsyncTask.deleteServing(user, servingInfo, modelConfigList);
-        deleteServing(servingInfoDeleteDTO, user, servingInfo);
-        String taskIdentify = (String) redisUtils.get(servingIdPrefix + String.valueOf(servingInfo.getId()));
-        if (StringUtils.isNotEmpty(taskIdentify)){
-            redisUtils.del(taskIdentify, servingIdPrefix + String.valueOf(servingInfo.getId()));
-        }
+        deployServingAsyncTask.deleteServing(servingInfo, modelConfigList);
+        deleteServing(id, user, servingInfo);
+        k8sTaskIdentifyMapper.deleteByTaskId(servingInfo.getId());
         Map<String, Object> map = new HashMap<>(NumberConstant.NUMBER_2);
         map.put("serving_id", servingInfo.getId());
         if (!servingModelConfigService.removeByMap(map)) {
             LogUtil.error(LogEnum.SERVING,
                     "User {} failed update online service in the database, service id={}, service name:{}",
-                    user.getUsername(), servingInfoDeleteDTO.getId(), servingInfo.getName());
+                    user.getUsername(), id, servingInfo.getName());
             throw new BusinessException(ServingErrorEnum.INTERNAL_SERVER_ERROR);
         }
         servingInfo.setStatusDetail(SymbolConstant.BRACKETS);
@@ -663,13 +700,12 @@ public class ServingServiceImpl implements ServingService {
         }
         //创建垃圾回收任务
         recycle(servingInfo, modelConfigList);
-        return new ServingInfoDeleteVO(servingInfo.getId());
     }
 
     /**
      * 垃圾回收当前服务信息
      *
-     * @param servingInfo 服务信息
+     * @param servingInfo     服务信息
      * @param modelConfigList 模型配置信息
      */
     private void recycle(ServingInfo servingInfo, List<ServingModelConfig> modelConfigList) {
@@ -688,17 +724,17 @@ public class ServingServiceImpl implements ServingService {
     /**
      * 删除服务并保存数据
      *
-     * @param servingInfoDeleteDTO 服务信息删除对象
-     * @param user                 用户信息
-     * @param servingInfo          在线服务信息
+     * @param id          服务信息删除对象
+     * @param user        用户信息
+     * @param servingInfo 在线服务信息
      */
     @Transactional(rollbackFor = Exception.class)
-    public void deleteServing(ServingInfoDeleteDTO servingInfoDeleteDTO, UserContext user, ServingInfo servingInfo) {
+    public void deleteServing(Long id, UserContext user, ServingInfo servingInfo) {
         int result = servingInfoMapper.deleteById(servingInfo.getId());
         if (result < NumberConstant.NUMBER_1) {
             LogUtil.error(LogEnum.SERVING,
                     "User {} failed deleting online service from the database, service id={}, service name:{}",
-                    user.getUsername(), servingInfoDeleteDTO.getId(), servingInfo.getName());
+                    user.getUsername(), id, servingInfo.getName());
             throw new BusinessException(ServingErrorEnum.INTERNAL_SERVER_ERROR);
         }
     }
@@ -766,16 +802,29 @@ public class ServingServiceImpl implements ServingService {
         servingInfo.setStatusDetail(SymbolConstant.BRACKETS);
         updateServingStart(user, servingInfo, modelConfigList);
         // 异步部署容器
-        String taskIdentify = resourceCache.getTaskIdentify(servingInfo.getId(), servingInfo.getName(), servingIdPrefix);
-        deployServingAsyncTask.deployServing(user, servingInfo, modelConfigList, taskIdentify);
+        K8sTaskIdentify taskIdentify = k8sTaskIdentifyMapper.getInfoByTaskId(servingInfo.getId());
+        if (taskIdentify == null) {
+            taskIdentify = new K8sTaskIdentify();
+            taskIdentify.setTaskId(servingInfo.getId());
+            taskIdentify.setTaskName(servingInfo.getName());
+            k8sTaskIdentifyMapper.insert(taskIdentify);
+        }
+        //方法（实验创建开始运行）上的大事务commit后再执行异步方法申请k8s资源执行任务。
+        String taskIdentityId = String.valueOf(taskIdentify.getId());
+        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronizationAdapter() {
+            @Override
+            public void afterCommit(){
+                deployServingAsyncTask.deployServing(user, servingInfo, modelConfigList, taskIdentityId);
+            }
+        });
         return new ServingStartVO(servingInfo.getId(), servingInfo.getStatus());
     }
 
     /**
      * 启动服务并保存数据
      *
-     * @param user        用户信息
-     * @param servingInfo 在线服务信息
+     * @param user            用户信息
+     * @param servingInfo     在线服务信息
      * @param modelConfigList 模型配置对象列表
      */
     @Transactional(rollbackFor = Exception.class)
@@ -787,8 +836,8 @@ public class ServingServiceImpl implements ServingService {
             throw new BusinessException(ServingErrorEnum.INTERNAL_SERVER_ERROR);
         }
         for (ServingModelConfig servingModelConfig : modelConfigList) {
-            servingModelConfig.setResourceInfo(null);
-            servingModelConfig.setUrl(null);
+            servingModelConfig.setResourceInfo(SymbolConstant.BLANK);
+            servingModelConfig.setUrl(SymbolConstant.BLANK);
             if (servingModelConfigMapper.updateById(servingModelConfig) < NumberConstant.NUMBER_1) {
                 throw new BusinessException(ServingErrorEnum.DATABASE_ERROR);
             }
@@ -871,7 +920,7 @@ public class ServingServiceImpl implements ServingService {
         servingInfo.setStatus(ServingStatusEnum.STOP.getStatus());
         servingInfo.setRunningNode(NumberConstant.NUMBER_0);
         List<ServingModelConfig> modelConfigList = getModelConfigByServingId(servingInfo.getId());
-        deployServingAsyncTask.deleteServing(user, servingInfo, modelConfigList);
+        deployServingAsyncTask.deleteServing(servingInfo, modelConfigList);
         updateServingStop(user, servingInfo, modelConfigList);
         servingInfo.setStatusDetail(SymbolConstant.BRACKETS);
         // 删除路由信息
@@ -903,7 +952,7 @@ public class ServingServiceImpl implements ServingService {
             servingModelConfigMapper.updateById(servingModelConfig);
         });
         if (ServingTypeEnum.GRPC.getType().equals(servingInfo.getType())) {
-            GrpcClient.shutdownChannel(servingInfo.getId(), user);
+            GrpcClient.shutdownChannel(servingInfo.getId());
         }
     }
 
@@ -1154,7 +1203,7 @@ public class ServingServiceImpl implements ServingService {
             servingInfo.putStatusDetail(statusDetailKey, req.getMessages());
         }
         LogUtil.info(LogEnum.SERVING, "The callback serving message:{} ,req message:{}", servingInfo, req);
-        return servingInfoMapper.updateById(servingInfo) < NumberConstant.NUMBER_1;
+        return servingInfoMapper.updateStatusDetail(servingInfo.getId(), servingInfo.getStatusDetail()) < NumberConstant.NUMBER_1;
     }
 
     @Transactional(rollbackFor = Exception.class)
@@ -1186,6 +1235,9 @@ public class ServingServiceImpl implements ServingService {
                     servingInfo.getRunningNode(), req);
             servingInfo.putStatusDetail(statusDetailKey, "运行中的节点数为0");
             servingInfo.setStatus(ServingStatusEnum.EXCEPTION.getStatus());
+            // 删除已创建的pod
+            List<ServingModelConfig> deleteList = getModelConfigByServingId(servingInfo.getId());
+            deployServingAsyncTask.deleteServing(servingInfo, deleteList);
         }
         if (servingInfo.getRunningNode() > NumberConstant.NUMBER_0) {
             LogUtil.info(LogEnum.SERVING,
@@ -1289,9 +1341,49 @@ public class ServingServiceImpl implements ServingService {
                 }
             }
             if (servingInfoId != null) {
-                servingInfoMapper.updateStatusById(servingInfoId, false);
+                servingInfoMapper.rollbackById(servingInfoId, false);
             }
         }
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void batchDelete(Set<Long> ids) {
+        for (Long id : ids) {
+            this.delete(id);
+        }
+    }
+
+    @Override
+    public List<ServingInfoQueryVO> queryByIds(List<Long> ids) {
+        UserContext user = userContextService.getCurUser();
+        if (user == null) {
+            throw new BusinessException("当前用户信息已失效");
+        }
+        LogUtil.info(LogEnum.SERVING, "User {} queried running service list, with the polling query {}", user.getUsername(), ids);
+        LambdaQueryWrapper<ServingInfo> wrapper = new LambdaQueryWrapper<>();
+        wrapper.in(ServingInfo::getId, ids);
+        if (!BaseService.isAdmin(user)) {
+            wrapper.eq(ServingInfo::getCreateUserId, user.getId());
+        }
+        List<ServingInfo> servingInfos = servingInfoMapper.selectList(wrapper);
+        List<ServingInfoQueryVO> queryList = servingInfos.stream().map(servingInfo -> {
+            ServingInfoQueryVO servingInfoQueryVO = new ServingInfoQueryVO();
+            BeanUtils.copyProperties(servingInfo, servingInfoQueryVO);
+            servingInfoQueryVO.setUrl(servingInfo.getUuid() + GATEWAY_URI_POSTFIX);
+            Map<String, String> statistics = servingLuaScriptService.countCallsByServingInfoId(servingInfo.getId());
+            servingInfoQueryVO.setTotalNum(statistics.getOrDefault("callCount", SymbolConstant.ZERO));
+            servingInfoQueryVO.setFailNum(statistics.getOrDefault("failedCount", SymbolConstant.ZERO));
+            //获取任务创建人用户名
+            if (servingInfo.getCreateUserId() != null) {
+                DataResponseBody<UserDTO> result = adminClient.getUsers(servingInfo.getCreateUserId());
+                servingInfoQueryVO.setCreateUserName(result.getData() != null ? result.getData().getUsername() : null);
+            }
+            return servingInfoQueryVO;
+        }).collect(Collectors.toList());
+        LogUtil.info(LogEnum.SERVING, "User {} queried running service list, running service count = {}",
+                user.getUsername(), queryList.size());
+        return queryList;
     }
 
 
@@ -1299,8 +1391,8 @@ public class ServingServiceImpl implements ServingService {
      * 创建serving回收任务
      *
      * @param servingInfo serving服务实体信息
-     * @param recyclePath  回收文件路径
-     * @param isRollBack   是否需要还原表数据
+     * @param recyclePath 回收文件路径
+     * @param isRollBack  是否需要还原表数据
      */
     public void createRecycleTask(ServingInfo servingInfo, String modelConfigIds, String recyclePath, boolean isRollBack) {
         RecycleCreateDTO recycleCreateDTO = RecycleCreateDTO.builder()

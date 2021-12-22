@@ -38,7 +38,7 @@ public class PtTrainJobDetailQueryDTO implements Serializable {
 
     @ApiModelProperty(value = "id", required = true)
     @NotNull(message = "id不能为null")
-    @Min(value = MagicNumConstant.ONE, message = "id必须大于1")
+    @Min(value = MagicNumConstant.ONE, message = "训练id不能小于1")
     private Long id;
 
 }

@@ -38,7 +38,7 @@ import java.util.List;
  * @description TrainJobApiTest测试类
  * @date 2020-04-14
  */
-@SpringBootTest(classes= DubheK8sApplication.class)
+@SpringBootTest(classes = DubheK8sApplication.class)
 @RunWith(SpringRunner.class)
 public class TrainJobApiTest {
 
@@ -46,7 +46,7 @@ public class TrainJobApiTest {
     private TrainJobApi trainJobApi;
 
     @Test
-    public void list(){
+    public void list() {
         List<BizJob> list = trainJobApi.list("namespace-1");
         for (BizJob bizJob : list) {
             System.out.println(bizJob);
@@ -54,30 +54,30 @@ public class TrainJobApiTest {
     }
 
     @Test
-    public void get(){
+    public void get() {
         BizJob bizJob = trainJobApi.get("namespace", "seven-test");
         System.out.println(JSON.toJSONString(bizJob));
     }
 
     @Test
-    public void create()  {
+    public void create() {
         PtJupyterJobBO bo = new PtJupyterJobBO();
-        bo.setNamespace("namespace-1")
+        bo.setCmdLines(Arrays.asList("-c", "while true; do echo hello; sleep 10;done"))
+                .setFsMounts(new HashMap<String, PtMountDirBO>() {{
+                    put("/dataset", new PtMountDirBO("/nfs/xxx/dataset"));
+                    put("/workspace", new PtMountDirBO("/nfs/xxx/dataset"));
+                    put("/valdataset", new PtMountDirBO("/nfs/xxx/dataset"));
+                }})
+                .setImage("tensorflow/tensorflow:latest")
+                .setBusinessLabel("train")
+                .setDelayDeleteTime(10)
+                .setDelayCreateTime(10).setNamespace("namespace-1")
                 .setName("train5")
                 .setCpuNum(500)
                 .setGpuNum(1)
                 .setUseGpu(true)
                 .setMemNum(200)
-                .setCmdLines(Arrays.asList("-c","while true; do echo hello; sleep 10;done"))
-                .setFsMounts(new HashMap<String, PtMountDirBO>(){{
-                    put("/dataset",new PtMountDirBO("/nfs/xxx/dataset"));
-                    put("/workspace",new PtMountDirBO("/nfs/xxx/dataset"));
-                    put("/valdataset",new PtMountDirBO("/nfs/xxx/dataset"));
-                }})
-                .setImage("tensorflow/tensorflow:latest")
-                .setBusinessLabel("train")
-                .setDelayDeleteTime(10)
-                .setDelayCreateTime(10);
+        ;
         System.out.println("before create");
         PtJupyterJobVO result = trainJobApi.create(bo);
         System.out.println("after create");
@@ -85,7 +85,7 @@ public class TrainJobApiTest {
     }
 
     @Test
-    public void delete(){
+    public void delete() {
         System.out.println("before delete");
         boolean isDeleted = trainJobApi.delete("test-ns", "my-ml");
         System.out.println("after delete: " + isDeleted);

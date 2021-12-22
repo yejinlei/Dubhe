@@ -21,6 +21,7 @@ import com.alibaba.fastjson.JSONObject;
 import io.swagger.annotations.ApiModelProperty;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
+import lombok.experimental.Accessors;
 import org.dubhe.biz.base.vo.BaseVO;
 
 import java.io.Serializable;
@@ -30,9 +31,9 @@ import java.sql.Timestamp;
  * @description 任务参数查询返回查询结果
  * @date 2020-04-27
  */
-@EqualsAndHashCode(callSuper = true)
 @Data
-public class PtTrainParamQueryVO extends BaseVO implements Serializable {
+@Accessors(chain = true)
+public class PtTrainParamQueryVO implements Serializable {
 
     @ApiModelProperty("任务参数ID")
     private Long id;
@@ -79,11 +80,26 @@ public class PtTrainParamQueryVO extends BaseVO implements Serializable {
     @ApiModelProperty("运行参数(算法来源为我的算法时为调优参数，算法来源为预置算法时为运行参数)")
     private JSONObject runParams;
 
+    @ApiModelProperty("运行参数映射关系")
+    private JSONObject runParamsNameMap;
+
+    @ApiModelProperty("运行命令概览")
+    private String displayRunCommand;
+
     @ApiModelProperty("规格名称")
     private String trainJobSpecsName;
 
     @ApiModelProperty("类型(0为CPU，1为GPU)")
     private Integer resourcesPoolType;
+
+    @ApiModelProperty("GPU类型(例如：NVIDIA)")
+    private String gpuType;
+
+    @ApiModelProperty("GPU型号(例如：v100)")
+    private String gpuModel;
+
+    @ApiModelProperty("k8s GPU资源标签key值(例如：nvidia.com/gpu)")
+    private String k8sLabelKey;
 
     @ApiModelProperty("训练类型")
     private Integer trainType;
@@ -117,6 +133,9 @@ public class PtTrainParamQueryVO extends BaseVO implements Serializable {
 
     @ApiModelProperty("创建人")
     private Long createUserId;
+
+    @ApiModelProperty("创建人用户名")
+    private String createUserName;
 
     @ApiModelProperty("创建时间")
     private Timestamp createTime;

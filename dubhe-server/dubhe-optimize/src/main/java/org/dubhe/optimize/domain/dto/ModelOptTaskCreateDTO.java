@@ -21,7 +21,11 @@ import com.alibaba.fastjson.JSONObject;
 import io.swagger.annotations.ApiModelProperty;
 import lombok.Data;
 import lombok.experimental.Accessors;
+import org.dubhe.biz.base.constant.NumberConstant;
 import org.dubhe.biz.base.constant.StringConstant;
+
+import javax.validation.constraints.Max;
+import javax.validation.constraints.Min;
 import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Pattern;
@@ -96,4 +100,32 @@ public class ModelOptTaskCreateDTO implements Serializable {
 
     @ApiModelProperty(value = "运行参数")
     private JSONObject params;
+
+    @ApiModelProperty(value = "GPU类型")
+    private String gpuType;
+
+    @ApiModelProperty(value = "GPU型号")
+    private String gpuModel;
+
+    @ApiModelProperty(value = "k8s GPU资源标签key值")
+    private String k8sLabelKey;
+
+    @ApiModelProperty(value = "节点类型(0为CPU，1为GPU)", required = true)
+    @Min(value = NumberConstant.NUMBER_0, message = "节点类型错误")
+    @Max(value = NumberConstant.NUMBER_1, message = "节点类型错误")
+    @NotNull(message = "节点类型不能为空")
+    private Integer resourcesPoolType;
+
+    @ApiModelProperty(value = "节点规格", required = true)
+    @NotNull(message = "节点规格不能为空")
+    private String resourcesPoolSpecs;
+
+    @ApiModelProperty(value = "规格信息", required = true)
+    @NotNull(message = "规格信息不能为空")
+    private String poolSpecsInfo;
+
+    @ApiModelProperty(value = "节点个数", required = true)
+    @NotNull(message = "节点个数不能为空")
+    @Max(value = NumberConstant.NUMBER_1, message = "节点个数不能大于1")
+    private Integer resourcesPoolNode;
 }

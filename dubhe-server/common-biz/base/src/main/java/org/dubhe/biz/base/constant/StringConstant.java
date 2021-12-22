@@ -30,7 +30,7 @@ public final class StringConstant {
     public static final String REQUEST_METHOD_GET = "GET";
 
     /**
-     * 字母、数字、英文横杠和下划线匹配
+     * 字母、数字、汉字、英文横杠和下划线匹配
      */
     public static final String REGEXP_NAME = "^[a-zA-Z0-9\\-\\_\\u4e00-\\u9fa5]+$";
 
@@ -50,9 +50,42 @@ public final class StringConstant {
     public static final String REGEXP_SPECS = "^[a-zA-Z0-9\\-\\_\\s\\u4e00-\\u9fa5]+$";
 
     /**
+     * GPU类型支持字母、数字、汉字、英文横杠、英文.号、空白字符和英文斜杠
+     */
+    public static final String REGEXP_GPU_TYPE = "^[a-zA-Z0-9\\-\\.\\s\\/\\u4e00-\\u9fa5]+$";
+
+    /**
+     * GPU型号支持小写字母、数字、英文横杠、英文.号和英文斜杠
+     */
+    public static final String REGEXP_GPU_MODEL = "^[a-z0-9\\-\\.\\/]+$";
+
+    /**
+     * k8s GPU资源名称支持小写字母、数字、英文横杠、英文.号和英文斜杠
+     */
+    public static final String REGEXP_K8S = "^[a-z0-9\\-\\.\\/]+$";
+
+    /**
      * 整数匹配
      */
     public static final Pattern PATTERN_NUM = Pattern.compile("^[-\\+]?[\\d]*$");
+    /**
+     * 数字匹配
+     */
+    public static final String NUMBER ="(\\d+)";
+    /**
+     * 整数匹配
+     */
+    public static final Pattern PATTERN_NUMBER  = Pattern.compile("(\\d+)");
+    /**
+     * 小数匹配
+     */
+    public static final Pattern PATTERN_DECIMAL = Pattern.compile("(\\d+\\.\\d+)");
+
+
+    /**
+     * 描述内容支持字母、数字、汉字、英文横杠和下划线
+     */
+    public static final String REGEXP_DESCRIPTION = "^[a-zA-Z0-9\\-\\_\\u4e00-\\u9fa5]+$";
 
 
     /**
@@ -80,7 +113,7 @@ public final class StringConstant {
     public static final String K8S_CALLBACK_PATH_DEPLOYMENT = "/api/k8s/callback/deployment";
     public static final String MULTIPART = "multipart/form-data";
 
-    public static final String PIP_SITE_PACKAGE ="pip-site-package";
+    public static final String PIP_SITE_PACKAGE = "pip-site-package";
 
     /**
      * 分页内容
@@ -106,12 +139,20 @@ public final class StringConstant {
     public static final String START_LOW = "start";
     public static final String END_LOW = "end";
     public static final String STEP_LOW = "step";
+    //1024*1024*1024
+    public static final String MEM_UNIT = "1073741824";
 
     /**
      * 任务缓存
      */
-    public static final String CACHE_TASK_ID ="task_id";
-    public static final String CACHE_TASK_NAME ="task_name";
+    public static final String CACHE_TASK_ID = "task_id";
+    public static final String CACHE_TASK_NAME = "task_name";
+
+
+    /**
+     * python命令行参数格式
+     */
+    public static final String PYTHON_COMMAND_PATTERN = " --%s=%s";
 
 
     private StringConstant() {

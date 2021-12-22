@@ -19,7 +19,6 @@ package org.dubhe.admin.rest;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
-import org.dubhe.admin.domain.dto.UserConfigDTO;
 import org.dubhe.admin.domain.dto.UserCreateDTO;
 import org.dubhe.admin.domain.dto.UserDeleteDTO;
 import org.dubhe.admin.domain.dto.UserQueryDTO;
@@ -27,12 +26,23 @@ import org.dubhe.admin.domain.dto.UserUpdateDTO;
 import org.dubhe.admin.service.UserService;
 import org.dubhe.biz.base.constant.Permissions;
 import org.dubhe.biz.base.context.UserContext;
+import org.dubhe.biz.base.dto.UserConfigSaveDTO;
 import org.dubhe.biz.base.dto.UserDTO;
 import org.dubhe.biz.base.vo.DataResponseBody;
+import org.dubhe.biz.base.vo.UserConfigVO;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
 import javax.servlet.http.HttpServletResponse;
 import javax.validation.Valid;
@@ -81,22 +91,23 @@ public class UserController {
     @ApiOperation("删除用户")
     @DeleteMapping
     @PreAuthorize(Permissions.USER_DELETE)
-    public DataResponseBody delete(@Valid @RequestBody UserDeleteDTO userDeleteDTO) {
-        userService.delete(userDeleteDTO.getIds());
+    public DataResponseBody delete(@Valid @RequestBody UserDeleteDTO userDeleteDTO, @RequestHeader("Authorization") String accessToken) {
+        userService.delete(userDeleteDTO.getIds(), accessToken);
         return new DataResponseBody();
     }
 
     @ApiOperation("根据用户ID查询用户配置")
     @GetMapping(value = "/getUserConfig")
-    public DataResponseBody getUserConfig(@RequestParam(value = "userId") Long userId) {
+    public DataResponseBody<UserConfigVO> getUserConfig(@RequestParam(value = "userId") Long userId) {
         return new DataResponseBody(userService.findUserConfig(userId));
     }
 
     @ApiOperation("新增或修改用户配置")
     @PutMapping(value = "/setUserConfig")
     @PreAuthorize(Permissions.USER_CONFIG_EDIT)
-    public DataResponseBody setUserConfig(@Validated @RequestBody UserConfigDTO userConfigDTO) {
-        return new DataResponseBody(userService.createOrUpdateUserConfig(userConfigDTO));
+    public DataResponseBody setUserConfig(@Validated @RequestBody UserConfigSaveDTO userConfigSaveDTO) {
+        userService.saveUserConfig(userConfigSaveDTO, null);
+        return new DataResponseBody();
     }
 
     /**
@@ -121,7 +132,7 @@ public class UserController {
 
     @ApiOperation("根据用户昵称搜索用户列表")
     @GetMapping(value = "/findByNickName")
-    public DataResponseBody<List<UserDTO>> findByNickName(@RequestParam(value = "nickName",required = false) String nickName) {
+    public DataResponseBody<List<UserDTO>> findByNickName(@RequestParam(value = "nickName", required = false) String nickName) {
         return new DataResponseBody(userService.findByNickName(nickName));
     }
 
@@ -130,4 +141,20 @@ public class UserController {
     public DataResponseBody<List<UserDTO>> getUserList(@RequestParam(value = "ids") List<Long> ids) {
         return new DataResponseBody(userService.getUserList(ids));
     }
+
+    @ApiOperation("重置密码")
+    @PostMapping(value = "/resetPassword/{userId}")
+    @PreAuthorize(Permissions.USER_RESET_PASSWORD)
+    public DataResponseBody resetPassword(@PathVariable Long userId) {
+        return userService.resetPassword(userId);
+    }
+
+
+    @ApiOperation("获取用户资源配额总量")
+    @GetMapping("/userAllot")
+    @PreAuthorize(Permissions.SYSTEM_NODE)
+    public DataResponseBody getUserAllotTotal() {
+        return userService.getAllotResources();
+    }
+    
 }

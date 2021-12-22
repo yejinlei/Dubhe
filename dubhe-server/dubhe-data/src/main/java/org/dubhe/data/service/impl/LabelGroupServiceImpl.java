@@ -23,6 +23,9 @@ import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import org.dubhe.biz.base.dto.UserDTO;
+import org.dubhe.biz.base.service.UserContextService;
+import org.dubhe.biz.base.vo.DataResponseBody;
 import org.dubhe.biz.permission.annotation.DataPermissionMethod;
 import org.dubhe.biz.permission.annotation.RolePermission;
 import org.dubhe.biz.base.constant.MagicNumConstant;
@@ -39,6 +42,7 @@ import org.dubhe.biz.db.utils.PageUtil;
 import org.dubhe.biz.db.utils.WrapperHelp;
 import org.dubhe.biz.log.enums.LogEnum;
 import org.dubhe.biz.log.utils.LogUtil;
+import org.dubhe.cloud.authconfig.service.AdminClient;
 import org.dubhe.cloud.authconfig.utils.JwtUtils;
 import org.dubhe.data.constant.*;
 import org.dubhe.data.dao.DatasetMapper;
@@ -70,6 +74,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
 import org.springframework.web.multipart.MultipartFile;
 
+import javax.annotation.Resource;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -94,11 +99,17 @@ public class LabelGroupServiceImpl extends ServiceImpl<LabelGroupMapper, LabelGr
     @Autowired
     private DatasetGroupLabelService datasetGroupLabelService;
 
+    @Resource
+    private AdminClient adminClient;
+
     /**
      * 数据回收服务
      */
     @Autowired
     private RecycleService recycleService;
+
+    @Resource
+    private UserContextService userContextService;
 
     /**
      * 创建标签组
@@ -108,7 +119,7 @@ public class LabelGroupServiceImpl extends ServiceImpl<LabelGroupMapper, LabelGr
      */
     @Transactional(rollbackFor = Exception.class)
     @Override
-    public void creatLabelGroup(LabelGroupCreateDTO labelGroupCreateDTO) {
+    public Long creatLabelGroup(LabelGroupCreateDTO labelGroupCreateDTO) {
 
         //1 标签组名称唯一校验
         labelGroupCreateDTO.setOriginUserId(JwtUtils.getCurUserId());
@@ -132,7 +143,7 @@ public class LabelGroupServiceImpl extends ServiceImpl<LabelGroupMapper, LabelGr
         if (!CollectionUtils.isEmpty(labelList)) {
             buildLabelDataByCreate(labelGroup, labelList);
         }
-
+        return labelGroup.getId();
     }
 
     /**
@@ -397,6 +408,16 @@ public class LabelGroupServiceImpl extends ServiceImpl<LabelGroupMapper, LabelGr
             queryWrapper.orderByDesc("update_time");
         }
         Page<LabelGroup> labelGroupPage = baseMapper.selectPage(page, queryWrapper);
+        Map<Long, String> idUserNameMap = new HashMap<>();
+        List<Long> userIds = labelGroupPage.getRecords().stream().map(LabelGroup::getCreateUserId).filter(Objects::nonNull).distinct().collect(Collectors.toList());
+        if (org.apache.commons.collections4.CollectionUtils.isNotEmpty(userIds)) {
+            DataResponseBody<List<UserDTO>> result = adminClient.getUserList(userIds);
+            if (result.getData() != null) {
+                idUserNameMap = result.getData().stream().collect(Collectors.toMap(UserDTO::getId, UserDTO::getUsername, (o, n) -> n));
+            }
+        }
+        Map<Long, String> finalIdUserNameMap = idUserNameMap;
+
         List<LabelGroupQueryVO> labelGroups = new ArrayList<>();
         if(!CollectionUtils.isEmpty(labelGroupPage.getRecords())){
             List<LabelGroup> records = labelGroupPage.getRecords();
@@ -411,6 +432,10 @@ public class LabelGroupServiceImpl extends ServiceImpl<LabelGroupMapper, LabelGr
                         .labelGroupType(labelGroup.getLabelGroupType())
                         .remark(labelGroup.getRemark()).updateTime(labelGroup.getUpdateTime()).build();
                 labelGroupQuery.setCount(labelGroupMap.get(labelGroup.getId()));
+                //获取标签组创建人用户名
+                if (BaseService.isAdmin(userContextService.getCurUser()) && labelGroup.getCreateUserId() != null) {
+                    labelGroupQuery.setCreateUserName(finalIdUserNameMap.getOrDefault(labelGroup.getCreateUserId(), null));
+                }
                 return labelGroupQuery;
             }).collect(Collectors.toList());
         }
@@ -488,7 +513,7 @@ public class LabelGroupServiceImpl extends ServiceImpl<LabelGroupMapper, LabelGr
      */
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public void importLabelGroup(LabelGroupImportDTO labelGroupImportDTO, MultipartFile file) {
+    public Long importLabelGroup(LabelGroupImportDTO labelGroupImportDTO, MultipartFile file) {
         //文件格式/大小/属性校验
         FileUtil.checkoutFile(file);
 
@@ -506,7 +531,7 @@ public class LabelGroupServiceImpl extends ServiceImpl<LabelGroupMapper, LabelGr
                 .remark(labelGroupImportDTO.getRemark()).build();
 
         //调用新增标签方法
-        this.creatLabelGroup(createDTO);
+        return this.creatLabelGroup(createDTO);
     }
 
     /**

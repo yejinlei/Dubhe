@@ -32,7 +32,7 @@ public class GpuUsageVO {
      */
     private String accId;
     /**
-     * 使用率 百分比
+     * 使用率
      */
-    Float usage;
+    private String usage;
 }

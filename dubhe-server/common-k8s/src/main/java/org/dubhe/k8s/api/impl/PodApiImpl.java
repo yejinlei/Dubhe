@@ -18,23 +18,32 @@
 package org.dubhe.k8s.api.impl;
 
 import cn.hutool.core.collection.CollectionUtil;
+import cn.hutool.core.io.FileUtil;
 import cn.hutool.core.io.IORuntimeException;
 import cn.hutool.core.util.StrUtil;
 import cn.hutool.http.HttpRequest;
 import cn.hutool.http.HttpResponse;
 import cn.hutool.http.HttpStatus;
+import com.alibaba.fastjson.JSON;
+import com.google.common.collect.Lists;
+import com.google.common.io.Files;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.PodList;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClientException;
+import io.fabric8.kubernetes.client.dsl.ExecWatch;
+import org.dubhe.biz.base.constant.MagicNumConstant;
+import org.dubhe.biz.base.constant.StringConstant;
 import org.dubhe.biz.base.constant.SymbolConstant;
 import org.dubhe.biz.base.utils.RegexUtil;
 import org.dubhe.biz.base.utils.StringUtils;
+import org.dubhe.biz.file.utils.IOUtil;
 import org.dubhe.biz.log.enums.LogEnum;
 import org.dubhe.biz.log.utils.LogUtil;
 import org.dubhe.k8s.api.JupyterResourceApi;
 import org.dubhe.k8s.api.MetricsApi;
 import org.dubhe.k8s.api.PodApi;
+import org.dubhe.k8s.constant.K8sLabelConstants;
 import org.dubhe.k8s.constant.K8sParamConstants;
 import org.dubhe.k8s.domain.bo.LabelBO;
 import org.dubhe.k8s.domain.resource.BizPod;
@@ -42,13 +51,17 @@ import org.dubhe.k8s.domain.vo.PtJupyterDeployVO;
 import org.dubhe.k8s.domain.vo.PtPodsVO;
 import org.dubhe.k8s.enums.K8sResponseEnum;
 import org.dubhe.k8s.enums.PodPhaseEnum;
+import org.dubhe.k8s.listener.DefaultPodExecListener;
 import org.dubhe.k8s.utils.BizConvertUtils;
 import org.dubhe.k8s.utils.K8sUtils;
 import org.dubhe.k8s.utils.LabelUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.util.CollectionUtils;
 
+import java.io.File;
+import java.io.InputStream;
 import java.util.*;
+import java.util.concurrent.CountDownLatch;
 import java.util.stream.Collectors;
 
 /**
@@ -312,6 +325,21 @@ public class PodApiImpl implements PodApi {
     }
 
     /**
+     * 根据resourceName查询Pod集合
+     * @param resourceName
+     * @return
+     */
+    @Override
+    public List<Pod> listByResourceName(String resourceName) {
+        try{
+            return client.pods().inAnyNamespace().withLabel(K8sLabelConstants.BASE_TAG_SOURCE, resourceName).list().getItems();
+        }catch (KubernetesClientException e) {
+            LogUtil.error(LogEnum.BIZ_K8S, "PodApiImpl.listByResourceName error:{}", e);
+            return new ArrayList<>();
+        }
+    }
+
+    /**
      * 根据命名空间查询Pod集合
      *
      * @param namespace 命名空间
@@ -367,6 +395,18 @@ public class PodApiImpl implements PodApi {
         return "";
     }
 
+
+    /**
+     * 根据resourceName 获取pod对应k8s中labels
+     *
+     * @param resourceName 资源名称
+     * @return Map<String, String> map
+     */
+    @Override
+    public Map<String, String> getLabels(String resourceName){
+        return LabelUtils.withEnvResourceName(resourceName);
+    }
+
     /**
      * 根据命名空间和资源名获得Token信息
      *
@@ -411,6 +451,136 @@ public class PodApiImpl implements PodApi {
         }
         LogUtil.info(LogEnum.BIZ_K8S, "GetUrlByResourceName Jupyter statefulset not created,[namespace]={}, [resourceName]={}",namespace,resourceName);
         return "";
+    }
+
+    /**
+      * 拷贝文件到pod
+      * @param namespace 命名空间
+      * @param podName pod名称
+      * @param containerName 容器名称
+      * @param file 文件
+      * @param targetDir 目标路径
+      */
+    @Override
+    public void copyToPod(String namespace, String podName, String containerName, File file, String targetDir) {
+        try {
+            LogUtil.info(LogEnum.BIZ_K8S, "PodApiImpl.copyToPod params:[namespace]={}, [podName]={},[containerName]={},[file]={},[targetDir]={}",namespace, podName,containerName,file.getAbsolutePath(),targetDir);
+            client.pods().inNamespace(namespace).withName(podName)
+                 .inContainer(containerName)
+                 .file(targetDir)
+                 .upload(file.toPath());
+        } catch (Exception e) {
+            LogUtil.error(LogEnum.BIZ_K8S, "PodApiImpl.copyToPod error, params:[namespace]={}, [podName]={},[containerName]={},[file]={},[targetDir]={}, error:{}",namespace, podName,containerName,file.getAbsolutePath(),targetDir, e);
+        }
+    }
+
+    /**
+      * 同步执行
+      * @param namespace 命名空间
+      * @param podName pod名称
+      * @param containerName 容器名称
+      * @param cmd 命令
+      */
+    @Override
+    public void exec(String namespace, String podName, String containerName, String cmd) {
+        try {
+            LogUtil.info(LogEnum.BIZ_K8S, "PodApiImpl.exec params:[namespace]={}, [podName]={},[containerName]={},[cmd]={}",namespace, podName,containerName,cmd);
+            final CountDownLatch execLatch = new CountDownLatch(1);
+            ExecWatch execWatch = client.pods().inNamespace(namespace).withName(podName).inContainer(containerName)
+                 .redirectingOutput()
+                 .withTTY() //不展示输出
+                 .usingListener(new DefaultPodExecListener(namespace, podName, containerName, execLatch))
+                 .exec("sh", "-c", cmd);
+            execLatch.await();
+         } catch (InterruptedException e) {
+            LogUtil.error(LogEnum.BIZ_K8S, "PodApiImpl.exec error,params:[namespace]={}, [podName]={},[containerName]={},[cmd]={},error:{}",namespace, podName,containerName,cmd,e);
+         }
+    }
+
+    /**
+     * 设置pod间 ssh免密登录
+     * @param podList pod 列表
+     */
+    @Override
+    public void sshAuthentication(List<Pod> podList) {
+        if (CollectionUtils.isEmpty(podList) || podList.size() == MagicNumConstant.ONE) {
+            return;
+        }
+        LogUtil.info(LogEnum.BIZ_K8S, "PodApiImpl.sshAuthentication params:[podList]={}", podList.stream().map(p->p.getMetadata().getName()).collect(Collectors.toList()));
+        File tempDir = Files.createTempDir();
+        try (
+                InputStream isRsa = getClass().getClassLoader().getResourceAsStream("key/id_rsa");
+                InputStream isRsaPub = getClass().getClassLoader().getResourceAsStream("key/id_rsa.pub")
+        ) {
+            //id_rsa
+            File tempIdRsa = FileUtil.createTempFile(tempDir);
+            IOUtil.copy(isRsa, tempIdRsa);
+            //id_rsa.pub
+            File tempIdRsaPub = FileUtil.createTempFile(tempDir);
+            IOUtil.copy(isRsaPub, tempIdRsaPub);
+            List<String> pubLines = FileUtil.readLines(tempIdRsaPub, StringConstant.UTF8);
+            String pubKeyContent = pubLines.get(0);
+            //按机器修改id_rsa.pub, 并组装一个大而全的authorized_keys
+            List<File> idRsaPubFiles = Lists.newArrayList();
+            File tempAuthorizedKeys = FileUtil.createTempFile(tempDir);
+            List<String> pubKeys = Lists.newArrayList();
+            for (int i = 0; i < podList.size(); i++) {
+                Pod podInfo = podList.get(i);
+                String podPubKeyContent = pubKeyContent.replace("{{ip}}", podInfo.getStatus().getPodIP());
+                File tempIdRsaPubOnPod = FileUtil.createTempFile(tempDir);
+                FileUtil.writeLines(Collections.singletonList(podPubKeyContent), tempIdRsaPubOnPod, StringConstant.UTF8);
+                idRsaPubFiles.add(tempIdRsaPubOnPod);
+                pubKeys.add(podPubKeyContent);
+            }
+            FileUtil.writeLines(pubKeys, tempAuthorizedKeys, StringConstant.UTF8);
+
+            //获得所有pod, 上传三个文件
+            for (int i = 0; i < podList.size(); i++) {
+                Pod pod = podList.get(i);
+                String containerName = pod.getSpec().getContainers().get(MagicNumConstant.ZERO).getName();
+                String namespace = pod.getMetadata().getNamespace();
+                //上传id_rsa
+                copyToPod(namespace, pod.getMetadata().getName(), containerName, tempIdRsa, "/root/.ssh/id_rsa");
+                //上传id_rsa.pub
+                File tempIdRsaPubOnPod = idRsaPubFiles.get(i);
+                copyToPod(namespace, pod.getMetadata().getName(), containerName, tempIdRsaPubOnPod, "/root/.ssh/id_rsa.pub");
+                //上传authorized_keys
+                copyToPod(namespace, pod.getMetadata().getName(), containerName, tempAuthorizedKeys, "/root/.ssh/authorized_keys");
+                //修改权限
+                String chmodCmd = StrUtil.format("chmod 644 /root/.ssh/authorized_keys && chmod 600 /root/.ssh/id_rsa && chmod 644 /root/.ssh/id_rsa.pub");
+                exec(pod.getMetadata().getNamespace(), pod.getMetadata().getName(), containerName, chmodCmd);
+            }
+        } catch (Exception e) {
+            LogUtil.error(LogEnum.BIZ_K8S, "PodApiImpl.sshAuthentication error,params:[podList]={},error:{}", podList, e);
+        } finally {
+            //清理临时文件
+            FileUtil.del(tempDir);
+        }
+    }
+
+    /**
+     * 设置pod NODE_IPS 环境变量为 pod ip 列表
+     * @param podList pod 列表
+     */
+    @Override
+    public void setNodeIpsEnv(List<Pod> podList) {
+        if (CollectionUtils.isEmpty(podList) || podList.size() == MagicNumConstant.ONE){
+            return;
+        }
+        LogUtil.info(LogEnum.BIZ_K8S, "PodApiImpl.setNodeIpsEnv params:[podList]={}", podList.stream().map(p->p.getMetadata().getName()).collect(Collectors.toList()));
+        List<String> nodeIpList = new ArrayList<>();
+        for (int i = 0; i < podList.size(); i++){
+            nodeIpList.add(podList.get(i).getStatus().getPodIP());
+        }
+        String nodeIps = JSON.toJSONString(nodeIpList);
+        LogUtil.info(LogEnum.BIZ_K8S, "PodApiImpl.setNodeIpsEnv nodeIps={}", nodeIps);
+        for (int i = 0; i < podList.size(); i++) {
+            Pod pod = podList.get(i);
+            String containerName = pod.getSpec().getContainers().get(MagicNumConstant.ZERO).getName();
+            //设置 NODE_IPS 环境变量
+            String chmodCmd = StrUtil.format("echo 'export NODE_IPS="+nodeIps+"' >> /root/.bashrc");
+            exec(pod.getMetadata().getNamespace(), pod.getMetadata().getName(), containerName, chmodCmd);
+        }
     }
 
     /**

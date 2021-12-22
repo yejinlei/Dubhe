@@ -18,10 +18,13 @@
 package org.dubhe.k8s.api;
 
 import io.fabric8.kubernetes.api.model.Pod;
+import io.fabric8.kubernetes.client.KubernetesClient;
 import org.dubhe.k8s.domain.bo.LabelBO;
 import org.dubhe.k8s.domain.resource.BizPod;
 import org.dubhe.k8s.domain.vo.PtPodsVO;
+import org.dubhe.k8s.utils.LabelUtils;
 
+import java.io.File;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -114,6 +117,13 @@ public interface PodApi {
     List<Pod> list(Set<LabelBO> labelBos);
 
     /**
+     * 根据resourceName查询Pod集合
+     * @param resourceName
+     * @return
+     */
+    List<Pod> listByResourceName(String resourceName);
+
+    /**
      * 根据命名空间查询Pod集合
      *
      * @param namespace 命名空间
@@ -150,6 +160,14 @@ public interface PodApi {
     String getToken(String namespace, String podName);
 
     /**
+     * 根据resourceName 获取pod对应k8s中labels
+     *
+     * @param resourceName 资源名称
+     * @return Map<String, String> map
+     */
+    Map<String, String> getLabels(String resourceName);
+
+    /**
      * 根据命名空间和资源名获得Token信息
      *
      * @param namespace 命名空间
@@ -167,7 +185,34 @@ public interface PodApi {
      */
     String getUrlByResourceName(String namespace, String resourceName);
 
+    /**
+      * 拷贝文件到pod
+      * @param namespace 命名空间
+      * @param podName pod名称
+      * @param containerName 容器名称
+      * @param file 文件
+      * @param targetDir 目标路径
+      */
+    void copyToPod(String namespace, String podName, String containerName, File file, String targetDir);
 
+    /**
+      * 同步执行
+      * @param namespace 命名空间
+      * @param podName pod名称
+      * @param containerName 容器名称
+      * @param cmd 命令
+      */
+    void exec(String namespace, String podName, String containerName, String cmd);
 
+    /**
+     * 设置pod间 ssh免密登录
+     * @param podList pod 列表
+     */
+    void sshAuthentication(List<Pod> podList);
 
+    /**
+     * 设置pod NODE_IPS 环境变量为 pod ip 列表
+     * @param podList pod 列表
+     */
+    void setNodeIpsEnv(List<Pod> podList);
 }

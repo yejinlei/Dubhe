@@ -90,10 +90,10 @@ public class PtImageController {
         return new DataResponseBody(ptImageService.getImageNameList(ptImageQueryNameDTO));
     }
 
-    @PutMapping("/imageResource")
+    @PutMapping("/defaultImage")
     @ApiOperation("修改镜像来源(notebook定制)")
     public DataResponseBody updateImageResource(@RequestParam Long id) {
-        ptImageService.updImageResource(id);
+        ptImageService.updateDefaultImage(id);
         return new DataResponseBody();
     }
 

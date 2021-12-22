@@ -68,7 +68,7 @@ public class TerminalCreateDTO extends TerminalDTO {
     private Integer totalNode;
 
     @ApiModelProperty(value = "描述")
-    @Length(max = MagicNumConstant.INTEGER_TWO_HUNDRED_AND_FIFTY_FIVE, message = "描述长度不超过255个字符")
+    @Length(max = MagicNumConstant.TWO_HUNDRED, message = "描述长度不超过200个字符")
     private String description;
 
     @NotNull

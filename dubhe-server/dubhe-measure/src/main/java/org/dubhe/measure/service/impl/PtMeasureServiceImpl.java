@@ -26,12 +26,14 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.google.common.base.Joiner;
 import org.dubhe.biz.base.constant.StringConstant;
 import org.dubhe.biz.base.context.UserContext;
+import org.dubhe.biz.base.dto.UserDTO;
 import org.dubhe.biz.base.enums.DatasetTypeEnum;
 import org.dubhe.biz.base.enums.MeasureStateEnum;
 import org.dubhe.biz.base.exception.BusinessException;
 import org.dubhe.biz.base.service.UserContextService;
 import org.dubhe.biz.base.utils.ReflectionUtils;
 import org.dubhe.biz.base.utils.StringUtils;
+import org.dubhe.biz.base.vo.DataResponseBody;
 import org.dubhe.biz.db.utils.PageUtil;
 import org.dubhe.biz.file.api.FileStoreApi;
 import org.dubhe.biz.file.enums.BizPathEnum;
@@ -40,6 +42,7 @@ import org.dubhe.biz.log.enums.LogEnum;
 import org.dubhe.biz.log.utils.LogUtil;
 import org.dubhe.biz.permission.annotation.DataPermissionMethod;
 import org.dubhe.biz.permission.base.BaseService;
+import org.dubhe.cloud.authconfig.service.AdminClient;
 import org.dubhe.k8s.utils.K8sNameTool;
 import org.dubhe.measure.async.GenerateMeasureFileAsync;
 import org.dubhe.measure.dao.PtMeasureMapper;
@@ -67,9 +70,7 @@ import javax.annotation.Resource;
 import java.io.BufferedInputStream;
 import java.io.FileInputStream;
 import java.io.IOException;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
@@ -100,6 +101,9 @@ public class PtMeasureServiceImpl implements PtMeasureService {
 
     @Autowired
     private UserContextService userContextService;
+
+    @Resource
+    private AdminClient adminClient;
 
     public final static List<String> FIELD_NAMES;
 
@@ -154,11 +158,25 @@ public class PtMeasureServiceImpl implements PtMeasureService {
             throw new BusinessException("查询度量列表展示异常");
         }
 
+        Map<Long, String> idUserNameMap = new HashMap<>();
+        List<Long> userIds = ptMeasures.getRecords().stream().map(PtMeasure::getCreateUserId).filter(Objects::nonNull).distinct().collect(Collectors.toList());
+        if (org.apache.commons.collections4.CollectionUtils.isNotEmpty(userIds)) {
+            DataResponseBody<List<UserDTO>> result = adminClient.getUserList(userIds);
+            if (result.getData() != null) {
+                idUserNameMap = result.getData().stream().collect(Collectors.toMap(UserDTO::getId, UserDTO::getUsername, (o, n) -> n));
+            }
+        }
+        Map<Long, String> finalIdUserNameMap = idUserNameMap;
+
         List<PtMeasureQueryVO> ptMeasureQueryResult = ptMeasures.getRecords().stream().map(x -> {
             PtMeasureQueryVO ptMeasureQueryVO = new PtMeasureQueryVO();
             BeanUtils.copyProperties(x, ptMeasureQueryVO);
             if (StrUtil.isNotEmpty(x.getModelUrls())) {
                 ptMeasureQueryVO.setModelUrls(StrUtil.split(x.getModelUrls(), ','));
+            }
+            //获取任务创建人用户名
+            if (BaseService.isAdmin(currentUser) && x.getCreateUserId() != null) {
+                ptMeasureQueryVO.setCreateUserName(finalIdUserNameMap.getOrDefault(x.getCreateUserId(), null));
             }
             return ptMeasureQueryVO;
         }).collect(Collectors.toList());
@@ -230,7 +248,7 @@ public class PtMeasureServiceImpl implements PtMeasureService {
                 .eq(PtMeasure::getName, ptMeasureUpdateDTO.getName())
                 .eq(PtMeasure::getCreateUserId, currentUser.getId())
         );
-        if (CollUtil.isNotEmpty(ptMeasures)) {
+        if (CollUtil.isNotEmpty(ptMeasures) && !ptMeasures.get(0).getId().equals(measure.getId())) {
             throw new BusinessException("度量名称已存在!");
         }
 

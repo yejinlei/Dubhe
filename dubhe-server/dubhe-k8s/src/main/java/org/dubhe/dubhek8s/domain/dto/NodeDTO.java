@@ -18,6 +18,7 @@
 package org.dubhe.dubhek8s.domain.dto;
 
 import lombok.Data;
+import org.dubhe.k8s.domain.vo.GpuUsageVO;
 
 import java.util.List;
 
@@ -28,7 +29,10 @@ import java.util.List;
  */
 @Data
 public class NodeDTO {
-
+    /**
+     * id
+     */
+    private Long id;
     /**
      * node节点id值
      */
@@ -60,7 +64,7 @@ public class NodeDTO {
     /**
      * 保存节点信息
      */
-      private List<PodDTO> pods;
+    private List<PodDTO> pods;
     /**
      * node节点的使用内存
      */
@@ -80,7 +84,7 @@ public class NodeDTO {
     /**
      * node节点的警告
      */
-    private String  warning;
+    private String warning;
 
     /**
      * 资源隔离环境
@@ -96,4 +100,14 @@ public class NodeDTO {
      * 资源占有对象
      */
     private String isolation;
+
+    /**
+     * 备注
+     */
+    private String remark;
+
+    /**
+     * node节点gpu使用率
+     */
+    private List<GpuUsageVO> gpuUsageList;
 }

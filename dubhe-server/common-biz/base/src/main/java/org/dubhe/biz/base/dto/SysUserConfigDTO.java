@@ -18,7 +18,9 @@ package org.dubhe.biz.base.dto;
 
 import lombok.Data;
 import lombok.experimental.Accessors;
+
 import java.io.Serializable;
+import java.util.List;
 
 /**
  * @description 系统用户配置 DTO
@@ -26,7 +28,7 @@ import java.io.Serializable;
  */
 @Data
 @Accessors(chain = true)
-public class SysUserConfigDTO implements Serializable{
+public class SysUserConfigDTO implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
@@ -46,8 +48,12 @@ public class SysUserConfigDTO implements Serializable{
     private Integer memoryLimit;
 
     /**
-     * GPU 资源限制配置
+     * GPU 资源限制
      */
-    private Integer gpuLimit;
+    private List<SysUserGpuConfigDTO> gpuResources;
 
+    /**
+     * 用户默认镜像
+     */
+    private Long defaultImageId;
 }

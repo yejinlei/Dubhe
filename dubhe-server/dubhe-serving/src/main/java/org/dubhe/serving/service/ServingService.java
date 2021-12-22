@@ -22,7 +22,6 @@ import org.dubhe.k8s.domain.vo.PodVO;
 import org.dubhe.recycle.domain.dto.RecycleCreateDTO;
 import org.dubhe.serving.domain.dto.PredictParamDTO;
 import org.dubhe.serving.domain.dto.ServingInfoCreateDTO;
-import org.dubhe.serving.domain.dto.ServingInfoDeleteDTO;
 import org.dubhe.serving.domain.dto.ServingInfoDetailDTO;
 import org.dubhe.serving.domain.dto.ServingInfoQueryDTO;
 import org.dubhe.serving.domain.dto.ServingInfoUpdateDTO;
@@ -32,8 +31,8 @@ import org.dubhe.serving.domain.dto.ServingStartDTO;
 import org.dubhe.serving.domain.dto.ServingStopDTO;
 import org.dubhe.serving.domain.vo.PredictParamVO;
 import org.dubhe.serving.domain.vo.ServingInfoCreateVO;
-import org.dubhe.serving.domain.vo.ServingInfoDeleteVO;
 import org.dubhe.serving.domain.vo.ServingInfoDetailVO;
+import org.dubhe.serving.domain.vo.ServingInfoQueryVO;
 import org.dubhe.serving.domain.vo.ServingInfoUpdateVO;
 import org.dubhe.serving.domain.vo.ServingMetricsVO;
 import org.dubhe.serving.domain.vo.ServingModelConfigVO;
@@ -43,6 +42,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * @description 云端服务管理
@@ -76,10 +76,9 @@ public interface ServingService {
     /**
      * 删除服务
      *
-     * @param servingInfoDeleteDTO 服务对象删除
-     * @return ServingInfoDeleteVO 服务删除返回对象
+     * @param ids
      */
-    ServingInfoDeleteVO delete(ServingInfoDeleteDTO servingInfoDeleteDTO);
+    void delete(Set<Long> ids);
 
     /**
      * 获取服务详情
@@ -185,4 +184,16 @@ public interface ServingService {
     void recycleRollback(RecycleCreateDTO dto);
 
 
+    /**
+     * 批量删除
+     * @param ids
+     */
+    void batchDelete(Set<Long> ids);
+
+    /**
+     * 根据 ID 列表查数据
+     * @param ids
+     * @return
+     */
+    List<ServingInfoQueryVO> queryByIds(List<Long> ids);
 }

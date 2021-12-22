@@ -24,8 +24,9 @@ import io.fabric8.kubernetes.api.model.NamespaceList;
 import io.fabric8.kubernetes.api.model.ResourceQuota;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClientException;
-import org.dubhe.biz.base.service.UserContextService;
+import org.dubhe.biz.base.utils.StringUtils;
 import org.dubhe.biz.log.enums.LogEnum;
+import org.dubhe.biz.log.utils.LogUtil;
 import org.dubhe.k8s.annotation.K8sValidation;
 import org.dubhe.k8s.api.NamespaceApi;
 import org.dubhe.k8s.api.ResourceQuotaApi;
@@ -36,18 +37,11 @@ import org.dubhe.k8s.enums.ValidationTypeEnum;
 import org.dubhe.k8s.utils.BizConvertUtils;
 import org.dubhe.k8s.utils.K8sUtils;
 import org.dubhe.k8s.utils.LabelUtils;
-import org.dubhe.biz.log.utils.LogUtil;
-import org.dubhe.biz.base.utils.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.util.CollectionUtils;
 
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
@@ -61,19 +55,17 @@ public class NamespaceApiImpl implements NamespaceApi {
     @Autowired
     private ResourceQuotaApi resourceQuotaApi;
 
-    @Autowired
-    private UserContextService userContextService;
-
     @Value("${user.config.cpu-limit}")
     private Integer cpuLimit;
 
     @Value("${user.config.memory-limit}")
     private Integer memoryLimit;
 
-    @Value("${user.config.gpu-limit}")
-    private Integer gpuLimit;
+    @Value("${user.config.gpu-limit.k8s-label-key}")
+    private String k8sLabelKey;
 
-
+    @Value("${user.config.gpu-limit.gpu-num-limit}")
+    private Integer gpuNumLimit;
 
     public NamespaceApiImpl(K8sUtils k8sUtils) {
         this.client = k8sUtils.getClient();
@@ -90,15 +82,17 @@ public class NamespaceApiImpl implements NamespaceApi {
     public BizNamespace create(@K8sValidation(ValidationTypeEnum.K8S_RESOURCE_NAME) String namespace, Map<String, String> labels) {
         try {
             BizNamespace bizNamespace = get(namespace);
-            if (bizNamespace != null){
+            if (bizNamespace != null) {
                 return bizNamespace;
             }
             Namespace ns = new NamespaceBuilder().withNewMetadata().withName(namespace).addToLabels(LabelUtils.getBaseLabels(namespace, labels)).endMetadata().build();
             Namespace res = client.namespaces().create(ns);
-            resourceQuotaApi.create(res.getMetadata().getName(),res.getMetadata().getName(),cpuLimit,memoryLimit,gpuLimit);
+            Map<String, Integer> gpuLimit = new HashMap<>(1);
+            gpuLimit.put(k8sLabelKey, gpuNumLimit);
+            resourceQuotaApi.create(res.getMetadata().getName(), res.getMetadata().getName(), cpuLimit, memoryLimit, gpuLimit);
             return BizConvertUtils.toBizNamespace(res);
         } catch (KubernetesClientException e) {
-            LogUtil.error(LogEnum.BIZ_K8S, "NamespaceApiImpl.create error, param:[namespace]={}, [labels]={},error:{}",namespace, labels, e);
+            LogUtil.error(LogEnum.BIZ_K8S, "NamespaceApiImpl.create error, param:[namespace]={}, [labels]={},error:{}", namespace, labels, e);
             return new BizNamespace().error(String.valueOf(e.getCode()), e.getMessage());
         }
     }
@@ -294,7 +288,7 @@ public class NamespaceApiImpl implements NamespaceApi {
             client.namespaces().withName(namespace).edit().editMetadata().addToLabels(labels).endMetadata().done();
             return new PtBaseResult();
         } catch (KubernetesClientException e) {
-            LogUtil.error(LogEnum.BIZ_K8S, "NamespaceApiImpl.addLabels error, param:[namespace]={}, [labels]={},error:{}",namespace, JSON.toJSONString(labels), e);
+            LogUtil.error(LogEnum.BIZ_K8S, "NamespaceApiImpl.addLabels error, param:[namespace]={}, [labels]={},error:{}", namespace, JSON.toJSONString(labels), e);
             return new PtBaseResult(String.valueOf(e.getCode()), e.getMessage());
         }
     }

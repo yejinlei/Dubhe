@@ -191,10 +191,20 @@ public class BizConvertUtils {
     }
 
     /**
+     * 将List<Service> 转为 List<BizService>
+     *
+     * @param serviceList Service 对象集合
+     * @return  List<BizService>  BizService对象集合
+     */
+    public static List<BizService> toBizServiceList(List<Service> serviceList) {
+        return serviceList.parallelStream().map(obj -> toBizService(obj)).collect(Collectors.toList());
+    }
+
+    /**
      * 将Service 转为 BizService
      *
      * @param service 对象
-     * @return
+     * @return BizService 对象
      */
     public static BizService toBizService(Service service) {
         return MappingUtils.mappingTo(service, BizService.class);

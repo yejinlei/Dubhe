@@ -54,6 +54,9 @@ public class VisualTrainQueryVO implements Serializable {
     @ApiModelProperty("创建人")
     private Long createUserId;
 
+    @ApiModelProperty("创建人用户名")
+    private String createUserName;
+
     @ApiModelProperty("创建时间")
     private Timestamp createTime;
 

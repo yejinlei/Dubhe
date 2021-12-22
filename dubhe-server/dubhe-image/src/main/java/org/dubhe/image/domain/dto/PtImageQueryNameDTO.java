@@ -20,9 +20,7 @@ import io.swagger.annotations.ApiModelProperty;
 import lombok.Data;
 import lombok.experimental.Accessors;
 
-import javax.validation.constraints.NotNull;
 import java.io.Serializable;
-import java.util.List;
 
 /**
  * @description 获取镜像名称列表查询条件
@@ -34,7 +32,6 @@ public class PtImageQueryNameDTO implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
-    @ApiModelProperty(value = "镜像项目类型(0:notebook , 1:train , 2:serving)", required = true)
-    @NotNull(message = "镜像项目类型(0:notebook , 1:train , 2:serving)不能为空")
-    List<Integer> projectTypes;
+    @ApiModelProperty(value = "镜像状态选择(默认为true ：镜像制作成功)")
+    Boolean requireSuccess;
 }

@@ -21,10 +21,8 @@ import cn.hutool.core.collection.CollectionUtil;
 import lombok.Data;
 import lombok.experimental.Accessors;
 import org.dubhe.biz.base.constant.MagicNumConstant;
-import org.dubhe.k8s.annotation.K8sValidation;
-import org.dubhe.k8s.enums.GraphicsCardTypeEnum;
-import org.dubhe.k8s.enums.ValidationTypeEnum;
 import org.dubhe.biz.base.utils.StringUtils;
+import org.dubhe.k8s.enums.GraphicsCardTypeEnum;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -38,33 +36,21 @@ import java.util.stream.Collectors;
  */
 @Data
 @Accessors(chain = true)
-public class PtJupyterJobBO {
-    /**命名空间**/
-    @K8sValidation(ValidationTypeEnum.K8S_RESOURCE_NAME)
-    private String namespace;
-    /**资源名称**/
-    @K8sValidation(ValidationTypeEnum.K8S_RESOURCE_NAME)
-    private String name;
-    /**GPU数量,1代表使用一张显卡**/
-    private Integer gpuNum;
-    /**是否使用gpu true：使用；false：不用**/
-    private Boolean useGpu;
-    /**内存数量，单位Mi**/
-    private Integer memNum;
-    /**cpu用量 单位:m 1个核心=1000m**/
-    private Integer cpuNum;
+public class PtJupyterJobBO extends BaseResourceBo {
     /**镜像名称**/
     private String image;
     /**执行命令**/
     private List<String> cmdLines;
 
     /**文件存储服务挂载 key：pod内挂载路径  value：文件存储路径及配置**/
-    private Map<String,PtMountDirBO> fsMounts;
+    private Map<String, PtMountDirBO> fsMounts;
 
     /**显卡类型**/
     private GraphicsCardTypeEnum graphicsCardType;
     /**业务标签,用于标识业务模块**/
     private String businessLabel;
+    /**额外扩展的标签**/
+    private Map<String, String> extraLabelMap;
     /**任务身份标签,用于标识任务身份**/
     private String taskIdentifyLabel;
     /**延时创建时间，单位：分钟**/
@@ -77,29 +63,29 @@ public class PtJupyterJobBO {
     private String pipSitePackageMountPath;
 
 
-    public List<String> getDirList(){
-        if (CollectionUtil.isNotEmpty(fsMounts)){
+    public List<String> getDirList() {
+        if (CollectionUtil.isNotEmpty(fsMounts)) {
             return fsMounts.values().stream().map(PtMountDirBO::getDir).collect(Collectors.toList());
         }
         return new ArrayList<>();
     }
 
-    public PtJupyterJobBO putFsMounts(String mountPath,String dir){
-        if (StringUtils.isNotEmpty(mountPath) && StringUtils.isNotEmpty(dir)){
-            if (fsMounts == null){
+    public PtJupyterJobBO putFsMounts(String mountPath, String dir) {
+        if (StringUtils.isNotEmpty(mountPath) && StringUtils.isNotEmpty(dir)) {
+            if (fsMounts == null) {
                 fsMounts = new HashMap<>(MagicNumConstant.TWO);
             }
-            fsMounts.put(mountPath,new PtMountDirBO(dir));
+            fsMounts.put(mountPath, new PtMountDirBO(dir));
         }
         return this;
     }
 
-    public PtJupyterJobBO putFsMounts(String mountPath,PtMountDirBO dir){
-        if (StringUtils.isNotEmpty(mountPath) && dir != null){
-            if (fsMounts == null){
+    public PtJupyterJobBO putFsMounts(String mountPath, PtMountDirBO dir) {
+        if (StringUtils.isNotEmpty(mountPath) && dir != null) {
+            if (fsMounts == null) {
                 fsMounts = new HashMap<>(MagicNumConstant.TWO);
             }
-            fsMounts.put(mountPath,dir);
+            fsMounts.put(mountPath, dir);
         }
         return this;
     }

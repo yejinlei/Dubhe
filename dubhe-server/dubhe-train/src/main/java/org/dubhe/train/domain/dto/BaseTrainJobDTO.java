@@ -17,6 +17,7 @@
 package org.dubhe.train.domain.dto;
 
 import com.alibaba.fastjson.JSONObject;
+import io.swagger.annotations.ApiModelProperty;
 import lombok.Data;
 import lombok.experimental.Accessors;
 
@@ -34,6 +35,7 @@ public class BaseTrainJobDTO implements Serializable {
     private static final long serialVersionUID = 1L;
 
     private JSONObject runParams;
+    private JSONObject runParamsNameMap;
     private String jobName;
     private String taskIdentify;
     private String dataSourcePath;
@@ -70,6 +72,16 @@ public class BaseTrainJobDTO implements Serializable {
      * GPU数量，单位：核
      */
     private Integer gpuNum;
+
+    /**
+     * GPU型号(例如：v100)
+     */
+    private String gpuModel;
+
+    /**
+     * k8s GPU资源标签key值(例如：nvidia.com/gpu)
+     */
+    private String k8sLabelKey;
 
     /**
      * 内存大小，单位：Mi

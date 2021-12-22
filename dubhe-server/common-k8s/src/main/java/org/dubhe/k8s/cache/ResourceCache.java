@@ -263,7 +263,7 @@ public class ResourceCache {
         return redisUtils.hmset(taskIdentify, new HashMap<String, Object>(){{
             put(StringConstant.CACHE_TASK_ID, taskId);
             put(StringConstant.CACHE_TASK_NAME, taskName);
-        }}, NumberConstant.MONTH_SECOND) && redisUtils.set(taskIdPrefix + String.valueOf(taskId), taskIdentify, NumberConstant.MONTH_SECOND);
+        }}) && redisUtils.set(taskIdPrefix + String.valueOf(taskId), taskIdentify);
     }
 
     /**
@@ -281,8 +281,8 @@ public class ResourceCache {
             redisUtils.hmset(taskIdentify, new HashMap<String, Object>(){{
                 put(StringConstant.CACHE_TASK_ID, taskId);
                 put(StringConstant.CACHE_TASK_NAME, taskName);
-            }}, NumberConstant.MONTH_SECOND);
-            redisUtils.set(taskIdPrefix + taskId, taskIdentify, NumberConstant.MONTH_SECOND);
+            }});
+            redisUtils.set(taskIdPrefix + taskId, taskIdentify);
         }
         return taskIdentify;
     }

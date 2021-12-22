@@ -18,6 +18,8 @@
 package org.dubhe.train.dao;
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
+import org.apache.ibatis.annotations.Param;
+import org.apache.ibatis.annotations.Update;
 import org.dubhe.train.domain.entity.PtJobParam;
 
 /**
@@ -25,5 +27,14 @@ import org.dubhe.train.domain.entity.PtJobParam;
  * @date 2020-04-27
  */
 public interface PtJobParamMapper extends BaseMapper<PtJobParam> {
+
+    /**
+     * 根据id修改运行开始时间
+     * @param id 训练参数id
+     * @param runStartTime 运行开始时间
+     * @return 数量
+     */
+    @Update("update pt_job_param set run_start_time = #{runStartTime} where id = #{id}")
+    int updateRunStartTimeById(@Param("id") Long id, @Param("runStartTime") Long runStartTime);
 
 }

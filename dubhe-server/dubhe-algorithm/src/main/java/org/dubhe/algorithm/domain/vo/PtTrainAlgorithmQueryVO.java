@@ -61,6 +61,7 @@ public class PtTrainAlgorithmQueryVO implements Serializable {
     private String runCommand;
 
     @ApiModelProperty(value = "运行参数")
+    @Deprecated
     private JSONObject runParams;
 
     @ApiModelProperty(value = "算法用途")
@@ -86,6 +87,9 @@ public class PtTrainAlgorithmQueryVO implements Serializable {
 
     @ApiModelProperty(value = "创建人")
     private Long createUserId;
+
+    @ApiModelProperty(value = "创建人用户名")
+    private String createUserName;
 
     @ApiModelProperty(value = "创建时间")
     private Timestamp createTime;

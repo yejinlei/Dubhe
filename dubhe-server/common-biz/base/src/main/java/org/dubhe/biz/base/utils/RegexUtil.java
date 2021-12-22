@@ -17,6 +17,7 @@
 
 package org.dubhe.biz.base.utils;
 
+import cn.hutool.core.util.StrUtil;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.regex.Matcher;
@@ -30,21 +31,23 @@ import java.util.regex.Pattern;
 public class RegexUtil {
     private static final String DIGIT = "^[0-9]*$";
     private static final String FLOAT = "^[-+]?[0-9]*\\.?[0-9]+$";
+    private static final String REGEX = "[^0-9]";
+
     /**
      * str待匹配文本
      * regex 正则表达式
      *返回str中匹配regex的第一个子串
      */
-    public static String getMatcher(String str,String regex) {
-        try{
-            if (StringUtils.isEmpty(str) || StringUtils.isEmpty(regex)){
+    public static String getMatcher(String str, String regex) {
+        try {
+            if (StringUtils.isEmpty(str) || StringUtils.isEmpty(regex)) {
                 return "";
             }
             Pattern p = Pattern.compile(regex, Pattern.CASE_INSENSITIVE);
             Matcher matcher = p.matcher(str);
             matcher.find();
             return matcher.group();
-        }catch (IllegalStateException e){
+        } catch (IllegalStateException e) {
             log.error(e.getMessage(), e);
             return "";
         }
@@ -55,8 +58,8 @@ public class RegexUtil {
      * @param str
      * @return
      */
-    public static boolean isDigits(String str){
-        if (StringUtils.isEmpty(str)){
+    public static boolean isDigits(String str) {
+        if (StringUtils.isEmpty(str)) {
             return false;
         }
         return str.matches(DIGIT);
@@ -67,10 +70,25 @@ public class RegexUtil {
      * @param str
      * @return
      */
-    public static boolean isFloat(String str){
-        if (StringUtils.isEmpty(str)){
+    public static boolean isFloat(String str) {
+        if (StringUtils.isEmpty(str)) {
             return false;
         }
         return str.matches(FLOAT);
+    }
+
+    /**
+     * 提取字符串中的数字
+     *
+     * @param str 原字符串
+     * @return Interger 格式化的后数字
+     */
+    public static Integer tranferRegEx(String str) {
+        String res = "";
+        if (StrUtil.isNotEmpty(str)) {
+            Matcher matcher = Pattern.compile(REGEX).matcher(str);
+            res = matcher.replaceAll("").trim();
+        }
+        return Integer.valueOf(res);
     }
 }

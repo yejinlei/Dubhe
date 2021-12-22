@@ -20,9 +20,11 @@ package org.dubhe.dubhek8s.k8s.api;
 import com.alibaba.fastjson.JSON;
 import org.dubhe.dubhek8s.DubheK8sApplication;
 import org.dubhe.k8s.api.ResourceQuotaApi;
+import org.dubhe.k8s.domain.bo.BaseResourceBo;
 import org.dubhe.k8s.domain.bo.PtResourceQuotaBO;
 import org.dubhe.k8s.domain.resource.BizQuantity;
 import org.dubhe.k8s.domain.resource.BizScopedResourceSelectorRequirement;
+import org.dubhe.k8s.enums.LimitsOfResourcesEnum;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -36,7 +38,7 @@ import java.util.HashMap;
  * @description ResourceQuotaApiTest测试类
  * @date 2020-04-23
  */
-@SpringBootTest(classes= DubheK8sApplication.class)
+@SpringBootTest(classes = DubheK8sApplication.class)
 @RunWith(SpringRunner.class)
 public class ResourceQuotaApiTest {
     @Resource
@@ -45,31 +47,38 @@ public class ResourceQuotaApiTest {
     @Test
     public void create() {
         PtResourceQuotaBO bo = new PtResourceQuotaBO();
-        bo.setNamespace("namespace");bo.setName("resource-quota");
-        HashMap<String, BizQuantity> hard = new HashMap<String, BizQuantity>(5){
+        bo.setNamespace("namespace");
+        bo.setName("resource-quota");
+        HashMap<String, BizQuantity> hard = new HashMap<String, BizQuantity>(5) {
             {
-                put("cpu",new BizQuantity("1",""));
-                put("memory",new BizQuantity("1024","Mi"));
-                put("pods",new BizQuantity("10",""));
+                put("cpu", new BizQuantity("1", ""));
+                put("memory", new BizQuantity("1024", "Mi"));
+                put("pods", new BizQuantity("10", ""));
             }
         };
         bo.setHard(hard);
-        bo.setScopeSelector(Arrays.asList(new BizScopedResourceSelectorRequirement("In","PriorityClass",Arrays.asList("medium"))));
-        System.out.println("create = "+ JSON.toJSONString(resourceQuotaApi.create(bo)));
+        bo.setScopeSelector(Arrays.asList(new BizScopedResourceSelectorRequirement("In", "PriorityClass", Arrays.asList("medium"))));
+        System.out.println("create = " + JSON.toJSONString(resourceQuotaApi.create(bo)));
     }
 
     @Test
-    public void list(){
-        System.out.println("list = "+ JSON.toJSONString(resourceQuotaApi.list("namespace")));
+    public void list() {
+        System.out.println("list = " + JSON.toJSONString(resourceQuotaApi.list("namespace")));
     }
 
     @Test
-    public void delete(){
-        System.out.println("delete = "+ JSON.toJSONString(resourceQuotaApi.delete("namespace","resource-quota")));
+    public void delete() {
+        System.out.println("delete = " + JSON.toJSONString(resourceQuotaApi.delete("namespace", "resource-quota")));
     }
 
     @Test
-    public void reachLimitsOfResources(){
-        System.out.println(JSON.toJSONString(resourceQuotaApi.reachLimitsOfResources("namespace-37",16000,16000,2).getMessage()));
+    public void reachLimitsOfResources() {
+        BaseResourceBo baseResourceBo = new BaseResourceBo();
+        baseResourceBo.setNamespace("namespace-40")
+                .setCpuNum(16000)
+                .setMemNum(16000)
+                .setGpuNum(2);
+        LimitsOfResourcesEnum limitsOfResourcesEnum = resourceQuotaApi.reachLimitsOfResources(baseResourceBo);
+        System.out.println(limitsOfResourcesEnum.getMessage());
     }
 }

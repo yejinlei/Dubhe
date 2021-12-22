@@ -19,7 +19,6 @@ package org.dubhe.optimize.service;
 
 import org.dubhe.biz.base.dto.PtModelStatusQueryDTO;
 import org.dubhe.optimize.domain.dto.ModelOptTaskInstanceCancelDTO;
-import org.dubhe.optimize.domain.dto.ModelOptTaskInstanceDeleteDTO;
 import org.dubhe.optimize.domain.dto.ModelOptTaskInstanceDetailDTO;
 import org.dubhe.optimize.domain.dto.ModelOptTaskInstanceQueryDTO;
 import org.dubhe.optimize.domain.dto.ModelOptTaskInstanceResubmitDTO;
@@ -28,6 +27,7 @@ import org.dubhe.optimize.domain.entity.ModelOptTaskInstance;
 import org.dubhe.optimize.domain.vo.ModelOptTaskInstanceQueryVO;
 
 import java.util.Map;
+import java.util.Set;
 
 /**
  * @description 模型优化任务实例
@@ -103,9 +103,9 @@ public interface ModelOptTaskInstanceService {
     /**
      * 删除任务实例
      *
-     * @param modelOptTaskInstanceDeleteDTO
+     * @param ids
      */
-    void delete(ModelOptTaskInstanceDeleteDTO modelOptTaskInstanceDeleteDTO);
+    void delete(Set<Long> ids);
 
     /**
      *  获取模型是否在使用

@@ -41,4 +41,9 @@ public class MeasureConstants {
      * 度量模块线程池名称
      */
     public final static String MEASURE_EXECUTOR = "measureExecutor";
+
+    /**
+     * 探针数据路径后缀
+     */
+    public final static String DATASET_SUFFIX = "origin";
 }

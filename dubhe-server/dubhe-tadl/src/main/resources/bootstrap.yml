@@ -1,0 +1,44 @@
+server:
+  port: 8864
+  # rest API 版本号
+  rest-version: v1
+
+spring:
+  application:
+    name: dubhe-tadl
+  profiles:
+    active: dev
+  cloud:
+    nacos:
+      config:
+        enabled: true
+        namespace: dubhe-server-cloud-dev
+        server-addr: 10.105.1.133:8848
+        shared-configs[0]:
+          data-id: common-k8s.yaml
+          group: dubhe
+          refresh: true
+        shared-configs[1]:
+          data-id: common-biz.yaml
+          group: dubhe
+          refresh: true
+        shared-configs[2]:
+            data-id: common-recycle.yaml
+            group: dubhe
+            refresh: true
+        shared-configs[3]:
+          data-id: dubhe-tadl.yaml
+          group: dubhe
+          refresh: true
+      discovery:
+        enabled: true
+        namespace: dubhe-server-cloud-dev
+        group: dubhe
+        server-addr: 10.105.1.133:8848
+  # 配置允许后面的Bean覆盖前面名称重复的Bean
+  main:
+    allow-bean-definition-overriding: true
+
+mybatis-plus:
+  mapper-locations: classpath:mapper/*.xml
+

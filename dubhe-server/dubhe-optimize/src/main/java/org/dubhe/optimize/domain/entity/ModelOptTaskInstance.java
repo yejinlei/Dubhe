@@ -179,6 +179,41 @@ public class ModelOptTaskInstance extends BaseEntity {
     @TableField(value = "opt_result_json_path_after")
     private String optResultJsonPathAfter;
     /**
+     * GPU类型
+     */
+    @TableField(value = "gpu_type")
+    private String gpuType;
+    /**
+     * GPU型号
+     */
+    @TableField(value = "gpu_model")
+    private String gpuModel;
+    /**
+     * k8s GPU资源标签key值
+     */
+    @TableField(value = "k8s_label_key")
+    private String k8sLabelKey;
+    /**
+     * 节点类型(0为CPU，1为GPU)
+     */
+    @TableField("resources_pool_type")
+    private Integer resourcesPoolType;
+    /**
+     * 节点规格
+     */
+    @TableField("resources_pool_specs")
+    private String resourcesPoolSpecs;
+    /**
+     * 规格信息
+     */
+    @TableField("pool_specs_info")
+    private String poolSpecsInfo;
+    /**
+     * 节点个数
+     */
+    @TableField("resources_pool_node")
+    private Integer resourcesPoolNode;
+    /**
      * 资源拥有者ID
      */
     @TableField(value = "origin_user_id",fill = FieldFill.INSERT)
@@ -204,5 +239,27 @@ public class ModelOptTaskInstance extends BaseEntity {
      */
     public void removeStatusDetail(String key){
         statusDetail = StringUtils.removeFromJsonStringMap(key,statusDetail);
+    }
+
+
+    /**
+     * @return 每个节点的GPU数量
+     */
+    public Integer getGpuNum(){
+        return JSONObject.parseObject(poolSpecsInfo.replace("\\", "")).getInteger("gpuNum");
+    }
+
+    /**
+     * @return cpu数量
+     */
+    public Integer getCpuNum(){
+        return JSONObject.parseObject(poolSpecsInfo.replace("\\", "")).getInteger("cpuNum");
+    }
+
+    /**
+     * @return cpu数量
+     */
+    public Integer getMemNum(){
+        return JSONObject.parseObject(poolSpecsInfo.replace("\\", "")).getInteger("memNum");
     }
 }

@@ -22,6 +22,7 @@ import cn.hutool.http.HttpStatus;
 import com.alibaba.fastjson.JSON;
 import org.dubhe.biz.base.constant.MagicNumConstant;
 import org.dubhe.biz.base.constant.SymbolConstant;
+import org.dubhe.biz.base.utils.DateUtil;
 import org.dubhe.biz.base.utils.SpringContextHolder;
 import org.dubhe.biz.base.utils.StringUtils;
 import org.dubhe.biz.base.vo.DataResponseBody;
@@ -31,9 +32,13 @@ import org.dubhe.dubhek8s.handler.WebSocketServer;
 import org.dubhe.k8s.cache.ResourceCache;
 import org.dubhe.k8s.constant.K8sLabelConstants;
 import org.dubhe.k8s.domain.dto.BaseK8sPodCallbackCreateDTO;
+import org.dubhe.k8s.domain.entity.K8sCallbackEvent;
+import org.dubhe.k8s.domain.resource.BizContainerLastStateTerminated;
+import org.dubhe.k8s.domain.resource.BizContainerStateTerminated;
+import org.dubhe.k8s.domain.resource.BizContainerStatus;
 import org.dubhe.k8s.domain.resource.BizPod;
-import org.dubhe.k8s.enums.PodPhaseEnum;
-import org.dubhe.k8s.enums.WatcherActionEnum;
+import org.dubhe.k8s.enums.*;
+import org.dubhe.k8s.service.K8sCallbackEventService;
 import org.dubhe.k8s.service.K8sResourceService;
 import org.dubhe.k8s.utils.K8sCallBackTool;
 import org.dubhe.k8s.utils.K8sNameTool;
@@ -44,7 +49,10 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
+
 import java.util.Observable;
+
+import static org.dubhe.k8s.enums.K8sEventTypeEnum.buildMessage;
 
 
 /**
@@ -65,6 +73,8 @@ public class PodCallback extends Observable {
     private WebSocketServer webSocketServer;
     @Autowired
     private K8sNameTool k8sNameTool;
+    @Autowired
+    private K8sCallbackEventService k8sCallbackEventService;
 
 
     private static final String POD_CONDITION_STATUS_FALSE = "False";
@@ -88,14 +98,15 @@ public class PodCallback extends Observable {
                 webSocketServer.sendToClient(userId);
             }
             String businessLabel = pod.getBusinessLabel();
-            LogUtil.info(LogEnum.BIZ_K8S,"watch pod {} action:{} phase:{}",pod.getName(),watcherActionEnum.getAction(),pod.getPhase());
+            LogUtil.info(LogEnum.BIZ_K8S,"watch pod {} action:{} phase:{} pod:{}",pod.getName(),watcherActionEnum.getAction(),pod.getPhase(),pod);
             cachePod(watcherActionEnum,pod);
-            String waitingReason = dealWithWaiting(watcherActionEnum, pod);
+            String stateMessage = dealWithStateMessage(watcherActionEnum, pod);
             setChanged();
             notifyObservers(pod);
             if (StringUtils.isNotEmpty(businessLabel) && needCallback(watcherActionEnum,pod)){
                 dealWithDeleted(watcherActionEnum,pod);
-                BaseK8sPodCallbackCreateDTO baseK8sPodCallbackCreateDTO = new BaseK8sPodCallbackCreateDTO(pod.getNamespace(), pod.getLabel(K8sLabelConstants.BASE_TAG_SOURCE),pod.getName(), pod.getLabel(K8sLabelConstants.BASE_TAG_P_KIND), pod.getLabel(K8sLabelConstants.BASE_TAG_P_NAME), pod.getPhase(), waitingReason);
+                BaseK8sPodCallbackCreateDTO baseK8sPodCallbackCreateDTO = new BaseK8sPodCallbackCreateDTO(pod.getNamespace(), pod.getLabel(K8sLabelConstants.BASE_TAG_SOURCE),pod.getName(), pod.getLabel(K8sLabelConstants.BASE_TAG_P_KIND), pod.getLabel(K8sLabelConstants.BASE_TAG_P_NAME), pod.getPhase(), stateMessage);
+                baseK8sPodCallbackCreateDTO.setLables(pod.getLabels());
                 String url = k8sCallBackTool.getPodCallbackUrl(businessLabel);
                 String token = k8sCallBackTool.generateToken();
 
@@ -139,34 +150,94 @@ public class PodCallback extends Observable {
      * @param watcherActionEnum 监控枚举类
      * @param pod Pod对象
      */
-    private String dealWithWaiting(WatcherActionEnum watcherActionEnum, BizPod pod) {
-        String waitingMessgae = SymbolConstant.BLANK;
+    private String dealWithStateMessage(WatcherActionEnum watcherActionEnum, BizPod pod) {
+        String stateMessage = SymbolConstant.BLANK;
         if (WatcherActionEnum.DELETED == watcherActionEnum){
-            return waitingMessgae;
+            return stateMessage;
         }
         // 如果 Pod 运行失败（如ImagePullBackOff），从 ContainerStatuses 获取 Waiting message 返回
         if (CollectionUtil.isNotEmpty(pod.getContainerStatuses())
             && null != pod.getContainerStatuses().get(MagicNumConstant.ZERO).getWaiting()){
             String waitingReason = pod.getContainerStatuses().get(MagicNumConstant.ZERO).getWaiting().getReason();
-            waitingMessgae = pod.getContainerStatuses().get(MagicNumConstant.ZERO).getWaiting().getMessage();
+            stateMessage = pod.getContainerStatuses().get(MagicNumConstant.ZERO).getWaiting().getMessage();
             if(waitingReason == null || "ContainerCreating".equals(waitingReason)){
                 return "任务已下发到 kubernetes";
             }
 
             // 将 Phase 置为 FAILED
             pod.setPhase(PodPhaseEnum.FAILED.getPhase());
-            return waitingMessgae;
+            return stateMessage;
         }
+
+        // pod terminated的状态，需要记录terminated事件
+        if (CollectionUtil.isNotEmpty(pod.getContainerStatuses())
+                && (null != pod.getContainerStatuses().get(MagicNumConstant.ZERO).getTerminated() ||
+                null != pod.getContainerStatuses().get(MagicNumConstant.ZERO).getLastStateTerminated())) {
+            BizContainerStatus bizContainerStatus = pod.getContainerStatuses().get(MagicNumConstant.ZERO);
+
+            //生成持久化事件信息
+            K8sEventTypeEnum typeEnum;
+            if (bizContainerStatus.getTerminated() != null) {
+                BizContainerStateTerminated stateTerminated = bizContainerStatus.getTerminated();
+                typeEnum = K8sEventTypeEnum.to(stateTerminated.getReason());
+                stateMessage = saveCallbackEvent(pod.getLabel(K8sLabelConstants.BASE_TAG_SOURCE),
+                        pod.getLabel(K8sLabelConstants.BASE_TAG_BUSINESS), bizContainerStatus.getContainerID(), stateTerminated.getStartedAt(),
+                        stateTerminated.getFinishedAt(), typeEnum);
+                LogUtil.info(LogEnum.BIZ_K8S, "save terminated callback event {}", bizContainerStatus.getTerminated());
+            } else if (bizContainerStatus.getLastStateTerminated() != null) {
+                BizContainerLastStateTerminated lastStateTerminated = bizContainerStatus.getLastStateTerminated();
+                typeEnum = K8sEventTypeEnum.to(lastStateTerminated.getReason());
+                stateMessage = saveCallbackEvent(pod.getLabel(K8sLabelConstants.BASE_TAG_SOURCE),
+                        pod.getLabel(K8sLabelConstants.BASE_TAG_BUSINESS), bizContainerStatus.getContainerID(), lastStateTerminated.getStartedAt(),
+                        lastStateTerminated.getFinishedAt(), typeEnum);
+                LogUtil.info(LogEnum.BIZ_K8S, "save last terminated callback event {}", bizContainerStatus.getLastStateTerminated());
+            }
+            return stateMessage;
+        }
+
         // 如果 Pod 处于 Pending 状态，从 Condition 取出最新信息返回
         if (StringUtils.equals(pod.getPhase(),PodPhaseEnum.PENDING.getPhase())){
             if (CollectionUtil.isNotEmpty(pod.getConditions())
                     && StringUtils.equals(POD_CONDITION_STATUS_FALSE, pod.getConditions().get(MagicNumConstant.ZERO).getStatus())){
-                waitingMessgae = pod.getConditions().get(MagicNumConstant.ZERO).getMessage();
-                return waitingMessgae;
+                stateMessage = pod.getConditions().get(MagicNumConstant.ZERO).getMessage();
+                return stateMessage;
             }
             return "任务已下发到 kubernetes";
         }
-        return waitingMessgae;
+        return stateMessage;
+    }
+
+    /**
+     * 保存callback事件的信息，目前只上报OOM事件
+     *
+     * @param resourceName
+     * @param business
+     * @param containerId
+     * @param startTime
+     * @param finishTime
+     * @param typeEnum
+     * @return
+     */
+    private String saveCallbackEvent(String resourceName, String business, String containerId, String startTime,
+                                   String finishTime, K8sEventTypeEnum typeEnum) {
+        if (!BusinessLabelServiceNameEnum.getEventBusinessList().contains(business)
+                || !K8sEventTypeEnum.OOMKilled.equals(typeEnum)) {
+            return SymbolConstant.BLANK;
+        }
+        K8sCallbackEvent k8sCallbackEvent = new K8sCallbackEvent();
+        k8sCallbackEvent.setEventType(typeEnum.name());
+        k8sCallbackEvent.setMessage(typeEnum.getMessage());
+        try {
+            k8sCallbackEvent.setStartTime(DateUtil.convertCST2UTCDate(startTime));
+            k8sCallbackEvent.setFinishTime(DateUtil.convertCST2UTCDate(finishTime));
+            k8sCallbackEvent.setResourceName(resourceName);
+            k8sCallbackEvent.setContainerId(containerId);
+            k8sCallbackEvent.setBusinessType(business);
+            k8sCallbackEventService.insertOrUpdate(k8sCallbackEvent);
+        } catch (Exception e) {
+            LogUtil.error(LogEnum.BIZ_K8S, "failed to save call back event {}", resourceName);
+        }
+        return buildMessage(typeEnum);
     }
 
     /**

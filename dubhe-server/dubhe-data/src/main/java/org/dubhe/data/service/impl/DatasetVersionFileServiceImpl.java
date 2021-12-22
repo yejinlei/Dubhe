@@ -36,6 +36,7 @@ import org.dubhe.biz.log.utils.LogUtil;
 import org.dubhe.biz.statemachine.dto.StateChangeDTO;
 import org.dubhe.data.constant.*;
 import org.dubhe.data.dao.DatasetVersionFileMapper;
+import org.dubhe.data.domain.bo.FileUploadBO;
 import org.dubhe.data.domain.dto.DatasetVersionFileDTO;
 import org.dubhe.data.domain.entity.*;
 import org.dubhe.data.machine.constant.FileStateCodeConstant;
@@ -720,5 +721,15 @@ public class DatasetVersionFileServiceImpl extends ServiceImpl<DatasetVersionFil
     @Override
     public Long getVersionFileIdByFileName(Long datasetId, String fileName, String versionName) {
         return baseMapper.getVersionFileIdByFileName(datasetId, fileName, versionName);
+    }
+
+    /**
+     * 获取导入文件所需信息
+     * @param datasetId         数据集id
+     * @return List<FileUploadBO>
+     */
+    @Override
+    public List<FileUploadBO> getFileUploadContent(Long datasetId,List<Long> fileIds) {
+        return baseMapper.getFileUploadContent(datasetId,fileIds);
     }
 }

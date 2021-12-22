@@ -20,11 +20,11 @@ package org.dubhe.optimize.rest;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import org.dubhe.biz.base.constant.Permissions;
+import org.dubhe.biz.base.dto.DeleteDTO;
 import org.dubhe.biz.base.vo.DataResponseBody;
 import org.dubhe.biz.dataresponse.factory.DataResponseFactory;
 import org.dubhe.optimize.domain.dto.ModelOptDatasetCreateDTO;
 import org.dubhe.optimize.domain.dto.ModelOptTaskCreateDTO;
-import org.dubhe.optimize.domain.dto.ModelOptTaskDeleteDTO;
 import org.dubhe.optimize.domain.dto.ModelOptTaskQueryDTO;
 import org.dubhe.optimize.domain.dto.ModelOptTaskSubmitDTO;
 import org.dubhe.optimize.domain.dto.ModelOptTaskUpdateDTO;
@@ -33,6 +33,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -60,6 +61,13 @@ public class ModelOptTaskController {
         return DataResponseFactory.success(modelOptTaskService.queryAll(modelOptTaskQueryDTO));
     }
 
+    @GetMapping("/getTaskById/{id}")
+    @ApiOperation("根据模型任务id查询数据")
+    @PreAuthorize(Permissions.MODEL_OPTIMIZE)
+    public DataResponseBody getTaskById(@PathVariable Long id){
+        return DataResponseFactory.success(modelOptTaskService.getTaskById(id));
+    }
+
     @PostMapping
     @ApiOperation("创建任务")
     @PreAuthorize(Permissions.MODEL_OPTIMIZE_CREATE)
@@ -85,8 +93,8 @@ public class ModelOptTaskController {
     @DeleteMapping
     @ApiOperation("删除模型优化任务")
     @PreAuthorize(Permissions.MODEL_OPTIMIZE_DELETE_TASK)
-    public DataResponseBody delete(@Validated @RequestBody ModelOptTaskDeleteDTO modelOptTaskDeleteDTO) {
-        modelOptTaskService.delete(modelOptTaskDeleteDTO);
+    public DataResponseBody delete(@Validated @RequestBody DeleteDTO deleteDTO) {
+        modelOptTaskService.delete(deleteDTO.getIds());
         return DataResponseFactory.success();
     }
 

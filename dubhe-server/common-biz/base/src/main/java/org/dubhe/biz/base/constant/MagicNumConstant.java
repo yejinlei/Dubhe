@@ -68,6 +68,7 @@ public final class MagicNumConstant {
     public static final int TWO_THOUSAND_TWENTY_EIGHT = 2048;
     public static final int THREE_THOUSAND = 3000;
     public static final int FOUR_THOUSAND = 4000;
+    public static final int EIGHT_THOUSAND_ONE_HUNDRED_NINETY_TWO = 8192;
     public static final int NINE_THOUSAND = 9000;
     public static final int NINE_THOUSAND_NINE_HUNDRED_NINTY_NINE = 9999;
     public static final int TEN_THOUSAND = 10000;

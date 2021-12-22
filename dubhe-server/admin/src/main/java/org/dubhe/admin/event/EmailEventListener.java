@@ -42,7 +42,7 @@ public class EmailEventListener {
 
 
     @EventListener
-    @Async("taskExecutor")
+    @Async
     public void onApplicationEvent(EmailEvent event) {
         EmailDTO emailDTO = (EmailDTO) event.getSource();
         sendMail(emailDTO.getReceiverMailAddress(), emailDTO.getSubject(), emailDTO.getCode());

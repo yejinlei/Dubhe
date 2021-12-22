@@ -29,6 +29,7 @@ import org.dubhe.biz.base.vo.WebsocketDataResponseBody;
 import org.dubhe.biz.log.enums.LogEnum;
 import org.dubhe.biz.log.utils.LogUtil;
 import org.dubhe.cloud.authconfig.dto.JwtUserDTO;
+import org.dubhe.dubhek8s.domain.vo.NamespaceVO;
 import org.dubhe.dubhek8s.service.SystemNamespaceService;
 import org.dubhe.k8s.enums.WebsocketTopicEnum;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -145,19 +146,12 @@ public class WebSocketServer {
         this.close();
     }
 
-    /**
-     * 给所有 session 发消息的方法
-     */
-    public void sendToAll() {
-        USER_CLIENT_MAP.keySet().parallelStream().forEach(userId -> USER_CLIENT_MAP.get(userId)
-                .sendMessage(JSON.toJSONString(new WebsocketDataResponseBody(WebsocketTopicEnum.RESOURCE_MONITOR.getTopic(),
-                        systemNamespaceService.findNamespace(userId)))));
-    }
 
     public void sendToClient(Long userId) {
         if (USER_CLIENT_MAP.get(userId) != null){
-            USER_CLIENT_MAP.get(userId).sendMessage(JSON.toJSONString(new WebsocketDataResponseBody(WebsocketTopicEnum.RESOURCE_MONITOR.getTopic(),
-                    systemNamespaceService.findNamespace(userId))));
+            NamespaceVO namespace = systemNamespaceService.findNamespace(userId);
+            String message = JSON.toJSONString(new WebsocketDataResponseBody(WebsocketTopicEnum.RESOURCE_MONITOR.getTopic(), namespace));
+            USER_CLIENT_MAP.get(userId).sendMessage(message);
         }
 
     }

@@ -17,10 +17,13 @@
 
 package org.dubhe.k8s.domain.bo;
 
+import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.util.NumberUtil;
+import cn.hutool.core.util.StrUtil;
 import lombok.Data;
 import org.dubhe.biz.base.constant.MagicNumConstant;
 import org.dubhe.biz.base.functional.StringFormat;
+import org.dubhe.biz.base.vo.UserAllotVO;
 import org.dubhe.k8s.domain.vo.GpuTotalMemResultVO;
 import org.dubhe.k8s.domain.vo.MetricsDataResultValueVO;
 import org.springframework.util.CollectionUtils;
@@ -203,6 +206,31 @@ public class PrometheusMetricBO {
         return list;
     }
 
+    public List<UserAllotVO> getUsageRateResults() {
+        List<UserAllotVO> list = new ArrayList<>();
+        if (data == null || CollUtil.isEmpty(data.getResult())) {
+            return list;
+        }
+        data.getResult().forEach(metricResult -> {
+            UserAllotVO userAllotVO = new UserAllotVO();
+            userAllotVO.setUserName(metricResult.getMetric().getNamespace());
+            userAllotVO.setAllotTotal(metricResult.getValue().get(1).toString());
+            list.add(userAllotVO);
+        });
+        return list;
+    }
+
+    public Map<Long, String> getResourceUsageResults() {
+        Map<Long, String> resMap = new HashMap<>();
+        if (data == null || CollUtil.isEmpty(data.getResult())) {
+            return resMap;
+        }
+        data.getResult().forEach(metricResult -> {
+            resMap.put(Long.valueOf(metricResult.getMetric().getNamespace().replace("namespace-", StrUtil.EMPTY)), metricResult.getValue().get(1).toString());
+        });
+        return resMap;
+    }
+
 }
 
 @Data
@@ -222,5 +250,6 @@ class MetricResult {
 class Metric {
     private String acc_id;
     private String pod;
+    private String namespace;
 }
 

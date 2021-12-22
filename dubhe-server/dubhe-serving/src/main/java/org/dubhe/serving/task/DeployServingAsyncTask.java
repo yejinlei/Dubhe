@@ -183,7 +183,7 @@ public class DeployServingAsyncTask {
                                 // 删除已创建的pod
                                 List<ServingModelConfig> deleteList = new ArrayList<>();
                                 deleteList.add(servingModelConfig);
-                                deleteServing(user, servingInfo, deleteList);
+                                deleteServing(servingInfo, deleteList);
                             }
                         }
                     } else {
@@ -254,7 +254,6 @@ public class DeployServingAsyncTask {
         bo.setNamespace(k8sNameTool.getNamespace(servingInfo.getCreateUserId()))
                 .setResourceName(k8sNameTool.generateResourceName(BizEnum.SERVING, servingModelConfig.getResourceInfo()))
                 .setReplicas(servingModelConfig.getResourcesPoolNode())
-                .setGpuNum(servingModelConfig.getGpuNum())
                 .setCpuNum(servingModelConfig.getCpuNum())
                 .setMemNum(servingModelConfig.getMemNum())
                 .setImage(servingModelConfig.getImage())
@@ -265,6 +264,9 @@ public class DeployServingAsyncTask {
                 }})
                 .setTaskIdentifyLabel(taskIdentify);
         bo.setBusinessLabel(k8sNameTool.getPodLabel(BizEnum.SERVING));
+        if (ResourcesPoolTypeEnum.isGpuCode(servingModelConfig.getResourcesPoolType())){
+            bo.setGpuModel(servingModelConfig.getGpuModel()).setGpuNum(servingModelConfig.getGpuNum()).setK8sLabelKey(servingModelConfig.getK8sLabelKey());
+        }
         return bo;
     }
 
@@ -309,54 +311,49 @@ public class DeployServingAsyncTask {
     /**
      * 删除pod
      *
-     * @param user            用户信息
      * @param servingInfo     在线服务信息
      * @param modelConfigList 在线服务模型部署信息集合
      */
     @Async("servingExecutor")
     @Transactional(rollbackFor = Exception.class)
-    public void deleteServing(UserContext user, ServingInfo servingInfo, List<ServingModelConfig> modelConfigList) {
+    public void deleteServing(ServingInfo servingInfo, List<ServingModelConfig> modelConfigList) {
         boolean flag = true;
         try {
             for (ServingModelConfig servingModelConfig : modelConfigList) {
 
                 String namespace = k8sNameTool.getNamespace(servingInfo.getCreateUserId());
                 String resourceName = k8sNameTool.generateResourceName(BizEnum.SERVING, servingModelConfig.getResourceInfo());
-                LogUtil.info(LogEnum.SERVING, "User {} delete the service, namespace:{}, resourceName:{}", user.getUsername(), namespace, resourceName);
+                LogUtil.info(LogEnum.SERVING, "Delete the service, namespace:{}, resourceName:{}", namespace, resourceName);
 
                 String uniqueName = ServingStatusDetailDescUtil.getUniqueName(servingModelConfig.getModelName(), servingModelConfig.getModelVersion());
                 String statusDetailKey = ServingStatusDetailDescUtil.getServingStatusDetailKey(ServingStatusDetailDescUtil.CONTAINER_DELETION_EXCEPTION, uniqueName);
 
                 PtBaseResult ptBaseResult = modelServingApi.delete(namespace, resourceName);
-                if (!ServingConstant.SUCCESS_CODE.equals(ptBaseResult.getCode())) {
+                if (ServingConstant.SUCCESS_CODE.equals(ptBaseResult.getCode())) {
+                    servingModelConfig.setResourceInfo(SymbolConstant.BLANK);
+                    if (servingModelConfigService.updateById(servingModelConfig)) {
+                        LogUtil.info(LogEnum.SERVING, "Delete the service SUCCESS, namespace:{}, resourceName:{}", namespace, resourceName);
+                    }
+                } else {
                     servingInfo.putStatusDetail(statusDetailKey, ptBaseResult.getMessage());
                     flag = false;
-                } else {
-                    servingModelConfig.setResourceInfo(null);
-                    if (servingModelConfigService.updateById(servingModelConfig)) {
-                        LogUtil.info(LogEnum.SERVING, "User {} delete the service SUCCESS, namespace:{}, resourceName:{}", user.getUsername(), namespace, resourceName);
-                    }
                 }
 
             }
         } catch (KubernetesClientException e) {
             servingInfo.putStatusDetail(ServingStatusDetailDescUtil.getServingStatusDetailKey(ServingStatusDetailDescUtil.CONTAINER_DELETION_EXCEPTION, servingInfo.getName()), e.getMessage());
-            LogUtil.error(LogEnum.SERVING, "An Exception occurred. Service id={}, service name:{}，exception :{}", user.getUsername(), servingInfo.getId(), servingInfo.getName(), e);
+            LogUtil.error(LogEnum.SERVING, "An Exception occurred. Service id={}, service name:{}，exception :{}", servingInfo.getId(), servingInfo.getName(), e);
         }
         if (!flag) {
             servingInfo.setStatus(ServingStatusEnum.EXCEPTION.getStatus());
-            LogUtil.error(LogEnum.SERVING, "An Exception occurred when user {} stopping the service, service name:{}", user.getUsername(), servingInfo.getName());
+            LogUtil.error(LogEnum.SERVING, "An Exception occurred when stopping the service, service name:{}", servingInfo.getName());
         }
-        LogUtil.info(LogEnum.SERVING, "User {} stopped the service with SUCCESS, service name:{}", user.getUsername(), servingInfo.getName());
+        LogUtil.info(LogEnum.SERVING, "Stopped the service with SUCCESS, service name:{}", servingInfo.getName());
         //grpc协议关闭对应通道
         if (ServingTypeEnum.GRPC.getType().equals(servingInfo.getType())) {
-            GrpcClient.shutdownChannel(servingInfo.getId(), user);
+            GrpcClient.shutdownChannel(servingInfo.getId());
         }
-        int result = servingInfoMapper.updateById(servingInfo);
-        if (result < NumberConstant.NUMBER_1) {
-            LogUtil.error(LogEnum.SERVING, "User {} FAILED stopping the online service. Database update FAILED. Service id={}, service name:{}，service status:{}", user.getUsername(), servingInfo.getId(), servingInfo.getName(), servingInfo.getStatus());
-            throw new BusinessException(ServingErrorEnum.DATABASE_ERROR);
-        }
+        servingInfoMapper.updateById(servingInfo);
     }
 
     /**
@@ -438,7 +435,7 @@ public class DeployServingAsyncTask {
             }
         } catch (KubernetesClientException e) {
             batchServing.putStatusDetail(ServingStatusDetailDescUtil.getServingStatusDetailKey(ServingStatusDetailDescUtil.BULK_SERVICE_DELETE_EXCEPTION, batchServing.getName()), e.getMessage());
-            LogUtil.error(LogEnum.SERVING, "An Exception occurred. BatchServing id={}, batchServing name:{}，exception :{}", user.getUsername(), batchServing.getId(), batchServing.getName(), e);
+            LogUtil.error(LogEnum.SERVING, "An Exception occurred. BatchServing id={}, batchServing name:{}，exception :{}", batchServing.getId(), batchServing.getName(), e);
         }
         batchServing.setStatus(ServingStatusEnum.EXCEPTION.getStatus());
         batchServingMapper.updateById(batchServing);
@@ -463,14 +460,13 @@ public class DeployServingAsyncTask {
         batchServing.setResourceInfo(resourceInfo);
         String targetPath = k8sNameTool.getAbsolutePath(batchRootPath + batchServing.getCreateUserId() + File.separator + batchServing.getId() + File.separator);
         String servingPath = getServingSourcePath(user, targetPath, batchServing.getUseScript(), batchServing.getScriptPath());
-        PtJupyterJobBO bo = new PtJupyterJobBO()
-                .setNamespace(k8sNameTool.getNamespace(batchServing.getCreateUserId()))
+        PtJupyterJobBO bo = new PtJupyterJobBO();
+        bo.setNamespace(k8sNameTool.getNamespace(batchServing.getCreateUserId()))
                 .setName(k8sNameTool.generateResourceName(BizEnum.BATCH_SERVING, batchServing.getResourceInfo()))
                 .setCpuNum(batchServing.getCpuNum())
-                .setGpuNum(batchServing.getGpuNum())
                 .setUseGpu(ResourcesPoolTypeEnum.isGpuCode(batchServing.getResourcesPoolType()))
-                .setMemNum(batchServing.getMemNum())
-                .setCmdLines(Arrays.asList("-c", command))
+                .setMemNum(batchServing.getMemNum());
+        bo.setCmdLines(Arrays.asList("-c", command))
                 .setFsMounts(new HashMap<String, PtMountDirBO>(NumberConstant.NUMBER_6) {{
                     put(ServingConstant.MODEL_PATH, new PtMountDirBO(k8sNameTool.getAbsolutePath(batchServing.getModelAddress())));
                     put(ServingConstant.INPUT_PATH, new PtMountDirBO(k8sNameTool.getAbsolutePath(batchServing.getInputPath())));
@@ -480,6 +476,10 @@ public class DeployServingAsyncTask {
                 .setImage(batchServing.getImage())
                 .setBusinessLabel(k8sNameTool.getPodLabel(BizEnum.BATCH_SERVING))
                 .setTaskIdentifyLabel(taskIdentify);
+
+        if (ResourcesPoolTypeEnum.isGpuCode(batchServing.getResourcesPoolType())){
+            bo.setGpuModel(batchServing.getGpuModel()).setGpuNum(batchServing.getGpuNum()).setK8sLabelKey(batchServing.getK8sLabelKey());
+        }
         return bo;
     }
 
@@ -512,7 +512,6 @@ public class DeployServingAsyncTask {
                 .setImage(batchServing.getImage())
                 .setMemNum(batchServing.getMemNum())
                 .setCpuNum(batchServing.getCpuNum())
-                .setGpuNum(batchServing.getGpuNum())
                 .setMasterCmd(command)
                 .setSlaveCmd(command)
                 .setBusinessLabel(k8sNameTool.getPodLabel(BizEnum.BATCH_SERVING))
@@ -523,6 +522,10 @@ public class DeployServingAsyncTask {
                     put(ServingConstant.DUBHE_SERVING_PATH, new PtMountDirBO(servingPath));
                 }})
                 .setTaskIdentifyLabel(taskIdentify);
+
+        if (ResourcesPoolTypeEnum.isGpuCode(batchServing.getResourcesPoolType())){
+            bo.setGpuModel(batchServing.getGpuModel()).setGpuNum(batchServing.getGpuNum()).setK8sLabelKey(batchServing.getK8sLabelKey());
+        }
         return bo;
     }
 

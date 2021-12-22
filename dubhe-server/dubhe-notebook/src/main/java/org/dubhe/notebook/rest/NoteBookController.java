@@ -22,6 +22,7 @@ import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import org.dubhe.biz.base.constant.Permissions;
 import org.dubhe.biz.base.constant.ResponseCode;
+import org.dubhe.biz.base.dto.DeleteDTO;
 import org.dubhe.biz.base.dto.NoteBookAlgorithmQueryDTO;
 import org.dubhe.biz.base.dto.NoteBookAlgorithmUpdateDTO;
 import org.dubhe.biz.base.vo.DataResponseBody;
@@ -71,7 +72,7 @@ public class NoteBookController {
     @GetMapping("/detail/{id}")
     @PreAuthorize(Permissions.NOTEBOOK)
     public DataResponseBody getNoteBook(@PathVariable Long id) {
-        return  DataResponseFactory.success(noteBookService.getNotebookDetail(id));
+        return DataResponseFactory.success(noteBookService.getNotebookDetail(id));
     }
 
     @ApiOperation("修改notebook算法ID")
@@ -91,9 +92,9 @@ public class NoteBookController {
     @ApiOperation("异步批量删除notebook")
     @DeleteMapping
     @PreAuthorize(Permissions.NOTEBOOK_DELETE)
-    public DataResponseBody deleteNoteBook(@RequestBody Set<Long> noteBookIds) {
+    public DataResponseBody deleteNoteBook(@Validated @RequestBody DeleteDTO deleteDTO) {
 
-        noteBookService.deleteNoteBooks( noteBookIds);
+        noteBookService.deleteNoteBooks(deleteDTO.getIds());
         return new DataResponseBody(ResponseCode.SUCCESS, "正在异步删除NoteBook中..");
     }
 

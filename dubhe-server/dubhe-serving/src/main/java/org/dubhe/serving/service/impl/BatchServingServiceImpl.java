@@ -30,7 +30,12 @@ import org.dubhe.biz.base.constant.NumberConstant;
 import org.dubhe.biz.base.constant.StringConstant;
 import org.dubhe.biz.base.constant.SymbolConstant;
 import org.dubhe.biz.base.context.UserContext;
-import org.dubhe.biz.base.dto.*;
+import org.dubhe.biz.base.dto.PtImageQueryUrlDTO;
+import org.dubhe.biz.base.dto.PtModelBranchQueryByIdDTO;
+import org.dubhe.biz.base.dto.PtModelInfoQueryByIdDTO;
+import org.dubhe.biz.base.dto.PtModelStatusQueryDTO;
+import org.dubhe.biz.base.dto.TrainAlgorithmSelectByIdDTO;
+import org.dubhe.biz.base.dto.UserDTO;
 import org.dubhe.biz.base.enums.BizEnum;
 import org.dubhe.biz.base.enums.DatasetTypeEnum;
 import org.dubhe.biz.base.enums.ImageTypeEnum;
@@ -51,10 +56,10 @@ import org.dubhe.biz.log.enums.LogEnum;
 import org.dubhe.biz.log.utils.LogUtil;
 import org.dubhe.biz.permission.annotation.DataPermissionMethod;
 import org.dubhe.biz.permission.base.BaseService;
-import org.dubhe.biz.redis.utils.RedisUtils;
 import org.dubhe.cloud.authconfig.service.AdminClient;
-import org.dubhe.k8s.cache.ResourceCache;
+import org.dubhe.k8s.dao.K8sTaskIdentifyMapper;
 import org.dubhe.k8s.domain.dto.PodQueryDTO;
+import org.dubhe.k8s.domain.entity.K8sTaskIdentify;
 import org.dubhe.k8s.domain.vo.PodVO;
 import org.dubhe.k8s.enums.PodPhaseEnum;
 import org.dubhe.k8s.service.PodService;
@@ -74,9 +79,21 @@ import org.dubhe.serving.client.ModelInfoClient;
 import org.dubhe.serving.config.TrainHarborConfig;
 import org.dubhe.serving.constant.ServingConstant;
 import org.dubhe.serving.dao.BatchServingMapper;
-import org.dubhe.serving.domain.dto.*;
+import org.dubhe.serving.domain.dto.BatchServingCreateDTO;
+import org.dubhe.serving.domain.dto.BatchServingDetailDTO;
+import org.dubhe.serving.domain.dto.BatchServingK8sPodCallbackCreateDTO;
+import org.dubhe.serving.domain.dto.BatchServingQueryDTO;
+import org.dubhe.serving.domain.dto.BatchServingStartDTO;
+import org.dubhe.serving.domain.dto.BatchServingStopDTO;
+import org.dubhe.serving.domain.dto.BatchServingUpdateDTO;
 import org.dubhe.serving.domain.entity.BatchServing;
-import org.dubhe.serving.domain.vo.*;
+import org.dubhe.serving.domain.vo.BatchServingCreateVO;
+import org.dubhe.serving.domain.vo.BatchServingDetailVO;
+import org.dubhe.serving.domain.vo.BatchServingQueryVO;
+import org.dubhe.serving.domain.vo.BatchServingStartVO;
+import org.dubhe.serving.domain.vo.BatchServingStopVO;
+import org.dubhe.serving.domain.vo.BatchServingUpdateVO;
+import org.dubhe.serving.domain.vo.ServingInfoQueryVO;
 import org.dubhe.serving.enums.ServingErrorEnum;
 import org.dubhe.serving.enums.ServingStatusEnum;
 import org.dubhe.serving.service.BatchServingService;
@@ -92,9 +109,11 @@ import javax.annotation.Resource;
 import java.io.File;
 import java.text.DecimalFormat;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 
@@ -137,12 +156,10 @@ public class BatchServingServiceImpl extends ServiceImpl<BatchServingMapper, Bat
     private TrainHarborConfig trainHarborConfig;
     @Resource
     private AlgorithmClient algorithmClient;
+    
     @Autowired
-    private RedisUtils redisUtils;
-    @Autowired
-    private ResourceCache resourceCache;
-    @Value("Task:BatchServing:"+"${spring.profiles.active}_batch_serving_id_")
-    private String batchServingIdPrefix;
+    private K8sTaskIdentifyMapper k8sTaskIdentifyMapper;
+  
     /**
      * 批量服务文件根路径
      */
@@ -213,9 +230,24 @@ public class BatchServingServiceImpl extends ServiceImpl<BatchServingMapper, Bat
             throw new BusinessException(ServingErrorEnum.INTERNAL_SERVER_ERROR);
         }
         IPage<BatchServing> batchServings = batchServingMapper.selectPage(page, wrapper);
+
+        Map<Long, String> idUserNameMap = new HashMap<>();
+        List<Long> userIds = batchServings.getRecords().stream().map(BatchServing::getCreateUserId).filter(Objects::nonNull).distinct().collect(Collectors.toList());
+        if (org.apache.commons.collections4.CollectionUtils.isNotEmpty(userIds)) {
+            DataResponseBody<List<UserDTO>> result = adminClient.getUserList(userIds);
+            if (result.getData() != null) {
+                idUserNameMap = result.getData().stream().collect(Collectors.toMap(UserDTO::getId, UserDTO::getUsername, (o, n) -> n));
+            }
+        }
+        Map<Long, String> finalIdUserNameMap = idUserNameMap;
+
         List<BatchServingQueryVO> queryList = batchServings.getRecords().stream().map(batchServing -> {
             BatchServingQueryVO batchServingQueryVO = new BatchServingQueryVO();
             BeanUtils.copyProperties(batchServing, batchServingQueryVO);
+            //获取任务创建人用户名
+            if (batchServing.getCreateUserId() != null) {
+                batchServingQueryVO.setCreateUserName(finalIdUserNameMap.getOrDefault(batchServing.getCreateUserId(), null));
+            }
             return batchServingQueryVO;
         }).collect(Collectors.toList());
         LogUtil.info(LogEnum.SERVING, "User {} queried batching service list, the number of batching service is {}", user.getUsername(), queryList.size());
@@ -261,8 +293,14 @@ public class BatchServingServiceImpl extends ServiceImpl<BatchServingMapper, Bat
         String outputPath = ServingConstant.OUTPUT_NFS_PATH + user.getId() + File.separator + StringUtils.getTimestamp() + File.separator;
         batchServing.setOutputPath(outputPath);
         saveBatchServing(user, batchServing);
-        String taskIdentify = resourceCache.getTaskIdentify(batchServing.getId(), batchServing.getName(), batchServingIdPrefix);
-        deployServingAsyncTask.deployBatchServing(user, batchServing, taskIdentify);
+
+        //存储任务身份信息
+        K8sTaskIdentify taskIdentify = new K8sTaskIdentify();
+        taskIdentify.setTaskId(batchServing.getId());
+        taskIdentify.setTaskName(batchServing.getName());
+        k8sTaskIdentifyMapper.insert(taskIdentify);
+        
+        deployServingAsyncTask.deployBatchServing(user, batchServing, String.valueOf(taskIdentify.getId()));
         return new BatchServingCreateVO(batchServing.getId(), batchServing.getStatus());
     }
 
@@ -433,8 +471,14 @@ public class BatchServingServiceImpl extends ServiceImpl<BatchServingMapper, Bat
         String outputPath = ServingConstant.OUTPUT_NFS_PATH + user.getId() + File.separator + StringUtils.getTimestamp() + File.separator;
         batchServing.setOutputPath(outputPath);
         updateBatchServing(user, batchServing);
-        String taskIdentify = resourceCache.getTaskIdentify(batchServing.getId(), batchServing.getName(), batchServingIdPrefix);
-        deployServingAsyncTask.deployBatchServing(user, batchServing, taskIdentify);
+        
+        //存储任务身份信息
+        K8sTaskIdentify taskIdentify = new K8sTaskIdentify();
+        taskIdentify.setTaskId(batchServing.getId());
+        taskIdentify.setTaskName(batchServing.getName());
+        k8sTaskIdentifyMapper.insert(taskIdentify);
+        
+        deployServingAsyncTask.deployBatchServing(user, batchServing, String.valueOf(taskIdentify.getId()));
         return new BatchServingUpdateVO(batchServing.getId(), batchServing.getStatus());
     }
 
@@ -543,39 +587,45 @@ public class BatchServingServiceImpl extends ServiceImpl<BatchServingMapper, Bat
     /**
      * 删除批量服务
      *
-     * @param batchServingDeleteDTO 批量服务删除参数
-     * @return BatchServingDeleteVO 返回删除后结果
+     * @param ids
      */
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public BatchServingDeleteVO delete(BatchServingDeleteDTO batchServingDeleteDTO) {
+    public void delete(Set<Long> ids) {
+        for (Long id : ids) {
+            this.delete(id);
+        }
+    }
+
+    /**
+     * 删除批量服务
+     * @param id
+     */
+    public void delete(Long id) {
         UserContext user = userContextService.getCurUser();
         if (user == null) {
             throw new BusinessException("当前用户信息已失效");
         }
-        BatchServing batchServing = checkBatchServingExist(batchServingDeleteDTO.getId(), user.getId());
+        BatchServing batchServing = checkBatchServingExist(id, user.getId());
         checkBatchServingStatus(batchServing.getStatus());
-        deleteBatchServing(batchServingDeleteDTO, user);
-        String taskIdentify = (String) redisUtils.get(batchServingIdPrefix + String.valueOf(batchServing.getId()));
-        if (StringUtils.isNotEmpty(taskIdentify)){
-            redisUtils.del(taskIdentify, batchServingIdPrefix + String.valueOf(batchServing.getId()));
-        }
+        deleteBatchServing(id, user);
+        k8sTaskIdentifyMapper.deleteByTaskId(batchServing.getId());
         String sourcePath = k8sNameTool.getAbsolutePath(batchRootPath + batchServing.getCreateUserId() + File.separator + batchServing.getId() + File.separator);
         String recyclePath = k8sNameTool.getAbsolutePath(batchServing.getInputPath()) + StrUtil.COMMA + k8sNameTool.getAbsolutePath(batchServing.getOutputPath()) + StrUtil.COMMA + sourcePath;
         createRecycleTask(batchServing, recyclePath, true);
-        return new BatchServingDeleteVO(batchServing.getId());
     }
+
 
     /**
      * 删除批量服务并保存数据
      *
-     * @param batchServingDeleteDTO 批量服务信息
+     * @param id                    批量服务id
      * @param user                  用户信息
      */
     @Transactional(rollbackFor = Exception.class)
-    public void deleteBatchServing(BatchServingDeleteDTO batchServingDeleteDTO, UserContext user) {
-        if (!removeById(batchServingDeleteDTO.getId())) {
-            LogUtil.error(LogEnum.SERVING, "User {} failed deleting the batching service in the database, service id={}", user.getUsername(), batchServingDeleteDTO.getId());
+    public void deleteBatchServing(Long id, UserContext user) {
+        if (!removeById(id)) {
+            LogUtil.error(LogEnum.SERVING, "User {} failed deleting the batching service in the database, service id={}", user.getUsername(), id);
             throw new BusinessException(ServingErrorEnum.INTERNAL_SERVER_ERROR);
         }
     }
@@ -608,8 +658,14 @@ public class BatchServingServiceImpl extends ServiceImpl<BatchServingMapper, Bat
         //对重新运行的详情数据清空
         batchServing.setStatusDetail(SymbolConstant.BRACKETS);
         updateBatchServing(user, batchServing);
-        String taskIdentify = resourceCache.getTaskIdentify(batchServing.getId(), batchServing.getName(), batchServingIdPrefix);
-        deployServingAsyncTask.deployBatchServing(user, batchServing, taskIdentify);
+        
+        //存储任务身份信息
+        K8sTaskIdentify taskIdentify = new K8sTaskIdentify();
+        taskIdentify.setTaskId(batchServing.getId());
+        taskIdentify.setTaskName(batchServing.getName());
+        k8sTaskIdentifyMapper.insert(taskIdentify);
+        
+        deployServingAsyncTask.deployBatchServing(user, batchServing, String.valueOf(taskIdentify.getId()));
         return new BatchServingStartVO(batchServing.getId(), batchServing.getStatus(), batchServing.getProgress());
     }
 
@@ -902,4 +958,5 @@ public class BatchServingServiceImpl extends ServiceImpl<BatchServingMapper, Bat
             batchServingMapper.updateStatusById(Long.valueOf(dto.getRemark()), false);
         }
     }
+
 }

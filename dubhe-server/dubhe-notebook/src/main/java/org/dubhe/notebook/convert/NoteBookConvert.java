@@ -18,17 +18,14 @@
 package org.dubhe.notebook.convert;
 
 
-import org.dubhe.biz.base.vo.NoteBookVO;
+import org.dubhe.notebook.domain.vo.NoteBookVO;
 import org.dubhe.biz.db.base.BaseConvert;
 import org.dubhe.notebook.domain.entity.NoteBook;
 
-import org.mapstruct.Mapper;
-import org.mapstruct.ReportingPolicy;
 
 /**
  * @description notebook 转化器
  * @create 2020-04-28
  */
-@Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.IGNORE)
 public interface NoteBookConvert extends BaseConvert<NoteBookVO, NoteBook> {
 }

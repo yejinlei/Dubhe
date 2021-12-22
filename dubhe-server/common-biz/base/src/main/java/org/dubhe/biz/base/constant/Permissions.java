@@ -132,6 +132,9 @@ public final class Permissions {
     public static final String USER_GROUP_EDIT_USER_ROLE = "hasAuthority('ROLE_system:userGroup:editUserRole')";
     public static final String USER_GROUP_EDIT_USER_STATE = "hasAuthority('ROLE_system:userGroup:editUserState')";
     public static final String USER_GROUP_DELETE_USER = "hasAuthority('ROLE_system:userGroup:deleteUser')";
+    public static final String USER_GROUP_RESET_USER_PASSWORD ="hasAuthority('ROLE_system:userGroup:resetUserPassword')" ;
+    public static final String USER_GROUP_CONFIG_EDIT ="hasAuthority('ROLE_system:userGroup:editUserConfig')" ;
+
 
     /**
      * 控制台：用户管理
@@ -142,6 +145,7 @@ public final class Permissions {
     public static final String USER_DOWNLOAD = "hasAuthority('ROLE_system:user:download')";
     public static final String USER_CONFIG_EDIT = "hasAuthority('ROLE_system:user:configEdit')";
     public static final String USER_RESOURCE_INFO = "hasAuthority('ROLE_system:user:resourceInfo')";
+    public static final String USER_RESET_PASSWORD = "hasAuthority('ROLE_system:user:resetPassword')";
 
     /**
      * 控制台：角色管理
@@ -203,6 +207,13 @@ public final class Permissions {
     public static final String SPECS_DELETE = "hasAuthority('ROLE_system:specs:delete')";
 
     /**
+     * 控制台：GPU资源管理
+     */
+    public static final String GPU_CREATE = "hasAuthority('ROLE_system:gpu:create')";
+    public static final String GPU_EDIT = "hasAuthority('ROLE_system:gpu:edit')";
+    public static final String GPU_DELETE = "hasAuthority('ROLE_system:gpu:delete')";
+
+    /**
      * 专业版：终端
      */
     public static final String TERMINAL_CREATE = "hasAuthority('ROLE_terminal:specs:create')";
@@ -211,6 +222,8 @@ public final class Permissions {
     public static final String TERMINAL_DELETE = "hasAuthority('ROLE_terminal:specs:delete')";
     public static final String TERMINAL_DETAIL = "hasAuthority('ROLE_terminal:specs:detail')";
     public static final String TERMINAL_LIST = "hasAuthority('ROLE_terminal:specs:list')";
+    public static final String TERMINAL_UPDATE = "hasAuthority('ROLE_terminal:specs:update')";
+
 
     private Permissions() {
     }

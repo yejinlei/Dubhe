@@ -1,12 +1,12 @@
 /**
  * Copyright 2020 Tianshu AI Platform. All Rights Reserved.
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  * http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -50,16 +50,16 @@ public class K8sLabelConstants {
     /**
      * 节点隔离标签key
      */
-    public final static String PLATFORM_TAG_ISOLATION_KEY="platform/node-isolate";
+    public final static String PLATFORM_TAG_ISOLATION_KEY = "platform/node-isolate";
     /**
      * 节点隔离标签value
      */
-    public final static String PLATFORM_TAG_ISOLATION_VALUE="{}-isolation-{}";
+    public final static String PLATFORM_TAG_ISOLATION_VALUE = "{}-isolation-{}";
 
     /**
      * 节点隔离标签value分隔符
      */
-    public final static String PLATFORM_TAG_ISOLATION_VALUE_SPLIT="-isolation-";
+    public final static String PLATFORM_TAG_ISOLATION_VALUE_SPLIT = "-isolation-";
 
     /**
      * 对象类型，对应k8s的kind
@@ -68,6 +68,11 @@ public class K8sLabelConstants {
 
     public final static String NODE_GPU_LABEL_KEY = "gpu";
     public final static String NODE_GPU_LABEL_VALUE = "gpu";
+
+    /**
+     * GPU型号标签key
+     */
+    public final static String NODE_GPU_MODEL_LABEL_KEY = "gpu-model";
 
     public final static String BASE_TAG_CREATE_BY_VALUE = "platform";
 }

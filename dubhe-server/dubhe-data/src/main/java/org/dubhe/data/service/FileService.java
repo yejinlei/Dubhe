@@ -315,7 +315,7 @@ public interface FileService {
      * @param dataset 数据集
      * @param fileIdsNotToEs  需要同步的文件ID
      */
-    void transportTextToEs(Dataset dataset,List<Long> fileIdsNotToEs);
+    void transportTextToEs(Dataset dataset,List<Long> fileIdsNotToEs,Boolean ifImport);
 
     /**
      * 还原es_transport状态

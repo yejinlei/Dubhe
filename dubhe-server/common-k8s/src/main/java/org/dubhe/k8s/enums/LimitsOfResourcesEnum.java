@@ -37,9 +37,8 @@ public enum LimitsOfResourcesEnum {
     /**
      * gpu不足
      */
-    LIMITS_OF_GPU(3, "gpu用量超限"),
-    ;
-
+    LIMITS_OF_GPU(3, "gpu用量超限");
+    
     LimitsOfResourcesEnum(int code, String message) {
         this.code = code;
         this.message = message;

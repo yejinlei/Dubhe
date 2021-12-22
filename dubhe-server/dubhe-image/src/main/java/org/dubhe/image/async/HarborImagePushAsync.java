@@ -54,13 +54,12 @@ public class HarborImagePushAsync {
      * 组装shell脚本执行命令
      *
      * @param imagePath
-     * @param imageNameandTag
+     * @param imageNameAndTag
      **/
     @Async
-    public void execShell(String imagePath, String imageNameandTag, PtImage ptImage) {
+    public void execShell(String imagePath, String imageNameAndTag, PtImage ptImage) {
         try {
-            String imageResource = harborProperties.getAddress() + StrUtil.SLASH + ptImage.getProjectName()
-                    + StrUtil.SLASH + imageNameandTag;
+            String imageResource = harborProperties.getAddress() + StrUtil.SLASH + imageNameAndTag;
             String cmdStr = "docker login --username=" + harborProperties.getUsername() + " " + harborProperties.getAddress() + " --password=" + harborProperties.getPassword() + " ; docker " +
                     "load < " + imagePath + " |awk '{print $3}' |xargs -I str docker tag str " + imageResource + " ; docker push " + imageResource + "; docker rmi " + imageResource;
             String[] cmd = {"/bin/bash", "-c", cmdStr};

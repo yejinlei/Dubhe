@@ -20,7 +20,7 @@ package org.dubhe.train.domain.dto;
 import io.swagger.annotations.ApiModelProperty;
 import lombok.Data;
 import lombok.experimental.Accessors;
-import org.dubhe.biz.base.constant.MagicNumConstant;
+import org.dubhe.train.constant.TrainConstant;
 import org.hibernate.validator.constraints.Length;
 
 import javax.validation.constraints.NotBlank;
@@ -39,9 +39,9 @@ public class PtTrainJobBaseDTO extends BaseImageDTO {
     @ApiModelProperty(value = "算法来源id")
     private Long algorithmId;
 
-    @ApiModelProperty(value = "运行命令,输入长度不能超过128个字符", required = true)
+    @ApiModelProperty(value = "运行命令,输入长度不能超过8192个字符", required = true)
     @NotBlank(message = "运行命令不能为空")
-    @Length(max = MagicNumConstant.ONE_HUNDRED_TWENTY_EIGHT, message = "运行命令-输入长度不能超过128个字符")
+    @Length(max = TrainConstant.RUN_COMMAND_LENGTH_LIMIT, message = "运行命令-输入长度不能超过8192个字符")
     private String runCommand;
 
 }

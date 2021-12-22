@@ -5,7 +5,7 @@ terminal:
   # 用户workspace目录
   workspace-dir: "/workspace"
   # ssh主机
-  ssh-host: 127.0.0.1
+  ssh-host: 10.5.26.91
 
 # 可匿名访问路径
 security:

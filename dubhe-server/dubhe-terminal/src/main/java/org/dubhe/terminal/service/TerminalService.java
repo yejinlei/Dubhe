@@ -17,10 +17,8 @@
 
 package org.dubhe.terminal.service;
 
-import org.dubhe.terminal.domain.dto.TerminalCreateDTO;
-import org.dubhe.terminal.domain.dto.TerminalDTO;
-import org.dubhe.terminal.domain.dto.TerminalK8sPodCallbackCreateDTO;
-import org.dubhe.terminal.domain.dto.TerminalPreserveDTO;
+import org.dubhe.biz.base.context.UserContext;
+import org.dubhe.terminal.domain.dto.*;
 import org.dubhe.terminal.domain.entity.Terminal;
 import org.dubhe.terminal.domain.entity.TerminalInfo;
 import org.dubhe.terminal.domain.vo.TerminalVO;
@@ -68,31 +66,50 @@ public interface TerminalService {
      * 查询详情
      *
      * @param terminalDTO
+     * @param enableUsername 是否需要查询创建用户名
      * @return
      */
-    TerminalVO detail(TerminalDTO terminalDTO);
+    TerminalVO detail(TerminalDTO terminalDTO,boolean enableUsername);
 
     /**
-     * 查询列表
+     * 获取终端列表
      *
+     * @param refreshStatus 是否从k8s刷新当前终端状态
      * @return
      */
-    List<TerminalVO> list();
+    List<TerminalVO> listWithK8sStatus(boolean refreshStatus);
 
     /**
-     * 刷新 TerminalInfo 状态
+     * 获取用户对应 终端列表
      *
-     * @param id
-     */
-    TerminalInfo refreshTerminalInfoStatus(Long id);
-
-    /**
-     * 刷新 Terminal 状态
-     *
-     * @param id
+     * @param user
      * @return
      */
-    Terminal refreshTerminalStatus(Long id);
+    List<Terminal> list(UserContext user);
+
+    /**
+     * terminal 列表获得vo
+     *
+     * @param terminalList terminal 列表
+     * @return
+     */
+    List<TerminalVO> listVO(List<Terminal> terminalList);
+
+    /**
+     * 刷新终端中节点 terminalInfo 状态与 k8s 集群同步
+     *
+     * @param terminalInfoIdList TerminalInfo id 列表
+     * @return
+     */
+    List<TerminalInfo> refreshTerminalInfoStatus(List<Long> terminalInfoIdList);
+
+    /**
+     * 刷新终端 terminal 状态与k8s集群同步
+     *
+     * @param idList Terminal id列表
+     * @return
+     */
+    List<Terminal> refreshTerminalStatus(List<Long> idList);
 
     /**
      * k8s回调pod在线服务状态
@@ -117,4 +134,20 @@ public interface TerminalService {
      * @param message 失败信息
      */
     void pushImageError(Long terminalId,String message,Long userId);
+
+    /**
+     * 一个终端内所有连接就绪后执行的任务
+     *
+     * @param terminalId
+     */
+    void terminalReadyTask(Long terminalId);
+
+
+    /**
+     * 更新终端描述
+     *
+     * @param  terminalDetailDTO
+     * @return boolean
+     */
+    boolean update(TerminalDetailDTO terminalDetailDTO);
 }

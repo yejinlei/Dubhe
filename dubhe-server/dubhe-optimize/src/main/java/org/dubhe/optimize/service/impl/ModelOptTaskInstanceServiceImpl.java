@@ -17,7 +17,6 @@
 
 package org.dubhe.optimize.service.impl;
 
-import org.apache.commons.collections4.CollectionUtils;
 import com.alibaba.fastjson.JSONObject;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
@@ -25,13 +24,16 @@ import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import io.fabric8.kubernetes.client.KubernetesClientException;
+import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.dubhe.biz.base.constant.MagicNumConstant;
 import org.dubhe.biz.base.constant.NumberConstant;
 import org.dubhe.biz.base.constant.SymbolConstant;
 import org.dubhe.biz.base.context.UserContext;
 import org.dubhe.biz.base.dto.PtModelStatusQueryDTO;
+import org.dubhe.biz.base.dto.UserDTO;
 import org.dubhe.biz.base.enums.BizEnum;
+import org.dubhe.biz.base.enums.ResourcesPoolTypeEnum;
 import org.dubhe.biz.base.exception.BusinessException;
 import org.dubhe.biz.base.service.UserContextService;
 import org.dubhe.biz.base.utils.DateUtil;
@@ -44,11 +46,13 @@ import org.dubhe.biz.file.enums.BizPathEnum;
 import org.dubhe.biz.file.utils.MinioUtil;
 import org.dubhe.biz.log.enums.LogEnum;
 import org.dubhe.biz.log.utils.LogUtil;
-import org.dubhe.biz.redis.utils.RedisUtils;
+import org.dubhe.biz.permission.base.BaseService;
+import org.dubhe.cloud.authconfig.service.AdminClient;
 import org.dubhe.k8s.api.ModelOptJobApi;
-import org.dubhe.k8s.cache.ResourceCache;
+import org.dubhe.k8s.dao.K8sTaskIdentifyMapper;
 import org.dubhe.k8s.domain.bo.PtModelOptimizationJobBO;
 import org.dubhe.k8s.domain.dto.PodQueryDTO;
+import org.dubhe.k8s.domain.entity.K8sTaskIdentify;
 import org.dubhe.k8s.domain.resource.BizJob;
 import org.dubhe.k8s.domain.vo.PodVO;
 import org.dubhe.k8s.enums.K8sResponseEnum;
@@ -57,11 +61,8 @@ import org.dubhe.k8s.service.PodService;
 import org.dubhe.k8s.utils.K8sNameTool;
 import org.dubhe.optimize.client.DictClient;
 import org.dubhe.optimize.constant.ModelOptConstant;
-import org.dubhe.optimize.enums.ModelOptErrorEnum;
-import org.dubhe.optimize.enums.ModelOptInstanceStatusEnum;
 import org.dubhe.optimize.dao.ModelOptTaskInstanceMapper;
 import org.dubhe.optimize.domain.dto.ModelOptTaskInstanceCancelDTO;
-import org.dubhe.optimize.domain.dto.ModelOptTaskInstanceDeleteDTO;
 import org.dubhe.optimize.domain.dto.ModelOptTaskInstanceDetailDTO;
 import org.dubhe.optimize.domain.dto.ModelOptTaskInstanceQueryDTO;
 import org.dubhe.optimize.domain.dto.ModelOptTaskInstanceResubmitDTO;
@@ -70,6 +71,8 @@ import org.dubhe.optimize.domain.entity.ModelOptTaskInstance;
 import org.dubhe.optimize.domain.vo.ModelOptResultQueryVO;
 import org.dubhe.optimize.domain.vo.ModelOptTaskInstanceQueryVO;
 import org.dubhe.optimize.enums.DistillCommandEnum;
+import org.dubhe.optimize.enums.ModelOptErrorEnum;
+import org.dubhe.optimize.enums.ModelOptInstanceStatusEnum;
 import org.dubhe.optimize.enums.OptimizeTypeEnum;
 import org.dubhe.optimize.service.ModelOptTaskInstanceService;
 import org.springframework.beans.BeanUtils;
@@ -82,10 +85,10 @@ import javax.annotation.Resource;
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
@@ -122,14 +125,12 @@ public class ModelOptTaskInstanceServiceImpl extends ServiceImpl<ModelOptTaskIns
     @Resource
     private UserContextService userContextService;
 
-    @Autowired
-    private RedisUtils redisUtils;
+    @Resource
+    private AdminClient adminClient;
 
     @Autowired
-    private ResourceCache resourceCache;
+    private K8sTaskIdentifyMapper k8sTaskIdentifyMapper;
 
-    @Value("Task:ModelOpt:"+"${spring.profiles.active}_model_opt_id_")
-    private String modelOptIdPrefix;
 
     /**
      * 分页查询任务执行记录实例列表
@@ -352,7 +353,13 @@ public class ModelOptTaskInstanceServiceImpl extends ServiceImpl<ModelOptTaskIns
                 .setDatasetName(instance.getDatasetName())
                 .setDatasetPath(instance.getDatasetPath())
                 .setCommand(instance.getCommand())
-                .setParams(instance.getParams());
+                .setParams(instance.getParams())
+                .setResourcesPoolSpecs(instance.getResourcesPoolSpecs())
+                .setResourcesPoolType(instance.getResourcesPoolType())
+                .setGpuType(instance.getGpuType())
+                .setGpuModel(instance.getGpuModel())
+                .setK8sLabelKey(instance.getK8sLabelKey())
+                .setPoolSpecsInfo(instance.getPoolSpecsInfo());
         return newInstance;
     }
 
@@ -374,12 +381,18 @@ public class ModelOptTaskInstanceServiceImpl extends ServiceImpl<ModelOptTaskIns
         String outputModelDir = SymbolConstant.SLASH + BizPathEnum.MODEL_OPT.getBizPath() + SymbolConstant.SLASH + curUser.getId() + SymbolConstant.SLASH + instance.getTaskId() + SymbolConstant.SLASH + instance.getId() + ModelOptConstant.OPTIMIZE_MODEL;
         String optResultJsonPathBefore = SymbolConstant.SLASH + BizPathEnum.MODEL_OPT.getBizPath() + SymbolConstant.SLASH + curUser.getId() + SymbolConstant.SLASH + instance.getTaskId() + SymbolConstant.SLASH + instance.getId() + ModelOptConstant.OPTIMIZE_JSON_BEFORE;
         String optResultJsonPathAfter = SymbolConstant.SLASH + BizPathEnum.MODEL_OPT.getBizPath() + SymbolConstant.SLASH + curUser.getId() + SymbolConstant.SLASH + instance.getTaskId() + SymbolConstant.SLASH + instance.getId() + ModelOptConstant.OPTIMIZE_JSON_AFTER;
-        String taskIdentify = resourceCache.getTaskIdentify(instance.getTaskId(), instance.getTaskName(), modelOptIdPrefix);
+
+        //存储任务身份信息
+        K8sTaskIdentify taskIdentify = new K8sTaskIdentify();
+        taskIdentify.setTaskId(instance.getTaskId());
+        taskIdentify.setTaskName(instance.getTaskName());
+        k8sTaskIdentifyMapper.insert(taskIdentify);
+
         jobBo.setNamespace(namespace);
         jobBo.setName(k8sNameTool.generateResourceName(BizEnum.MODEL_OPT, instance.getId().toString()));
-        jobBo.setCpuNum(ModelOptConstant.CPU_NUM);
-        jobBo.setMemNum(ModelOptConstant.MEMORY_NUM);
-        jobBo.setGpuNum(ModelOptConstant.GPU_NUM);
+        jobBo.setCpuNum(instance.getCpuNum());
+        jobBo.setMemNum(instance.getMemNum());
+        jobBo.setGpuNum(instance.getGpuNum());
         jobBo.setCmdLines(Arrays.asList("-c", command));
         jobBo.putNfsMounts(ModelOptConstant.DATASET_MOUNT_PATH, k8sNameTool.getAbsolutePath(instance.getDatasetPath()));
         jobBo.putNfsMounts(ModelOptConstant.INPUT_MODEL_BEFORE_MOUNT_PATH, k8sNameTool.getAbsolutePath(instance.getModelAddress()));
@@ -390,8 +403,10 @@ public class ModelOptTaskInstanceServiceImpl extends ServiceImpl<ModelOptTaskIns
         jobBo.putNfsMounts(ModelOptConstant.OUTPUT_RESULT_AFTER_MOUNT_PATH, k8sNameTool.getAbsolutePath(optResultJsonPathAfter));
         jobBo.setBusinessLabel(k8sNameTool.getPodLabel(BizEnum.MODEL_OPT));
         jobBo.setImage(optimizeImage);
-        jobBo.setTaskIdentifyLabel(taskIdentify);
-
+        jobBo.setTaskIdentifyLabel(String.valueOf(taskIdentify.getId()));
+        jobBo.setGpuModel(instance.getGpuModel());
+        jobBo.setGpuType(instance.getGpuType());
+        jobBo.setK8sLabelKey(instance.getK8sLabelKey());
         // 调用k8s接口
         BizJob bizJob = modelOptJobApi.create(jobBo);
         if (null == bizJob || !bizJob.isSuccess()) {
@@ -400,7 +415,7 @@ public class ModelOptTaskInstanceServiceImpl extends ServiceImpl<ModelOptTaskIns
                     LogEnum.MODEL_OPT,
                     "用户{}创建模型优化任务实例, k8s创建过程中失败, 实例id={}, 传递参数为{}, 错误的信息为{}",
                     curUser.getUsername(), instance.getId(), instance, message);
-            return false;
+            throw new BusinessException(message);
         }
         instance.setLogPath(logPath);
         instance.setOutputModelDir(outputModelDir);
@@ -507,30 +522,33 @@ public class ModelOptTaskInstanceServiceImpl extends ServiceImpl<ModelOptTaskIns
     public int deleteByTaskId(Long taskId) {
         LambdaQueryWrapper<ModelOptTaskInstance> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(ModelOptTaskInstance::getTaskId, taskId);
-        String taskIdentify = (String) redisUtils.get(modelOptIdPrefix + String.valueOf(taskId));
-        if (org.dubhe.biz.base.utils.StringUtils.isNotEmpty(taskIdentify)){
-            redisUtils.del(taskIdentify, modelOptIdPrefix + String.valueOf(taskId));
-        }
+        k8sTaskIdentifyMapper.deleteByTaskId(taskId);
         return modelOptTaskInstanceMapper.delete(wrapper);
     }
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public void delete(ModelOptTaskInstanceDeleteDTO modelOptTaskInstanceDeleteDTO) {
+    public void delete(Set<Long> ids) {
+        for (Long id : ids) {
+            delete(id);
+        }
+    }
+
+    public void delete(Long id) {
         UserContext curUser = userContextService.getCurUser();
         if (curUser == null) {
             throw new BusinessException("当前用户信息已失效");
         }
-        ModelOptTaskInstance modelOptTaskInstance = modelOptTaskInstanceMapper.selectById(modelOptTaskInstanceDeleteDTO.getId());
+        ModelOptTaskInstance modelOptTaskInstance = modelOptTaskInstanceMapper.selectById(id);
         checkInstExist(modelOptTaskInstance);
         if (StringUtils.equalsAny(modelOptTaskInstance.getStatus(), ModelOptInstanceStatusEnum.RUNNING.getValue(), ModelOptInstanceStatusEnum.WAITING.getValue())) {
             throw new BusinessException(ModelOptErrorEnum.MODEL_OPT_TASK_INSTANCE_STATUS_ERROR);
         }
         String namespace = k8sNameTool.getNamespace(modelOptTaskInstance.getCreateUserId());
-        modelOptTaskInstanceMapper.deleteById(modelOptTaskInstanceDeleteDTO.getId());
+        modelOptTaskInstanceMapper.deleteById(id);
         // 调用k8s删除相关资源
         modelOptJobApi.deleteByResourceName(namespace,
-                k8sNameTool.generateResourceName(BizEnum.MODEL_OPT, modelOptTaskInstanceDeleteDTO.getId().toString()));
+                k8sNameTool.generateResourceName(BizEnum.MODEL_OPT, String.valueOf(id)));
     }
 
     /**
@@ -592,6 +610,11 @@ public class ModelOptTaskInstanceServiceImpl extends ServiceImpl<ModelOptTaskIns
             modelOptTaskInstanceVO.setPodName(pods.get(NumberConstant.NUMBER_0).getPodName());
         }
         modelOptTaskInstanceVO.setNamespace(nameSpace);
+        //获取模型优化创建人用户名
+        if (BaseService.isAdmin(curUser) && modelOptTaskInstance.getCreateUserId() != null) {
+            DataResponseBody<UserDTO> result = adminClient.getUsers(modelOptTaskInstance.getCreateUserId());
+            modelOptTaskInstanceVO.setCreateUserName(result.getData() != null ? result.getData().getUsername() : null);
+        }
         if (StringUtils.isEmpty(modelOptTaskInstance.getOptResultBefore()) ||
                 StringUtils.isEmpty(modelOptTaskInstance.getOptResultAfter())) {
             return modelOptTaskInstanceVO;

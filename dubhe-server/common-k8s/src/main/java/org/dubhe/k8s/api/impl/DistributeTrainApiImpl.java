@@ -46,8 +46,10 @@ import org.dubhe.k8s.api.ResourceIisolationApi;
 import org.dubhe.k8s.api.ResourceQuotaApi;
 import org.dubhe.k8s.api.VolumeApi;
 import org.dubhe.k8s.cache.ResourceCache;
+import org.dubhe.k8s.constant.K8sLabelConstants;
 import org.dubhe.k8s.constant.K8sParamConstants;
 import org.dubhe.k8s.domain.PtBaseResult;
+import org.dubhe.k8s.domain.bo.BaseResourceBo;
 import org.dubhe.k8s.domain.bo.BuildFsVolumeBO;
 import org.dubhe.k8s.domain.bo.DistributeTrainBO;
 import org.dubhe.k8s.domain.bo.TaskYamlBO;
@@ -58,17 +60,15 @@ import org.dubhe.k8s.domain.cr.DistributeTrainSpec;
 import org.dubhe.k8s.domain.entity.K8sTask;
 import org.dubhe.k8s.domain.resource.BizDistributeTrain;
 import org.dubhe.k8s.domain.vo.VolumeVO;
-import org.dubhe.k8s.enums.ImagePullPolicyEnum;
-import org.dubhe.k8s.enums.K8sKindEnum;
-import org.dubhe.k8s.enums.K8sResponseEnum;
-import org.dubhe.k8s.enums.LackOfResourcesEnum;
-import org.dubhe.k8s.enums.LimitsOfResourcesEnum;
+import org.dubhe.k8s.enums.*;
+import org.dubhe.k8s.service.K8sGpuConfigService;
 import org.dubhe.k8s.service.K8sTaskService;
 import org.dubhe.k8s.utils.BizConvertUtils;
+import org.dubhe.k8s.utils.K8sCommonUtils;
 import org.dubhe.k8s.utils.K8sUtils;
 import org.dubhe.k8s.utils.LabelUtils;
+import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 
 import java.io.ByteArrayInputStream;
 import java.sql.Timestamp;
@@ -84,7 +84,6 @@ import static org.dubhe.biz.base.constant.MagicNumConstant.SIXTY_LONG;
 import static org.dubhe.biz.base.constant.MagicNumConstant.THOUSAND_LONG;
 import static org.dubhe.biz.base.constant.MagicNumConstant.ZERO;
 import static org.dubhe.biz.base.constant.SymbolConstant.BLANK;
-import static org.dubhe.k8s.constant.K8sParamConstants.GPU_RESOURCE_KEY;
 import static org.dubhe.k8s.constant.K8sParamConstants.NODE_READY_TRUE;
 import static org.dubhe.k8s.constant.K8sParamConstants.PYTHONUNBUFFERED;
 import static org.dubhe.k8s.constant.K8sParamConstants.QUANTITY_CPU_KEY;
@@ -130,6 +129,12 @@ public class DistributeTrainApiImpl implements DistributeTrainApi {
     @Autowired
     private ResourceIisolationApi resourceIisolationApi;
 
+    @Autowired
+    private K8sCommonUtils k8sCommonUtils;
+
+    @Autowired
+    private K8sGpuConfigService  k8sGpuConfigService;
+
     private KubernetesClient client;
     private MixedOperation<DistributeTrain, DistributeTrainList, DistributeTrainDoneable, Resource<DistributeTrain, DistributeTrainDoneable>> dtClient;
 
@@ -147,12 +152,22 @@ public class DistributeTrainApiImpl implements DistributeTrainApi {
     @Override
     public BizDistributeTrain create(DistributeTrainBO bo) {
         LogUtil.info(LogEnum.BIZ_K8S, "Params of creating DistributeTrain--create:{}", bo);
-        LimitsOfResourcesEnum limitsOfResources = resourceQuotaApi.reachLimitsOfResources(bo.getNamespace(), bo.getCpuNum() * bo.getSize(), bo.getMemNum() * bo.getSize(), bo.getGpuNum() == null?0:bo.getGpuNum() * bo.getSize());
+
+        BaseResourceBo baseResourceBo = new BaseResourceBo();
+        BeanUtils.copyProperties(bo, baseResourceBo);
+        baseResourceBo.setCpuNum(bo.getCpuNum() * bo.getSize());
+        baseResourceBo.setMemNum(bo.getMemNum() * bo.getSize());
+        baseResourceBo.setGpuNum(bo.getGpuNum() == null ? 0 : bo.getGpuNum() * bo.getSize());
+        LimitsOfResourcesEnum limitsOfResources = resourceQuotaApi.reachLimitsOfResources(baseResourceBo);
         if (!LimitsOfResourcesEnum.ADEQUATE.equals(limitsOfResources)) {
             return new BizDistributeTrain().error(K8sResponseEnum.LACK_OF_RESOURCES.getCode(), limitsOfResources.getMessage());
         }
         if (bo.getGpuNum() != null && bo.getGpuNum() > 0) {
-            LackOfResourcesEnum lack = nodeApi.isOutOfTotalAllocatableGpu(bo.getGpuNum() * bo.getSize());
+            Integer k8sGpuNumLimit = k8sGpuConfigService.getGpuLimit(bo.getNamespace(), bo.getGpuModel(), bo.getK8sLabelKey());
+            if(bo.getGpuNum() > k8sGpuNumLimit){
+                return new BizDistributeTrain().error(K8sResponseEnum.LACK_OF_RESOURCES.getCode(), LimitsOfResourcesEnum.LIMITS_OF_GPU.getMessage());
+            }
+            LackOfResourcesEnum lack = nodeApi.isOutOfTotalAllocatableGpu(baseResourceBo.getK8sLabelKey(), baseResourceBo.getGpuModel(), bo.getGpuNum() * bo.getSize());
             if (!LackOfResourcesEnum.ADEQUATE.equals(lack)) {
                 return new BizDistributeTrain().error(K8sResponseEnum.LACK_OF_RESOURCES.getCode(), lack.getMessage());
             }
@@ -179,6 +194,8 @@ public class DistributeTrainApiImpl implements DistributeTrainApi {
         private Integer memNum;
         private Integer cpuNum;
         private Integer gpuNum;
+        private String k8sLabelKey;
+        private String gpuModel;
         private String slaveCmd;
         private Map<String, String> env;
         private Map<String, String> baseLabels;
@@ -199,6 +216,9 @@ public class DistributeTrainApiImpl implements DistributeTrainApi {
             this.memNum = bo.getMemNum();
             this.cpuNum = bo.getCpuNum();
             this.gpuNum = bo.getGpuNum();
+            this.k8sLabelKey = bo.getK8sLabelKey();
+            this.gpuModel = bo.getGpuModel();
+
             this.slaveCmd = bo.getSlaveCmd();
             this.env = bo.getEnv();
             this.businessLabel = bo.getBusinessLabel();
@@ -260,16 +280,18 @@ public class DistributeTrainApiImpl implements DistributeTrainApi {
             masterResources.setLimits(new HashMap<String, Quantity>() {{
                 Optional.ofNullable(memNum).ifPresent(v -> put(QUANTITY_MEMORY_KEY, new Quantity(v.toString(), K8sParamConstants.MEM_UNIT)));
                 Optional.ofNullable(cpuNum).ifPresent(v -> put(QUANTITY_CPU_KEY, new Quantity(v.toString(), K8sParamConstants.CPU_UNIT)));
-                Optional.ofNullable(gpuNum).ifPresent(v -> put(GPU_RESOURCE_KEY, new Quantity(v.toString())));
+                Optional.ofNullable(gpuNum).ifPresent(v -> put(k8sLabelKey, new Quantity(v.toString())));
             }});
+            k8sCommonUtils.addRdmaResource(masterResources.getLimits());
             distributeTrainSpec.setMasterResources(masterResources);
             //slave节点申请资源
             ResourceRequirements slaveResources = new ResourceRequirements();
             slaveResources.setLimits(new HashMap<String, Quantity>() {{
                 Optional.ofNullable(memNum).ifPresent(v -> put(QUANTITY_MEMORY_KEY, new Quantity(v.toString(), K8sParamConstants.MEM_UNIT)));
                 Optional.ofNullable(cpuNum).ifPresent(v -> put(QUANTITY_CPU_KEY, new Quantity(v.toString(), K8sParamConstants.CPU_UNIT)));
-                Optional.ofNullable(gpuNum).ifPresent(v -> put(GPU_RESOURCE_KEY, new Quantity(v.toString())));
+                Optional.ofNullable(gpuNum).ifPresent(v -> put(k8sLabelKey, new Quantity(v.toString())));
             }});
+            k8sCommonUtils.addRdmaResource(slaveResources.getLimits());
             distributeTrainSpec.setSlaveResources(slaveResources);
             //配置环境变量
             List<EnvVar> envVarList = new ArrayList() {{
@@ -283,6 +305,10 @@ public class DistributeTrainApiImpl implements DistributeTrainApi {
 
             if (gpuNum != null && gpuNum != 0) {
                 envVarList.add(new EnvVarBuilder().withName(GPU_NUM_PER_NODE).withValue(String.valueOf(gpuNum)).build());
+                Map<String, String> gpuLabel = new HashMap<String, String>(2);
+                gpuLabel.put(K8sLabelConstants.NODE_GPU_LABEL_KEY, K8sLabelConstants.NODE_GPU_LABEL_VALUE);
+                gpuLabel.put(K8sLabelConstants.NODE_GPU_MODEL_LABEL_KEY, gpuModel);
+                distributeTrainSpec.setNodeSelector(gpuLabel);
             }
             if (CollectionUtils.isNotEmpty(env)) {
                 Set<String> envNames = env.keySet();
@@ -384,7 +410,7 @@ public class DistributeTrainApiImpl implements DistributeTrainApi {
      */
     @Override
     public PtBaseResult deleteByResourceName(String namespace, String resourceName) {
-        LogUtil.info(LogEnum.BIZ_K8S, "deleteByResourceName namespace {} resourceName {}", namespace,resourceName);
+        LogUtil.info(LogEnum.BIZ_K8S, "deleteByResourceName namespace {} resourceName {}", namespace, resourceName);
         if (dtClient == null) {
             LogUtil.error(LogEnum.BIZ_K8S, "dtClient初始化失败");
         }
@@ -392,7 +418,7 @@ public class DistributeTrainApiImpl implements DistributeTrainApi {
             return new BizDistributeTrain().baseErrorBadRequest();
         }
         try {
-            k8sTaskService.deleteByNamespaceAndResourceName(namespace,resourceName);
+            k8sTaskService.deleteByNamespaceAndResourceName(namespace, resourceName);
             //根据条件获得对应的分布式训练资源集合
             DistributeTrainList list = dtClient.inNamespace(namespace).withLabels(LabelUtils.withEnvResourceName(resourceName)).list();
             List<DistributeTrain> items = list.getItems();
@@ -486,7 +512,7 @@ public class DistributeTrainApiImpl implements DistributeTrainApi {
     @Override
     public boolean delete(String crYaml) {
         try {
-            LogUtil.info(LogEnum.BIZ_K8S, "delete crYaml {}",crYaml);
+            LogUtil.info(LogEnum.BIZ_K8S, "delete crYaml {}", crYaml);
             return dtClient.load(new ByteArrayInputStream(crYaml.getBytes())).delete();
         } catch (KubernetesClientException e) {
             LogUtil.error(LogEnum.BIZ_K8S, "Delete DistributeTrain error:{} ,yml:{}", e.getMessage(), crYaml);

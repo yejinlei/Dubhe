@@ -78,7 +78,6 @@ public class NoteBookStatusRefreshTask {
         List<NoteBook> noteBookList = noteBookService.getList(new Page(MagicNumConstant.ZERO, oneTimeProcessingQuantity)
                 , NoteBookStatusEnum.STARTING
                 , NoteBookStatusEnum.STOPPING
-                , NoteBookStatusEnum.DELETING
         );
         int noteBookSize = noteBookList.size();
         LogUtil.info(LogEnum.NOTE_BOOK, "The size of refreshing notebook size is ：{}", noteBookSize);

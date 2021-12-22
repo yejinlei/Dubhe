@@ -54,10 +54,10 @@ public class AuthConst {
      * 默认匿名访问路径
      */
     public final static String[] DEFAULT_PERMIT_PATHS = {"/swagger**/**", "/webjars/**", "/v2/api-docs/**", "/doc.html/**",
-            "/users/findUserByUsername", "/auth/login", "/auth/code",
-            "/datasets/files/annotations/auto","/datasets/versions/**/convert/finish", "/datasets/enhance/finish",
-            "/auth/getCodeBySentEmail","/auth/userRegister","/ws/**",
-            StringConstant.RECYCLE_CALL_URI+"**"
+            "/users/findUserByUsername", "/auth/login", "/auth/code", "/auth/resetPassword",
+            "/datasets/files/annotations/auto", "/datasets/versions/**/convert/finish", "/datasets/enhance/finish",
+            "/auth/getCodeBySentEmail", "/auth/userRegister", "/ws/**",
+            StringConstant.RECYCLE_CALL_URI + "**"
     };
 
     /**

@@ -23,6 +23,7 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.experimental.Accessors;
 import org.dubhe.biz.base.constant.MagicNumConstant;
+import org.dubhe.biz.base.constant.StringConstant;
 import org.dubhe.train.utils.TrainUtil;
 import org.hibernate.validator.constraints.Length;
 
@@ -65,6 +66,9 @@ public class PtTrainJobUpdateDTO extends PtTrainJobBaseDTO {
     @ApiModelProperty("运行参数(算法来源为我的算法时为调优参数，算法来源为预置算法时为运行参数)")
     private JSONObject runParams;
 
+    @ApiModelProperty("运行参数映射关系")
+    private JSONObject runParamsNameMap;
+
     @ApiModelProperty(value = "类型(0为CPU，1为GPU)", required = true)
     @Min(value = MagicNumConstant.ZERO, message = "类型错误")
     @Max(value = MagicNumConstant.ONE, message = "类型错误")
@@ -84,6 +88,21 @@ public class PtTrainJobUpdateDTO extends PtTrainJobBaseDTO {
     @NotNull(message = "GPU数量不能为空")
     @Min(value = MagicNumConstant.ZERO, message = "GPU数量不能小于0")
     private Integer gpuNum;
+
+    @ApiModelProperty(value = "GPU类型(例如：NVIDIA)")
+    @Length(max = MagicNumConstant.SIXTY_FOUR, message = "GPU类型错误-输入长度不能超过64个字符")
+    @Pattern(regexp = StringConstant.REGEXP_GPU_TYPE, message = "支持字母、数字、汉字、英文横杠、英文.号、空白字符和英文斜杠")
+    private String gpuType;
+
+    @ApiModelProperty(value = "GPU型号(例如：v100)")
+    @Length(max = MagicNumConstant.SIXTY_FOUR, message = "GPU型号错误-输入长度不能超过64个字符")
+    @Pattern(regexp = StringConstant.REGEXP_GPU_MODEL, message = "支持小写字母、数字、英文横杠、英文.号、空白字符和英文斜杠")
+    private String gpuModel;
+
+    @ApiModelProperty(value = "k8s GPU资源标签key值(例如：nvidia.com/gpu)")
+    @Length(max = MagicNumConstant.SIXTY_FOUR, message = "GPU型号错误-输入长度不能超过64个字符")
+    @Pattern(regexp = StringConstant.REGEXP_K8S, message = "支持小写字母、数字、英文横杠、英文.号和英文斜杠")
+    private String k8sLabelKey;
 
     @ApiModelProperty(value = "内存大小，单位：M", required = true)
     @NotNull(message = "内存数值不能为空")

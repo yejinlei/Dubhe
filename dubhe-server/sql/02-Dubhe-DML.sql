@@ -51,7 +51,7 @@ insert  into `menu` (`id`,`pid`,`type`,`name`,`icon`,`path`,`component`,`compone
 (101,10,1,'标签组详情',NULL,'labelgroup/detail','labelGroup/labelGroupForm','LabelGroupDetail','SubpageLayout',NULL,NULL,NULL,b'1',b'0',23,1,1,b'0'),
 (102,10,1,'创建标签组',NULL,'labelgroup/create','labelGroup/labelGroupForm','LabelGroupCreate','SubpageLayout',NULL,NULL,NULL,b'1',b'0',22,1,1,b'0'),
 (103,10,1,'标签组管理','mobanguanli','labelgroup','labelGroup/index','LabelGroup','BaseLayout','',NULL,NULL,b'0',b'0',21,1,1,b'0'),
-(1058,0,0,'云端Serving','shujumoxing','cloudserving',NULL,NULL,NULL,NULL,NULL,NULL,b'0',b'0',60,1,1,b'0'),
+(1058,0,0,'云端部署','shujumoxing','cloudserving',NULL,NULL,NULL,NULL,NULL,NULL,b'0',b'0',60,1,1,b'0'),
 (1059,1058,1,'在线服务','shujumoxing','onlineserving','cloudServing','CloudServing','BaseLayout','serving:online',NULL,NULL,b'0',b'0',61,1,1,b'0'),
 (1060,1058,1,'批量服务','shujumoxing','batchserving','cloudServing/batch','BatchServing','BaseLayout','serving:batch',NULL,NULL,b'0',b'0',62,1,1,b'0'),
 (1061,1058,1,'部署详情',NULL,'onlineserving/detail','cloudServing/detail','CloudServingDetail','SubpageLayout','serving:online',NULL,NULL,b'1',b'0',63,1,1,b'0'),
@@ -75,7 +75,12 @@ insert  into `menu` (`id`,`pid`,`type`,`name`,`icon`,`path`,`component`,`compone
 (1079,10,1,'音频数据集',NULL,'datasets/audio/list/:datasetId','dataset/audio/list','AudioList','DetailLayout',NULL,NULL,'{}',b'1',b'0',999,1,1,b'0'),
 (1080,10,1,'音频标注',NULL,'datasets/audio/annotation/:datasetId','dataset/audio/annotation','AudioAnnotation','DetailLayout',NULL,NULL,'{}',b'1',b'0',999,1,1,b'0'),
 (1081,10,1,'自定义数据集',NULL,'datasets/custom/:datasetId','dataset/custom','CustomList','DetailLayout',NULL,NULL,'{}',b'1',b'0',999,1,1,b'0'),
-(1084,90,1,'资源规格管理','xunlianzhunbei','resources','system/resources','Resources','BaseLayout','system:specs',NULL,NULL,b'0',b'0',999,NULL,NULL,b'0');
+(1084,90,1,'资源规格管理','xunlianzhunbei','resources','system/resources','Resources','BaseLayout','system:specs',NULL,NULL,b'0',b'0',999,NULL,NULL,b'0'),
+(1085, 0, 0, '自动机器学习', 'jinhangzhongshiyan', 'tadl', NULL, NULL, NULL, 'TADL', b'0', b'0', 35, 1, 3, '2021-03-31 08:09:20', '2021-09-14 10:18:05', b'0', NULL, NULL),
+(1086, 1085, 1, '实验详情', NULL, 'experiment/:experimentId', 'tadl/detail', 'ExperimentDetail', 'DetailLayout', NULL, b'1', b'0', 999, 1, 1, '2021-03-31 08:23:56', '2021-03-31 08:36:36', b'0', NULL, '{}'),
+(1087, 1085, 1, '实验管理', NULL, 'list', 'tadl/list/index', 'TadlList', 'BaseLayout', 'tadl', b'0', b'0', 36, 3, 14, '2021-03-31 09:51:04', '2021-09-14 10:18:29', b'0', NULL, '{}'),
+(1088, 1085, 1, 'TadlForm', NULL, 'form', 'tadl/formPage', 'TadlForm', 'SubpageLayout', 'tadl', b'1', b'0', 999, 3, 3, '2021-03-31 09:51:59', '2021-03-31 09:52:04', b'0', NULL, '{}'),
+(1089, 1085, 1, '搜索策略', 'zoom', 'searchstrategy', 'tadl/strategy/index', 'SearchStrategy', 'BaseLayout', 'tadl', b'0', b'0', 37, 14, 14, '2021-03-31 10:40:50', '2021-03-31 11:39:59', b'0', NULL, '{}');
 
 insert into auth(id, auth_code, description, create_user_id, update_user_id) values (1, 'admin权限组', '默认全部操作权限', 1, 1);
 
@@ -157,6 +162,7 @@ INSERT INTO `dict_detail`(`dict_id`, `label`, `value`, `sort`) VALUES (9, '用�
 INSERT INTO `dict_detail`(`dict_id`, `label`, `value`, `sort`) VALUES (9, '训练生成', '1', 2);
 INSERT INTO `dict_detail`(`dict_id`, `label`, `value`, `sort`) VALUES (9, '优化生成', '2', 3);
 INSERT INTO `dict_detail`(`dict_id`, `label`, `value`, `sort`) VALUES (9, '模型转换', '3', 4);
+INSERT INTO `dict_detail`(`dict_id`, `label`, `value`, `sort`) VALUES (9, '自动机器学习', '4', 5);
 
 INSERT INTO `dict`(`id`, `name`, `remark`) VALUES (10, 'job_status', '训练任务状态');
 INSERT INTO `dict_detail`(`dict_id`, `label`, `value`, `sort`) VALUES (10, '待处理', '0', 1);
@@ -2829,3 +2835,40 @@ alter table pt_train_param change log_path out_path varchar(128) default '' null
 -- 管理员角色操作权限初始化
 insert into auth_permission (auth_id, permission_id) select 1, id from permission;
 INSERT INTO `roles_auth` (role_id, auth_id) values (1, 1);
+
+--模型优化任务的 GPU类型，型号，k8s GPU资源标签key值初始化
+UPDATE
+`model_opt_task`
+SET
+  `gpu_type` = 'nvidia',
+  `gpu_model` = 'v100',
+  `k8s_label_key` = 'nvidia.com/gpu';
+
+-- 模型优化任务实例 GPU类型，型号，k8s GPU资源标签key值初始化
+  UPDATE
+    `model_opt_task_instance`
+  SET
+    `gpu_type` = 'nvidia',
+    `gpu_model` = 'v100',
+    `k8s_label_key` = 'nvidia.com/gpu';
+-- serving GPU类型，型号，k8s GPU资源标签key值初始化
+ UPDATE
+  `serving_model_config`
+SET
+  `gpu_type` = 'nvidia',
+  `gpu_model` = 'v100',
+  `k8s_label_key` = 'nvidia.com/gpu';
+-- serving_batch GPU类型，型号，k8s GPU资源标签key值初始化
+ UPDATE
+  `serving_batch`
+SET
+  `gpu_type` = 'nvidia',
+  `gpu_model` = 'v100',
+  `k8s_label_key` = 'nvidia.com/gpu';
+-- tadl_experiment_stage GPU类型，型号，k8s GPU资源标签key值初始化
+ UPDATE
+  `tadl_experiment_stage`
+SET
+  `gpu_type` = 'nvidia',
+  `gpu_model` = 'v100',
+  `k8s_label_key` = 'nvidia.com/gpu';

@@ -23,6 +23,7 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.experimental.Accessors;
 import org.dubhe.biz.base.constant.MagicNumConstant;
+import org.dubhe.biz.base.constant.StringConstant;
 import org.dubhe.train.utils.TrainUtil;
 import org.hibernate.validator.constraints.Length;
 
@@ -35,7 +36,7 @@ import javax.validation.constraints.*;
 @EqualsAndHashCode(callSuper = true)
 @Data
 @Accessors(chain = true)
-public class PtTrainParamCreateDTO extends BaseImageDTO {
+public class PtTrainParamCreateDTO extends PtTrainJobBaseDTO {
 
     @ApiModelProperty(value = "任务参数名称,输入长度不能超过32个字符", required = true)
     @NotBlank(message = "任务参数名称不能为空")
@@ -47,11 +48,6 @@ public class PtTrainParamCreateDTO extends BaseImageDTO {
     @Length(max = MagicNumConstant.INTEGER_TWO_HUNDRED_AND_FIFTY_FIVE, message = "任务参数描述-输入长度不能超过256个字符")
     private String description;
 
-    @ApiModelProperty(value = "算法id,算法id不能小于1", required = true)
-    @NotNull(message = "算法id不能为空")
-    @Min(value = MagicNumConstant.ONE, message = "算法id不能小于1")
-    private Long algorithmId;
-
     @ApiModelProperty("算法用途，输入长度不能超过128个字符")
     @Length(max = MagicNumConstant.ONE_HUNDRED_TWENTY_EIGHT, message = "算法用途-输入长度不能超过128个字符")
     private String algorithmUsage;
@@ -59,11 +55,6 @@ public class PtTrainParamCreateDTO extends BaseImageDTO {
     @ApiModelProperty("验证数据集算法用途，输入长度不能超过128个字符")
     @Length(max = MagicNumConstant.ONE_HUNDRED_TWENTY_EIGHT, message = "验证数据集算法用途-输入长度不能超过128个字符")
     private String valAlgorithmUsage;
-
-    @ApiModelProperty(value = "运行命令,输入长度不能超过128个字符", required = true)
-    @NotBlank(message = "运行命令不能为空")
-    @Length(max = MagicNumConstant.ONE_HUNDRED_TWENTY_EIGHT, message = "运行命令-输入长度不能超过128个字符")
-    private String runCommand;
 
     @ApiModelProperty(value = "数据集来源路径,输入长度不能超过127个字符")
     @Length(max = MagicNumConstant.ONE_HUNDRED_TWENTY_SEVEN, message = "数据集来源路径-输入长度不能超过127个字符")
@@ -76,11 +67,29 @@ public class PtTrainParamCreateDTO extends BaseImageDTO {
     @ApiModelProperty("运行参数(算法来源为我的算法时为调优参数，算法来源为预置算法时为运行参数)")
     private JSONObject runParams;
 
+    @ApiModelProperty("系统运行参数映射关系")
+    private JSONObject runParamsNameMap;
+
     @ApiModelProperty(value = "类型(0为CPU，1为GPU)", required = true)
     @Min(value = MagicNumConstant.ZERO, message = "类型错误")
     @Max(value = MagicNumConstant.ONE, message = "类型错误")
     @NotNull(message = "类型(0为CPU，1为GPU)不能为空")
     private Integer resourcesPoolType;
+
+    @ApiModelProperty(value = "GPU类型(例如：NVIDIA)")
+    @Length(max = MagicNumConstant.SIXTY_FOUR, message = "GPU类型错误-输入长度不能超过64个字符")
+    @Pattern(regexp = StringConstant.REGEXP_GPU_TYPE, message = "支持字母、数字、汉字、英文横杠、英文.号、空白字符和英文斜杠")
+    private String gpuType;
+
+    @ApiModelProperty(value = "GPU型号(例如：v100)")
+    @Length(max = MagicNumConstant.SIXTY_FOUR, message = "GPU型号错误-输入长度不能超过64个字符")
+    @Pattern(regexp = StringConstant.REGEXP_GPU_MODEL, message = "支持小写字母、数字、英文横杠、英文.号和英文斜杠")
+    private String gpuModel;
+
+    @ApiModelProperty(value = "k8s GPU资源标签key值(例如：nvidia.com/gpu)")
+    @Length(max = MagicNumConstant.SIXTY_FOUR, message = "GPU型号错误-输入长度不能超过64个字符")
+    @Pattern(regexp = StringConstant.REGEXP_K8S, message = "支持小写字母、数字、英文横杠、英文.号和英文斜杠")
+    private String k8sLabelKey;
 
     @ApiModelProperty(value = "规格名称", required = true)
     @NotNull(message = "规格名称不能为空")
@@ -130,5 +139,7 @@ public class PtTrainParamCreateDTO extends BaseImageDTO {
     @Length(max = MagicNumConstant.INTEGER_TWO_HUNDRED_AND_FIFTY_FIVE, message = "学生模型长度不能超过255个字符")
     @Pattern(regexp = TrainUtil.REGEXP_IDS_STRING, message = "学生模型ids参数格式不正确")
     private String studentModelIds;
+
+
 
 }

@@ -20,6 +20,7 @@ package org.dubhe.notebook.convert;
 
 import org.dubhe.biz.base.constant.MagicNumConstant;
 import org.dubhe.biz.base.enums.BizEnum;
+import org.dubhe.biz.base.enums.ResourcesPoolTypeEnum;
 import org.dubhe.k8s.domain.bo.PtJupyterResourceBO;
 import org.dubhe.k8s.utils.K8sNameTool;
 import org.dubhe.notebook.domain.entity.NoteBook;
@@ -47,11 +48,7 @@ public class PtJupyterResourceConvert {
             return null;
         }
         PtJupyterResourceBO bo = new PtJupyterResourceBO();
-        bo.setNamespace(noteBook.getK8sNamespace())
-                .setName(noteBook.getK8sResourceName())
-                .setCpuNum(noteBook.getCpuNum() * MagicNumConstant.ONE_THOUSAND)
-                .setGpuNum(noteBook.getGpuNum() < MagicNumConstant.ONE ? null : noteBook.getGpuNum())
-                .setMemNum(noteBook.getMemNum())
+        bo
                 .setImage(noteBook.getK8sImageName())
                 .setWorkspaceDir(k8sNameTool.getAbsolutePath(noteBook.getK8sPvcPath()))
                 .setWorkspaceMountPath(noteBook.getK8sMountPath())
@@ -63,8 +60,15 @@ public class PtJupyterResourceConvert {
                 .setDatasetMountPath(k8sNameTool.getDatasetPath())
                 .setDatasetReadOnly(true)
                 .setDelayDeleteTime(notebookDelayDeleteTime)
-                .setPipSitePackageDir(k8sNameTool.getAbsolutePath(noteBook.getPipSitePackagePath()))
                 .setTaskIdentifyLabel(taskIdentify)
+                .setNamespace(noteBook.getK8sNamespace())
+                .setName(noteBook.getK8sResourceName())
+                .setCpuNum(noteBook.getCpuNum() * MagicNumConstant.ONE_THOUSAND)
+                .setUseGpu(ResourcesPoolTypeEnum.isGpuCode(noteBook.getResourcesPoolType()))
+                .setGpuNum(noteBook.getGpuNum() < MagicNumConstant.ONE ? null : noteBook.getGpuNum())
+                .setK8sLabelKey(noteBook.getK8sLabelKey())
+                .setGpuModel(noteBook.getGpuModel())
+                .setMemNum(noteBook.getMemNum())
         ;
         return bo;
     }

@@ -37,6 +37,7 @@
         <module>dubhe-serving</module>
         <module>dubhe-serving-gateway</module>
         <module>dubhe-terminal</module>
+        <module>dubhe-tadl</module>
     </modules>
 
 
@@ -125,6 +126,7 @@
         <!-- 分表依赖 -->
         <sharding-jdbc>4.0.0-RC1</sharding-jdbc>
         <org.dubhe.cloud.unit-test.version>0.0.1-SNAPSHOT</org.dubhe.cloud.unit-test.version>
+        <org.redisson.version>3.13.6</org.redisson.version>
     </properties>
 
 
@@ -262,6 +264,12 @@
                 <artifactId>ffmpeg-platform</artifactId>
                 <version>${ffmpeg-platform.version}</version>
             </dependency>
+            <!--redisson client-->
+            <dependency>
+                <groupId>org.redisson</groupId>
+                <artifactId>redisson-spring-boot-starter</artifactId>
+                <version>${org.redisson.version}</version>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 
@@ -270,6 +278,28 @@
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter</artifactId>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.apache.logging.log4j</groupId>
+                    <artifactId>log4j-to-slf4j</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-api</artifactId>
+            <version>2.16.0</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-core</artifactId>
+            <version>2.16.0</version>
+            <exclusions>
+                <exclusion>
+                    <artifactId>log4j-api</artifactId>
+                    <groupId>org.apache.logging.log4j</groupId>
+                </exclusion>
+            </exclusions>
         </dependency>
 
         <!-- 链路追踪 -->
@@ -322,7 +352,6 @@
                 </exclusion>
             </exclusions>
         </dependency>
-
     </dependencies>
 
     <build>

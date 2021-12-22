@@ -79,8 +79,8 @@ public class AuthCodeServiceImpl extends ServiceImpl<AuthCodeMapper, Auth> imple
         Page page = authCodeQueryDTO.toPage();
         QueryWrapper<Auth> queryWrapper = new QueryWrapper<>();
 
-        if (StringUtils.isNotEmpty(authCodeQueryDTO.getAuthCode())) {
-            queryWrapper.and(x -> x.eq("id", authCodeQueryDTO.getAuthCode()).or().like("authCOde", authCodeQueryDTO.getAuthCode()));
+        if (StringUtils.isNotEmpty(authCodeQueryDTO.getKeyword())) {
+            queryWrapper.and(x -> x.eq("id", authCodeQueryDTO.getKeyword()).or().like("authCOde", authCodeQueryDTO.getKeyword()));
         }
 
         //排序

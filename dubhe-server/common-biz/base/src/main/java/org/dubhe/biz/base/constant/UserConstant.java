@@ -101,4 +101,19 @@ public class UserConstant {
      */
     public final static Long DEFAULT_CREATE_USER_ID = 0L;
 
+    /**
+     * namespace前缀
+     */
+    public final static String NAMESPACE_PREFIX = "namespace-";
+
+    /**
+     * 查询7d内的用户资源用量
+     */
+    public final static String UNIT_7D = "7d";
+
+    /**
+     * 查询15d内的用户资源用量
+     */
+    public final static String UNIT_15D = "15d";
+
 }

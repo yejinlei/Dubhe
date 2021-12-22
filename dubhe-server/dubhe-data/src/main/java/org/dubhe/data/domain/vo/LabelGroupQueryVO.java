@@ -17,6 +17,7 @@
 
 package org.dubhe.data.domain.vo;
 
+import io.swagger.annotations.ApiModelProperty;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -83,4 +84,7 @@ public class LabelGroupQueryVO extends PageQueryBase implements Serializable {
      * 标签组类型:0:视觉,1:文本
      */
     private Integer labelGroupType;
+
+    @ApiModelProperty("创建人用户名")
+    private String createUserName;
 }

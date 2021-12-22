@@ -167,7 +167,21 @@ public class ServingModelConfig extends BaseEntity {
      **/
     @TableField("image_tag")
     private String imageTag;
-
+    /**
+     * GPU类型(例如：nvidia)
+     */
+    @TableField(value = "gpu_type")
+    private String gpuType;
+    /**
+     * GPU型号(例如：v100)
+     */
+    @TableField(value = "gpu_model")
+    private String gpuModel;
+    /**
+     * k8s GPU资源标签key值(例如：nvidia.com/gpu
+     */
+    @TableField(value = "k8s_label_key")
+    private String k8sLabelKey;
     /**
      * @return 每个节点的GPU数量
      */

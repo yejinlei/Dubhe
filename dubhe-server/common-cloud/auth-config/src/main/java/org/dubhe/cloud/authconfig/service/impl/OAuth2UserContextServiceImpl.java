@@ -32,12 +32,12 @@ public class OAuth2UserContextServiceImpl implements UserContextService {
     @Override
     public UserContext getCurUser() {
         JwtUserDTO jwtUserDTO = JwtUtils.getCurUser();
-        return jwtUserDTO == null?null:jwtUserDTO.getUser();
+        return jwtUserDTO == null ? null : jwtUserDTO.getUser();
     }
 
     @Override
     public Long getCurUserId() {
         UserContext userContext = getCurUser();
-        return userContext == null?null:userContext.getId();
+        return userContext == null ? null : userContext.getId();
     }
 }

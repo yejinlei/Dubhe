@@ -21,9 +21,9 @@ import cn.hutool.core.collection.CollectionUtil;
 import lombok.Data;
 import lombok.experimental.Accessors;
 import org.dubhe.biz.base.constant.MagicNumConstant;
+import org.dubhe.biz.base.utils.StringUtils;
 import org.dubhe.k8s.annotation.K8sValidation;
 import org.dubhe.k8s.enums.ValidationTypeEnum;
-import org.dubhe.biz.base.utils.StringUtils;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -73,13 +73,21 @@ public class DistributeTrainBO {
      **/
     private Integer gpuNum;
     /**
+     * GPU型号(例如：nvidia-v100)
+     */
+    private String gpuModel;
+    /**
+     * k8s GPU资源标签key值(例如：nvidia.com/gpu)
+     */
+    private String k8sLabelKey;
+    /**
      * slave机器运行时执行命令
      **/
     private String slaveCmd;
     /**
      * 运行环境变量
      **/
-    private Map<String,String> env;
+    private Map<String, String> env;
     /**
      * 业务标签,用于标识业务模块
      **/
@@ -99,7 +107,7 @@ public class DistributeTrainBO {
     /**
      * 文件存储服务挂载 key：pod内挂载路径  value：文件存储路径及配置
      **/
-    private Map<String,PtMountDirBO> fsMounts;
+    private Map<String, PtMountDirBO> fsMounts;
 
     /**
      * 设置文件存储挂载
@@ -107,12 +115,12 @@ public class DistributeTrainBO {
      * @param dir 文件存储服务路径
      * @return
      */
-    public DistributeTrainBO putFsMounts(String mountPath,String dir){
-        if (StringUtils.isNotEmpty(mountPath) && StringUtils.isNotEmpty(dir)){
-            if (fsMounts == null){
+    public DistributeTrainBO putFsMounts(String mountPath, String dir) {
+        if (StringUtils.isNotEmpty(mountPath) && StringUtils.isNotEmpty(dir)) {
+            if (fsMounts == null) {
                 fsMounts = new HashMap<>(MagicNumConstant.EIGHT);
             }
-            fsMounts.put(mountPath,new PtMountDirBO(dir));
+            fsMounts.put(mountPath, new PtMountDirBO(dir));
         }
         return this;
     }
@@ -123,12 +131,12 @@ public class DistributeTrainBO {
      * @param dir 文件存储服务路径及配置
      * @return
      */
-    public DistributeTrainBO putFsMounts(String mountPath,PtMountDirBO dir){
-        if (StringUtils.isNotEmpty(mountPath) && dir != null){
-            if (fsMounts == null){
+    public DistributeTrainBO putFsMounts(String mountPath, PtMountDirBO dir) {
+        if (StringUtils.isNotEmpty(mountPath) && dir != null) {
+            if (fsMounts == null) {
                 fsMounts = new HashMap<>(MagicNumConstant.EIGHT);
             }
-            fsMounts.put(mountPath,dir);
+            fsMounts.put(mountPath, dir);
         }
         return this;
     }
@@ -137,8 +145,8 @@ public class DistributeTrainBO {
      * 获取 文件存储服务路径列表
      * @return
      */
-    public List<String> getDirList(){
-        if (CollectionUtil.isNotEmpty(fsMounts)){
+    public List<String> getDirList() {
+        if (CollectionUtil.isNotEmpty(fsMounts)) {
             return fsMounts.values().stream().map(PtMountDirBO::getDir).collect(Collectors.toList());
         }
         return new ArrayList<>();

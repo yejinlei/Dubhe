@@ -1,12 +1,12 @@
 /**
  * Copyright 2020 Tianshu AI Platform. All Rights Reserved.
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  * http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -19,6 +19,7 @@ package org.dubhe.k8s.api;
 
 import io.fabric8.kubernetes.api.model.Toleration;
 import org.dubhe.k8s.domain.PtBaseResult;
+import org.dubhe.k8s.domain.bo.BaseResourceBo;
 import org.dubhe.k8s.domain.resource.BizNode;
 import org.dubhe.k8s.domain.resource.BizTaint;
 import org.dubhe.k8s.enums.LackOfResourcesEnum;
@@ -91,7 +92,7 @@ public interface NodeApi {
      * @param value 标签value
      * @return List<BizNode>
      */
-    List<BizNode> getWithLabel(String key,String value);
+    List<BizNode> getWithLabel(String key, String value);
 
     /**
      * 根据标签查询节点
@@ -115,29 +116,39 @@ public interface NodeApi {
      *
      * @param nodeSelector 节点选择标签
      * @param taints 该资源所能容忍的污点
-     * @param cpuNum 单位为m 1核等于1000m
-     * @param memNum 单位为Mi 1Mi等于1024Ki
-     * @param gpuNum 单位为显卡，即"1"表示1张显卡
+     * @param baseResourceBo 资源通用属性基类
      * @return LackOfResourcesEnum 资源缺乏枚举类
      */
-    LackOfResourcesEnum isAllocatable(Map<String, String> nodeSelector, List<BizTaint> taints, Integer cpuNum, Integer memNum, Integer gpuNum);
+    LackOfResourcesEnum isAllocatable(Map<String, String> nodeSelector, List<BizTaint> taints, BaseResourceBo baseResourceBo);
 
     /**
      * 查询集群资源是否充足
      *
-     * @param cpuNum 单位为m 1核等于1000m
-     * @param memNum 单位为Mi 1Mi等于1024Ki
-     * @param gpuNum 单位为显卡，即"1"表示1张显卡
+     * @param baseResourceBo 资源通用属性基类
      * @return LackOfResourcesEnum 资源缺乏枚举类
      */
-    LackOfResourcesEnum isAllocatable(Integer cpuNum, Integer memNum, Integer gpuNum);
+    LackOfResourcesEnum isAllocatable(BaseResourceBo baseResourceBo);
+
+    /**
+     * 查询集群资源是否充足
+     *
+     * @param namespace 命名空间
+     * @param cpuNum cpu限制 单位核 0表示不限制
+     * @param memNum 内存限制 单位G 0表示不限制
+     *  @param k8sLabelKey k8s GPU资源标签key值(例如：nvidia.com/gpu)
+     * @param gpuNum GPU数量，0表示共享显卡，null表示不使用显卡
+     * @param gpuModel gpu型号
+     * @return LackOfResourcesEnum 资源缺乏枚举类
+     */
+    LackOfResourcesEnum isAllocatableConvert(String namespace, Integer cpuNum, Integer memNum, Boolean useGpu, String k8sLabelKey, String gpuModel, Integer gpuNum);
 
     /**
      * 判断是否超出总可分配gpu数
      * @param gpuNum
+     * @param gpuModel gpu型号
      * @return LackOfResourcesEnum 资源缺乏枚举类
      */
-    LackOfResourcesEnum isOutOfTotalAllocatableGpu(Integer gpuNum);
+    LackOfResourcesEnum isOutOfTotalAllocatableGpu(String k8sLabelKey, String gpuModel, Integer gpuNum);
 
     /**
      * 添加污点
@@ -189,9 +200,9 @@ public interface NodeApi {
 
     /**
      * 获取当前用户 资源隔离 NodeSelector
-     * @return Map<String,String>
+     * @return Map<String, String>
      */
-    Map<String,String> getNodeIsolationNodeSelector();
+    Map<String, String> getNodeIsolationNodeSelector();
 
     /**
      * 根据userid 生成 BizTaint 列表
@@ -207,4 +218,5 @@ public interface NodeApi {
      * @return
      */
     List<BizTaint> geBizTaintListByUserId();
+
 }

@@ -186,7 +186,21 @@ public class BatchServing extends BaseEntity {
      */
     @TableField(value = "origin_user_id",fill = FieldFill.INSERT)
     private Long originUserId;
-
+    /**
+     *GPU类型
+     */
+    @TableField(value = "gpu_type")
+    private String gpuType;
+    /**
+     *GPU型号
+     */
+    @TableField(value = "gpu_model")
+    private String gpuModel;
+    /**
+     *k8s GPU资源标签key值
+     */
+    @TableField(value = "k8s_label_key")
+    private String k8sLabelKey;
     /**
      * @return 每个节点的GPU数量
      */

@@ -23,10 +23,13 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.experimental.Accessors;
 import org.dubhe.biz.base.constant.MagicNumConstant;
+import org.dubhe.biz.base.constant.StringConstant;
 import org.dubhe.terminal.domain.entity.TerminalInfo;
+import org.hibernate.validator.constraints.Length;
 
 import javax.validation.constraints.Min;
 import javax.validation.constraints.NotNull;
+import javax.validation.constraints.Pattern;
 import java.io.Serializable;
 
 /**
@@ -61,7 +64,22 @@ public class TerminalInfoDTO implements Serializable {
     @ApiModelProperty(value = "磁盘大小（M）")
     private Integer diskMemNum;
 
+    @ApiModelProperty(value = "GPU类型(例如：NVIDIA)")
+    @Length(max = MagicNumConstant.SIXTY_FOUR, message = "GPU类型错误-输入长度不能超过64个字符")
+    @Pattern(regexp = StringConstant.REGEXP_GPU_TYPE, message = "支持字母、数字、汉字、英文横杠、英文.号、空白字符和英文斜杠")
+    private String gpuType;
+
+    @ApiModelProperty(value = "GPU型号(例如：v100)")
+    @Length(max = MagicNumConstant.SIXTY_FOUR, message = "GPU型号错误-输入长度不能超过64个字符")
+    @Pattern(regexp = StringConstant.REGEXP_GPU_MODEL, message = "支持小写字母、数字、英文横杠、英文.号和英文斜杠")
+    private String gpuModel;
+
+    @ApiModelProperty(value = "k8s GPU资源标签key值(例如：nvidia.com/gpu)")
+    @Length(max = MagicNumConstant.SIXTY_FOUR, message = "GPU型号错误-输入长度不能超过64个字符")
+    @Pattern(regexp = StringConstant.REGEXP_K8S, message = "支持小写字母、数字、英文横杠、英文.号和英文斜杠")
+    private String k8sLabelKey;
+
     public TerminalInfo toTerminalInfo(Long terminalId,String k8sResourceName,Long originUserId,String sshUser,String sshPwd){
-        return new TerminalInfo(id,terminalId,cpuNum,memNum,gpuNum,diskMemNum,k8sResourceName,originUserId,sshUser,sshPwd);
+        return new TerminalInfo(id,terminalId,cpuNum,memNum,gpuNum,diskMemNum,gpuType,gpuModel,k8sLabelKey,k8sResourceName,originUserId,sshUser,sshPwd);
     }
 }

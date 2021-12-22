@@ -17,9 +17,13 @@
 
 package org.dubhe.k8s.enums;
 
+import lombok.Getter;
 import org.dubhe.biz.base.constant.ApplicationNameConst;
 import org.dubhe.biz.base.enums.BizEnum;
 import org.dubhe.biz.base.utils.StringUtils;
+
+import java.util.ArrayList;
+import java.util.List;
 
 import static org.dubhe.biz.base.constant.SymbolConstant.BLANK;
 
@@ -52,7 +56,10 @@ public enum BusinessLabelServiceNameEnum {
      * 专业版终端
      */
     TERMINAL(BizEnum.TERMINAL.getBizCode(), ApplicationNameConst.TERMINAL),
-    ;
+    /**
+     * TADL
+     */
+    TADL(BizEnum.TADL.getBizCode(), ApplicationNameConst.SERVER_TADL);
     /**
      * 业务标签
      */
@@ -74,21 +81,34 @@ public enum BusinessLabelServiceNameEnum {
         this.businessLabel = businessLabel;
         this.serviceName = serviceName;
     }
-    public static String getServiceNameByBusinessLabel(String businessLabel){
+
+    public static String getServiceNameByBusinessLabel(String businessLabel) {
         for (BusinessLabelServiceNameEnum businessLabelServiceNameEnum : BusinessLabelServiceNameEnum.values()) {
-            if (StringUtils.equals(businessLabel, businessLabelServiceNameEnum.getBusinessLabel() )){
+            if (StringUtils.equals(businessLabel, businessLabelServiceNameEnum.getBusinessLabel())) {
                 return businessLabelServiceNameEnum.getServiceName();
             }
         }
         return BLANK;
     }
 
-    public static String getBusinessLabelByServiceName(String serviceName){
+    public static String getBusinessLabelByServiceName(String serviceName) {
         for (BusinessLabelServiceNameEnum businessLabelServiceNameEnum : BusinessLabelServiceNameEnum.values()) {
-            if (StringUtils.equals(serviceName, businessLabelServiceNameEnum.getServiceName() )){
+            if (StringUtils.equals(serviceName, businessLabelServiceNameEnum.getServiceName())) {
                 return businessLabelServiceNameEnum.getBusinessLabel();
             }
         }
         return BLANK;
+    }
+
+    /**
+     * 获取需要持久化事件的业务类型
+     * @return
+     */
+    public static List<String> getEventBusinessList() {
+        return new ArrayList<String >(){{
+            add(NOTEBOOK.businessLabel);
+            add(TERMINAL.businessLabel);
+            add(TRAIN.businessLabel);
+        }};
     }
 }

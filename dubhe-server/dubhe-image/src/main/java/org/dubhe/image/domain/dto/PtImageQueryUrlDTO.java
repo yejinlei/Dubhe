@@ -42,4 +42,7 @@ public class PtImageQueryUrlDTO {
     @ApiModelProperty(value = "镜像项目类型(0:notebook , 1:train , 2:serving)")
     private Integer projectType;
 
+    @ApiModelProperty(value = "镜像ID")
+    private Long id;
+
 }

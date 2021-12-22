@@ -78,12 +78,7 @@ public interface PtImageService {
      */
     Set<String> getImageNameList(PtImageQueryNameDTO ptImageQueryNameDTO);
 
-    /**
-     * 修改镜像来源(notebook定制)
-     *
-     * @param id 镜像id
-     */
-    void updImageResource(Long id);
+
 
     /**
      * 获取镜像URL
@@ -106,4 +101,11 @@ public interface PtImageService {
      * @return List<PtImage>
      */
     List<PtImage> getTerminalImageList();
+
+    /**
+     * 修改默认镜像
+     *
+     * @param id 镜像id
+     */
+    void updateDefaultImage(Long id);
 }

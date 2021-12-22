@@ -20,15 +20,18 @@ package org.dubhe.train.dao;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import org.apache.ibatis.annotations.Param;
+import org.apache.ibatis.annotations.Update;
 import org.dubhe.biz.base.annotation.DataPermission;
 import org.dubhe.train.domain.entity.PtTrainJob;
 import org.dubhe.train.domain.vo.PtTrainVO;
+
+import java.util.Collection;
 
 /**
  * @description 训练作业job Mapper 接口
  * @date 2020-04-27
  */
-@DataPermission(ignoresMethod = {"insert", "getPageTrain"})
+@DataPermission(ignoresMethod = {"insert", "getPageTrain", "updateStatusDetailById"})
 public interface PtTrainJobMapper extends BaseMapper<PtTrainJob> {
 
     /**
@@ -41,10 +44,20 @@ public interface PtTrainJobMapper extends BaseMapper<PtTrainJob> {
      * @param sort         排序字段
      * @param order        排序方式
      *
+     * @param trainIds
      * @return PtTrainVO
      */
     Page<PtTrainVO> getPageTrain(Page page, @Param("createUserId") Long createUserId,
                                  @Param("trainStatus") Integer trainStatus, @Param("trainName") String trainName, @Param("sort") String sort,
-                                 @Param("order") String order);
+                                 @Param("order") String order, @Param("trainIds") Collection<Long> trainIds);
+
+    /**
+     * 根据id修改statusDetail
+     * @param id 训练版本id
+     * @param statusDetail 训练状态详情
+     * @return 数量
+     */
+    @Update("update pt_train_job set status_detail = #{statusDetail} where id = #{id}")
+    int updateStatusDetailById(@Param("id") Long id, @Param("statusDetail") String statusDetail);
 
 }

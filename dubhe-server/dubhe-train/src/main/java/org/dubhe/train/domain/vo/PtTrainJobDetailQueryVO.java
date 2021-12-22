@@ -77,6 +77,15 @@ public class PtTrainJobDetailQueryVO extends PtTrainJobDetailVO {
     @ApiModelProperty("类型(0为CPU，1为GPU)")
     private Integer resourcesPoolType;
 
+    @ApiModelProperty("GPU类型(例如：NVIDIA)")
+    private String gpuType;
+
+    @ApiModelProperty("GPU型号(例如：v100)")
+    private String gpuModel;
+
+    @ApiModelProperty("k8s GPU资源标签key值(例如：nvidia.com/gpu)")
+    private String k8sLabelKey;
+
     @ApiModelProperty("节点个数")
     private Integer resourcesPoolNode;
 
@@ -193,4 +202,10 @@ public class PtTrainJobDetailQueryVO extends PtTrainJobDetailVO {
 
     @ApiModelProperty(value = "训练所在k8s namespace")
     private String k8sNamespace;
+
+    @ApiModelProperty(value = "运行开始时间")
+    private Long runStartTime;
+
+    @ApiModelProperty(value = "运行结束时间")
+    private Long runEndTime;
 }

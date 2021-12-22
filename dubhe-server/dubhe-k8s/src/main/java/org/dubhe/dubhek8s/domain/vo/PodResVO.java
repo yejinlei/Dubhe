@@ -47,4 +47,9 @@ public class PodResVO {
      * pod的状态
      */
     private String status;
+
+    /**
+     * gpu型号
+     */
+    private String gpuModel;
 }

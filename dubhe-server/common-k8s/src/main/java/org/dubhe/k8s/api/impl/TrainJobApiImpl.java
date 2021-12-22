@@ -22,15 +22,7 @@ import cn.hutool.core.util.RandomUtil;
 import cn.hutool.core.util.StrUtil;
 import com.alibaba.fastjson.JSON;
 import com.google.common.collect.Maps;
-import io.fabric8.kubernetes.api.model.Container;
-import io.fabric8.kubernetes.api.model.EnvVar;
-import io.fabric8.kubernetes.api.model.EnvVarBuilder;
-import io.fabric8.kubernetes.api.model.Quantity;
-import io.fabric8.kubernetes.api.model.ResourceRequirementsBuilder;
-import io.fabric8.kubernetes.api.model.Volume;
-import io.fabric8.kubernetes.api.model.VolumeBuilder;
-import io.fabric8.kubernetes.api.model.VolumeMount;
-import io.fabric8.kubernetes.api.model.VolumeMountBuilder;
+import io.fabric8.kubernetes.api.model.*;
 import io.fabric8.kubernetes.api.model.batch.Job;
 import io.fabric8.kubernetes.api.model.batch.JobBuilder;
 import io.fabric8.kubernetes.api.model.batch.JobList;
@@ -42,45 +34,25 @@ import org.dubhe.biz.base.utils.StringUtils;
 import org.dubhe.biz.file.api.FileStoreApi;
 import org.dubhe.biz.log.enums.LogEnum;
 import org.dubhe.biz.log.utils.LogUtil;
-import org.dubhe.k8s.api.LogMonitoringApi;
-import org.dubhe.k8s.api.NodeApi;
-import org.dubhe.k8s.api.PersistentVolumeClaimApi;
-import org.dubhe.k8s.api.PodApi;
-import org.dubhe.k8s.api.ResourceIisolationApi;
-import org.dubhe.k8s.api.ResourceQuotaApi;
-import org.dubhe.k8s.api.TrainJobApi;
+import org.dubhe.k8s.api.*;
 import org.dubhe.k8s.cache.ResourceCache;
 import org.dubhe.k8s.constant.K8sLabelConstants;
 import org.dubhe.k8s.constant.K8sParamConstants;
-import org.dubhe.k8s.domain.bo.PtJupyterJobBO;
-import org.dubhe.k8s.domain.bo.PtMountDirBO;
-import org.dubhe.k8s.domain.bo.PtPersistentVolumeClaimBO;
-import org.dubhe.k8s.domain.bo.TaskYamlBO;
+import org.dubhe.k8s.domain.bo.*;
 import org.dubhe.k8s.domain.entity.K8sTask;
 import org.dubhe.k8s.domain.resource.BizJob;
 import org.dubhe.k8s.domain.resource.BizPersistentVolumeClaim;
 import org.dubhe.k8s.domain.vo.PtJupyterJobVO;
-import org.dubhe.k8s.enums.ImagePullPolicyEnum;
-import org.dubhe.k8s.enums.K8sKindEnum;
-import org.dubhe.k8s.enums.K8sResponseEnum;
-import org.dubhe.k8s.enums.LackOfResourcesEnum;
-import org.dubhe.k8s.enums.LimitsOfResourcesEnum;
-import org.dubhe.k8s.enums.RestartPolicyEnum;
-import org.dubhe.k8s.enums.ShellCommandEnum;
+import org.dubhe.k8s.enums.*;
+import org.dubhe.k8s.service.K8sGpuConfigService;
 import org.dubhe.k8s.service.K8sTaskService;
-import org.dubhe.k8s.utils.BizConvertUtils;
-import org.dubhe.k8s.utils.K8sUtils;
-import org.dubhe.k8s.utils.LabelUtils;
+import org.dubhe.k8s.utils.*;
+import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import javax.annotation.Resource;
 import java.sql.Timestamp;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
@@ -90,6 +62,7 @@ import java.util.stream.Collectors;
 public class TrainJobApiImpl implements TrainJobApi {
 
     private K8sUtils k8sUtils;
+
     private KubernetesClient client;
 
     @Resource(name = "hostFileStoreApiImpl")
@@ -99,10 +72,7 @@ public class TrainJobApiImpl implements TrainJobApi {
     private PersistentVolumeClaimApi persistentVolumeClaimApi;
     @Autowired
     private NodeApi nodeApi;
-    @Autowired
-    private PodApi podApi;
-    @Autowired
-    private LogMonitoringApi logMonitoringApi;
+
     @Autowired
     private K8sTaskService k8sTaskService;
     @Autowired
@@ -111,6 +81,11 @@ public class TrainJobApiImpl implements TrainJobApi {
     private ResourceQuotaApi resourceQuotaApi;
     @Autowired
     private ResourceIisolationApi resourceIisolationApi;
+    @Autowired
+    private K8sGpuConfigService k8sGpuConfigService;
+
+    @Autowired
+    private K8sCommonUtils k8sCommonUtils;
 
     public TrainJobApiImpl(K8sUtils k8sUtils) {
         this.k8sUtils = k8sUtils;
@@ -124,15 +99,24 @@ public class TrainJobApiImpl implements TrainJobApi {
      * @return PtJupyterJobVO 训练任务 Job 结果类
      */
     @Override
-    public PtJupyterJobVO create(PtJupyterJobBO bo)  {
-        try{
-            LimitsOfResourcesEnum limitsOfResources = resourceQuotaApi.reachLimitsOfResources(bo.getNamespace(),bo.getCpuNum(), bo.getMemNum(), bo.getGpuNum());
-            if (!LimitsOfResourcesEnum.ADEQUATE.equals(limitsOfResources)){
+    public PtJupyterJobVO create(PtJupyterJobBO bo) {
+        try {
+            BaseResourceBo baseResourceBo = new BaseResourceBo();
+            BeanUtils.copyProperties(bo, baseResourceBo);
+            LimitsOfResourcesEnum limitsOfResources = resourceQuotaApi.reachLimitsOfResources(baseResourceBo);
+
+            if (!LimitsOfResourcesEnum.ADEQUATE.equals(limitsOfResources)) {
                 return new PtJupyterJobVO().error(K8sResponseEnum.LACK_OF_RESOURCES.getCode(), limitsOfResources.getMessage());
             }
-            LackOfResourcesEnum lack = nodeApi.isAllocatable(bo.getCpuNum(),bo.getMemNum(),bo.getGpuNum());
-            if (!LackOfResourcesEnum.ADEQUATE.equals(lack)){
-                return new PtJupyterJobVO().error(K8sResponseEnum.LACK_OF_RESOURCES.getCode(),lack.getMessage());
+            if (bo.getUseGpu()) {
+                Integer k8sGpuNumLimit = k8sGpuConfigService.getGpuLimit(bo.getNamespace(), bo.getGpuModel(), bo.getK8sLabelKey());
+                if(bo.getGpuNum() > k8sGpuNumLimit){
+                    return new PtJupyterJobVO().error(K8sResponseEnum.LACK_OF_RESOURCES.getCode(), LimitsOfResourcesEnum.LIMITS_OF_GPU.getMessage());
+                }
+            }
+            LackOfResourcesEnum lack = nodeApi.isAllocatable(baseResourceBo);
+            if (!LackOfResourcesEnum.ADEQUATE.equals(lack)) {
+                return new PtJupyterJobVO().error(K8sResponseEnum.LACK_OF_RESOURCES.getCode(), lack.getMessage());
             }
             LogUtil.info(LogEnum.BIZ_K8S, "Params of creating Job--create:{}", bo);
             if (!fileStoreApi.createDirs(bo.getDirList().toArray(new String[MagicNumConstant.ZERO]))) {
@@ -215,6 +199,7 @@ public class TrainJobApiImpl implements TrainJobApi {
         private String namespace;
         private String image;
         private Boolean useGpu;
+        private String gpuModel;
         private List<String> cmdLines;
         private Map<String, PtMountDirBO> fsMounts;
 
@@ -237,6 +222,7 @@ public class TrainJobApiImpl implements TrainJobApi {
             this.namespace = bo.getNamespace();
             this.image = bo.getImage();
             this.cmdLines = new ArrayList();
+            this.gpuModel = bo.getGpuModel();
             Optional.ofNullable(bo.getCmdLines()).ifPresent(v -> cmdLines = v);
             this.useGpu = bo.getUseGpu()==null?false:bo.getUseGpu();
             if (bo.getUseGpu() != null && bo.getUseGpu() && null == bo.getGpuNum()){
@@ -245,13 +231,14 @@ public class TrainJobApiImpl implements TrainJobApi {
 
             this.resourcesLimitsMap = Maps.newHashMap();
             Optional.ofNullable(bo.getCpuNum()).ifPresent(v -> resourcesLimitsMap.put(K8sParamConstants.QUANTITY_CPU_KEY, new Quantity(v.toString(), K8sParamConstants.CPU_UNIT)));
-            Optional.ofNullable(bo.getGpuNum()).ifPresent(v -> resourcesLimitsMap.put(K8sParamConstants.GPU_RESOURCE_KEY, new Quantity(v.toString())));
+            Optional.ofNullable(bo.getGpuNum()).ifPresent(v -> resourcesLimitsMap.put(bo.getK8sLabelKey(), new Quantity(v.toString())));
             Optional.ofNullable(bo.getMemNum()).ifPresent(v -> resourcesLimitsMap.put(K8sParamConstants.QUANTITY_MEMORY_KEY, new Quantity(v.toString(), K8sParamConstants.MEM_UNIT)));
+            k8sCommonUtils.addRdmaResource(resourcesLimitsMap);
 
             this.fsMounts = bo.getFsMounts();
             businessLabel = bo.getBusinessLabel();
+            this.baseLabels = LabelUtils.getBaseLabels(baseName,bo.getBusinessLabel(),bo.getExtraLabelMap());
             this.taskIdentifyLabel = bo.getTaskIdentifyLabel();
-            this.baseLabels = LabelUtils.getBaseLabels(baseName,bo.getBusinessLabel());
 
             this.volumeMounts = new ArrayList<>();
             this.volumes = new ArrayList<>();
@@ -429,7 +416,7 @@ public class TrainJobApiImpl implements TrainJobApi {
             //镜像
             container.setName(jobName);
             container.setImage(image);
-            container.setImagePullPolicy(ImagePullPolicyEnum.IFNOTPRESENT.getPolicy());
+            container.setImagePullPolicy(ImagePullPolicyEnum.ALWAYS.getPolicy());
             container.setVolumeMounts(volumeMounts);
             //启动命令
             container.setCommand(Collections.singletonList(ShellCommandEnum.BIN_BANSH.getShell()));
@@ -440,9 +427,10 @@ public class TrainJobApiImpl implements TrainJobApi {
                     .addToLimits(resourcesLimitsMap)
                     .build());
 
-            Map<String,String> gpuLabel = new HashMap<String,String>(1);
-            if (useGpu){
-                gpuLabel.put(K8sLabelConstants.NODE_GPU_LABEL_KEY,K8sLabelConstants.NODE_GPU_LABEL_VALUE);
+            Map<String, String> gpuLabel = new HashMap<String, String>(2);
+            if (useGpu) {
+                gpuLabel.put(K8sLabelConstants.NODE_GPU_LABEL_KEY, K8sLabelConstants.NODE_GPU_LABEL_VALUE);
+                gpuLabel.put(K8sLabelConstants.NODE_GPU_MODEL_LABEL_KEY, gpuModel);
             }
 
             job = new JobBuilder()
@@ -458,7 +446,7 @@ public class TrainJobApiImpl implements TrainJobApi {
                         .withNewTemplate()
                             .withNewMetadata()
                                 .withName(jobName)
-                                .addToLabels(LabelUtils.getChildLabels(baseName, jobName, K8sKindEnum.JOB.getKind(),businessLabel, taskIdentifyLabel))
+                                .addToLabels(LabelUtils.getChildLabels(baseName, jobName, K8sKindEnum.JOB.getKind(),businessLabel,taskIdentifyLabel,baseLabels))
                                 .withNamespace(namespace)
                             .endMetadata()
                             .withNewSpec()
@@ -477,10 +465,10 @@ public class TrainJobApiImpl implements TrainJobApi {
                 job = client.batch().jobs().create(job);
                 LogUtil.info(LogEnum.BIZ_K8S, "{} deployed successfully", jobName);
             }
-            if (delayCreate > MagicNumConstant.ZERO || delayDelete > MagicNumConstant.ZERO){
-             taskYamlBO.append(job);
+            if (delayCreate > MagicNumConstant.ZERO || delayDelete > MagicNumConstant.ZERO) {
+                taskYamlBO.append(job);
             }
-
+            LogUtil.info(LogEnum.BIZ_K8S, "Ready to deploy {}, yaml info is : {}", jobName, YamlUtils.dumpAsYaml(job));
             return job;
         }
     }

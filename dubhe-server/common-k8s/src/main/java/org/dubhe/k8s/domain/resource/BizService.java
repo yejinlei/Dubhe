@@ -17,12 +17,14 @@
 
 package org.dubhe.k8s.domain.resource;
 
+import com.google.common.collect.Maps;
 import lombok.Data;
 import lombok.experimental.Accessors;
 import org.dubhe.k8s.annotation.K8sField;
 import org.springframework.util.CollectionUtils;
 
 import java.util.List;
+import java.util.Map;
 
 /**
  * @description Kubernetes Service
@@ -43,6 +45,9 @@ public class BizService {
     @K8sField("spec:ports")
     private List<BizServicePort> ports;
 
+    @K8sField("metadata:labels")
+    private Map<String, String> labels = Maps.newHashMap();
+
     public BizServicePort getServicePortByTargetPort(Integer targetPort){
         if (CollectionUtils.isEmpty(ports) || targetPort == null){
             return null;
@@ -53,5 +58,15 @@ public class BizService {
             }
         }
         return null;
+    }
+
+    /**
+     * 根据键获取label
+     *
+     * @param labelKey
+     * @return
+     */
+    public String getLabel(String labelKey) {
+        return labels.get(labelKey);
     }
 }

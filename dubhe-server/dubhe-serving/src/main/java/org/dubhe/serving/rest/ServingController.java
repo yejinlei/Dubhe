@@ -21,11 +21,11 @@ import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import org.dubhe.biz.base.annotation.ApiVersion;
 import org.dubhe.biz.base.constant.Permissions;
+import org.dubhe.biz.base.dto.DeleteDTO;
 import org.dubhe.biz.base.dto.PtModelStatusQueryDTO;
 import org.dubhe.biz.base.vo.DataResponseBody;
 import org.dubhe.serving.domain.dto.PredictParamDTO;
 import org.dubhe.serving.domain.dto.ServingInfoCreateDTO;
-import org.dubhe.serving.domain.dto.ServingInfoDeleteDTO;
 import org.dubhe.serving.domain.dto.ServingInfoDetailDTO;
 import org.dubhe.serving.domain.dto.ServingInfoQueryDTO;
 import org.dubhe.serving.domain.dto.ServingInfoUpdateDTO;
@@ -41,10 +41,13 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
 import javax.annotation.Resource;
+import java.util.List;
+import java.util.Set;
 
 /**
  * @description 在线服务管理
@@ -66,6 +69,13 @@ public class ServingController {
         return new DataResponseBody(servingService.query(servingInfoQueryDTO));
     }
 
+    @ApiOperation("根据 ID 列表查数据")
+    @GetMapping("/queryByIds")
+    @PreAuthorize(Permissions.SERVING_DEPLOYMENT)
+    public DataResponseBody queryByIds(@RequestParam List<Long> ids) {
+        return new DataResponseBody(servingService.queryByIds(ids));
+    }
+
     @ApiOperation("创建服务")
     @PostMapping
     @PreAuthorize(Permissions.SERVING_DEPLOYMENT_CREATE)
@@ -83,8 +93,17 @@ public class ServingController {
     @ApiOperation("删除服务")
     @DeleteMapping
     @PreAuthorize(Permissions.SERVING_DEPLOYMENT_DELETE)
-    public DataResponseBody delete(@Validated @RequestBody ServingInfoDeleteDTO servingInfoDeleteDTO) {
-        return new DataResponseBody(servingService.delete(servingInfoDeleteDTO));
+    public DataResponseBody delete(@Validated @RequestBody DeleteDTO deleteDTO) {
+        servingService.delete(deleteDTO.getIds());
+        return new DataResponseBody();
+    }
+
+    @ApiOperation("批量删除服务")
+    @DeleteMapping("/batch")
+    @PreAuthorize(Permissions.SERVING_DEPLOYMENT_DELETE)
+    public DataResponseBody batchDelete(@RequestParam Set<Long> ids) {
+        servingService.batchDelete(ids);
+        return new DataResponseBody();
     }
 
     @ApiOperation("获取服务详情")

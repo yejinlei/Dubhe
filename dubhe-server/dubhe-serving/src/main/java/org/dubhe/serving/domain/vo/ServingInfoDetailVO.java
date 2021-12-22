@@ -67,4 +67,5 @@ public class ServingInfoDetailVO implements Serializable {
 
     @ApiModelProperty(value = "创建人id")
     private Long createUserId;
+
 }

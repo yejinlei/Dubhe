@@ -22,6 +22,7 @@ import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import org.dubhe.admin.dao.UserGroupMapper;
+import org.dubhe.admin.dao.UserMapper;
 import org.dubhe.admin.dao.UserRoleMapper;
 import org.dubhe.admin.domain.dto.*;
 import org.dubhe.admin.domain.entity.Group;
@@ -32,6 +33,7 @@ import org.dubhe.admin.service.UserGroupService;
 import org.dubhe.admin.service.UserService;
 import org.dubhe.biz.base.constant.StringConstant;
 import org.dubhe.biz.base.context.UserContext;
+import org.dubhe.biz.base.dto.UserConfigSaveDTO;
 import org.dubhe.biz.base.exception.BusinessException;
 import org.dubhe.biz.base.service.UserContextService;
 import org.dubhe.biz.base.utils.ReflectionUtils;
@@ -39,9 +41,12 @@ import org.dubhe.biz.base.utils.StringUtils;
 import org.dubhe.biz.db.utils.PageUtil;
 import org.dubhe.biz.log.enums.LogEnum;
 import org.dubhe.biz.log.utils.LogUtil;
+import org.dubhe.cloud.authconfig.factory.PasswordEncoderFactory;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.dao.DuplicateKeyException;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -55,8 +60,14 @@ import java.util.stream.Collectors;
 @Service
 public class UserGroupServiceImpl implements UserGroupService {
 
+    @Value("${initial_password}")
+    private String initialPassword;
+
     @Autowired
     private UserGroupMapper userGroupMapper;
+
+    @Autowired
+    private UserMapper userMapper;
 
     @Autowired
     private UserContextService userContextService;
@@ -248,7 +259,7 @@ public class UserGroupServiceImpl implements UserGroupService {
      * @param userGroupUpdDTO 批量删除用户组用户DTO
      */
     @Override
-    public void delUser(UserGroupUpdDTO userGroupUpdDTO) {
+    public void delUser(UserGroupUpdDTO userGroupUpdDTO, String accessToken) {
         //获取用户组的成员id
         List<User> userList = userGroupMapper.queryUserByGroupId(userGroupUpdDTO.getGroupId());
         userGroupMapper.delUserByGroupId(userGroupUpdDTO.getGroupId());
@@ -258,7 +269,7 @@ public class UserGroupServiceImpl implements UserGroupService {
                 ids.add(user.getId());
             }
         }
-        userService.delete(ids);
+        userService.delete(ids, accessToken);
     }
 
     /**
@@ -288,5 +299,46 @@ public class UserGroupServiceImpl implements UserGroupService {
         userRoleMapper.deleteByUserId(ids);
         //添加用户的新角色
         userRoleMapper.insertBatchs(userRoleList);
+    }
+
+    /**
+     * 批量重置用户组用户的密码
+     *
+     * @param groupId
+     */
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void resetUserPassword(Long groupId) {
+        //获取用户组的成员id
+        List<User> userList = userGroupMapper.queryUserByGroupId(groupId);
+        Set<Long> ids = new HashSet<>();
+        if (CollUtil.isNotEmpty(userList)) {
+            for (User user : userList) {
+                ids.add(user.getId());
+            }
+        }
+        PasswordEncoder passwordEncoder = PasswordEncoderFactory.getPasswordEncoder();
+        //重置为默认密码123456，加密密码
+        String encode = passwordEncoder.encode(initialPassword);
+
+        LambdaUpdateWrapper<User> updateWrapper = new LambdaUpdateWrapper<>();
+        updateWrapper.in(User::getId, ids);
+        updateWrapper.set(User::getPassword,encode);
+        updateWrapper.set(User::getLastPasswordResetTime,new Date());
+        userService.update(updateWrapper);
+    }
+
+    @Override
+    public void saveUserConfig(UserGroupConfigSaveDTO userGroupConfigSaveDTO) {
+        UserConfigSaveDTO userConfigSaveDTO = new UserConfigSaveDTO();
+        BeanUtils.copyProperties(userGroupConfigSaveDTO,userConfigSaveDTO);
+
+        List<User> users = userGroupMapper.queryUserByGroupId(userGroupConfigSaveDTO.getGroupId());
+        if(CollUtil.isNotEmpty(users)) {
+            users.forEach(user -> {
+                userConfigSaveDTO.setUserId(user.getId());
+                userService.saveUserConfig(userConfigSaveDTO,null);
+            });
+        }
     }
 }

@@ -94,6 +94,11 @@ public class PtModelBranchQueryVO implements Serializable {
     private Long createUserId;
 
     /**
+     * 创建人用户名
+     */
+    private String createUserName;
+
+    /**
      * 修改人ID
      */
     private Long updateUserId;

@@ -39,7 +39,8 @@ public enum RecycleModuleEnum {
     BIZ_MODEL(7, "模型管理",SERVER_MODEL),
     BIZ_DATAMEDICINE(8, "医学影像",SERVER_DATA_DCM),
     BIZ_MEASURE(9, "度量管理",SERVER_MEASURE),
-    BIZ_SERVING(10, "云端Serving", SERVER_SERVING);
+    BIZ_SERVING(10, "云端部署", SERVER_SERVING),
+    BIZ_TADL(11,"自动机器学习",SERVER_TADL);
 
     private Integer value;
 

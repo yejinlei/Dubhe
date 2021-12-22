@@ -27,7 +27,7 @@ import java.util.List;
  * @date 2020-05-26
  */
 @Data
-public class PtModelOptimizationDeploymentBO extends PtDeploymentBO {
+public class PtModelOptimizationDeploymentBO extends BaseResourceBo {
     /**
      * 挂载到dataset的数据集的路径
      **/

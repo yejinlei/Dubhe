@@ -17,7 +17,6 @@
 
 package org.dubhe.algorithm.service.impl;
 
-import cn.hutool.core.util.RandomUtil;
 import cn.hutool.core.util.StrUtil;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
@@ -39,13 +38,16 @@ import org.dubhe.algorithm.domain.vo.PtTrainAlgorithmQueryVO;
 import org.dubhe.algorithm.service.PtTrainAlgorithmService;
 import org.dubhe.biz.base.constant.MagicNumConstant;
 import org.dubhe.biz.base.constant.NumberConstant;
+import org.dubhe.biz.base.constant.SymbolConstant;
 import org.dubhe.biz.base.context.UserContext;
 import org.dubhe.biz.base.dto.*;
 import org.dubhe.biz.base.enums.AlgorithmSourceEnum;
+import org.dubhe.biz.base.enums.AlgorithmStatusEnum;
 import org.dubhe.biz.base.enums.DatasetTypeEnum;
 import org.dubhe.biz.base.enums.ImageTypeEnum;
 import org.dubhe.biz.base.exception.BusinessException;
 import org.dubhe.biz.base.service.UserContextService;
+import org.dubhe.biz.base.utils.CommandUtil;
 import org.dubhe.biz.base.utils.ReflectionUtils;
 import org.dubhe.biz.base.utils.StringUtils;
 import org.dubhe.biz.base.vo.DataResponseBody;
@@ -58,6 +60,7 @@ import org.dubhe.biz.log.enums.LogEnum;
 import org.dubhe.biz.log.utils.LogUtil;
 import org.dubhe.biz.permission.annotation.DataPermissionMethod;
 import org.dubhe.biz.permission.base.BaseService;
+import org.dubhe.cloud.authconfig.service.AdminClient;
 import org.dubhe.k8s.utils.K8sNameTool;
 import org.dubhe.recycle.config.RecycleConfig;
 import org.dubhe.recycle.domain.dto.RecycleCreateDTO;
@@ -115,6 +118,9 @@ public class PtTrainAlgorithmServiceImpl implements PtTrainAlgorithmService {
 
     @Resource(name = "hostFileStoreApiImpl")
     private FileStoreApi fileStoreApi;
+
+    @Resource
+    private AdminClient adminClient;
 
     public final static List<String> FIELD_NAMES;
 
@@ -176,11 +182,29 @@ public class PtTrainAlgorithmServiceImpl implements PtTrainAlgorithmService {
                     ptTrainAlgorithmQueryDTO);
             throw new BusinessException("查询训练算法列表展示异常");
         }
+
+        Map<Long, String> idUserNameMap = new HashMap<>();
+        List<Long> userIds = ptTrainAlgorithms.getRecords().stream().map(PtTrainAlgorithm::getCreateUserId).filter(Objects::nonNull).distinct().collect(Collectors.toList());
+        if (CollectionUtils.isNotEmpty(userIds)) {
+            DataResponseBody<List<UserDTO>> result = adminClient.getUserList(userIds);
+            if (result.getData() != null) {
+                idUserNameMap = result.getData().stream().collect(Collectors.toMap(UserDTO::getId, UserDTO::getUsername, (o, n) -> n));
+            }
+        }
+        Map<Long, String> finalIdUserNameMap = idUserNameMap;
+
         List<PtTrainAlgorithmQueryVO> ptTrainAlgorithmQueryResult = ptTrainAlgorithms.getRecords().stream().map(x -> {
             PtTrainAlgorithmQueryVO ptTrainAlgorithmQueryVO = new PtTrainAlgorithmQueryVO();
             BeanUtils.copyProperties(x, ptTrainAlgorithmQueryVO);
+            ptTrainAlgorithmQueryVO.setRunCommand(CommandUtil.buildPythonCommand(x.getRunCommand(), x.getRunParams()));
+            ptTrainAlgorithmQueryVO.setRunParams(null);
             //获取镜像名称与版本
             getImageNameAndImageTag(x, ptTrainAlgorithmQueryVO);
+            //获取算法创建人用户名
+            if (BaseService.isAdmin(user) && x.getCreateUserId() != null) {
+                finalIdUserNameMap.get(x.getCreateUserId());
+                ptTrainAlgorithmQueryVO.setCreateUserName(finalIdUserNameMap.getOrDefault(x.getCreateUserId(), null));
+            }
             return ptTrainAlgorithmQueryVO;
         }).collect(Collectors.toList());
         return PageUtil.toPage(page, ptTrainAlgorithmQueryResult);
@@ -229,13 +253,8 @@ public class PtTrainAlgorithmServiceImpl implements PtTrainAlgorithmService {
         Integer countResult = ptTrainAlgorithmMapper.selectCount(queryWrapper);
         //如果是通过【保存至算法】接口创建算法，名称重复可用随机数生成新算法名，待后续客户自主修改
         if (countResult > 0) {
-            if (ptTrainAlgorithmCreateDTO.getNoteBookId() != null) {
-                String randomStr = RandomUtil.randomNumbers(MagicNumConstant.FOUR);
-                ptTrainAlgorithm.setAlgorithmName(ptTrainAlgorithmCreateDTO.getAlgorithmName() + randomStr);
-            } else {
-                LogUtil.error(LogEnum.BIZ_ALGORITHM, "The algorithm name ({}) already exists", ptTrainAlgorithmCreateDTO.getAlgorithmName());
-                throw new BusinessException("算法名称已存在，请重新输入");
-            }
+            LogUtil.error(LogEnum.BIZ_ALGORITHM, "The algorithm name ({}) already exists", ptTrainAlgorithmCreateDTO.getAlgorithmName());
+            throw new BusinessException("算法名称已存在，请重新输入");
         }
         //校验path是否带有压缩文件，如有，则解压至算法文件夹下并删除压缩文件
         if (path.toLowerCase().endsWith(AlgorithmConstant.COMPRESS_ZIP)) {
@@ -251,11 +270,21 @@ public class PtTrainAlgorithmServiceImpl implements PtTrainAlgorithmService {
         try {
             //算法未保存成功，抛出异常，并返回失败信息
             ptTrainAlgorithmMapper.insert(ptTrainAlgorithm);
-            //设置子线程共享
-            ServletRequestAttributes servletRequestAttributes = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
-            RequestContextHolder.setRequestAttributes(servletRequestAttributes, true);
-            //上传算法异步处理
-            algorithmUpdateAsync.createTrainAlgorithm(userContext.getCurUser(), ptTrainAlgorithm, ptTrainAlgorithmCreateDTO);
+            if (ptTrainAlgorithmCreateDTO.getNoteBookId() != null) {
+                //保存算法根据notbookId更新算法id
+                NoteBookAlgorithmUpdateDTO noteBookAlgorithmUpdateDTO = new NoteBookAlgorithmUpdateDTO();
+                noteBookAlgorithmUpdateDTO.setAlgorithmId(ptTrainAlgorithm.getId());
+                noteBookAlgorithmUpdateDTO.setNotebookIdList(Collections.singletonList(ptTrainAlgorithmCreateDTO.getNoteBookId()));
+                noteBookClient.updateNoteBookAlgorithm(noteBookAlgorithmUpdateDTO);
+                ptTrainAlgorithm.setAlgorithmStatus(AlgorithmStatusEnum.SUCCESS.getCode());
+                ptTrainAlgorithmMapper.updateById(ptTrainAlgorithm);
+            } else {
+                //上传算法异步处理
+                //设置子线程共享
+                ServletRequestAttributes servletRequestAttributes = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
+                RequestContextHolder.setRequestAttributes(servletRequestAttributes, true);
+                algorithmUpdateAsync.createTrainAlgorithm(userContext.getCurUser(), ptTrainAlgorithm, ptTrainAlgorithmCreateDTO);
+            }
         } catch (Exception e) {
             LogUtil.error(LogEnum.BIZ_ALGORITHM, "The user {} saving algorithm was not successful. Failure reason :{}", user.getUsername(), e.getMessage());
             throw new BusinessException("算法未保存成功");

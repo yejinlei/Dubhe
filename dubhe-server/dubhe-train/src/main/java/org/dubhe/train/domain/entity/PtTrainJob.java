@@ -22,11 +22,15 @@ import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
+import io.swagger.annotations.ApiModelProperty;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.experimental.Accessors;
+import org.dubhe.biz.base.constant.MagicNumConstant;
 import org.dubhe.biz.base.utils.StringUtils;
 import org.dubhe.biz.db.entity.BaseEntity;
+
+import javax.validation.constraints.Min;
 
 /**
  * @description 训练作业job
@@ -116,6 +120,24 @@ public class PtTrainJob extends BaseEntity {
      */
     @TableField(value = "resources_pool_type")
     private Integer resourcesPoolType;
+
+    /**
+     * GPU类型(例如：NVIDIA)
+     */
+    @TableField(value = "gpu_type")
+    private String gpuType;
+
+    /**
+     * GPU型号(例如：v100)
+     */
+    @TableField(value = "gpu_model")
+    private String gpuModel;
+
+    /**
+     * k8s GPU资源标签key值(例如：nvidia.com/gpu)
+     */
+    @TableField(value = "k8s_label_key")
+    private String k8sLabelKey;
 
     /**
      * 规格

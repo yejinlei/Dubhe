@@ -33,6 +33,10 @@ public class BizContainerStatus {
      */
     @K8sField("state:terminated")
     private BizContainerStateTerminated terminated;
+
+    @K8sField("lastState:terminated")
+    private BizContainerLastStateTerminated lastStateTerminated;
+
     /**
      * Details about a waiting container
      */
@@ -41,4 +45,7 @@ public class BizContainerStatus {
 
     @K8sField("containerID")
     private String containerID;
+
+    @K8sField("restartCount")
+    private Integer restartCount;
 }

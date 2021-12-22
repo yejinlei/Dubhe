@@ -16,7 +16,7 @@
  */
 package org.dubhe.dubhek8s.service;
 
-import org.dubhe.dubhek8s.domain.dto.ResourceQuotaDTO;
+import org.dubhe.biz.base.dto.ResourceQuotaDTO;
 
 /**
  * @description ResourceQuota 服务接口

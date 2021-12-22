@@ -33,9 +33,6 @@ public class PtImageQueryImageDTO implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
-    @ApiModelProperty(value = "镜像项目类型(0:notebook , 1:train , 2:serving)")
-    private Integer projectType;
-
     @ApiModelProperty(value = "镜像名称", required = true)
     @NotBlank(message = "源镜像名称不能为空")
     private String imageName;

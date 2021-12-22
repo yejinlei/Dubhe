@@ -28,6 +28,7 @@ import org.dubhe.serving.domain.vo.*;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * @description 批量服务管理
@@ -62,10 +63,9 @@ public interface BatchServingService extends IService<BatchServing> {
     /**
      * 删除批量服务
      *
-     * @param batchServingDeleteDTO 批量服务删除参数
-     * @return BatchServingDeleteVO 批量服务删除返回结果
+     * @param ids
      */
-    BatchServingDeleteVO delete(BatchServingDeleteDTO batchServingDeleteDTO);
+    void delete(Set<Long> ids);
 
     /**
      * 启动批量服务

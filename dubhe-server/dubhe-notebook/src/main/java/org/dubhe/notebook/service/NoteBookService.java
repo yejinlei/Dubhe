@@ -24,7 +24,7 @@ import org.dubhe.biz.file.enums.BizPathEnum;
 import org.dubhe.notebook.domain.dto.*;
 import org.dubhe.notebook.domain.entity.NoteBook;
 import org.dubhe.notebook.enums.NoteBookStatusEnum;
-import org.dubhe.biz.base.vo.NoteBookVO;
+import org.dubhe.notebook.domain.vo.NoteBookVO;
 
 import java.util.List;
 import java.util.Map;

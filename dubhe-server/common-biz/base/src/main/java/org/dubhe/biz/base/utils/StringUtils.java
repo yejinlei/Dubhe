@@ -17,6 +17,7 @@
 
 package org.dubhe.biz.base.utils;
 
+import cn.hutool.core.util.StrUtil;
 import com.alibaba.fastjson.JSON;
 import eu.bitwalker.useragentutils.Browser;
 import eu.bitwalker.useragentutils.UserAgent;
@@ -413,5 +414,12 @@ public class StringUtils extends org.apache.commons.lang3.StringUtils {
             log.error(e.getMessage(), e);
         }
         return null;
+    }
+
+    public static String toNumPrecent(String arg1, int arg2) {
+        if (StrUtil.isEmpty(arg1) || arg2 == 0) {
+            return "0";
+        }
+        return String.valueOf(Math.round(Double.parseDouble(arg1) / arg2));
     }
 }

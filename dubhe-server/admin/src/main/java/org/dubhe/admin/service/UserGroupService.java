@@ -101,7 +101,7 @@ public interface UserGroupService {
      *
      * @param userGroupUpdDTO 批量删除用户组用户DTO
      */
-    void delUser(UserGroupUpdDTO userGroupUpdDTO);
+    void delUser(UserGroupUpdDTO userGroupUpdDTO, String accessToken);
 
     /**
      * 批量修改用户组用户的角色
@@ -109,4 +109,19 @@ public interface UserGroupService {
      * @param userRoleUpdateDTO
      */
     void updateUserRole(UserRoleUpdateDTO userRoleUpdateDTO);
+
+
+    /**
+     * 批量重置用户组用户的密码
+     *
+     * @param groupId
+     */
+    void resetUserPassword(Long groupId);
+
+    /**
+     * 批量修改用户组用户的设置
+     *
+     * @param userGroupConfigSaveDTO
+     */
+    void saveUserConfig(UserGroupConfigSaveDTO userGroupConfigSaveDTO);
 }

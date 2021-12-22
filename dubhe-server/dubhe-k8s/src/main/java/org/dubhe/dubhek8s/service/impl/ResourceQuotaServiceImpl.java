@@ -16,7 +16,7 @@
  */
 package org.dubhe.dubhek8s.service.impl;
 
-import org.dubhe.dubhek8s.domain.dto.ResourceQuotaDTO;
+import org.dubhe.biz.base.dto.ResourceQuotaDTO;
 import org.dubhe.dubhek8s.handler.WebSocketServer;
 import org.dubhe.dubhek8s.service.ResourceQuotaService;
 import org.dubhe.k8s.api.ResourceQuotaApi;
@@ -42,7 +42,7 @@ public class ResourceQuotaServiceImpl implements ResourceQuotaService {
         String namespace = k8sNameTool.getNamespace(resourceQuotaDTO.getUserId());
         BizResourceQuota bizResourceQuota = resourceQuotaApi.create(namespace, namespace, resourceQuotaDTO.getCpuLimit(),
                 resourceQuotaDTO.getMemoryLimit(), resourceQuotaDTO.getGpuLimit());
-        webSocketServer.sendToAll();
+        webSocketServer.sendToClient(resourceQuotaDTO.getUserId());
        return bizResourceQuota.isSuccess();
     }
 }

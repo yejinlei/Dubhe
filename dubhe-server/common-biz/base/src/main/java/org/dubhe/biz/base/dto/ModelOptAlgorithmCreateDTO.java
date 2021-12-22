@@ -18,6 +18,7 @@ package org.dubhe.biz.base.dto;
 
 import lombok.Data;
 import lombok.experimental.Accessors;
+import org.dubhe.biz.base.constant.MagicNumConstant;
 import org.dubhe.biz.base.constant.NumberConstant;
 import org.dubhe.biz.base.constant.StringConstant;
 import org.hibernate.validator.constraints.Length;
@@ -42,7 +43,7 @@ public class ModelOptAlgorithmCreateDTO implements Serializable {
     private String name;
 
     @NotBlank(message = "代码目录不能为空")
-    @Length(max = NumberConstant.NUMBER_64, message = "代码目录-输入长度不能超过128个字符")
+    @Length(max = MagicNumConstant.ONE_HUNDRED_TWENTY_EIGHT, message = "代码目录-输入长度不能超过128个字符")
     private String path;
 
 }

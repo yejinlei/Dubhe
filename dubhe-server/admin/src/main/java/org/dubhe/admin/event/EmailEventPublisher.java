@@ -41,7 +41,7 @@ public class EmailEventPublisher {
      *
      * @param dto
      */
-    @Async("taskExecutor")
+    @Async
     public void sentEmailEvent(final EmailDTO dto) {
         try {
             EmailEvent emailEvent = new EmailEvent(dto);

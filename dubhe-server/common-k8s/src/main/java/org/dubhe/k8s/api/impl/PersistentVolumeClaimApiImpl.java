@@ -138,7 +138,7 @@ public class PersistentVolumeClaimApiImpl implements PersistentVolumeClaimApi {
                 //创建pv
                 PersistentVolume pv = new PersistentVolumeBuilder()
                         .withNewMetadata().addToLabels(pvLabels).withName(bo.getPvcName() + PV_SUFFIX).endMetadata()
-                        .withNewSpec().addToCapacity(STORAGE, new Quantity(bo.getRequest())).addNewAccessMode(AccessModeEnum.READ_WRITE_ONCE.getType()).withNewPersistentVolumeReclaimPolicy(StringUtils.isNotEmpty(bo.getReclaimPolicy())?PvReclaimPolicyEnum.RECYCLE.getPolicy():bo.getReclaimPolicy())
+                        .withNewSpec().addToCapacity(STORAGE, new Quantity(bo.getRequest())).addNewAccessMode(AccessModeEnum.READ_WRITE_ONCE.getType()).withNewPersistentVolumeReclaimPolicy(StringUtils.isEmpty(bo.getReclaimPolicy())?PvReclaimPolicyEnum.RECYCLE.getPolicy():bo.getReclaimPolicy())
                         .withNewHostPath().withNewPath(bo.getPath()).withType(K8sParamConstants.HOST_PATH_TYPE).endHostPath()
                         .endSpec()
                         .build();
@@ -305,6 +305,27 @@ public class PersistentVolumeClaimApiImpl implements PersistentVolumeClaimApi {
             return new PtBaseResult();
         } catch (KubernetesClientException e) {
             LogUtil.error(LogEnum.BIZ_K8S, "PersistentVolumeClaimApiImpl.delete error, param:[namespace]={}, error:{}", namespace, e);
+            return new PtBaseResult(String.valueOf(e.getCode()), e.getMessage());
+        }
+    }
+
+    /**
+     * 删除PVC
+     *
+     * @param namespace 命名空间
+     * @param resourceName 资源名称
+     * @return PtBaseResult 基础结果类
+     */
+    @Override
+    public PtBaseResult deletePvcByResourceName(String namespace, String resourceName) {
+        if (StringUtils.isEmpty(namespace) || StringUtils.isEmpty(resourceName)) {
+            return new PtBaseResult().baseErrorBadRequest();
+        }
+        try {
+            client.persistentVolumeClaims().inNamespace(namespace).withLabel(K8sLabelConstants.BASE_TAG_SOURCE,resourceName).delete();
+            return new PtBaseResult();
+        } catch (KubernetesClientException e) {
+            LogUtil.error(LogEnum.BIZ_K8S, "PersistentVolumeClaimApiImpl.deletePvcByResourceName error, param:[namespace]={}, error:{}", namespace, e);
             return new PtBaseResult(String.valueOf(e.getCode()), e.getMessage());
         }
     }

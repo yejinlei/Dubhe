@@ -21,7 +21,9 @@ import com.alibaba.fastjson.JSONObject;
 import io.swagger.annotations.ApiModelProperty;
 import lombok.Data;
 import lombok.experimental.Accessors;
+import org.dubhe.biz.base.constant.MagicNumConstant;
 
+import javax.validation.constraints.Min;
 import java.io.Serializable;
 import java.sql.Timestamp;
 
@@ -80,6 +82,15 @@ public class PtTrainJobDetailVO implements Serializable {
     @ApiModelProperty("类型(0为CPU，1为GPU)")
     private Integer resourcesPoolType;
 
+    @ApiModelProperty("GPU类型(例如：NVIDIA)")
+    private String gpuType;
+
+    @ApiModelProperty("GPU型号(例如：v100)")
+    private String gpuModel;
+
+    @ApiModelProperty("k8s GPU资源标签key值(例如：nvidia.com/gpu)")
+    private String k8sLabelKey;
+
     @ApiModelProperty("节点个数")
     private Integer resourcesPoolNode;
 
@@ -88,6 +99,9 @@ public class PtTrainJobDetailVO implements Serializable {
 
     @ApiModelProperty("创建人")
     private Long createUserId;
+
+    @ApiModelProperty("创建人用户名")
+    private String createUserName;
 
     @ApiModelProperty("创建时间")
     private Timestamp createTime;
@@ -118,6 +132,12 @@ public class PtTrainJobDetailVO implements Serializable {
 
     @ApiModelProperty("运行参数(算法来源为我的算法时为调优参数，算法来源为预置算法时为运行参数)")
     private JSONObject runParams;
+
+    @ApiModelProperty("运行参数映射关系")
+    private JSONObject runParamsNameMap;
+
+    @ApiModelProperty("运行命令概览")
+    private String displayRunCommand;
 
     @ApiModelProperty("F1值")
     private String paramF1;

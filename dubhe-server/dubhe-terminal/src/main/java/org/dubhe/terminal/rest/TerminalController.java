@@ -19,14 +19,14 @@ package org.dubhe.terminal.rest;
 
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
+import io.swagger.annotations.ApiParam;
 import org.dubhe.biz.base.annotation.ApiVersion;
-import org.dubhe.biz.base.constant.Permissions;
 import org.dubhe.biz.base.vo.DataResponseBody;
 import org.dubhe.terminal.domain.dto.TerminalCreateDTO;
 import org.dubhe.terminal.domain.dto.TerminalDTO;
+import org.dubhe.terminal.domain.dto.TerminalDetailDTO;
 import org.dubhe.terminal.domain.dto.TerminalPreserveDTO;
 import org.dubhe.terminal.service.TerminalService;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
@@ -76,14 +76,21 @@ public class TerminalController {
     @ApiOperation("根据terminalId查询详情")
     //@PreAuthorize(Permissions.TERMINAL_DETAIL)
     public DataResponseBody detail(@Validated TerminalDTO terminalDTO) {
-        return new DataResponseBody(terminalService.detail(terminalDTO));
+        return new DataResponseBody(terminalService.detail(terminalDTO,true));
     }
 
     @GetMapping("/list")
     @ApiOperation("连接列表")
     //@PreAuthorize(Permissions.TERMINAL_LIST)
-    public DataResponseBody list() {
-        return new DataResponseBody(terminalService.list());
+    public DataResponseBody list(@ApiParam(name = "refreshStatus" ,value = "是否从k8s刷新当前终端状态") @RequestParam(value = "refreshStatus",required = false) boolean refreshStatus) {
+        return new DataResponseBody(terminalService.listWithK8sStatus(refreshStatus));
+    }
+
+    @PutMapping()
+    @ApiOperation("更新")
+    //@PreAuthorize(Permissions.TERMINAL_UPDATE)
+    public DataResponseBody update(@Validated @RequestBody TerminalDetailDTO terminalDetailDTO) {
+        return new DataResponseBody(terminalService.update(terminalDetailDTO));
     }
 
 

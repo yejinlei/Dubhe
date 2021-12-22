@@ -131,6 +131,42 @@ public class ModelOptTaskInstanceQueryVO extends BaseVO {
     /**
      * 命名空间
      */
-    String namespace;
+    private String namespace;
+
+    /**
+     * 创建人用户名
+     */
+    private String createUserName;
+
+    /**
+     * GPU类型
+     */
+    private String gpuType;
+
+    /**
+     * GPU型号
+     */
+    private String gpuModel;
+
+    /**
+     * k8s GPU资源标签key值
+     */
+    private String k8sLabelKey;
+    /**
+     * 节点类型(0为CPU，1为GPU)
+     */
+    private Integer resourcesPoolType;
+    /**
+     * 节点规格
+     */
+    private String resourcesPoolSpecs;
+    /**
+     * 规格信息
+     */
+    private String poolSpecsInfo;
+    /**
+     * 节点个数
+     */
+    private Integer resourcesPoolNode;
 
 }

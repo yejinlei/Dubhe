@@ -41,10 +41,6 @@ public class PtImageUploadDTO implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
-    @ApiModelProperty(value = "镜像项目类型", required = true)
-    @NotNull(message = "镜像项目类型不能为空")
-    private Integer projectType;
-
     @ApiModelProperty(value = "镜像来源(0为我的镜像, 1为预置镜像)")
     @FlagValidator(value = {"0", "1"}, message = "无效镜像来源")
     private Integer imageResource;

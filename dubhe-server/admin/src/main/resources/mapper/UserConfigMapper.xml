@@ -21,9 +21,6 @@
             <if test="memoryLimit != null">
                 memory_limit,
             </if>
-            <if test="gpuLimit != null">
-                gpu_limit,
-            </if>
             <if test="createUserId != null">
                 create_user_id,
             </if>
@@ -32,6 +29,9 @@
             </if>
             <if test="updateUserId != null">
                 update_user_id,
+            </if>
+            <if test="defaultImageId != null">
+                default_image_id,
             </if>
             <if test="deleted != null">
                 deleted,
@@ -50,9 +50,6 @@
             <if test="memoryLimit != null">
                 #{memoryLimit},
             </if>
-            <if test="gpuLimit != null">
-                #{gpuLimit},
-            </if>
             <if test="createUserId != null">
                 #{createUserId},
             </if>
@@ -61,6 +58,9 @@
             </if>
             <if test="updateUserId != null">
                 #{updateUserId},
+            </if>
+            <if test="defaultImageId != null">
+                #{defaultImageId},
             </if>
             <if test="deleted != null">
                 #{deleted},
@@ -77,9 +77,6 @@
             <if test="memoryLimit != null">
                 memory_limit = #{memoryLimit},
             </if>
-            <if test="gpuLimit != null">
-                gpu_limit = #{gpuLimit},
-            </if>
             <if test="createTime != null">
                 create_time = #{createTime},
             </if>
@@ -92,9 +89,26 @@
             <if test="updateUserId != null">
                 update_user_id = #{updateUserId},
             </if>
+            <if test="defaultImageId != null">
+                default_image_id = #{defaultImageId},
+            </if>
             <if test="deleted != null">
                 deleted = #{deleted},
             </if>
         </trim>
     </insert>
+    
+    <select id="selectLimitSum" resultType="org.dubhe.admin.domain.vo.UserLimitConfigVO">
+        select 
+            u.id userId,
+            u.username userName,
+            u.nick_name nickName, 
+            uc.cpu_limit cpu,
+            uc.memory_limit mem,
+            sum(ugc.gpu_limit) gpu
+        from user u 
+            left join user_config uc on u.id=uc.user_id
+            left join user_gpu_config ugc on uc.user_id=ugc.user_id 
+            where uc.deleted=0 and ugc.deleted=0 group by userId order by ${sort} ${order}
+</select>
 </mapper>

@@ -41,7 +41,9 @@ import io.fabric8.kubernetes.api.model.extensions.IngressRule;
 import io.fabric8.kubernetes.api.model.extensions.IngressRuleBuilder;
 import io.fabric8.kubernetes.api.model.extensions.IngressTLS;
 import io.fabric8.kubernetes.api.model.extensions.IngressTLSBuilder;
+import org.dubhe.biz.base.constant.MagicNumConstant;
 import org.dubhe.biz.base.constant.SymbolConstant;
+import org.dubhe.k8s.constant.K8sLabelConstants;
 import org.dubhe.k8s.constant.K8sParamConstants;
 import org.dubhe.k8s.domain.bo.BuildIngressBO;
 import org.dubhe.k8s.domain.bo.BuildServiceBO;
@@ -57,11 +59,11 @@ import org.dubhe.k8s.enums.ShellCommandEnum;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
+
+import static org.dubhe.biz.base.constant.MagicNumConstant.ZERO_LONG;
+
+import static org.dubhe.biz.base.constant.MagicNumConstant.ZERO_LONG;
 
 /**
  * @description 构建 Kubernetes 资源对象
@@ -240,6 +242,11 @@ public class ResourceBuildUtils {
         Map<String, String> childLabels = LabelUtils.getChildLabels(bo.getResourceName(), deploymentName, K8sKindEnum.DEPLOYMENT.getKind(), bo.getBusinessLabel(),bo.getTaskIdentifyLabel());
         LabelSelector labelSelector = new LabelSelector();
         labelSelector.setMatchLabels(childLabels);
+        Map<String, String> gpuLabel = new HashMap<>(2);
+        if(bo.getGpuNum()> MagicNumConstant.ZERO){
+            gpuLabel.put(K8sLabelConstants.NODE_GPU_LABEL_KEY, K8sLabelConstants.NODE_GPU_LABEL_VALUE);
+            gpuLabel.put(K8sLabelConstants.NODE_GPU_MODEL_LABEL_KEY, bo.getGpuModel());
+        }
         return new DeploymentBuilder()
                 .withNewMetadata()
                     .withName(deploymentName)
@@ -256,7 +263,9 @@ public class ResourceBuildUtils {
                             .withNamespace(bo.getNamespace())
                         .endMetadata()
                         .withNewSpec()
+                            .withTerminationGracePeriodSeconds(ZERO_LONG)
                             .addToNodeSelector(K8sUtils.gpuSelector(bo.getGpuNum()))
+                            .addToNodeSelector(gpuLabel)
                             .addToContainers(buildContainer(bo, volumeVO, deploymentName))
                             .addToVolumes(volumeVO.getVolumes().toArray(new Volume[0]))
                             .withRestartPolicy(RestartPolicyEnum.ALWAYS.getRestartPolicy())
@@ -276,12 +285,17 @@ public class ResourceBuildUtils {
     public static Container buildContainer(DeploymentBO bo, VolumeVO volumeVO, String name) {
         Map<String, Quantity> resourcesLimitsMap = Maps.newHashMap();
         Optional.ofNullable(bo.getCpuNum()).ifPresent(v -> resourcesLimitsMap.put(K8sParamConstants.QUANTITY_CPU_KEY, new Quantity(v.toString(), K8sParamConstants.CPU_UNIT)));
-        Optional.ofNullable(bo.getGpuNum()).ifPresent(v -> resourcesLimitsMap.put(K8sParamConstants.GPU_RESOURCE_KEY, new Quantity(v.toString())));
         Optional.ofNullable(bo.getMemNum()).ifPresent(v -> resourcesLimitsMap.put(K8sParamConstants.QUANTITY_MEMORY_KEY, new Quantity(v.toString(), K8sParamConstants.MEM_UNIT)));
+        if (bo.getGpuNum() != null && bo.getGpuNum() > MagicNumConstant.ZERO && !StringUtils.isEmpty(bo.getK8sLabelKey())){
+            resourcesLimitsMap.put(bo.getK8sLabelKey(), new Quantity(String.valueOf(bo.getGpuNum())));
+        }
+        if(!CollectionUtils.isEmpty(bo.getCustomResourcesLimitsMap())){
+            resourcesLimitsMap.putAll(bo.getCustomResourcesLimitsMap());
+        }
         Container container = new ContainerBuilder()
                 .withNewName(name)
                 .withNewImage(bo.getImage())
-                .withNewImagePullPolicy(ImagePullPolicyEnum.IFNOTPRESENT.getPolicy())
+                .withNewImagePullPolicy(StringUtils.isEmpty(bo.getImagePullPolicy())?ImagePullPolicyEnum.IFNOTPRESENT.getPolicy():bo.getImagePullPolicy())
                 .withVolumeMounts(volumeVO.getVolumeMounts())
                 .withNewResources().addToLimits(resourcesLimitsMap).endResources()
                 .build();

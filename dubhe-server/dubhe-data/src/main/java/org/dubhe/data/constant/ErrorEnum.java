@@ -112,6 +112,7 @@ public enum ErrorEnum implements ErrorCode {
     DATASET_NOT_ANNOTATION(1718, "数据集暂不支持自动标注"),
     DATASET_NOT_OPERATIONS_BASE_DATASET(1719, "禁止操作内置的数据集"),
     DATASET_PUBLISH_REJECT(1720, "文本暂不支持多版本发布"),
+    DATASET_CHECK_VERSION_ERROR(1721,"目标版本不存在"),
 
     /**
      * 数据集版本校验

@@ -20,10 +20,10 @@ package org.dubhe.serving.rest;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import org.dubhe.biz.base.constant.Permissions;
+import org.dubhe.biz.base.dto.DeleteDTO;
 import org.dubhe.biz.base.dto.PtModelStatusQueryDTO;
 import org.dubhe.biz.base.vo.DataResponseBody;
 import org.dubhe.serving.domain.dto.BatchServingCreateDTO;
-import org.dubhe.serving.domain.dto.BatchServingDeleteDTO;
 import org.dubhe.serving.domain.dto.BatchServingDetailDTO;
 import org.dubhe.serving.domain.dto.BatchServingQueryDTO;
 import org.dubhe.serving.domain.dto.BatchServingStartDTO;
@@ -79,8 +79,9 @@ public class BatchServingController {
     @ApiOperation("删除批量服务")
     @DeleteMapping
     @PreAuthorize(Permissions.SERVING_BATCH_DELETE)
-    public DataResponseBody delete(@Validated @RequestBody BatchServingDeleteDTO batchServingDeleteDTO) {
-        return new DataResponseBody(batchServingService.delete(batchServingDeleteDTO));
+    public DataResponseBody delete(@Validated @RequestBody DeleteDTO deleteDTO) {
+        batchServingService.delete(deleteDTO.getIds());
+        return new DataResponseBody();
     }
 
     @ApiOperation("启动批量服务")

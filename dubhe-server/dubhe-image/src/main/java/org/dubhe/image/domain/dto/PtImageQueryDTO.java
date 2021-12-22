@@ -46,7 +46,4 @@ public class PtImageQueryDTO extends PageQueryBase implements Serializable {
     @ApiModelProperty(value = "镜像名称或id")
     private String imageNameOrId;
 
-    @ApiModelProperty(value = "镜像项目类型(0:notebook , 1:train , 2:serving)")
-    private Integer projectType;
-
 }

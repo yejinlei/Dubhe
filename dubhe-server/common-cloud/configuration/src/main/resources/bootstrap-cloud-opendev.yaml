@@ -1,0 +1,12 @@
+spring:
+  cloud:
+    nacos:
+      username: nacos
+      password: Tianshu
+      context-path: /nacos
+      config:
+        namespace: dubhe-server-cloud-open-dev
+        server-addr: 10.105.1.132:8848
+      discovery:
+        namespace: dubhe-server-cloud-open-dev
+        server-addr: 10.105.1.132:8848

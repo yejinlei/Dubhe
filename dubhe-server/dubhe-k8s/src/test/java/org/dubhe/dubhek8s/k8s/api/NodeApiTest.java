@@ -24,6 +24,7 @@ import org.dubhe.dubhek8s.DubheK8sApplication;
 import org.dubhe.dubhek8s.service.SystemNodeService;
 import org.dubhe.k8s.api.NodeApi;
 import org.dubhe.k8s.constant.K8sLabelConstants;
+import org.dubhe.k8s.domain.bo.BaseResourceBo;
 import org.dubhe.k8s.domain.resource.BizNode;
 import org.dubhe.k8s.domain.resource.BizTaint;
 import org.dubhe.k8s.enums.K8sTolerationEffectEnum;
@@ -35,14 +36,18 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.junit4.SpringRunner;
 
 import javax.annotation.Resource;
-import java.sql.SQLOutput;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * @description NodeApiTest测试类
  * @date 2020-04-22
  */
-@SpringBootTest(classes= DubheK8sApplication.class)
+@SpringBootTest(classes = DubheK8sApplication.class)
 @RunWith(SpringRunner.class)
 public class NodeApiTest {
     @Resource
@@ -101,41 +106,46 @@ public class NodeApiTest {
     }
 
     @Test
-    public void isAllocatable(){
+    public void isAllocatable() {
         LackOfResourcesEnum flag;
-        flag = nodeApi.isAllocatable(nodeApi.getNodeIsolationNodeSelector(), nodeApi.geBizTaintListByUserId(),100,300 ,3);
+        BaseResourceBo baseResourceBo = new BaseResourceBo();
+        baseResourceBo.setNamespace("namespace-40")
+                .setCpuNum(100)
+                .setMemNum(300)
+                .setGpuNum(3);
+        flag = nodeApi.isAllocatable(nodeApi.getNodeIsolationNodeSelector(), nodeApi.geBizTaintListByUserId(), baseResourceBo);
         System.out.println(flag.getMessage());
     }
 
     @Test
-    public void isOutOfTotalAllocatableGpu(){
-        System.out.println(nodeApi.isOutOfTotalAllocatableGpu(3));
+    public void isOutOfTotalAllocatableGpu() {
+        System.out.println(nodeApi.isOutOfTotalAllocatableGpu("nvidia.com/gpu", "", 3));
     }
 
     @Test
-    public void taint(){
+    public void taint() {
         List<BizTaint> bizTaintList = new ArrayList<>();
         BizTaint bizTaint = new BizTaint();
         bizTaint.setEffect(K8sTolerationEffectEnum.NOSCHEDULE.getEffect());
         bizTaint.setKey(K8sLabelConstants.PLATFORM_TAG_ISOLATION_KEY);
-        bizTaint.setValue(StrUtil.format(K8sLabelConstants.PLATFORM_TAG_ISOLATION_VALUE, SpringContextHolder.getActiveProfile(),1));
+        bizTaint.setValue(StrUtil.format(K8sLabelConstants.PLATFORM_TAG_ISOLATION_VALUE, SpringContextHolder.getActiveProfile(), 1));
         bizTaintList.add(bizTaint);
-        System.out.println(JSON.toJSONString(nodeApi.taint("cpu02",bizTaintList)));
+        System.out.println(JSON.toJSONString(nodeApi.taint("cpu02", bizTaintList)));
     }
 
     @Test
-    public void delTaint(){
+    public void delTaint() {
         List<BizTaint> bizTaintList = new ArrayList<>();
         BizTaint bizTaint = new BizTaint();
         bizTaint.setEffect(K8sTolerationEffectEnum.NOSCHEDULE.getEffect());
         bizTaint.setKey(K8sLabelConstants.PLATFORM_TAG_ISOLATION_KEY);
-        bizTaint.setValue(StrUtil.format(K8sLabelConstants.PLATFORM_TAG_ISOLATION_VALUE, SpringContextHolder.getActiveProfile(),1));
+        bizTaint.setValue(StrUtil.format(K8sLabelConstants.PLATFORM_TAG_ISOLATION_VALUE, SpringContextHolder.getActiveProfile(), 1));
         bizTaintList.add(bizTaint);
         System.out.println(JSON.toJSONString(nodeApi.delTaint("master02")));
     }
 
     @Test
-    public void findNodes(){
+    public void findNodes() {
         System.out.println(JSON.toJSONString(systemNodeService.findNodesIsolation()));
     }
 }

@@ -56,6 +56,14 @@ public class PtJupyterResourceBO {
      **/
     private Integer cpuNum;
     /**
+     * GPU型号(例如：v100)
+     */
+    private String gpuModel;
+    /**
+     * k8s GPU资源标签key值(例如：nvidia.com/gpu)
+     */
+    private String k8sLabelKey;
+    /**
      * 镜像名称
      **/
     private String image;
@@ -105,12 +113,4 @@ public class PtJupyterResourceBO {
      * 定时删除时间，单位：分钟
      **/
     private Integer delayDeleteTime;
-    /**
-     * pip包路径
-     */
-    private String pipSitePackageDir;
-    /**
-     * k8s内pip包路径
-     */
-    private String pipSitePackageMountPath;
 }

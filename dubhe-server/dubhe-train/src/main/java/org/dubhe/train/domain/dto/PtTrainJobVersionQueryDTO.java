@@ -26,6 +26,7 @@ import org.dubhe.biz.db.base.PageQueryBase;
 import javax.validation.constraints.Min;
 import javax.validation.constraints.NotNull;
 import java.io.Serializable;
+import java.util.Set;
 
 /**
  * @description 训练任务版本查询
@@ -44,5 +45,8 @@ public class PtTrainJobVersionQueryDTO extends PageQueryBase implements Serializ
 
     @ApiModelProperty("训练作业job状态, 0为待处理，1为运行中，2为运行完成，3为失败，4为停止，5为未知,6为删除，7为创建失败")
     private Integer trainStatus;
+
+    @ApiModelProperty(value = "训练作业id集合",hidden = true)
+    private Set<Long> ids;
 
 }

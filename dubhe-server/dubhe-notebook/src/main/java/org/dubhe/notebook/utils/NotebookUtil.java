@@ -34,7 +34,7 @@ public class NotebookUtil {
     private static final String NOTEBOOK = "notebook";
     private static final String NAMESPACE = "namespace";
     private static final String RESOURCE_NAME = "resource-name";
-    private static final String K8S_MOUNT_PATH = "/tf";
+    private static final String K8S_MOUNT_PATH = "/workspace";
     private static final String K8S_FILE_SEPARATOR = "/";
     private static final int TRUNCATION_INDEX = 250;
     private static final int NOTEBOOK_TIMEOUT_SECOND = 180;

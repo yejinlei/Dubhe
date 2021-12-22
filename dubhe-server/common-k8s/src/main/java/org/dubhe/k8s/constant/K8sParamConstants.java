@@ -46,7 +46,7 @@ public class K8sParamConstants {
     public static final String ENV_URL_KEY = "JUPYTER_BASE_URL";
     public static final String VOLUME_PREFIX = "volume-";
     public static final int RESOURCE_NAME_SUFFIX_LENGTH = MagicNumConstant.FIVE;
-    public static final String TOKEN="token=";
+    public static final String TOKEN = "token=";
     public static final String SVC_SUFFIX = "svc";
     public static final String INGRESS_SUFFIX = "ingress";
     public static final String SHM_NAME = "shm";
@@ -70,7 +70,7 @@ public class K8sParamConstants {
     /**
      * k8s资源对象名称校验正则表达式
      */
-    public static final String K8S_RESOURCE_NAME_REGEX = "[a-z0-9]([-a-z0-9]*[a-z0-9])?";
+    public static final String K8S_RESOURCE_NAME_REGEX = "(([A-Za-z0-9][-A-Za-z0-9_.]*)?[A-Za-z0-9])?";
     /**
      * resourceName最大长度
      */
@@ -80,6 +80,21 @@ public class K8sParamConstants {
      */
     public static String POD_NAME_PLACEHOLDER = "pod-name-placeholder";
 
+    /**
+     * nodeName 占位符
+     */
+    public static String NODE_NAME_PLACEHOLDER = "node-name-placeholder";
+
+    /**
+     * 时间段 占位符
+     */
+    public static String SUM_DAY = "usage-rate-day";
+
+    /**
+     * 用户namespace 占位符
+     */
+    public static String NAMESPACES = "namespace-placeholder";
+    
     /**
      * ResourceQuota cpu 限制key
      */
@@ -98,5 +113,9 @@ public class K8sParamConstants {
     public static final String CONTAINER_ID_PREFIX = "docker://";
 
     public static final String WAITING_REASON_CONTAINER_CREATING = "ContainerCreating";
+
+    public static final String K8S_LABEL_KEY_PREFIX = "requests.";
+
+    public static final String RDMA_HCA_RESOURCE_KEY = "rdma/hca";
 
 }

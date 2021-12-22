@@ -57,4 +57,11 @@ public class ResultUtil {
             throw new BusinessException(String.format(errorMessageTemplate, params));
         }
     }
+
+
+    public static void isTrue(Boolean object, String errorMessageTemplate, Object... params) {
+        if (!Boolean.TRUE.equals(object)) {
+            throw new BusinessException(String.format(errorMessageTemplate, params));
+        }
+    }
 }

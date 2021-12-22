@@ -18,10 +18,12 @@
 package org.dubhe.harbor.api.impl;
 
 
+import cn.hutool.core.util.StrUtil;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONArray;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import org.dubhe.biz.base.constant.MagicNumConstant;
+import org.dubhe.biz.base.constant.StringConstant;
 import org.dubhe.biz.base.constant.SymbolConstant;
 import org.dubhe.biz.log.enums.LogEnum;
 import org.dubhe.harbor.api.HarborApi;
@@ -307,6 +309,17 @@ public class HarborApiImpl implements HarborApi {
              }
          });
      }
+    }
+
+    @Override
+    public String getFullImageUrl(Long userId, String name, String tag) {
+
+        return imagePullUrl+ getImageUrl(userId,name,tag);
+    }
+
+    @Override
+    public String getImageUrl(Long userId, String name, String tag) {
+        return StringConstant.COMMON+ StrUtil.SLASH +userId+ StrUtil.SLASH+name+StrUtil.COLON+tag;
     }
 
 }

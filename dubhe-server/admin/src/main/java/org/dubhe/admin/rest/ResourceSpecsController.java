@@ -25,10 +25,12 @@ import org.dubhe.admin.domain.dto.ResourceSpecsUpdateDTO;
 import org.dubhe.admin.service.ResourceSpecsService;
 import org.dubhe.biz.base.constant.Permissions;
 import org.dubhe.biz.base.dto.QueryResourceSpecsDTO;
+import org.dubhe.admin.domain.dto.QueryUserResourceSpecsDTO;
 import org.dubhe.biz.base.vo.DataResponseBody;
 import org.dubhe.biz.base.vo.QueryResourceSpecsVO;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import javax.validation.Valid;
@@ -47,14 +49,28 @@ public class ResourceSpecsController {
 
     @ApiOperation("查询资源规格")
     @GetMapping
-    public DataResponseBody getResourceSpecs(ResourceSpecsQueryDTO resourceSpecsQueryDTO) {
+    public DataResponseBody getResourceSpecs(@Validated ResourceSpecsQueryDTO resourceSpecsQueryDTO) {
         return new DataResponseBody(resourceSpecsService.getResourceSpecs(resourceSpecsQueryDTO));
     }
 
-    @ApiOperation("查询资源规格(远程调用)")
+
+    @ApiOperation("查询资源规格(训练远程调用)")
     @GetMapping("/queryResourceSpecs")
-    public DataResponseBody<QueryResourceSpecsVO> queryResourceSpecs(QueryResourceSpecsDTO queryResourceSpecsDTO) {
+    public DataResponseBody<QueryResourceSpecsVO> queryResourceSpecs(@Validated QueryResourceSpecsDTO queryResourceSpecsDTO) {
         return new DataResponseBody(resourceSpecsService.queryResourceSpecs(queryResourceSpecsDTO));
+    }
+
+    @ApiOperation("查询用户资源规格")
+    @GetMapping("/queryUserResourceSpecs")
+    public DataResponseBody<QueryResourceSpecsVO> getUserResourceSpecs(@Validated QueryUserResourceSpecsDTO queryUserResourceSpecsDTO) {
+        return new DataResponseBody(resourceSpecsService.getUserResourceSpecs(queryUserResourceSpecsDTO));
+    }
+
+
+    @ApiOperation("查询资源规格(tadl远程调用)")
+    @GetMapping("/queryTadlResourceSpecs")
+    public DataResponseBody<QueryResourceSpecsVO> queryTadlResourceSpecs(Long id) {
+        return new DataResponseBody(resourceSpecsService.queryTadlResourceSpecs(id));
     }
 
     @ApiOperation("新增资源规格")

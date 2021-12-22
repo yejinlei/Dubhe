@@ -16,9 +16,14 @@
  */
 package org.dubhe.admin.service;
 
-import org.dubhe.admin.domain.dto.*;
-import org.dubhe.biz.base.vo.QueryResourceSpecsVO;
+import org.dubhe.admin.domain.dto.ResourceSpecsCreateDTO;
+import org.dubhe.admin.domain.dto.ResourceSpecsDeleteDTO;
+import org.dubhe.admin.domain.dto.ResourceSpecsQueryDTO;
+import org.dubhe.admin.domain.dto.ResourceSpecsUpdateDTO;
+import org.dubhe.biz.base.vo.QueryUserResourceSpecsVO;
 import org.dubhe.biz.base.dto.QueryResourceSpecsDTO;
+import org.dubhe.admin.domain.dto.QueryUserResourceSpecsDTO;
+import org.dubhe.biz.base.vo.QueryResourceSpecsVO;
 
 import java.util.List;
 import java.util.Map;
@@ -62,4 +67,18 @@ public interface ResourceSpecsService {
      * @return QueryResourceSpecsVO 资源规格返回结果实体类
      */
     QueryResourceSpecsVO queryResourceSpecs(QueryResourceSpecsDTO queryResourceSpecsDTO);
+
+    /**
+     * 查询用户资源规格
+     * @param queryUserResourceSpecsDTO 查询用户资源规格请求实体
+     * @return List<QueryUserResourceSpecsVO> 用户资源规格返回结果实体类集合
+     */
+    List<QueryUserResourceSpecsVO> getUserResourceSpecs(QueryUserResourceSpecsDTO queryUserResourceSpecsDTO);
+
+    /**
+     * 查询资源规格
+     * @param id 资源规格id
+     * @return QueryResourceSpecsVO 资源规格返回结果实体类
+     */
+    QueryResourceSpecsVO queryTadlResourceSpecs(Long id);
 }

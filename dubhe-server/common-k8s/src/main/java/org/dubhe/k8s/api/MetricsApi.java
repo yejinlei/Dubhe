@@ -17,13 +17,16 @@
 
 package org.dubhe.k8s.api;
 
+import org.dubhe.biz.base.vo.UserAllotVO;
 import org.dubhe.k8s.domain.dto.PodQueryDTO;
+import org.dubhe.k8s.domain.vo.GpuUsageVO;
 import org.dubhe.k8s.domain.vo.PodRangeMetricsVO;
 import org.dubhe.k8s.domain.vo.PtContainerMetricsVO;
 import org.dubhe.k8s.domain.vo.PtNodeMetricsVO;
 import org.dubhe.k8s.domain.vo.PtPodsVO;
 
 import java.util.List;
+import java.util.Map;
 
 /**
  * @description 监控信息查询接口
@@ -103,5 +106,18 @@ public interface MetricsApi {
      * @return List<PtContainerMetricsVO> Pod资源用量结果类集合
      */
     List<PtContainerMetricsVO> getContainerMetrics();
+
+
+    /**
+     * 查询某个节点的gpu使用率
+     *
+     * @return Map<String, List < GpuUsageVO>> 节点gpu使用率集合
+     */
+    Map<String, List<GpuUsageVO>> getNodeGpuUsage();
+
+
+    List<UserAllotVO> getNamespaceUsageRate(Integer resourceType, String sumDay);
+
+    Map<Long, String> getResourceUsageByUser(Integer resourceType, String sumDay, String namespaces);
 
 }

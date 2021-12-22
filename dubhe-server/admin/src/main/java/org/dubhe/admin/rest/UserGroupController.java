@@ -18,6 +18,7 @@ package org.dubhe.admin.rest;
 
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
+import org.dubhe.admin.domain.dto.UserGroupConfigSaveDTO;
 import org.dubhe.admin.domain.dto.UserGroupDTO;
 import org.dubhe.admin.domain.dto.UserGroupDeleteDTO;
 import org.dubhe.admin.domain.dto.UserGroupQueryDTO;
@@ -32,9 +33,11 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -118,8 +121,8 @@ public class UserGroupController {
     @DeleteMapping("/delete")
     @ApiOperation("批量删除组用户")
     @PreAuthorize(Permissions.USER_GROUP_DELETE_USER)
-    public DataResponseBody delUser(@Validated @RequestBody UserGroupUpdDTO userGroupUpdDTO) {
-        userGroupService.delUser(userGroupUpdDTO);
+    public DataResponseBody delUser(@Validated @RequestBody UserGroupUpdDTO userGroupUpdDTO, @RequestHeader("Authorization") String accessToken) {
+        userGroupService.delUser(userGroupUpdDTO, accessToken);
         return new DataResponseBody();
     }
 
@@ -130,4 +133,21 @@ public class UserGroupController {
         userGroupService.updateUserRole(userRoleUpdateDTO);
         return new DataResponseBody();
     }
+
+    @PutMapping("/resetPassword/{groupId}")
+    @ApiOperation("批量重置组成员密码")
+    @PreAuthorize(Permissions.USER_GROUP_RESET_USER_PASSWORD)
+    public DataResponseBody resetUserPassword(@PathVariable Long groupId) {
+        userGroupService.resetUserPassword(groupId);
+        return new DataResponseBody();
+    }
+
+    @ApiOperation("批量新增或修改组成员配置")
+    @PutMapping(value = "/setUserConfig")
+    @PreAuthorize(Permissions.USER_GROUP_CONFIG_EDIT)
+    public DataResponseBody setUserConfig(@Validated @RequestBody UserGroupConfigSaveDTO userGroupConfigSaveDTO) {
+        userGroupService.saveUserConfig(userGroupConfigSaveDTO);
+        return new DataResponseBody();
+    }
+
 }

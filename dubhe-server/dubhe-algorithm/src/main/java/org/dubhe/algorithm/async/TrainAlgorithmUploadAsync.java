@@ -22,7 +22,6 @@ import org.dubhe.algorithm.dao.PtTrainAlgorithmMapper;
 import org.dubhe.algorithm.domain.dto.PtTrainAlgorithmCreateDTO;
 import org.dubhe.algorithm.domain.entity.PtTrainAlgorithm;
 import org.dubhe.biz.base.context.UserContext;
-import org.dubhe.biz.base.dto.NoteBookAlgorithmUpdateDTO;
 import org.dubhe.biz.base.enums.AlgorithmStatusEnum;
 import org.dubhe.biz.base.exception.BusinessException;
 import org.dubhe.biz.file.api.FileStoreApi;
@@ -35,7 +34,6 @@ import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.Resource;
-import java.util.Arrays;
 
 /**
  * @description 异步上传算法
@@ -103,14 +101,6 @@ public class TrainAlgorithmUploadAsync {
             ptTrainAlgorithm.setAlgorithmStatus(AlgorithmStatusEnum.SUCCESS.getCode());
             //更新fork算法新路径
             trainAlgorithmMapper.updateById(ptTrainAlgorithm);
-            //保存算法根据notbookId更新算法id
-            if (trainAlgorithmCreateDTO.getNoteBookId() != null) {
-                LogUtil.info(LogEnum.BIZ_ALGORITHM, "Save algorithm Update algorithm ID :{} according to notBookId:{}", trainAlgorithmCreateDTO.getNoteBookId(), ptTrainAlgorithm.getId());
-                NoteBookAlgorithmUpdateDTO noteBookAlgorithmUpdateDTO = new NoteBookAlgorithmUpdateDTO();
-                noteBookAlgorithmUpdateDTO.setAlgorithmId(ptTrainAlgorithm.getId());
-                noteBookAlgorithmUpdateDTO.setNotebookIdList(Arrays.asList(trainAlgorithmCreateDTO.getNoteBookId()));
-                noteBookClient.updateNoteBookAlgorithm(noteBookAlgorithmUpdateDTO);
-            }
         } else {
             ptTrainAlgorithm.setAlgorithmStatus(AlgorithmStatusEnum.FAIL.getCode());
             trainAlgorithmMapper.updateById(ptTrainAlgorithm);

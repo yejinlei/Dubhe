@@ -294,4 +294,29 @@
         select id from data_dataset_version_file where file_name = #{fileName} and version_name = #{versionName}
         and dataset_id = #{datasetId}
     </select>
+
+    <select id="getFileUploadContent" resultMap="fileUploadContent">
+        SELECT
+            ddvf.id version_file_id,
+            df.id file_id,
+            df.url,
+            df.`name`
+        FROM
+            data_dataset_version_file ddvf
+            LEFT JOIN data_file df ON ddvf.file_id = df.id
+        WHERE
+            ddvf.dataset_id = #{datasetId}
+            AND df.dataset_id = #{datasetId}
+            AND df.id in
+            <foreach item="item" collection="fileIds" separator="," open="(" close=")">
+                #{item}
+            </foreach>
+    </select>
+
+    <resultMap id="fileUploadContent" type="org.dubhe.data.domain.bo.FileUploadBO">
+        <result column="version_file_id" property="versionFileId"/>
+        <result column="file_id" property="fileId"/>
+        <result column="url" property="fileUrl"/>
+        <result column="name" property="fileName"/>
+    </resultMap>
 </mapper>

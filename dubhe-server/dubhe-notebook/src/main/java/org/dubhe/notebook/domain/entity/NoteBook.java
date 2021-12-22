@@ -40,7 +40,7 @@ public class NoteBook extends BaseEntity {
     @ApiModelProperty(hidden = true)
     private Long id;
 
-    @TableField(value = "origin_user_id",fill = FieldFill.INSERT)
+    @TableField(value = "origin_user_id", fill = FieldFill.INSERT)
     @ApiModelProperty(hidden = true)
     private Long originUserId;
 
@@ -67,9 +67,25 @@ public class NoteBook extends BaseEntity {
     @ApiModelProperty(value = "cpu数量")
     private Integer cpuNum;
 
+    @TableField(exist = false)
+    @ApiModelProperty(value = "类型(0为CPU，1为GPU)")
+    private Integer resourcesPoolType;
+
     @TableField(value = "gpu_num")
     @ApiModelProperty(value = "gpu数量")
     private Integer gpuNum;
+
+    @TableField(value = "gpu_type")
+    @ApiModelProperty(value = "gpu类型")
+    private String gpuType;
+
+    @TableField(value = "gpu_model")
+    @ApiModelProperty(value = "gpu型号")
+    private String gpuModel;
+
+    @TableField(value = "k8s_label_key")
+    @ApiModelProperty(value = "k8s GPU资源标签key值(例如：nvidia.com/gpu)")
+    private String k8sLabelKey;
 
     @TableField(value = "mem_num")
     @ApiModelProperty(value = "内存大小")
@@ -162,8 +178,8 @@ public class NoteBook extends BaseEntity {
      * @param key 键
      * @param value 值
      */
-    public void putStatusDetail(String key,String value){
-        statusDetail = StringUtils.putIntoJsonStringMap(key,value,statusDetail);
+    public void putStatusDetail(String key, String value) {
+        statusDetail = StringUtils.putIntoJsonStringMap(key, value, statusDetail);
     }
 
     /**
@@ -171,7 +187,7 @@ public class NoteBook extends BaseEntity {
      *
      * @param key 键
      */
-    public void removeStatusDetail(String key){
-        statusDetail = StringUtils.removeFromJsonStringMap(key,statusDetail);
+    public void removeStatusDetail(String key) {
+        statusDetail = StringUtils.removeFromJsonStringMap(key, statusDetail);
     }
 }

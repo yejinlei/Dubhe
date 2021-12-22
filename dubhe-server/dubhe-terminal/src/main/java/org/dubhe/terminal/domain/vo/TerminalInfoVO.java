@@ -17,17 +17,13 @@
 
 package org.dubhe.terminal.domain.vo;
 
-import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableField;
-import com.baomidou.mybatisplus.annotation.TableId;
 import io.swagger.annotations.ApiModelProperty;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.experimental.Accessors;
-import org.dubhe.biz.db.entity.BaseEntity;
 import org.dubhe.terminal.domain.entity.TerminalInfo;
 
-import javax.validation.constraints.NotNull;
 import java.io.Serializable;
 
 /**
@@ -76,10 +72,22 @@ public class TerminalInfoVO implements Serializable {
     @ApiModelProperty(value = "磁盘大小（M）")
     private Integer diskMemNum;
 
+    @ApiModelProperty(value = "pod ip")
+    private String podIp;
+
+    @ApiModelProperty("GPU类型(例如：NVIDIA)")
+    private String gpuType;
+
+    @ApiModelProperty("GPU型号(例如：v100)")
+    private String gpuModel;
+
+    @ApiModelProperty("k8s GPU资源标签key值(例如：nvidia.com/gpu)")
+    private String k8sLabelKey;
+
     @ApiModelProperty(value = "是否master节点:false 否 true:是")
     private boolean masterFlag;
 
-    public TerminalInfoVO(TerminalInfo terminalInfo){
+    public TerminalInfoVO(TerminalInfo terminalInfo) {
         this.id = terminalInfo.getId();
         this.terminalId = terminalInfo.getTerminalId();
         this.name = terminalInfo.getName();
@@ -91,6 +99,10 @@ public class TerminalInfoVO implements Serializable {
         this.memNum = terminalInfo.getMemNum();
         this.gpuNum = terminalInfo.getGpuNum();
         this.diskMemNum = terminalInfo.getDiskMemNum();
+        this.podIp = terminalInfo.getPodIp();
+        this.gpuType = terminalInfo.getGpuType();
+        this.gpuModel = terminalInfo.getGpuModel();
+        this.k8sLabelKey = terminalInfo.getK8sLabelKey();
         this.masterFlag = terminalInfo.isMasterFlag();
         this.statusDetail = terminalInfo.getStatusDetail();
     }

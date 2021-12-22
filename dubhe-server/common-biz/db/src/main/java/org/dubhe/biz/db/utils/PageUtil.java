@@ -61,14 +61,14 @@ public class PageUtil extends cn.hutool.core.util.PageUtil {
      * 自定义分页
      */
     public static Map<String, Object> toPage(IPage page, Collection data) {
-        Map<String, Object> map = new LinkedHashMap<>(2);
+        Map<String, Object> map = new LinkedHashMap<>(4);
         map.put("result", data);
         map.put("page", buildPagination(page));
         return map;
     }
 
     private static Map<String, Object> buildPagination(IPage page) {
-        Map<String, Object> map = new HashMap<>(2);
+        Map<String, Object> map = new HashMap<>(4);
         map.put("current", page.getCurrent());
         map.put("size", page.getSize());
         map.put("total", page.getTotal());

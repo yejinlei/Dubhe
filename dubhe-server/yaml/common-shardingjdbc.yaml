@@ -6,9 +6,9 @@ spring:
       master:
         type: com.alibaba.druid.pool.DruidDataSource
         driver-class-name: net.sf.log4jdbc.sql.jdbcapi.DriverSpy
-        url: jdbc:log4jdbc:mysql://127.0.0.1:3306/dubhe-cloud-test?serverTimezone=Asia/Shanghai&characterEncoding=utf8&useSSL=false&allowMultiQueries=true&useInformationSchema=true
+        url: jdbc:log4jdbc:mysql://10.5.29.66:3306/dubhe-cloud-test?serverTimezone=Asia/Shanghai&characterEncoding=utf8&useSSL=false&allowMultiQueries=true&useInformationSchema=true
         username: test
-        password: test
+        password: zj12345678
 
     #指定data_dataset表 主键id 生成策略
     sharding:

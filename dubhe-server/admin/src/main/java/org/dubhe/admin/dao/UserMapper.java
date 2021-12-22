@@ -110,6 +110,13 @@ public interface UserMapper extends BaseMapper<User> {
      */
     Set<String> queryPermissionByUserId(Long userId);
 
+    /**
+     * 查找用户所在的用户组名
+     *
+     * @param userId 用户id
+     * @return 用户组名
+     */
+    String queryUserGroupNameByUserId(Long userId);
 
     /**
      * 查询实体及关联对象
@@ -143,5 +150,14 @@ public interface UserMapper extends BaseMapper<User> {
     @Select("select u.* from user u join  users_roles ur on u.id=ur.user_id and ur.role_id=#{roleId} ${ew.customSqlSegment}  order by u.id desc")
     @ResultMap(value = "userMapperResults")
     IPage<User> selectCollPageByRoleId(Page<User> page, @Param("ew") Wrapper<User> queryWrapper, Long roleId);
+
+    /**
+     * 根据用户id查找用户名
+     *
+     * @param userId 用户id
+     * @return 用户名
+     */
+    @Select("SELECT username FROM user WHERE id=#{userId} and enabled=1 AND deleted=0 ")
+    String findUserNameById(@Param("userId") Long userId);
 
 }

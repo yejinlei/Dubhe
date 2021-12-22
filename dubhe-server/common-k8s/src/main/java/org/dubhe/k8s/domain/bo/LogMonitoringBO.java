@@ -17,6 +17,7 @@
 package org.dubhe.k8s.domain.bo;
 import lombok.Data;
 import lombok.experimental.Accessors;
+import org.dubhe.biz.base.enums.BizEnum;
 import org.dubhe.k8s.domain.dto.PodLogQueryDTO;
 
 import java.util.Set;
@@ -55,6 +56,26 @@ public class LogMonitoringBO {
      * 日志查询时间范围：结束时间
      **/
     private Long endTimeMillis;
+
+    /**
+     * 日志查询起始行
+     **/
+    private Integer from;
+
+    /**
+     * 日志查询行数
+     **/
+    private Integer size;
+
+    /**
+     * 业务标签,用于标识一个组的业务模块 比如:TRAIN模块的trainId, TADL模块的experimentId
+     */
+    private String businessGroupId;
+
+    /**
+     * 业务标签,用于标识业务模块
+     */
+    private BizEnum business;
 
     public LogMonitoringBO(String namespace,String podName){
         this.namespace = namespace;

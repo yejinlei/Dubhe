@@ -18,6 +18,7 @@
 package org.dubhe.data.service;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import org.dubhe.data.domain.bo.FileUploadBO;
 import org.dubhe.data.domain.dto.DatasetVersionFileDTO;
 import org.dubhe.data.domain.entity.Dataset;
 import org.dubhe.data.domain.entity.DatasetVersion;
@@ -342,4 +343,11 @@ public interface DatasetVersionFileService {
      * @param versionName       版本名称
      */
     Long getVersionFileIdByFileName(Long datasetId, String fileName, String versionName);
+
+    /**
+     * 获取导入文件所需信息
+     * @param datasetId         数据集id
+     * @return List<FileUploadBO>
+     */
+    List<FileUploadBO> getFileUploadContent(Long datasetId,List<Long> fileIds);
 }

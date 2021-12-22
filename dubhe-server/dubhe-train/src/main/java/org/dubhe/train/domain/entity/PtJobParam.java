@@ -86,6 +86,12 @@ public class PtJobParam extends BaseEntity {
     private JSONObject runParams;
 
     /**
+     * 运行参数映射关系
+     */
+    @TableField(value = "run_params_name_map", typeHandler = FastjsonTypeHandler.class)
+    private JSONObject runParamsNameMap;
+
+    /**
      * F1值
      */
     @TableField(value = "param_f1")
@@ -132,4 +138,16 @@ public class PtJobParam extends BaseEntity {
      */
     @TableField(value = "notebook_name")
     private String notebookName;
+
+    /**
+     * 运行开始时间
+     */
+    @TableField(value = "run_start_time")
+    private Long runStartTime;
+
+    /**
+     * 运行结束时间
+     */
+    @TableField(value = "run_end_time")
+    private Long runEndTime;
 }

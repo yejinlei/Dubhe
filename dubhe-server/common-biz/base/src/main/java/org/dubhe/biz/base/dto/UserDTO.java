@@ -45,6 +45,8 @@ public class UserDTO implements Serializable {
 
     private String remark;
 
+    private String userGroupName;
+
     private Date lastPasswordResetTime;
 
     private Timestamp createTime;

@@ -31,6 +31,7 @@ import org.dubhe.biz.base.constant.SymbolConstant;
 import org.dubhe.biz.base.context.UserContext;
 import org.dubhe.biz.base.dto.ModelOptAlgorithmCreateDTO;
 import org.dubhe.biz.base.dto.PtModelInfoQueryByIdDTO;
+import org.dubhe.biz.base.dto.UserDTO;
 import org.dubhe.biz.base.enums.DatasetTypeEnum;
 import org.dubhe.biz.base.exception.BusinessException;
 import org.dubhe.biz.base.service.UserContextService;
@@ -48,17 +49,16 @@ import org.dubhe.biz.log.enums.LogEnum;
 import org.dubhe.biz.log.utils.LogUtil;
 import org.dubhe.biz.permission.annotation.DataPermissionMethod;
 import org.dubhe.biz.permission.base.BaseService;
+import org.dubhe.cloud.authconfig.service.AdminClient;
 import org.dubhe.k8s.utils.K8sNameTool;
 import org.dubhe.optimize.client.AlgorithmClient;
 import org.dubhe.optimize.client.ModelInfoClient;
 import org.dubhe.optimize.constant.ModelOptConstant;
-import org.dubhe.optimize.enums.ModelOptErrorEnum;
 import org.dubhe.optimize.dao.ModelOptBuiltInMapper;
 import org.dubhe.optimize.dao.ModelOptDatasetMapper;
 import org.dubhe.optimize.dao.ModelOptTaskMapper;
 import org.dubhe.optimize.domain.dto.ModelOptDatasetCreateDTO;
 import org.dubhe.optimize.domain.dto.ModelOptTaskCreateDTO;
-import org.dubhe.optimize.domain.dto.ModelOptTaskDeleteDTO;
 import org.dubhe.optimize.domain.dto.ModelOptTaskQueryDTO;
 import org.dubhe.optimize.domain.dto.ModelOptTaskSubmitDTO;
 import org.dubhe.optimize.domain.dto.ModelOptTaskUpdateDTO;
@@ -72,6 +72,7 @@ import org.dubhe.optimize.domain.vo.ModelOptDatasetVO;
 import org.dubhe.optimize.domain.vo.ModelOptModelQueryVO;
 import org.dubhe.optimize.domain.vo.ModelOptTaskQueryVO;
 import org.dubhe.optimize.domain.vo.ModelOptUpdateVO;
+import org.dubhe.optimize.enums.ModelOptErrorEnum;
 import org.dubhe.optimize.enums.OptimizeTypeEnum;
 import org.dubhe.optimize.service.ModelOptTaskInstanceService;
 import org.dubhe.optimize.service.ModelOptTaskService;
@@ -85,8 +86,11 @@ import org.springframework.util.CollectionUtils;
 
 import javax.annotation.Resource;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
@@ -128,6 +132,9 @@ public class ModelOptTaskServiceImpl implements ModelOptTaskService {
 
     @Resource(name = "hostFileStoreApiImpl")
     private FileStoreApi fileStoreApi;
+
+    @Resource
+    private AdminClient adminClient;
 
     public final static List<String> FILED_MANES;
 
@@ -195,15 +202,37 @@ public class ModelOptTaskServiceImpl implements ModelOptTaskService {
             throw new BusinessException(ModelOptErrorEnum.INTERNAL_SERVER_ERROR);
         }
         IPage<ModelOptTask> modelOptTasks = modelOptTaskMapper.selectPage(page, wrapper);
+
+        Map<Long, String> finalIdUserNameMap = getFinalIdUserNameMap(modelOptTasks);
+
         List<ModelOptTaskQueryVO> queryVOList = modelOptTasks.getRecords().stream().map(modelOptTask -> {
             ModelOptTaskQueryVO queryVO = new ModelOptTaskQueryVO();
             BeanUtils.copyProperties(modelOptTask, queryVO);
+            //获取任务创建人用户名
+            if (BaseService.isAdmin(curUser) && modelOptTask.getCreateUserId() != null) {
+                queryVO.setCreateUserName(finalIdUserNameMap.getOrDefault(modelOptTask.getCreateUserId(), null));
+            }
             return queryVO;
         }).collect(Collectors.toList());
         LogUtil.info(LogEnum.MODEL_OPT, "用户{}查询模型优化任务列表，任务数={}", curUser.getUsername(), queryVOList.size());
         return PageUtil.toPage(modelOptTasks, queryVOList);
     }
 
+    /**
+     * 获取最终用户名键值对
+     * @param modelOptTasks 模型优化任务集合
+     * @return Map<Long,String>
+     */
+    public Map<Long,String> getFinalIdUserNameMap(IPage<ModelOptTask> modelOptTasks){
+        List<Long> userIds = modelOptTasks.getRecords().stream().map(ModelOptTask::getCreateUserId).filter(Objects::nonNull).distinct().collect(Collectors.toList());
+        if (!CollectionUtils.isEmpty(userIds)) {
+            DataResponseBody<List<UserDTO>> result = adminClient.getUserList(userIds);
+            if (result.getData() != null) {
+                return result.getData().stream().collect(Collectors.toMap(UserDTO::getId, UserDTO::getUsername, (o, n) -> n));
+            }
+        }
+        return new HashMap<>();
+    }
     /**
      * 创建模型优化任务
      *
@@ -373,13 +402,24 @@ public class ModelOptTaskServiceImpl implements ModelOptTaskService {
     /**
      * 删除模型优化任务
      *
-     * @param modelOptTaskDeleteDTO 模型优化任务删除参数
+     * @param ids
      */
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public void delete(ModelOptTaskDeleteDTO modelOptTaskDeleteDTO) {
+    public void delete(Set<Long> ids) {
+        for (Long id : ids) {
+            this.delete(id);
+        }
+    }
+
+    /**
+     * 删除模型优化任务
+     *
+     * @param id
+     */
+    public void delete(Long id) {
         UserContext curUser = userContextService.getCurUser();
-        ModelOptTask modelOptTask = modelOptTaskMapper.selectById(modelOptTaskDeleteDTO.getId());
+        ModelOptTask modelOptTask = modelOptTaskMapper.selectById(id);
         if (curUser == null) {
             throw new BusinessException("当前用户信息已失效");
         }
@@ -388,16 +428,16 @@ public class ModelOptTaskServiceImpl implements ModelOptTaskService {
             throw new BusinessException(ModelOptErrorEnum.MODEL_OPT_TASK_ABSENT);
         }
         checkTaskExist(modelOptTask);
-        if (modelOptTaskInstanceService.checkUnfinishedInst(modelOptTaskDeleteDTO.getId())) {
+        if (modelOptTaskInstanceService.checkUnfinishedInst(id)) {
             throw new BusinessException(ModelOptErrorEnum.MODEL_OPT_TASK_DELETE_ERROR);
         }
-        int result = modelOptTaskMapper.deleteById(modelOptTaskDeleteDTO.getId());
+        int result = modelOptTaskMapper.deleteById(id);
         if (result < MagicNumConstant.ONE) {
-            LogUtil.error(LogEnum.MODEL_OPT, "用户{}删除模型优化任务, 数据库操作失败，任务id={}， 任务名:{}", curUser.getUsername(), modelOptTaskDeleteDTO.getId(), modelOptTask.getName());
+            LogUtil.error(LogEnum.MODEL_OPT, "用户{}删除模型优化任务, 数据库操作失败，任务id={}， 任务名:{}", curUser.getUsername(), id, modelOptTask.getName());
             throw new BusinessException(ModelOptErrorEnum.INTERNAL_SERVER_ERROR);
         }
         //删除该任务对应的实例
-        modelOptTaskInstanceService.deleteByTaskId(modelOptTaskDeleteDTO.getId());
+        modelOptTaskInstanceService.deleteByTaskId(id);
     }
 
     /**
@@ -517,6 +557,28 @@ public class ModelOptTaskServiceImpl implements ModelOptTaskService {
         }
     }
 
+    @Override
+    public ModelOptTaskQueryVO getTaskById(Long id) {
+        UserContext curUser = userContextService.getCurUser();
+        LogUtil.info(LogEnum.MODEL_OPT, "用户{}查询模型优化任务，查询任务id={}", curUser.getUsername(), id);
+        LambdaQueryWrapper<ModelOptTask> wrapper = new LambdaQueryWrapper<ModelOptTask>().eq(ModelOptTask::getId, id);
+        if (!BaseService.isAdmin(curUser)) {
+            wrapper.eq(ModelOptTask::getCreateUserId, curUser.getId());
+        }
+        ModelOptTask modelOptTask = modelOptTaskMapper.selectOne(wrapper);
+        if (Objects.isNull(modelOptTask)){
+            return null;
+        }
+        ModelOptTaskQueryVO queryVO = new ModelOptTaskQueryVO();
+        BeanUtils.copyProperties(modelOptTask, queryVO);
+        //获取任务创建人用户名
+        if (BaseService.isAdmin(curUser) && modelOptTask.getCreateUserId() != null) {
+            DataResponseBody<UserDTO> result = adminClient.getUsers(modelOptTask.getCreateUserId());
+            queryVO.setCreateUserName(result.getData() != null ? result.getData().getUsername() : null);
+        }
+        return queryVO;
+    }
+
     /**
      * 校验任务是否存在
      *
@@ -599,6 +661,13 @@ public class ModelOptTaskServiceImpl implements ModelOptTaskService {
         instance.setDatasetPath(task.getDatasetPath());
         instance.setCommand(task.getCommand());
         instance.setParams(task.getParams());
+        instance.setGpuModel(task.getGpuModel());
+        instance.setGpuType(task.getGpuType());
+        instance.setK8sLabelKey(task.getK8sLabelKey());
+        instance.setPoolSpecsInfo(task.getPoolSpecsInfo());
+        instance.setResourcesPoolNode(task.getResourcesPoolNode());
+        instance.setResourcesPoolType(task.getResourcesPoolType());
+        instance.setResourcesPoolSpecs(task.getResourcesPoolSpecs());
         //实例创建用户与任务保持一致
         instance.setCreateUserId(task.getCreateUserId());
         return instance;

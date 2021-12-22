@@ -36,8 +36,9 @@ public class MenuQueryDTO {
     @Query(propName = "create_time", type = Query.Type.BETWEEN)
     private List<Timestamp> createTime;
 
-
     @Query(propName = "deleted", type = Query.Type.EQ)
     private Boolean deleted = false;
 
+    @Query(type = Query.Type.ORDER_BY)
+    private String sort = "sort";
 }

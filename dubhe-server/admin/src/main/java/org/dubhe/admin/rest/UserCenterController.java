@@ -78,7 +78,6 @@ public class UserCenterController {
         List<RoleSmallDTO> roles = roleService.getRoleByUserId(curUserId);
         List<MenuDTO> menuDtoList = menuService.findByRoles(roles);
         List<MenuDTO> menuDtos = (List<MenuDTO>) menuService.buildTree(menuDtoList).get("result");
-
         return new DataResponseBody(menuService.buildMenus(menuDtos));
     }
 

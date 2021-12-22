@@ -134,7 +134,7 @@ public class PermissionServiceImpl extends ServiceImpl<PermissionMapper, Permiss
 
         Map<String, Object> map = new HashMap<>(2);
         if (trees.size() == 0) {
-            permissions.stream().filter(x -> !ids.contains(x.getId())).collect(Collectors.toList());
+            trees = permissions.stream().filter(x -> !ids.contains(x.getId())).collect(Collectors.toList());
         }
 
         Map<String, Object> page = new HashMap<>(3);

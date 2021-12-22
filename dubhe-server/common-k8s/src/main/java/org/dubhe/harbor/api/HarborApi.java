@@ -67,4 +67,21 @@ public interface HarborApi {
      */
     void deleteImageByTag(String imageUrl);
 
+    /**
+     *
+     * @param userId 用户Id
+     * @param name   镜像名称
+     * @param tag    镜像标签
+     * @return
+     */
+    String getFullImageUrl(Long userId,String name,String tag);
+
+    /**
+     *
+     * @param userId 用户Id
+     * @param name   镜像名称
+     * @param tag    镜像标签
+     * @return
+     */
+    String getImageUrl(Long userId,String name,String tag);
 }

@@ -66,7 +66,9 @@ import org.dubhe.k8s.cache.ResourceCache;
 import org.dubhe.k8s.constant.K8sLabelConstants;
 import org.dubhe.k8s.constant.K8sParamConstants;
 import org.dubhe.k8s.domain.PtBaseResult;
+import org.dubhe.k8s.domain.bo.BaseResourceBo;
 import org.dubhe.k8s.domain.bo.PtJupyterResourceBO;
+import org.dubhe.k8s.domain.bo.PtMountDirBO;
 import org.dubhe.k8s.domain.bo.PtPersistentVolumeClaimBO;
 import org.dubhe.k8s.domain.bo.TaskYamlBO;
 import org.dubhe.k8s.domain.entity.K8sTask;
@@ -77,10 +79,13 @@ import org.dubhe.k8s.enums.K8sKindEnum;
 import org.dubhe.k8s.enums.K8sResponseEnum;
 import org.dubhe.k8s.enums.LackOfResourcesEnum;
 import org.dubhe.k8s.enums.LimitsOfResourcesEnum;
+import org.dubhe.k8s.service.K8sGpuConfigService;
 import org.dubhe.k8s.service.K8sTaskService;
+import org.dubhe.k8s.utils.K8sCommonUtils;
 import org.dubhe.k8s.utils.K8sUtils;
 import org.dubhe.k8s.utils.LabelUtils;
 import org.dubhe.k8s.utils.YamlUtils;
+import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import javax.annotation.Resource;
@@ -121,16 +126,18 @@ public class JupyterResourceApiImpl implements JupyterResourceApi {
     private ResourceQuotaApi resourceQuotaApi;
     @Autowired
     private ResourceIisolationApi resourceIisolationApi;
+    @Autowired
+    private K8sGpuConfigService k8sGpuConfigService;
 
+    @Autowired
+    private K8sCommonUtils k8sCommonUtils;
 
     private static final String DATASET = "/dataset";
     private static final String WORKSPACE = "/workspace";
     private static final String DSHM_PATH = "/dev/shm";
-    private static final String K8S_PIP_SITE_PACKAGE = "/home/admin/.local/lib/python3.8/site-packages";
 
     private static final String PVC_DATASET = "pvc-dataset";
     private static final String PVC_WORKSPACE = "pvc-workspace";
-    private static final String PVC_PIP_SITE_PACKAGE = "pvc-pip-site-package";
 
     private static final String CONTAINER_NAME = "web";
     private static final Integer CONTAINER_PORT = 8888;
@@ -158,19 +165,27 @@ public class JupyterResourceApiImpl implements JupyterResourceApi {
                 return new PtJupyterDeployVO().error(K8sResponseEnum.BAD_REQUEST.getCode(), K8sResponseEnum.BAD_REQUEST.getMessage());
             }
 
-            LimitsOfResourcesEnum limitsOfResources = resourceQuotaApi.reachLimitsOfResources(bo.getNamespace(), bo.getCpuNum(), bo.getMemNum(), bo.getGpuNum());
+            BaseResourceBo baseResourceBo = new BaseResourceBo();
+            BeanUtils.copyProperties(bo, baseResourceBo);
+            LimitsOfResourcesEnum limitsOfResources = resourceQuotaApi.reachLimitsOfResources(baseResourceBo);
             if (!LimitsOfResourcesEnum.ADEQUATE.equals(limitsOfResources)) {
                 return new PtJupyterDeployVO().error(K8sResponseEnum.LACK_OF_RESOURCES.getCode(), limitsOfResources.getMessage());
             }
-            LackOfResourcesEnum lack = nodeApi.isAllocatable(bo.getCpuNum(), bo.getMemNum(), bo.getGpuNum());
+            if (bo.getUseGpu()) {
+                Integer k8sGpuNumLimit = k8sGpuConfigService.getGpuLimit(bo.getNamespace(), bo.getGpuModel(), bo.getK8sLabelKey());
+                if(bo.getGpuNum() > k8sGpuNumLimit){
+                    return new PtJupyterDeployVO().error(K8sResponseEnum.LACK_OF_RESOURCES.getCode(), LimitsOfResourcesEnum.LIMITS_OF_GPU.getMessage());
+                }
+            }
+            LackOfResourcesEnum lack = nodeApi.isAllocatable(baseResourceBo);
             if (!LackOfResourcesEnum.ADEQUATE.equals(lack)) {
                 return new PtJupyterDeployVO().error(K8sResponseEnum.LACK_OF_RESOURCES.getCode(), lack.getMessage());
             }
-
-            if (!fileStoreApi.createDirs(bo.getWorkspaceDir(), bo.getDatasetDir(),bo.getPipSitePackageDir())) {
-                return new PtJupyterDeployVO().error(K8sResponseEnum.INTERNAL_SERVER_ERROR.getCode(), K8sResponseEnum.INTERNAL_SERVER_ERROR.getMessage());
-            }
             resourceCache.deletePodCacheByResourceName(bo.getNamespace(), bo.getName());
+
+            if(!fileStoreApi.fileOrDirIsExist(bo.getWorkspaceDir())){
+                fileStoreApi.createDir(bo.getWorkspaceDir());
+            }
             PtJupyterDeployVO result = new JupyterDeployer(bo).buildFsVolumes().deploy();
             LogUtil.info(LogEnum.BIZ_K8S, "Return value of creating Notebook create:{}", result);
             return result;
@@ -189,11 +204,20 @@ public class JupyterResourceApiImpl implements JupyterResourceApi {
     @Override
     public PtJupyterDeployVO createWithPvc(PtJupyterResourceBO bo) {
         try {
-            LimitsOfResourcesEnum limitsOfResources = resourceQuotaApi.reachLimitsOfResources(bo.getNamespace(), bo.getCpuNum(), bo.getMemNum(), bo.getGpuNum());
+
+            BaseResourceBo baseResourceBo = new BaseResourceBo();
+            BeanUtils.copyProperties(bo, baseResourceBo);
+            LimitsOfResourcesEnum limitsOfResources = resourceQuotaApi.reachLimitsOfResources(baseResourceBo);
             if (!LimitsOfResourcesEnum.ADEQUATE.equals(limitsOfResources)) {
                 return new PtJupyterDeployVO().error(K8sResponseEnum.LACK_OF_RESOURCES.getCode(), limitsOfResources.getMessage());
             }
-            LackOfResourcesEnum lack = nodeApi.isAllocatable(bo.getCpuNum(), bo.getMemNum(), bo.getGpuNum());
+            if (bo.getUseGpu()) {
+                Integer k8sGpuNumLimit = k8sGpuConfigService.getGpuLimit(bo.getNamespace(), bo.getGpuModel(), bo.getK8sLabelKey());
+                if(bo.getGpuNum() > k8sGpuNumLimit){
+                    return new PtJupyterDeployVO().error(K8sResponseEnum.LACK_OF_RESOURCES.getCode(), LimitsOfResourcesEnum.LIMITS_OF_GPU.getMessage());
+                }
+            }
+            LackOfResourcesEnum lack = nodeApi.isAllocatable(baseResourceBo);
             if (!LackOfResourcesEnum.ADEQUATE.equals(lack)) {
                 return new PtJupyterDeployVO().error(K8sResponseEnum.LACK_OF_RESOURCES.getCode(), lack.getMessage());
             }
@@ -230,12 +254,14 @@ public class JupyterResourceApiImpl implements JupyterResourceApi {
      */
     @Override
     public PtBaseResult delete(String namespace, String resourceName) {
-        LogUtil.info(LogEnum.BIZ_K8S, "Param of delete namespace {} resourceName {}", namespace,resourceName);
+        LogUtil.info(LogEnum.BIZ_K8S, "Param of delete namespace {} resourceName {}", namespace, resourceName);
         try {
             Boolean res = client.extensions().ingresses().inNamespace(namespace).withLabels(LabelUtils.withEnvResourceName(resourceName)).delete()
                     && client.services().inNamespace(namespace).withLabels(LabelUtils.withEnvResourceName(resourceName)).delete()
                     && client.apps().statefulSets().inNamespace(namespace).withLabels(LabelUtils.withEnvResourceName(resourceName)).delete()
                     && client.secrets().inNamespace(namespace).withLabels(LabelUtils.withEnvResourceName(resourceName)).delete();
+            persistentVolumeClaimApi.deletePvcByResourceName(namespace,resourceName);
+            persistentVolumeClaimApi.deletePvByResourceName(resourceName);
             k8sTaskService.deleteByNamespaceAndResourceName(namespace,resourceName);
             if (res) {
                 return new PtBaseResult();
@@ -305,12 +331,11 @@ public class JupyterResourceApiImpl implements JupyterResourceApi {
         private String image;
         private String datasetDir;
         private String datasetMountPath;
-        private String pipSitePackageDir;
-        private String pipSitePackageMountPath;
         private String workspaceMountPath;
         private String workspaceDir;
         private Boolean useGpu;
         private Quantity shmMemory;
+        private String gpuModel;
 
         //数据集默认只读
         private boolean datasetReadOnly;
@@ -339,8 +364,6 @@ public class JupyterResourceApiImpl implements JupyterResourceApi {
             this.image = bo.getImage();
             this.datasetDir = bo.getDatasetDir();
             this.datasetMountPath = StringUtils.isEmpty(bo.getDatasetMountPath()) ? DATASET : bo.getDatasetMountPath();
-            this.pipSitePackageDir=bo.getPipSitePackageDir();
-            this.pipSitePackageMountPath=StringUtils.isEmpty(bo.getPipSitePackageMountPath()) ? K8S_PIP_SITE_PACKAGE : bo.getPipSitePackageMountPath();
             this.workspaceDir = bo.getWorkspaceDir();
             this.workspaceMountPath = StringUtils.isEmpty(bo.getWorkspaceMountPath()) ? WORKSPACE : bo.getWorkspaceMountPath();
             Optional.ofNullable(bo.getDatasetReadOnly()).ifPresent(v -> datasetReadOnly = v);
@@ -349,14 +372,16 @@ public class JupyterResourceApiImpl implements JupyterResourceApi {
             if (bo.getUseGpu() != null && bo.getUseGpu() && null == bo.getGpuNum()) {
                 bo.setGpuNum(0);
             }
+            this.gpuModel = bo.getGpuModel();
 
             this.resourcesLimitsMap = Maps.newHashMap();
             Optional.ofNullable(bo.getCpuNum()).ifPresent(v -> resourcesLimitsMap.put(K8sParamConstants.QUANTITY_CPU_KEY, new Quantity(v.toString(), K8sParamConstants.CPU_UNIT)));
-            Optional.ofNullable(bo.getGpuNum()).ifPresent(v -> resourcesLimitsMap.put(K8sParamConstants.GPU_RESOURCE_KEY, new Quantity(v.toString())));
+            Optional.ofNullable(bo.getGpuNum()).ifPresent(v -> resourcesLimitsMap.put(bo.getK8sLabelKey(), new Quantity(v.toString())));
             Optional.ofNullable(bo.getMemNum()).ifPresent(v -> resourcesLimitsMap.put(K8sParamConstants.QUANTITY_MEMORY_KEY, new Quantity(v.toString(), K8sParamConstants.MEM_UNIT)));
-            this.shmMemory = new Quantity("1024",K8sParamConstants.MEM_UNIT);
+            k8sCommonUtils.addRdmaResource(resourcesLimitsMap);
+            this.shmMemory = new Quantity("1024", K8sParamConstants.MEM_UNIT);
             // 共享内存设置为容器内存的一半（参考 Linux 的默认设置）
-            Optional.ofNullable(bo.getMemNum()).ifPresent(v -> shmMemory.setAmount(String.valueOf(v/2)));
+            Optional.ofNullable(bo.getMemNum()).ifPresent(v -> shmMemory.setAmount(String.valueOf(v / 2)));
             this.host = k8sUtils.getHost();
             this.businessLabel = bo.getBusinessLabel();
             this.taskIdentifyLabel = bo.getTaskIdentifyLabel();
@@ -439,7 +464,7 @@ public class JupyterResourceApiImpl implements JupyterResourceApi {
                         .addToData(ImmutableMap.of(K8sParamConstants.SECRET_PWD_KEY, base64Pwd, K8sParamConstants.SECRET_URL_KEY, base64BaseUrl))
                         .build();
 
-                LogUtil.info(LogEnum.BIZ_K8S, "Ready to deploy {}", secretName);
+                LogUtil.info(LogEnum.BIZ_K8S, "Ready to deploy {}, yaml info is : {}", secretName, YamlUtils.dumpAsYaml(secret));
                 secret = client.secrets().create(secret);
                 LogUtil.info(LogEnum.BIZ_K8S, "{} deployed successfully", secretName);
             }
@@ -459,13 +484,11 @@ public class JupyterResourceApiImpl implements JupyterResourceApi {
                         .withReadOnly(datasetReadOnly)
                         .build());
 
+                BizPersistentVolumeClaim bizPersistentVolumeClaim = persistentVolumeClaimApi.createWithFsPv(new PtPersistentVolumeClaimBO(namespace,baseName,new PtMountDirBO(datasetDir,MagicNumConstant.ONE_HUNDRED+K8sParamConstants.MEM_UNIT_GI,true)));
                 volumes.add(new VolumeBuilder()
-                        .withName(PVC_DATASET)
-                        .withNewHostPath()
-                            .withPath(datasetDir)
-                            .withType(K8sParamConstants.HOST_PATH_TYPE)
-                        .endHostPath()
-                        .build());
+                    .withName(PVC_DATASET)
+                    .withNewPersistentVolumeClaim(bizPersistentVolumeClaim.getName(), true)
+                    .build());
             }
         }
 
@@ -484,25 +507,6 @@ public class JupyterResourceApiImpl implements JupyterResourceApi {
                     .build());
         }
 
-        /**
-         * 挂载pip包路径
-         */
-        private void buildPipSitePackageFsVolume(){
-            if (StrUtil.isNotBlank(pipSitePackageDir)) {
-                volumeMounts.add(new VolumeMountBuilder()
-                        .withName(PVC_PIP_SITE_PACKAGE)
-                        .withMountPath(pipSitePackageMountPath)
-                        .build());
-
-                volumes.add(new VolumeBuilder()
-                        .withName(PVC_PIP_SITE_PACKAGE)
-                        .withNewHostPath()
-                            .withPath(pipSitePackageDir)
-                            .withType(K8sParamConstants.HOST_PATH_TYPE)
-                        .endHostPath()
-                        .build());
-            }
-        }
 
         /**
          * 构建VolumeMount
@@ -517,8 +521,8 @@ public class JupyterResourceApiImpl implements JupyterResourceApi {
                 volumes.add(new VolumeBuilder()
                         .withName(PVC_WORKSPACE)
                         .withNewHostPath()
-                            .withPath(workspaceDir)
-                            .withType(K8sParamConstants.HOST_PATH_TYPE)
+                        .withPath(workspaceDir)
+                        .withType(K8sParamConstants.HOST_PATH_TYPE)
                         .endHostPath()
                         .build());
             }
@@ -548,7 +552,6 @@ public class JupyterResourceApiImpl implements JupyterResourceApi {
          * @return JupyterDeployer Notebook 部署类
          */
         private JupyterDeployer buildFsVolumes() {
-            buildPipSitePackageFsVolume();
             buildDatasetFsVolume();
             buildWorkspaceFsVolume();
             buildShmFsVolume();
@@ -561,7 +564,6 @@ public class JupyterResourceApiImpl implements JupyterResourceApi {
          * @return JupyterDeployer Notebook 部署类
          */
         private JupyterDeployer buildFsPvcVolumes() {
-            buildPipSitePackageFsVolume();
             buildDatasetFsVolume();
             buildWorkspaceFsPvcVolume();
             buildShmFsVolume();
@@ -588,12 +590,18 @@ public class JupyterResourceApiImpl implements JupyterResourceApi {
             Container container = new Container();
             container.setName(statefulSetName);
             container.setImage(image);
-            container.setImagePullPolicy(ImagePullPolicyEnum.IFNOTPRESENT.getPolicy());
+            container.setImagePullPolicy(ImagePullPolicyEnum.ALWAYS.getPolicy());
             //端口映射
             container.setPorts(Arrays.asList(new ContainerPortBuilder()
                     .withContainerPort(CONTAINER_PORT)
                     .withName(CONTAINER_NAME).build()));
             container.setVolumeMounts(volumeMounts);
+
+            List<String> cmd = new ArrayList<>();
+            cmd.add("/bin/bash");
+            cmd.add("-c");
+            cmd.add("mv /root/README.md  /workspace/ ;  /root/miniconda3/bin/python3 -m pip config set global.index-url https://pypi.tuna.tsinghua.edu.cn/simple  && /root/miniconda3/bin/jupyter-lab --ip=0.0.0.0 --port=8888 --allow-root --no-browser ");
+            container.setCommand(cmd);
 
             //环境变量
             List<EnvVar> env = new ArrayList();
@@ -617,7 +625,7 @@ public class JupyterResourceApiImpl implements JupyterResourceApi {
                     .build());
             Map<String, String> gpuLabel = new HashMap<>(2);
             if (useGpu) {
-                gpuLabel.put(K8sLabelConstants.NODE_GPU_LABEL_KEY, K8sLabelConstants.NODE_GPU_LABEL_VALUE);
+                gpuLabel.put(K8sLabelConstants.NODE_GPU_MODEL_LABEL_KEY, gpuModel);
             }
 
             statefulSet = new StatefulSetBuilder()

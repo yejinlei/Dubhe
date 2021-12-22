@@ -22,12 +22,15 @@ import cn.hutool.core.util.ObjectUtil;
 import cn.hutool.core.util.StrUtil;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONArray;
+import com.alibaba.fastjson.JSONObject;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import org.dubhe.biz.base.constant.*;
+import org.dubhe.biz.base.dto.UserDTO;
+import org.dubhe.biz.base.dto.UserSmallDTO;
 import org.dubhe.biz.base.vo.DatasetVO;
 import org.dubhe.biz.file.utils.MinioUtil;
 import org.dubhe.biz.file.api.FileStoreApi;
@@ -49,6 +52,7 @@ import org.dubhe.biz.log.enums.LogEnum;
 import org.dubhe.biz.log.utils.LogUtil;
 import org.dubhe.biz.permission.annotation.RolePermission;
 import org.dubhe.biz.statemachine.dto.StateChangeDTO;
+import org.dubhe.cloud.authconfig.service.AdminClient;
 import org.dubhe.cloud.authconfig.utils.JwtUtils;
 import org.dubhe.biz.base.vo.DatasetVO;
 import org.dubhe.data.client.TrainServerClient;
@@ -56,6 +60,7 @@ import org.dubhe.data.constant.*;
 import org.dubhe.data.dao.DatasetMapper;
 import org.dubhe.data.dao.TaskMapper;
 import org.dubhe.biz.base.vo.ProgressVO;
+import org.dubhe.data.domain.bo.FileUploadBO;
 import org.dubhe.data.domain.dto.*;
 import org.dubhe.data.domain.entity.*;
 import org.dubhe.data.domain.vo.*;
@@ -67,6 +72,7 @@ import org.dubhe.data.machine.utils.StateMachineUtil;
 import org.dubhe.data.pool.BasePool;
 import org.dubhe.data.service.*;
 import org.dubhe.data.service.task.DatasetRecycleFile;
+import org.dubhe.data.util.GeneratorKeyUtil;
 import org.dubhe.data.util.ZipUtil;
 import org.dubhe.recycle.domain.dto.RecycleCreateDTO;
 import org.dubhe.recycle.domain.dto.RecycleDetailCreateDTO;
@@ -112,6 +118,9 @@ public class DatasetServiceImpl extends ServiceImpl<DatasetMapper, Dataset> impl
     @Autowired
     @Lazy
     private TaskService taskService;
+
+    @Resource
+    private AdminClient adminClient;
 
     @Resource(name = "hostFileStoreApiImpl")
     private FileStoreApi fileStoreApi;
@@ -259,6 +268,9 @@ public class DatasetServiceImpl extends ServiceImpl<DatasetMapper, Dataset> impl
      */
     @Resource
     private MinioUtil minioUtil;
+
+    @Autowired
+    private GeneratorKeyUtil generatorKeyUtil;
 
     /**
      * 线程池
@@ -551,6 +563,7 @@ public class DatasetServiceImpl extends ServiceImpl<DatasetMapper, Dataset> impl
         datasetVO.setLabelGroupType(labelGroupType);
         datasetVO.setSourceId(dataset.getSourceId());
         datasetVO.setCurrentVersionName(dataset.getCurrentVersionName());
+
         return datasetVO;
     }
 
@@ -603,25 +616,23 @@ public class DatasetServiceImpl extends ServiceImpl<DatasetMapper, Dataset> impl
         } catch (DuplicateKeyException e) {
             throw new BusinessException(ErrorEnum.DATASET_NAME_DUPLICATED_ERROR);
         }
-        if (!dataset.isImport()) {
-            //新增数据标签关系
-            List<Label> labels = labelService.listByGroupId(datasetCreateDTO.getLabelGroupId());
-            if (!CollectionUtils.isEmpty(labels)) {
-                List<DatasetLabel> datasetLabels = labels.stream().map(a -> {
-                    DatasetLabel datasetLabel = new DatasetLabel();
-                    datasetLabel.setDatasetId(dataset.getId());
-                    datasetLabel.setLabelId(a.getId());
-                    return datasetLabel;
-                }).collect(Collectors.toList());
-                datasetLabelService.saveList(datasetLabels);
-            }
-            //预置标签处理
-            if (datasetCreateDTO.getPresetLabelType() != null) {
-                presetLabel(datasetCreateDTO.getPresetLabelType(), dataset.getId());
-            }
-            if (DatatypeEnum.VIDEO.getValue().equals(datasetCreateDTO.getDataType())) {
-                dataset.setStatus(DataStateCodeConstant.NOT_SAMPLED_STATE);
-            }
+        //新增数据标签关系
+        List<Label> labels = labelService.listByGroupId(datasetCreateDTO.getLabelGroupId());
+        if (!CollectionUtils.isEmpty(labels)) {
+            List<DatasetLabel> datasetLabels = labels.stream().map(a -> {
+                DatasetLabel datasetLabel = new DatasetLabel();
+                datasetLabel.setDatasetId(dataset.getId());
+                datasetLabel.setLabelId(a.getId());
+                return datasetLabel;
+            }).collect(Collectors.toList());
+            datasetLabelService.saveList(datasetLabels);
+        }
+        //预置标签处理
+        if (datasetCreateDTO.getPresetLabelType() != null) {
+            presetLabel(datasetCreateDTO.getPresetLabelType(), dataset.getId());
+        }
+        if (DatatypeEnum.VIDEO.getValue().equals(datasetCreateDTO.getDataType())) {
+            dataset.setStatus(DataStateCodeConstant.NOT_SAMPLED_STATE);
         }
         dataset.setUri(fileUtil.getDatasetAbsPath(dataset.getId()));
         if (datasetCreateDTO.getDataType().equals(DatatypeEnum.AUTO_IMPORT.getValue())) {
@@ -630,6 +641,9 @@ public class DatasetServiceImpl extends ServiceImpl<DatasetMapper, Dataset> impl
                     DatatypeEnum.getEnumValue(datasetCreateDTO.getDataType()).getMsg()));
             dataset.setStatus(DataStateCodeConstant.ANNOTATION_COMPLETE_STATE);
             dataset.setCurrentVersionName(DEFAULT_VERSION);
+        }
+        if(datasetCreateDTO.isImport()){
+            dataset.setStatus(DataStateEnum.ANNOTATION_COMPLETE_STATE.getCode());
         }
         updateById(dataset);
         return dataset.getId();
@@ -725,9 +739,10 @@ public class DatasetServiceImpl extends ServiceImpl<DatasetMapper, Dataset> impl
                 setEventMethodName(DataStateMachineConstant.DATA_DELETE_FILES_EVENT);
                 setStateMachineType(DataStateMachineConstant.DATA_STATE_MACHINE);
             }});
-
+            if(dataset.getDataType().equals(MagicNumConstant.TWO) || dataset.getDataType().equals(MagicNumConstant.THREE)){
+                fileService.deleteEsData(fileDeleteDTO.getFileIds());
+            }
         }
-        fileService.deleteEsData(fileDeleteDTO.getFileIds());
     }
 
 
@@ -902,9 +917,25 @@ public class DatasetServiceImpl extends ServiceImpl<DatasetMapper, Dataset> impl
                 }
             }
             List<Dataset> records = page.getRecords();
+
+            Map<Long, String> idUserNameMap = new HashMap<>();
+            List<Long> userIds = records.stream().map(Dataset::getCreateUserId).filter(Objects::nonNull).distinct().collect(Collectors.toList());
+            if (org.apache.commons.collections4.CollectionUtils.isNotEmpty(userIds)) {
+                DataResponseBody<List<UserDTO>> result = adminClient.getUserList(userIds);
+                if (result.getData() != null) {
+                    idUserNameMap = result.getData().stream().collect(Collectors.toMap(UserDTO::getId, UserDTO::getUsername, (o, n) -> n));
+                }
+            }
+            Map<Long, String> finalIdUserNameMap = idUserNameMap;
+
             if (!CollectionUtils.isEmpty(records)) {
                 for (Dataset dataset : records) {
                     DatasetVO datasetVO = buildDatasetVO(dataset, null, null);
+                    if (dataset.getCreateUserId() != null) {
+                        UserSmallDTO userSmallDTO = new UserSmallDTO();
+                        userSmallDTO.setUsername(finalIdUserNameMap.getOrDefault(dataset.getCreateUserId(), null));
+                        datasetVO.setCreateUser(userSmallDTO);
+                    }
                     if (dataset.getCurrentVersionName() != null) {
                         DatasetVersion datasetVersion = datasetVersionService
                                 .getVersionByDatasetIdAndVersionName(dataset.getId(), dataset.getCurrentVersionName());
@@ -986,8 +1017,46 @@ public class DatasetServiceImpl extends ServiceImpl<DatasetMapper, Dataset> impl
      */
     @Override
     public void uploadFiles(Long datasetId, BatchFileCreateDTO batchFileCreateDTO) {
-        List<Long> fileIds = saveDbForUploadFiles(datasetId, batchFileCreateDTO);
-        transportTextToEsForUploadFiles(datasetId, fileIds);
+        List<Long> fileIds = saveDbForUploadFiles(datasetId, batchFileCreateDTO, batchFileCreateDTO.getIfImport());
+        if(batchFileCreateDTO.getIfImport()!=null && batchFileCreateDTO.getIfImport()){
+            importFileAnnotation(datasetId, fileIds);
+        }
+        transportTextToEsForUploadFiles(datasetId, fileIds,batchFileCreateDTO.getIfImport());
+    }
+
+    void importFileAnnotation(Long datasetId, List<Long> fileIds) {
+        List<Long> versionFileIds = datasetVersionFileService.getVersionFileIdsByFileIds(datasetId, fileIds);
+        List<FileUploadBO> fileUploadContent = datasetVersionFileService.getFileUploadContent(datasetId,fileIds);
+        List<DataFileAnnotation> dataFileAnnotations = new ArrayList<>();
+        fileUploadContent.forEach(fileUploadBO -> {
+            String annPath = StringUtils.substringBeforeLast(fileUploadBO.getFileUrl(), ".");
+            annPath = annPath.replace("/origin/","/annotation/").replace(bucket+"/","");
+            try {
+                JSONArray annJsonArray = JSONObject.parseArray((minioUtil.readString(bucket, annPath)));
+                for (Object object : annJsonArray) {
+                    JSONObject jsonObject = (JSONObject) object;
+                    Long categoryId = Long.parseLong(jsonObject.getString("category_id"));
+                    Double score = jsonObject.getString("score")==null ? null : Double.parseDouble(jsonObject.getString("score"));
+                    DataFileAnnotation dataFileAnnotation = DataFileAnnotation.builder().fileName(fileUploadBO.getFileName())
+                            .versionFileId(fileUploadBO.getVersionFileId())
+                            .datasetId(datasetId)
+                            .labelId(categoryId)
+                            .prediction(score).build();
+                    dataFileAnnotations.add(dataFileAnnotation);
+                }
+            } catch (Exception e) {
+                LogUtil.error(LogEnum.BIZ_DATASET, "导入数据集读取标注出错:{}",e);
+            }
+        });
+        if(!CollectionUtils.isEmpty(dataFileAnnotations)){
+            Queue<Long> dataFileAnnotionIds = generatorKeyUtil.getSequenceByBusinessCode(Constant.DATA_FILE_ANNOTATION, dataFileAnnotations.size());
+            for (DataFileAnnotation dataFileAnnotation : dataFileAnnotations) {
+                dataFileAnnotation.setId(dataFileAnnotionIds.poll());
+                dataFileAnnotation.setStatus(MagicNumConstant.ZERO);
+                dataFileAnnotation.setInvariable(MagicNumConstant.ZERO);
+            }
+            dataFileAnnotationService.insertDataFileBatch(dataFileAnnotations);
+        }
     }
 
     /**
@@ -997,7 +1066,7 @@ public class DatasetServiceImpl extends ServiceImpl<DatasetMapper, Dataset> impl
      * @param batchFileCreateDTO
      */
     @Transactional(rollbackFor = Exception.class)
-    public List<Long> saveDbForUploadFiles(Long datasetId, BatchFileCreateDTO batchFileCreateDTO) {
+    public List<Long> saveDbForUploadFiles(Long datasetId, BatchFileCreateDTO batchFileCreateDTO,Boolean ifImport) {
         Dataset dataset = getBaseMapper().selectById(datasetId);
         if (null == dataset) {
             throw new BusinessException(ErrorEnum.DATA_ABSENT_OR_NO_AUTH, "id:" + datasetId, null);
@@ -1010,9 +1079,11 @@ public class DatasetServiceImpl extends ServiceImpl<DatasetMapper, Dataset> impl
         if (!CollectionUtils.isEmpty(list)) {
             List<DatasetVersionFile> datasetVersionFiles = new ArrayList<>();
             for (File file : list) {
-                datasetVersionFiles.add(
-                        new DatasetVersionFile(datasetId, dataset.getCurrentVersionName(), file.getId(), file.getName())
-                );
+                DatasetVersionFile datasetVersionFile = new DatasetVersionFile(datasetId, dataset.getCurrentVersionName(), file.getId(), file.getName());
+                if(ifImport != null && ifImport){
+                    datasetVersionFile.setAnnotationStatus(FileTypeEnum.FINISHED.getValue());
+                }
+                datasetVersionFiles.add(datasetVersionFile);
             }
             datasetVersionFileService.insertList(datasetVersionFiles);
         }
@@ -1021,11 +1092,13 @@ public class DatasetServiceImpl extends ServiceImpl<DatasetMapper, Dataset> impl
             return fileIds;
         }
         //改变数据集的状态
-        StateMachineUtil.stateChange(new StateChangeDTO() {{
-            setObjectParam(new Object[]{dataset});
-            setEventMethodName(DataStateMachineConstant.DATA_UPLOAD_FILES_EVENT);
-            setStateMachineType(DataStateMachineConstant.DATA_STATE_MACHINE);
-        }});
+        if(!dataset.isImport()){
+            StateMachineUtil.stateChange(new StateChangeDTO() {{
+                setObjectParam(new Object[]{dataset});
+                setEventMethodName(DataStateMachineConstant.DATA_UPLOAD_FILES_EVENT);
+                setStateMachineType(DataStateMachineConstant.DATA_STATE_MACHINE);
+            }});
+        }
         return fileIds;
     }
 
@@ -1034,10 +1107,10 @@ public class DatasetServiceImpl extends ServiceImpl<DatasetMapper, Dataset> impl
      *
      * @param datasetId 数据集ID
      */
-    public void transportTextToEsForUploadFiles(Long datasetId, List<Long> fileIds) {
+    public void transportTextToEsForUploadFiles(Long datasetId, List<Long> fileIds,Boolean ifImport) {
         Dataset dataset = getBaseMapper().selectById(datasetId);
         if (dataset.getDataType().equals(MagicNumConstant.TWO) || dataset.getDataType().equals(MagicNumConstant.THREE)) {
-            fileService.transportTextToEs(dataset, fileIds);
+            fileService.transportTextToEs(dataset, fileIds,ifImport);
         }
     }
 
@@ -1663,5 +1736,4 @@ public class DatasetServiceImpl extends ServiceImpl<DatasetMapper, Dataset> impl
         .ne("deleted", MagicNumConstant.ONE);
         return baseMapper.selectList(queryWrapper);
     }
-
 }

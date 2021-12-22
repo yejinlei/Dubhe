@@ -90,11 +90,15 @@ public class PtImage extends BaseEntity {
     @TableField(value = "origin_user_id", fill = FieldFill.INSERT)
     private Long originUserId;
 
-    //镜像ssh密码
+    /**
+     * 镜像ssh密码
+     */
     @TableField(value = "ssh_pwd")
     private String sshPwd;
 
-    //镜像ssh用户
+    /**
+     * 镜像ssh用户
+     */
     @TableField(value = "ssh_user")
     private String sshUser;
 }

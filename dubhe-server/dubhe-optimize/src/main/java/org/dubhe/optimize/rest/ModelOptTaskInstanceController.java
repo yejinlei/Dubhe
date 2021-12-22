@@ -20,10 +20,14 @@ package org.dubhe.optimize.rest;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import org.dubhe.biz.base.constant.Permissions;
+import org.dubhe.biz.base.dto.DeleteDTO;
 import org.dubhe.biz.base.dto.PtModelStatusQueryDTO;
 import org.dubhe.biz.base.vo.DataResponseBody;
 import org.dubhe.biz.dataresponse.factory.DataResponseFactory;
-import org.dubhe.optimize.domain.dto.*;
+import org.dubhe.optimize.domain.dto.ModelOptTaskInstanceCancelDTO;
+import org.dubhe.optimize.domain.dto.ModelOptTaskInstanceDetailDTO;
+import org.dubhe.optimize.domain.dto.ModelOptTaskInstanceQueryDTO;
+import org.dubhe.optimize.domain.dto.ModelOptTaskInstanceResubmitDTO;
 import org.dubhe.optimize.service.ModelOptTaskInstanceService;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
@@ -76,8 +80,8 @@ public class ModelOptTaskInstanceController {
     @ApiOperation("删除任务实例")
     @DeleteMapping
     @PreAuthorize(Permissions.MODEL_OPTIMIZE_DELETE_TASK_INSTANCE)
-    public DataResponseBody delete(@Validated @RequestBody ModelOptTaskInstanceDeleteDTO modelOptTaskInstanceDeleteDTO) {
-        modelOptTaskInstanceService.delete(modelOptTaskInstanceDeleteDTO);
+    public DataResponseBody delete(@Validated @RequestBody DeleteDTO deleteDTO) {
+        modelOptTaskInstanceService.delete(deleteDTO.getIds());
         return DataResponseFactory.success();
     }
 

@@ -20,35 +20,33 @@ package org.dubhe.train.rest;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import org.dubhe.biz.base.constant.Permissions;
+import org.dubhe.biz.base.dto.DeleteDTO;
 import org.dubhe.biz.base.dto.PtModelStatusQueryDTO;
 import org.dubhe.biz.base.dto.PtTrainDataSourceStatusQueryDTO;
 import org.dubhe.biz.base.vo.DataResponseBody;
 import org.dubhe.biz.dataresponse.factory.DataResponseFactory;
 import org.dubhe.train.domain.dto.PtTrainJobCreateDTO;
-import org.dubhe.train.domain.dto.PtTrainJobDeleteDTO;
 import org.dubhe.train.domain.dto.PtTrainJobDetailQueryDTO;
 import org.dubhe.train.domain.dto.PtTrainJobResumeDTO;
 import org.dubhe.train.domain.dto.PtTrainJobStopDTO;
 import org.dubhe.train.domain.dto.PtTrainJobUpdateDTO;
 import org.dubhe.train.domain.dto.PtTrainJobVersionQueryDTO;
 import org.dubhe.train.domain.dto.PtTrainModelDTO;
+import org.dubhe.train.domain.dto.PtTrainQueryByIdDTO;
 import org.dubhe.train.domain.dto.PtTrainQueryDTO;
 import org.dubhe.train.domain.dto.VisualTrainQueryDTO;
+import org.dubhe.train.domain.vo.PtTrainJobDetailVO;
+import org.dubhe.train.domain.vo.PtTrainVO;
 import org.dubhe.train.enums.TrainTypeEnum;
 import org.dubhe.train.service.PtTrainJobService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 
 /**
@@ -68,6 +66,29 @@ public class PtTrainJobController {
     @PreAuthorize(Permissions.TRAINING_JOB)
     public DataResponseBody getTrainJob(@Validated PtTrainQueryDTO ptTrainQueryDTO) {
         return new DataResponseBody(ptTrainJobService.getTrainJob(ptTrainQueryDTO));
+    }
+
+    @GetMapping("/getTrainById")
+    @ApiOperation("根据训练作业ID查询训练详情")
+    @PreAuthorize(Permissions.TRAINING_JOB)
+    public DataResponseBody getTrainById(@Validated PtTrainQueryByIdDTO ptTrainQueryByIdDTO) {
+        return new DataResponseBody(ptTrainJobService.getTrainById(ptTrainQueryByIdDTO));
+    }
+
+    @PostMapping("/findTrainByIds")
+    @ApiOperation("根据id集合查询训练")
+    @PreAuthorize(Permissions.TRAINING_JOB)
+    public DataResponseBody<List<PtTrainVO>> findTrainByIds(@RequestBody Set<Long> ids) {
+        List<PtTrainVO> ptTrainVOList = ptTrainJobService.findTrainByIds(ids);
+        return new DataResponseBody(ptTrainVOList);
+    }
+
+    @PostMapping("/findTrainJobByIds")
+    @ApiOperation("根据id集合查询训练作业")
+    @PreAuthorize(Permissions.TRAINING_JOB)
+    public DataResponseBody<List<PtTrainVO>> findTrainJobByIds(@RequestBody Set<Long> ids) {
+        List<PtTrainJobDetailVO> ptTrainJobDetailVOList = ptTrainJobService.findTrainJobByIds(ids);
+        return new DataResponseBody(ptTrainJobDetailVOList);
     }
 
     @GetMapping("/jobDetail")
@@ -132,10 +153,19 @@ public class PtTrainJobController {
     }
 
     @DeleteMapping
-    @ApiOperation("删除训练任务")
+    @ApiOperation("批量删除训练")
     @PreAuthorize(Permissions.TRAINING_JOB_DELETE)
-    public DataResponseBody deleteTrainJob(@Validated @RequestBody PtTrainJobDeleteDTO ptTrainJobDeleteDTO) {
-        return new DataResponseBody(ptTrainJobService.deleteTrainJob(ptTrainJobDeleteDTO));
+    public DataResponseBody batchDeleteTrain(@Validated @RequestBody DeleteDTO deleteDTO) {
+        ptTrainJobService.batchDeleteTrain(deleteDTO.getIds());
+        return new DataResponseBody();
+    }
+
+    @DeleteMapping("/job")
+    @ApiOperation("批量删除训练任务")
+    @PreAuthorize(Permissions.TRAINING_JOB_DELETE)
+    public DataResponseBody batchDeleteTrainJob(@Validated @RequestBody DeleteDTO deleteDTO) {
+        ptTrainJobService.batchDeleteTrainJob(deleteDTO.getIds());
+        return new DataResponseBody();
     }
 
     @PostMapping("/stop")

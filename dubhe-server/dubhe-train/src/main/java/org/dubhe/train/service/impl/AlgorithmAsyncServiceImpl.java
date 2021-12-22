@@ -16,6 +16,7 @@
  */
 
 package org.dubhe.train.service.impl;
+
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import org.dubhe.biz.base.constant.MagicNumConstant;
 import org.dubhe.biz.base.utils.DateUtil;
@@ -88,7 +89,7 @@ public class AlgorithmAsyncServiceImpl extends AbstractPodCallback implements Po
     public <R extends BaseK8sPodCallbackCreateDTO> boolean doCallback(int times, R k8sPodCallbackCreateDTO) {
         // 强制转型
         AlgorithmK8sPodCallbackCreateDTO req = (AlgorithmK8sPodCallbackCreateDTO) k8sPodCallbackCreateDTO;
-        LogUtil.info(LogEnum.BIZ_TRAIN, "Thread {} try {} time.Request: {}", Thread.currentThread(), times, req.toString());
+        LogUtil.info(LogEnum.BIZ_TRAIN, " trainK8sPodCallback: Thread {} try {} time.Request: {}", Thread.currentThread(), times, req.toString());
         // 匹配训练任务
         PtTrainJob ptTrainJob = getPtTrainJob(req);
         if (null == ptTrainJob) {
@@ -108,19 +109,31 @@ public class AlgorithmAsyncServiceImpl extends AbstractPodCallback implements Po
             // 不需要做回调处理的分布式训练场景
             return true;
         }
-        // 如果上报状态是结束状态并没指定过运行时间，则更新运行时间
-        if (TrainJobStatusEnum.isEnd(phase) && TrainUtil.INIT_RUNTIME.equals(ptTrainJob.getRuntime())) {
-            //获取训练运行参数
-            QueryWrapper<PtJobParam> jobParamQueryWrapper = new QueryWrapper<>();
-            jobParamQueryWrapper.eq("train_job_id", ptTrainJob.getId()).last(" limit 1 ");
-            PtJobParam ptJobParam = ptJobParamMapper.selectOne(jobParamQueryWrapper);
-            if (ptJobParam == null) {
-                LogUtil.error(LogEnum.BIZ_TRAIN, "ptJobParam is not exist, trainJob id is {}", ptTrainJob.getId());
+
+        // 获取训练运行参数
+        QueryWrapper<PtJobParam> jobParamQueryWrapper = new QueryWrapper<>();
+        jobParamQueryWrapper.eq("train_job_id", ptTrainJob.getId()).last(" limit 1 ");
+        PtJobParam ptJobParam = ptJobParamMapper.selectOne(jobParamQueryWrapper);
+        if (ptJobParam == null) {
+            LogUtil.error(LogEnum.BIZ_TRAIN, "ptJobParam table acquisition failed, trainJob id is {}", ptTrainJob.getId());
+            return false;
+        }
+        // 如果上报状态是运行状态且运行开始时间为null或被断点续训重置为0，则更新运行开始时间
+        boolean updateRunStartTime = TrainJobStatusEnum.RUNNING.getMessage().equalsIgnoreCase(phase) && ((ptJobParam.getRunStartTime() == null) || (ptJobParam.getRunStartTime() == MagicNumConstant.ZERO));
+        long currentTime = System.currentTimeMillis();
+        if (updateRunStartTime) {
+            // 更新job运行开始时间
+            if (ptJobParamMapper.updateRunStartTimeById(ptJobParam.getId(), currentTime) < 1) {
+                LogUtil.error(LogEnum.BIZ_TRAIN, "train run start time initialization failed, id is {} , phase is {}", ptTrainJob.getId(), req.getPhase());
                 return false;
             }
+        }
+        // 如果上报状态是结束状态并没指定过运行时间，则更新运行时间
+        if (TrainJobStatusEnum.isEnd(phase) && TrainUtil.INIT_RUNTIME.equals(ptTrainJob.getRuntime())) {
             //更新训练运行时长
-            long currentTime = System.currentTimeMillis();
             long timeDelta = 0;
+            long runStartTime = ptJobParam.getRunStartTime();
+            long runEndTime = currentTime;
             if (TrainJobStatusEnum.STOP.getMessage().equalsIgnoreCase(phase)) {
                 //判断训练是否设置延时启动并延时停止
                 boolean delayFlag = ptJobParam.getDelayCreateTime() != null && ptJobParam.getDelayDeleteTime() != null;
@@ -132,21 +145,27 @@ public class AlgorithmAsyncServiceImpl extends AbstractPodCallback implements Po
                         && ptJobParam.getDelayDeleteTime() != null;
                 if (delayFlag) {
                     timeDelta = ptJobParam.getDelayDeleteTime().getTime() - ptJobParam.getDelayCreateTime().getTime();
+                    runStartTime = ptJobParam.getDelayCreateTime().getTime();
                 } else if (delayCreateFlag) {
-                    timeDelta = currentTime - ptJobParam.getDelayCreateTime().getTime();
+                    timeDelta = runEndTime - ptJobParam.getDelayCreateTime().getTime();
                 } else if (delayDeleteFlag) {
-                    timeDelta = currentTime - ptTrainJob.getCreateTime().getTime();
+                    timeDelta = runEndTime - runStartTime;
                 }
             } else {
-                timeDelta = currentTime - ptTrainJob.getUpdateTime().getTime();
+                timeDelta = runEndTime - runStartTime;
             }
             ptTrainJob.setRuntime(DubheDateUtil.secondConvertString(timeDelta));
+            ptJobParam.setRunStartTime(runStartTime).setRunEndTime(runEndTime);
+            // 更新job运行开始时间和运行结束时间
+            if (ptJobParamMapper.updateById(ptJobParam) < 1) {
+                LogUtil.error(LogEnum.BIZ_TRAIN, "train run start time and run end time update failed, id is {} , phase is {}", ptTrainJob.getId(), req.getPhase());
+                return false;
+            }
         }
         // 更新job运行时间和状态
         ptTrainJob.setTrainStatus(TrainJobStatusEnum.transferStatus(phase).getStatus());
-        int updateResult = ptTrainJobMapper.updateById(ptTrainJob);
-        if (updateResult < 1) {
-            LogUtil.error(LogEnum.BIZ_TRAIN, "Update train job failed, id is {} , phase is {}", ptTrainJob.getId(), req.getPhase());
+        if (ptTrainJobMapper.updateById(ptTrainJob) < 1) {
+            LogUtil.error(LogEnum.BIZ_TRAIN, "train runtime and run status update failed, id is {} , phase is {}", ptTrainJob.getId(), req.getPhase());
             return false;
         }
         return true;
@@ -158,7 +177,7 @@ public class AlgorithmAsyncServiceImpl extends AbstractPodCallback implements Po
      * @param times     尝试次数
      * @param ptTrainJob
      */
-    private void updateStatusDetail(AlgorithmK8sPodCallbackCreateDTO req, int times, PtTrainJob ptTrainJob){
+    private void updateStatusDetail(AlgorithmK8sPodCallbackCreateDTO req, int times, PtTrainJob ptTrainJob) {
         // 生成资源唯一标识，避免并发调用重复执行
         String key = req.getNamespace() + "#" + req.getResourceName();
         // 线程唯一身份标识
@@ -174,7 +193,7 @@ public class AlgorithmAsyncServiceImpl extends AbstractPodCallback implements Po
             if (PodUtil.isMaster(podName)) {
                 podName = "Master";
             } else if (PodUtil.isSlave(podName)) {
-                int slaveIndex =  podName.indexOf("slave");
+                int slaveIndex = podName.indexOf("slave");
                 podName = "S" + podName.substring(slaveIndex + 1, slaveIndex + 5)
                         + podName.substring(slaveIndex + 11);
             } else {
@@ -182,18 +201,17 @@ public class AlgorithmAsyncServiceImpl extends AbstractPodCallback implements Po
             }
             String statusDetailValue = ptTrainJob.getStatusDetailValue(podName);
             LogUtil.info(LogEnum.BIZ_TRAIN, "Thread {} try {} status details is {}", Thread.currentThread(), times, statusDetailValue);
-            if (statusDetailValue == null && StringUtils.isEmpty(req.getMessages())){
+            if (statusDetailValue == null && StringUtils.isEmpty(req.getMessages())) {
                 return;
             }
-            if (StringUtils.isEmpty(req.getMessages())){
+            if (StringUtils.isEmpty(req.getMessages())) {
                 ptTrainJob.removeStatusDetail(podName);
-            }else {
+            } else {
                 ptTrainJob.putStatusDetail(podName, req.getMessages());
             }
 
             // 更新训练信息（错误信息）
-            int updateResult = ptTrainJobMapper.updateById(ptTrainJob);
-            if (updateResult < 1) {
+            if (ptTrainJobMapper.updateStatusDetailById(ptTrainJob.getId(), ptTrainJob.getStatusDetail()) < 1) {
                 LogUtil.error(LogEnum.BIZ_TRAIN, "Update train job failed, id is {} , phase is {}", ptTrainJob.getId(), req.getPhase());
                 return;
             }
@@ -232,7 +250,6 @@ public class AlgorithmAsyncServiceImpl extends AbstractPodCallback implements Po
         logMonitoringApi.addLogsToEs(req.getPodName(), req.getNamespace(), logList);
 
     }
-
 
 
     /**

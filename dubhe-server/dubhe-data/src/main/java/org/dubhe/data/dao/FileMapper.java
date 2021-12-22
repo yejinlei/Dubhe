@@ -164,7 +164,8 @@ public interface FileMapper extends BaseMapper<File> {
      * @param fileIdsNotToEs 需要同步的文件ID
      * @return List<EsTransportDTO>  ES数据同步DTO
      */
-    List<EsTransportDTO> selectTextDataNoTransport(@Param("datasetId") Long datasetId,@Param("fileIdsNotToEs")List<Long> fileIdsNotToEs);
+    List<EsTransportDTO> selectTextDataNoTransport(@Param("datasetId") Long datasetId,@Param("fileIdsNotToEs")List<Long> fileIdsNotToEs,
+                                                   @Param("ifImport") Boolean ifImport);
 
     /**
      * 更新同步es标志

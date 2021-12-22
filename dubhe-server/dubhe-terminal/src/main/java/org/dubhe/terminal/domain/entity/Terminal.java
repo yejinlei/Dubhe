@@ -146,6 +146,13 @@ public class Terminal extends BaseEntity {
         statusDetail = StringUtils.removeFromJsonStringMap(key,statusDetail);
     }
 
+    /**
+     * 移除 键值
+     */
+    public void removeStatusDetail(){
+        statusDetail = SymbolConstant.BRACKETS;
+    }
+
     public void setUpdateInfo(Long userId){
         setUpdateTime(DateUtil.getCurrentTimestamp());
         setUpdateUserId(userId);

@@ -79,13 +79,24 @@
             df.enhance_type,
             df.origin_user_id,
             df.id
+            <if test="ifImport">
+                ,
+                dfa.label_id,
+                dfa.prediction
+            </if>
         FROM
             data_dataset_version_file ddvf
             LEFT JOIN data_file df ON ddvf.file_id = df.id
+            <if test="ifImport">
+                LEFT JOIN data_file_annotation dfa on ddvf.id = dfa.version_file_id
+            </if>
         WHERE
             df.es_transport = 0
             AND ddvf.dataset_id = #{datasetId}
             AND df.dataset_id = #{datasetId}
+            <if test="ifImport">
+                AND dfa.dataset_id = #{datasetId}
+            </if>
             AND df.id in
             <foreach collection="fileIdsNotToEs" item="fileId" open="(" close=")" separator=",">
                 #{fileId}

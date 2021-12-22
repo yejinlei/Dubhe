@@ -16,15 +16,18 @@
  */
 
 package org.dubhe.dubhek8s.rest;
+
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import org.dubhe.biz.base.constant.Permissions;
+import org.dubhe.biz.base.dto.QueryUserK8sResourceDTO;
 import org.dubhe.biz.base.vo.DataResponseBody;
+import org.dubhe.biz.base.vo.QueryUserResourceSpecsVO;
 import org.dubhe.dubhek8s.service.SystemNodeService;
+import org.dubhe.k8s.domain.dto.NodeInfoDTO;
 import org.dubhe.k8s.domain.dto.NodeIsolationDTO;
-import org.dubhe.k8s.domain.dto.PodLogDownloadQueryDTO;
+import org.dubhe.k8s.domain.entity.K8sNode;
 import org.dubhe.k8s.domain.resource.BizNode;
-import org.dubhe.k8s.domain.resource.BizTaint;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
@@ -54,18 +57,25 @@ public class SystemNodeController {
     @ApiOperation("查询节点状态")
     @GetMapping(value = "findAllNode")
     @PreAuthorize(Permissions.SYSTEM_NODE)
-    public DataResponseBody findNodes(){
+    public DataResponseBody findNodes() {
         return new DataResponseBody(systemNodeService.findNodesIsolation());
+    }
+
+
+    @ApiOperation("查询用户k8s可用资源(admin远程调用)")
+    @PostMapping(value = "queryUserResource")
+    public DataResponseBody<List<QueryUserResourceSpecsVO>> queryUserK8sResource(@Validated @RequestBody List<QueryUserK8sResourceDTO> queryUserK8sResources) {
+        return new DataResponseBody(systemNodeService.queryUserK8sResource(queryUserK8sResources));
     }
 
     @ApiOperation("添加资源隔离")
     @PostMapping(value = "isolation")
     @PreAuthorize(Permissions.SYSTEM_NODE)
-    public DataResponseBody addNodeIisolation(@Validated @RequestBody NodeIsolationDTO nodeIsolationDTO, HttpServletResponse response){
+    public DataResponseBody addNodeIisolation(@Validated @RequestBody NodeIsolationDTO nodeIsolationDTO, HttpServletResponse response) {
         String res = "";
         List<BizNode> bizNodes = systemNodeService.addNodeIisolation(nodeIsolationDTO);
-        for (BizNode bizNode : bizNodes){
-            if (!bizNode.isSuccess()){
+        for (BizNode bizNode : bizNodes) {
+            if (!bizNode.isSuccess()) {
                 res += bizNode.getMessage();
             }
         }
@@ -75,14 +85,29 @@ public class SystemNodeController {
     @ApiOperation("删除资源隔离")
     @DeleteMapping(value = "isolation")
     @PreAuthorize(Permissions.SYSTEM_NODE)
-    public DataResponseBody delNodeIisolation(@Validated @RequestBody NodeIsolationDTO nodeIsolationDTO, HttpServletResponse response){
+    public DataResponseBody delNodeIisolation(@Validated @RequestBody NodeIsolationDTO nodeIsolationDTO, HttpServletResponse response) {
         String res = "";
         List<BizNode> bizNodes = systemNodeService.delNodeIisolation(nodeIsolationDTO);
-        for (BizNode bizNode : bizNodes){
-            if (!bizNode.isSuccess()){
+        for (BizNode bizNode : bizNodes) {
+            if (!bizNode.isSuccess()) {
                 res += bizNode.getMessage();
             }
         }
         return new DataResponseBody(res);
+    }
+
+    @ApiOperation("编辑")
+    @PostMapping(value = "edit")
+    @PreAuthorize(Permissions.SYSTEM_NODE)
+    public DataResponseBody edit(@Validated @RequestBody NodeInfoDTO nodeInfoDTO, HttpServletResponse response) {
+        K8sNode k8sNode = systemNodeService.editNodeInfo(nodeInfoDTO);
+        return new DataResponseBody();
+    }
+
+    @ApiOperation("资源统计")
+    @GetMapping("findAllResource")
+    @PreAuthorize(Permissions.SYSTEM_NODE)
+    public DataResponseBody findAllResource() {
+        return new DataResponseBody(systemNodeService.findAllResource());
     }
 }

@@ -68,5 +68,9 @@ public class RecycleConfig {
      * 回收serving相关文件后，回收文件最大有效时长，以天为单位
      */
     private Integer servingValid;
+    /**
+     * 用户删除tadl算法版本文件后，文件最大有效时长，以天为单位
+     */
+    private Integer tadlValid;
 
 }

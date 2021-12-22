@@ -19,9 +19,15 @@ package org.dubhe.notebook.domain.dto;
 
 import io.swagger.annotations.ApiModelProperty;
 import lombok.Data;
+import org.dubhe.biz.base.constant.MagicNumConstant;
 import org.dubhe.notebook.utils.NotebookUtil;
 
-import javax.validation.constraints.*;
+import javax.validation.constraints.Max;
+import javax.validation.constraints.Min;
+import javax.validation.constraints.NotBlank;
+import javax.validation.constraints.NotNull;
+import javax.validation.constraints.Pattern;
+import javax.validation.constraints.Size;
 
 /**
  * @description 创建notebook请求体
@@ -49,6 +55,15 @@ public class NoteBookCreateDTO {
     @ApiModelProperty(value = "gpu数量")
     private Integer gpuNum;
 
+    @ApiModelProperty(value = "GPU类型(1为NVIDIA，2为燧原DTU)")
+    private String gpuType;
+
+    @ApiModelProperty(value = "GPU型号")
+    private String gpuModel;
+
+    @ApiModelProperty(value = "k8s GPU资源标签key值(例如：nvidia.com/gpu)")
+    private String k8sLabelKey;
+
     @NotNull
     @Min(value = NotebookUtil.MEMORY_MIN_NUMBER, message = "最少需要1G内存")
     @ApiModelProperty(value = "内存大小")
@@ -68,4 +83,10 @@ public class NoteBookCreateDTO {
 
     @ApiModelProperty("数据集id")
     private Integer dataSourceId;
+
+    @ApiModelProperty(value = "类型(0为CPU，1为GPU)", required = true)
+    @Min(value = MagicNumConstant.ZERO, message = "类型错误")
+    @Max(value = MagicNumConstant.ONE, message = "类型错误")
+    @NotNull(message = "类型(0为CPU，1为GPU)不能为空")
+    private Integer resourcesPoolType;
 }

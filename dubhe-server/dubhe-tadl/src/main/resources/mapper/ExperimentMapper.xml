@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+
+<mapper namespace="org.dubhe.tadl.dao.ExperimentMapper">
+
+    <update id="updateExperimentDeletedById">
+        update tadl_experiment e inner join
+        tadl_experiment_stage s on e.id = s.experiment_id
+        inner join tadl_trial t on s.experiment_id = t.experiment_id
+        set e.deleted = #{deleted} ,s.deleted= #{deleted},t.deleted= #{deleted}
+        where e.id = #{id}
+    </update>
+    <update id="updateExperimentFailedByTrialId">
+        update tadl_trial t
+        inner join
+        tadl_experiment_stage s
+        on t.stage_id = s.id
+        inner join tadl_experiment e
+        on s.experiment_id = e.id
+        set
+        t.status = #{trialStatus},
+        s.status = #{stageStatus},
+        e.status = #{experimentStatus} ,
+        e.status_detail=#{statusDetail},
+        t.end_time = current_timestamp,
+        s.end_time = current_timestamp,
+        e.end_time = current_timestamp
+        where  t.id = #{trialId}
+    </update>
+
+</mapper>

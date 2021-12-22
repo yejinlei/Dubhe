@@ -93,4 +93,13 @@ public class ServingModelConfigDTO implements Serializable {
 
     @ApiModelProperty(value = "算法ID")
     private Long algorithmId;
+
+    @ApiModelProperty("'GPU类型")
+    private String gpuType;
+
+    @ApiModelProperty("GPU型号")
+    private String gpuModel;
+
+    @ApiModelProperty("k8s GPU资源标签key值")
+    private String k8sLabelKey;
 }

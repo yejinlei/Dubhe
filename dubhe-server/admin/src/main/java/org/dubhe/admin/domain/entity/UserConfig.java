@@ -39,6 +39,12 @@ public class UserConfig extends BaseEntity {
     @TableId(value = "user_id")
     private Long userId;
 
+    @TableField(exist = false)
+    private String userName;
+
+    @TableField(exist = false)
+    private String nickName;
+
     @TableId(value = "notebook_delay_delete_time")
     private Integer notebookDelayDeleteTime;
 
@@ -48,6 +54,6 @@ public class UserConfig extends BaseEntity {
     @TableId(value = "memory_limit")
     private Integer memoryLimit;
 
-    @TableId(value = "gpu_limit")
-    private Integer gpuLimit;
+    @TableId(value = "default_image_id")
+    private Long defaultImageId;
 }

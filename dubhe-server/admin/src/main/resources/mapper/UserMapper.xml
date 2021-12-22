@@ -13,4 +13,9 @@
              left join users_roles ur on ra.role_id = ur.role_id
     where ur.user_id = #{userId} and p.deleted=0;
     </select>
+
+    <select id="queryUserGroupNameByUserId" parameterType="Long" resultType="java.lang.String">
+    select g.name from pt_group g, user u, user_group ug
+         where u.id = #{userId} and u.id = ug.user_id and ug.group_id = g.id and g.deleted = 0 and u.deleted = 0
+    </select>
 </mapper>

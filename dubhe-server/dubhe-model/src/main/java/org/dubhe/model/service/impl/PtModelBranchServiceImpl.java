@@ -27,6 +27,7 @@ import org.dubhe.biz.base.context.UserContext;
 import org.dubhe.biz.base.dto.PtModelBranchConditionQueryDTO;
 import org.dubhe.biz.base.dto.PtModelBranchQueryByIdDTO;
 import org.dubhe.biz.base.dto.PtModelStatusQueryDTO;
+import org.dubhe.biz.base.dto.UserDTO;
 import org.dubhe.biz.base.enums.DatasetTypeEnum;
 import org.dubhe.biz.base.exception.BusinessException;
 import org.dubhe.biz.base.service.UserContextService;
@@ -41,6 +42,8 @@ import org.dubhe.biz.file.enums.BizPathEnum;
 import org.dubhe.biz.log.enums.LogEnum;
 import org.dubhe.biz.log.utils.LogUtil;
 import org.dubhe.biz.permission.annotation.DataPermissionMethod;
+import org.dubhe.biz.permission.base.BaseService;
+import org.dubhe.cloud.authconfig.service.AdminClient;
 import org.dubhe.cloud.remotecall.config.RestTemplateHolder;
 import org.dubhe.k8s.utils.K8sNameTool;
 import org.dubhe.model.dao.PtModelBranchMapper;
@@ -73,9 +76,8 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
 import org.springframework.web.client.RestTemplate;
 
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
+import javax.annotation.Resource;
+import java.util.*;
 import java.util.stream.Collectors;
 
 
@@ -116,6 +118,9 @@ public class PtModelBranchServiceImpl implements PtModelBranchService {
     @Value("${model.converter.url}")
     private String modelConverterUrl;
 
+    @Resource
+    private AdminClient adminClient;
+
     public final static List<String> FIELD_NAMES;
 
     static {
@@ -142,6 +147,16 @@ public class PtModelBranchServiceImpl implements PtModelBranchService {
 
         IPage<PtModelBranch> ptModelBranches = ptModelBranchMapper.selectPage(page, wrapper);
 
+        Map<Long, String> idUserNameMap = new HashMap<>();
+        List<Long> userIds = ptModelBranches.getRecords().stream().map(PtModelBranch::getCreateUserId).filter(Objects::nonNull).distinct().collect(Collectors.toList());
+        if (org.apache.commons.collections4.CollectionUtils.isNotEmpty(userIds)) {
+            DataResponseBody<List<UserDTO>> result = adminClient.getUserList(userIds);
+            if (result.getData() != null) {
+                idUserNameMap = result.getData().stream().collect(Collectors.toMap(UserDTO::getId, UserDTO::getUsername, (o, n) -> n));
+            }
+        }
+        Map<Long, String> finalIdUserNameMap = idUserNameMap;
+
         PtModelInfo ptModelInfo = ptModelInfoMapper.selectById(ptModelBranchQueryDTO.getParentId());
         List<PtModelBranchQueryVO> ptModelBranchQueryVOs = ptModelBranches.getRecords().stream().map(x -> {
             PtModelBranchQueryVO ptModelBranchQueryVO = new PtModelBranchQueryVO();
@@ -153,6 +168,10 @@ public class PtModelBranchServiceImpl implements PtModelBranchService {
                     (ptModelInfo.getFrameType() == PtModelUtil.NUMBER_FOUR && ptModelInfo.getModelType() == PtModelUtil.NUMBER_ONE) ||
                     (ptModelInfo.getFrameType() == PtModelUtil.NUMBER_THREE && ptModelInfo.getModelType() == PtModelUtil.NUMBER_EIGHT);
             ptModelBranchQueryVO.setServingModel(flag);
+            //获取模型创建人用户名
+            if (BaseService.isAdmin(userContextService.getCurUser()) && x.getCreateUserId() != null) {
+                ptModelBranchQueryVO.setCreateUserName(finalIdUserNameMap.getOrDefault(x.getCreateUserId(), null));
+            }
             return ptModelBranchQueryVO;
         }).collect(Collectors.toList());
         return PageUtil.toPage(page, ptModelBranchQueryVOs);
@@ -195,7 +214,8 @@ public class PtModelBranchServiceImpl implements PtModelBranchService {
                 LogUtil.error(LogEnum.BIZ_MODEL, "User {} failed to create new version", user.getUsername());
                 throw new BusinessException("模型版本创建失败");
             }
-        } else if (ptModelBranchCreateDTO.getModelSource() == PtModelUtil.TRAINING_IMPORT || ptModelBranchCreateDTO.getModelSource() == PtModelUtil.MODEL_OPTIMIZATION) {
+        } else if (ptModelBranchCreateDTO.getModelSource() == PtModelUtil.TRAINING_IMPORT || ptModelBranchCreateDTO.getModelSource() == PtModelUtil.MODEL_OPTIMIZATION
+        ||ptModelBranchCreateDTO.getModelSource() == PtModelUtil.AUTOMATIC_MACHINE_LEARNING) {
             //文件拷贝中
             ptModelBranch.setStatus(ModelCopyStatusEnum.COPING.getCode());
             //判断模型版本是否已存在
@@ -223,6 +243,9 @@ public class PtModelBranchServiceImpl implements PtModelBranchService {
         ptModelInfo.setVersion(ptModelBranch.getVersion());
         ptModelInfo.setModelAddress(ptModelBranch.getModelAddress());
         ptModelInfo.setTotalNum(ptModelInfo.getTotalNum() + 1);
+        QueryWrapper<PtModelBranch> parentId = new QueryWrapper<>();
+        parentId.eq("parent_id", ptModelInfo.getId());
+        ptModelInfo.setVersionNum(ptModelBranchMapper.selectCount(parentId));
         if (ptModelInfoMapper.updateById(ptModelInfo) < 1) {
             LogUtil.error(LogEnum.BIZ_MODEL, "User {} failed to modify version, failed to modify version table", user.getUsername());
             throw new BusinessException("模型版本创建失败");
@@ -319,10 +342,7 @@ public class PtModelBranchServiceImpl implements PtModelBranchService {
 
         //获取parentID
         List<PtModelBranch> ptModelBranches = ptModelBranchMapper.selectBatchIds(ids);
-        List<Long> parentIdLists = ptModelBranches.stream().map(x -> {
-            return x.getParentId();
-        }).distinct().collect(Collectors.toList());
-
+        List<Long> parentIdLists = ptModelBranches.stream().map(PtModelBranch::getParentId).distinct().collect(Collectors.toList());
         //删除任务参数
         if (ptModelBranchMapper.deleteBatchIds(ids) < ids.size()) {
             //模型版本未删除成功,抛出异常，并返回失败信息
@@ -331,9 +351,8 @@ public class PtModelBranchServiceImpl implements PtModelBranchService {
         }
 
         //更新parent的状态
-        LogUtil.info(LogEnum.BIZ_MODEL, "Parentid of update algorithm{}", parentIdLists);
         for (int num = 0; num < parentIdLists.size(); num++) {
-            QueryWrapper<PtModelBranch> queryWrapper = new QueryWrapper<PtModelBranch>();
+            QueryWrapper<PtModelBranch> queryWrapper = new QueryWrapper<>();
             queryWrapper.eq("parent_id", parentIdLists.get(num));
             queryWrapper.orderByDesc("id");
             queryWrapper.last("limit 1");
@@ -342,17 +361,15 @@ public class PtModelBranchServiceImpl implements PtModelBranchService {
             if (ptModelBranchList.size() > 0) {
                 ptModelInfo.setVersion(ptModelBranchList.get(0).getVersion());
                 ptModelInfo.setModelAddress(ptModelBranchList.get(0).getModelAddress());
-                if (ptModelInfoMapper.updateById(ptModelInfo) < 1) {
-                    LogUtil.error(LogEnum.BIZ_MODEL, "The user {} failed to delete the model version and failed to modify the model management table", user.getUsername());
-                    throw new BusinessException("模型版本删除失败");
-                }
+                QueryWrapper<PtModelBranch> parentId = new QueryWrapper<>();
+                parentId.eq("parent_id", ptModelInfo.getId());
+                ptModelInfo.setVersionNum(ptModelBranchMapper.selectCount(parentId));
             } else {
-                ptModelInfo.setVersion("");
-                ptModelInfo.setModelAddress("");
-                if (ptModelInfoMapper.updateById(ptModelInfo) < 1) {
-                    LogUtil.error(LogEnum.BIZ_MODEL, "The user {} failed to delete the model version and failed to modify the model management table", user.getUsername());
-                    throw new BusinessException("模型版本删除失败");
-                }
+                ptModelInfo.setVersion("").setModelAddress("").setVersionNum(0);
+            }
+            if (ptModelInfoMapper.updateById(ptModelInfo) < 1) {
+                LogUtil.error(LogEnum.BIZ_MODEL, "The user {} failed to delete the model version and failed to modify the model management table", user.getUsername());
+                throw new BusinessException("模型版本删除失败");
             }
         }
         //定时任务删除相应的模型文件

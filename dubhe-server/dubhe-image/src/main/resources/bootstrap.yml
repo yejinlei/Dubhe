@@ -10,8 +10,8 @@ spring:
     nacos:
       config:
         enabled: true
-        namespace: dubhe-server-cloud-prod
-        server-addr: 127.0.0.1:8848
+        namespace: dubhe-server-cloud-dev
+        server-addr: 10.105.1.133:8848
         shared-configs[0]:
           data-id: common-k8s.yaml
           group: dubhe
@@ -32,5 +32,5 @@ spring:
         enabled: true
         namespace: dubhe-server-cloud-dev
         group: dubhe
-        server-addr: 127.0.0.1:8848
+        server-addr: 10.105.1.133:8848
 

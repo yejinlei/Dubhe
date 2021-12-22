@@ -17,13 +17,13 @@
 
 package org.dubhe.k8s.domain.bo;
 
+import lombok.Data;
+import lombok.experimental.Accessors;
 import org.dubhe.biz.base.constant.SymbolConstant;
 import org.dubhe.k8s.annotation.K8sValidation;
 import org.dubhe.k8s.constant.K8sParamConstants;
 import org.dubhe.k8s.domain.resource.BizQuantity;
 import org.dubhe.k8s.domain.resource.BizScopedResourceSelectorRequirement;
-import lombok.Data;
-import lombok.experimental.Accessors;
 import org.dubhe.k8s.enums.ValidationTypeEnum;
 
 import java.util.HashMap;
@@ -49,11 +49,11 @@ public class PtResourceQuotaBO {
      * @param amount 值
      * @param format 单位
      */
-    public void addCpuLimitsHard(String amount,String format){
-        if (hard == null){
+    public void addCpuLimitsHard(String amount, String format) {
+        if (hard == null) {
             hard = new HashMap<>();
         }
-        hard.put(K8sParamConstants.RESOURCE_QUOTA_CPU_LIMITS_KEY,new BizQuantity(amount,format));
+        hard.put(K8sParamConstants.RESOURCE_QUOTA_CPU_LIMITS_KEY, new BizQuantity(amount, format));
     }
 
     /**
@@ -61,21 +61,23 @@ public class PtResourceQuotaBO {
      * @param amount 值
      * @param format 单位
      */
-    public void addMemoryLimitsHard(String amount,String format){
-        if (hard == null){
+    public void addMemoryLimitsHard(String amount, String format) {
+        if (hard == null) {
             hard = new HashMap<>();
         }
-        hard.put(K8sParamConstants.RESOURCE_QUOTA_MEMORY_LIMITS_KEY,new BizQuantity(amount,format));
+        hard.put(K8sParamConstants.RESOURCE_QUOTA_MEMORY_LIMITS_KEY, new BizQuantity(amount, format));
     }
 
     /**
      * 添加gpu 限制
-     * @param amount 值
+     * @param map 值
      */
-    public void addGpuLimitsHard(String amount){
-        if (hard == null){
+    public void addGpuLimitsHard(Map<String, String> map) {
+        if (hard == null) {
             hard = new HashMap<>();
         }
-        hard.put(K8sParamConstants.RESOURCE_QUOTA_GPU_LIMITS_KEY,new BizQuantity(amount, SymbolConstant.BLANK));
+        for (Map.Entry<String, String> entry : map.entrySet()) {
+            hard.put(K8sParamConstants.K8S_LABEL_KEY_PREFIX + entry.getKey(), new BizQuantity(entry.getValue(), SymbolConstant.BLANK));
+        }
     }
 }

@@ -49,6 +49,7 @@ public class PageQueryBase<T> {
      */
     private String order;
 
+
     public Page<T> toPage() {
         Page<T> page = new Page();
         if (this.current != null) {

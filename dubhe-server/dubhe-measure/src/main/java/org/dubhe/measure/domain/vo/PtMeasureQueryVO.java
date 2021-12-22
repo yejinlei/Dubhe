@@ -61,4 +61,7 @@ public class PtMeasureQueryVO implements Serializable {
 
     @ApiModelProperty("度量文件生成状态")
     private Integer measureStatus;
+
+    @ApiModelProperty("创建人用户名")
+    private String createUserName;
 }

@@ -16,6 +16,7 @@
  */
 package org.dubhe.admin.service.impl;
 
+import cn.hutool.core.collection.CollectionUtil;
 import cn.hutool.core.util.ObjectUtil;
 import cn.hutool.core.util.StrUtil;
 import cn.hutool.crypto.asymmetric.KeyType;
@@ -26,18 +27,39 @@ import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import org.dubhe.admin.async.CleanupUserResourcesAsync;
 import org.dubhe.admin.client.AuthServiceClient;
+import org.dubhe.admin.client.GpuConfigClient;
 import org.dubhe.admin.client.ResourceQuotaClient;
-import org.dubhe.admin.dao.*;
-import org.dubhe.admin.domain.dto.*;
+import org.dubhe.admin.client.template.GpuConfigTemplateClient;
+import org.dubhe.admin.client.template.ObtainAccessToken;
+import org.dubhe.admin.client.template.ResourceQuotaTemplateClient;
+import org.dubhe.admin.dao.MenuMapper;
+import org.dubhe.admin.dao.PermissionMapper;
+import org.dubhe.admin.dao.RoleMapper;
+import org.dubhe.admin.dao.TeamMapper;
+import org.dubhe.admin.dao.UserAvatarMapper;
+import org.dubhe.admin.dao.UserConfigMapper;
+import org.dubhe.admin.dao.UserGpuConfigMapper;
+import org.dubhe.admin.dao.UserMapper;
+import org.dubhe.admin.dao.UserRoleMapper;
+import org.dubhe.admin.domain.dto.AuthUserDTO;
+import org.dubhe.admin.domain.dto.EmailDTO;
+import org.dubhe.admin.domain.dto.UserCenterUpdateDTO;
+import org.dubhe.admin.domain.dto.UserCreateDTO;
+import org.dubhe.admin.domain.dto.UserEmailUpdateDTO;
+import org.dubhe.admin.domain.dto.UserQueryDTO;
+import org.dubhe.admin.domain.dto.UserRegisterDTO;
+import org.dubhe.admin.domain.dto.UserRegisterMailDTO;
+import org.dubhe.admin.domain.dto.UserResetPasswordDTO;
+import org.dubhe.admin.domain.dto.UserUpdateDTO;
 import org.dubhe.admin.domain.entity.Role;
 import org.dubhe.admin.domain.entity.User;
 import org.dubhe.admin.domain.entity.UserAvatar;
 import org.dubhe.admin.domain.entity.UserConfig;
+import org.dubhe.admin.domain.entity.UserGpuConfig;
 import org.dubhe.admin.domain.entity.UserRole;
 import org.dubhe.admin.domain.vo.EmailVo;
-import org.dubhe.admin.domain.vo.UserConfigCreateVO;
-import org.dubhe.admin.domain.vo.UserConfigVO;
 import org.dubhe.admin.domain.vo.UserVO;
 import org.dubhe.admin.enums.UserMailCodeEnum;
 import org.dubhe.admin.event.EmailEventPublisher;
@@ -48,16 +70,29 @@ import org.dubhe.biz.base.constant.AuthConst;
 import org.dubhe.biz.base.constant.ResponseCode;
 import org.dubhe.biz.base.constant.UserConstant;
 import org.dubhe.biz.base.context.UserContext;
-import org.dubhe.biz.base.dto.*;
+import org.dubhe.biz.base.dto.GpuConfigDTO;
+import org.dubhe.biz.base.dto.Oauth2TokenDTO;
+import org.dubhe.biz.base.dto.ResourceQuotaDTO;
+import org.dubhe.biz.base.dto.SysPermissionDTO;
+import org.dubhe.biz.base.dto.SysRoleDTO;
+import org.dubhe.biz.base.dto.SysUserConfigDTO;
+import org.dubhe.biz.base.dto.SysUserGpuConfigDTO;
+import org.dubhe.biz.base.dto.TeamDTO;
+import org.dubhe.biz.base.dto.UserConfigSaveDTO;
+import org.dubhe.biz.base.dto.UserDTO;
+import org.dubhe.biz.base.dto.UserGpuConfigDTO;
 import org.dubhe.biz.base.enums.BaseErrorCodeEnum;
 import org.dubhe.biz.base.enums.SwitchEnum;
 import org.dubhe.biz.base.exception.BusinessException;
 import org.dubhe.biz.base.exception.CaptchaException;
-import org.dubhe.biz.base.utils.DateUtil;
 import org.dubhe.biz.base.utils.Md5Util;
 import org.dubhe.biz.base.utils.RandomUtil;
 import org.dubhe.biz.base.utils.RsaEncrypt;
 import org.dubhe.biz.base.vo.DataResponseBody;
+import org.dubhe.biz.base.vo.GpuAllotVO;
+import org.dubhe.biz.base.vo.UserAllotResourceVO;
+import org.dubhe.biz.base.vo.UserConfigVO;
+import org.dubhe.biz.base.vo.UserGpuConfigVO;
 import org.dubhe.biz.dataresponse.factory.DataResponseFactory;
 import org.dubhe.biz.db.utils.PageUtil;
 import org.dubhe.biz.db.utils.WrapperHelp;
@@ -65,6 +100,7 @@ import org.dubhe.biz.file.utils.DubheFileUtil;
 import org.dubhe.biz.log.enums.LogEnum;
 import org.dubhe.biz.log.utils.LogUtil;
 import org.dubhe.biz.permission.annotation.DataPermissionMethod;
+import org.dubhe.biz.permission.aspect.PermissionAspect;
 import org.dubhe.biz.redis.utils.RedisUtils;
 import org.dubhe.cloud.authconfig.dto.JwtUserDTO;
 import org.dubhe.cloud.authconfig.factory.PasswordEncoderFactory;
@@ -73,15 +109,28 @@ import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cglib.beans.BeanMap;
+import org.springframework.cloud.context.config.annotation.RefreshScope;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronizationAdapter;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 import org.springframework.util.CollectionUtils;
 
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
-import java.util.*;
+import java.time.Duration;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
@@ -89,6 +138,7 @@ import java.util.stream.Collectors;
  * @date 2020-11-26
  */
 @Service
+@RefreshScope
 public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements UserService {
 
     @Value("${rsa.private_key}")
@@ -98,7 +148,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
     private String initialPassword;
 
     @Value("${user.config.notebook-delay-delete-time}")
-    private Integer defaultNotebookDelayDeleteTime;
+    private Integer userConfigNotebookDelayDeleteTime;
 
     @Value("${user.config.cpu-limit}")
     private Integer cpuLimit;
@@ -106,8 +156,17 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
     @Value("${user.config.memory-limit}")
     private Integer memoryLimit;
 
-    @Value("${user.config.gpu-limit}")
-    private Integer gpuLimit;
+    @Value("${user.config.gpu-limit.gpu-type}")
+    private String gpuType;
+
+    @Value("${user.config.gpu-limit.gpu-model}")
+    private String gpuModel;
+
+    @Value("${user.config.gpu-limit.k8s-label-key}")
+    private String k8sLabelKey;
+
+    @Value("${user.config.gpu-limit.gpu-num-limit}")
+    private Integer gpuNumLimit;
 
     @Autowired
     private UserMapper userMapper;
@@ -131,7 +190,6 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
     @Autowired
     private UserAvatarMapper userAvatarMapper;
 
-
     @Autowired
     private RedisUtils redisUtils;
 
@@ -151,14 +209,33 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
     private UserConfigMapper userConfigMapper;
 
     @Autowired
+    private UserGpuConfigMapper userGpuConfigMapper;
+
+    @Autowired
     ResourceQuotaClient resourceQuotaClient;
 
+    @Autowired
+    ResourceQuotaTemplateClient resourceQuotaTemplateClient;
 
+    @Autowired
+    GpuConfigTemplateClient gpuConfigTemplateClient;
+
+    @Autowired
+    private GpuConfigClient gpuConfigClient;
+
+    @Autowired
+    private CleanupUserResourcesAsync cleanupUserResourcesAsync;
+
+    @Autowired
+    private ObtainAccessToken obtainAccessToken;
     /**
      * 测试标识 true:允许debug false:拒绝debug
      */
     @Value("${debug.flag}")
     private Boolean debugFlag;
+
+    @Value("${email.send-limit}")
+    private Integer emailSendLimit;
 
     private final String LOCK_SEND_CODE = "LOCK_SEND_CODE";
 
@@ -173,10 +250,12 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
     public Object queryAll(UserQueryDTO criteria, Page page) {
         if (criteria.getRoleId() == null) {
             IPage<User> users = userMapper.selectCollPage(page, WrapperHelp.getWrapper(criteria));
-            return PageUtil.toPage(users, userConvert::toDto);
+            List<UserDTO> userDTOList = convertToUserDTO(users);
+            return PageUtil.toPage(users, userDTOList);
         } else {
             IPage<User> users = userMapper.selectCollPageByRoleId(page, WrapperHelp.getWrapper(criteria), criteria.getRoleId());
-            return PageUtil.toPage(users, userConvert::toDto);
+            List<UserDTO> userDTOList = convertToUserDTO(users);
+            return PageUtil.toPage(users, userDTOList);
         }
     }
 
@@ -189,7 +268,17 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
     @Override
     public List<UserDTO> queryAll(UserQueryDTO criteria) {
         List<User> users = userMapper.selectCollList(WrapperHelp.getWrapper(criteria));
-        return userConvert.toDto(users);
+        List<UserDTO> userDTOList = null;
+        if (CollectionUtil.isEmpty(users)) {
+            return userDTOList;
+        }
+        userDTOList = userConvert.toDto(users);
+        for (UserDTO userDTO : userDTOList) {
+            String userGroupName = userMapper.queryUserGroupNameByUserId(userDTO.getId());
+            userDTO.setUserGroupName(userGroupName);
+        }
+
+        return userDTOList;
     }
 
     /**
@@ -248,15 +337,14 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         for (Role role : resources.getRoles()) {
             roleMapper.tiedUserRole(user.getId(), role.getId());
         }
-        UserConfigDTO userConfigDTO = new UserConfigDTO();
-        userConfigDTO.setUserId(user.getId());
-        userConfigDTO.setCpuLimit(cpuLimit);
-        userConfigDTO.setMemoryLimit(memoryLimit);
-        userConfigDTO.setGpuLimit(gpuLimit);
-        DataResponseBody dataResponseBody = resourceQuotaClient.updateResourceQuota(userConfigDTO);
-        if (!dataResponseBody.succeed()){
-            throw new BusinessException("用户配置更新失败");
-        }
+        //初始化用户配置
+        UserConfigSaveDTO userConfigDTO = new UserConfigSaveDTO();
+        userConfigDTO.setUserId(user.getId()).setCpuLimit(cpuLimit).setMemoryLimit(memoryLimit)
+                .setNotebookDelayDeleteTime(userConfigNotebookDelayDeleteTime);
+        List<UserGpuConfigDTO> userGpuConfigs = new ArrayList<>();
+        userGpuConfigs.add(new UserGpuConfigDTO().setGpuType(gpuType).setGpuModel(gpuModel).setK8sLabelKey(k8sLabelKey).setGpuLimit(gpuNumLimit));
+        userConfigDTO.setGpuResources(userGpuConfigs);
+        saveUserConfig(userConfigDTO, null);
         return userConvert.toDto(user);
     }
 
@@ -307,19 +395,15 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
      */
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public void delete(Set<Long> ids) {
+    public void delete(Set<Long> ids, String accessToken) {
         if (!CollectionUtils.isEmpty(ids)) {
             Long adminId = Long.valueOf(UserConstant.ADMIN_USER_ID);
             if (ids.contains(adminId)) {
                 throw new BusinessException(BaseErrorCodeEnum.SYSTEM_USER_CANNOT_DELETE);
             }
-            ids.forEach(id -> {
-                userMapper.updateById(
-                        User.builder()
-                                .id(id)
-                                .deleted(SwitchEnum.getBooleanValue(SwitchEnum.ON.getValue()))
-                                .build());
-            });
+            userMapper.deleteBatchIds(ids);
+            //异步清理用户资源
+            cleanupUserResourcesAsync.cleanUserResource(ids, accessToken);
         }
     }
 
@@ -339,6 +423,9 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         }
         UserDTO dto = new UserDTO();
         BeanUtils.copyProperties(user, dto);
+        if (user.getUserAvatar() != null && StrUtil.isNotBlank(user.getUserAvatar().getPath())) {
+            dto.setUserAvatarPath(user.getUserAvatar().getPath());
+        }
         List<Role> roles = roleMapper.findRolesByUserId(user.getId());
         if (!CollectionUtils.isEmpty(roles)) {
             dto.setRoles(roles.stream().map(a -> {
@@ -357,12 +444,36 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
 
     private SysUserConfigDTO getUserConfig(Long userId) {
         UserConfig userConfig = userConfigMapper.selectOne(new QueryWrapper<>(new UserConfig().setUserId(userId)));
-        SysUserConfigDTO sysUserConfigDTO= new SysUserConfigDTO();
-        if (userConfig == null){
-            return sysUserConfigDTO.setCpuLimit(cpuLimit).setMemoryLimit(memoryLimit)
-                        .setGpuLimit(gpuLimit).setNotebookDelayDeleteTime(defaultNotebookDelayDeleteTime);
+        SysUserConfigDTO sysUserConfigDTO = new SysUserConfigDTO();
+        // 如果用户配置为空，则返回默认配置
+        if (userConfig == null) {
+            sysUserConfigDTO.setCpuLimit(cpuLimit).setMemoryLimit(memoryLimit)
+                    .setNotebookDelayDeleteTime(userConfigNotebookDelayDeleteTime);
+        } else {
+            BeanUtils.copyProperties(userConfig, sysUserConfigDTO);
         }
-        BeanUtils.copyProperties(userConfig, sysUserConfigDTO);
+        // 查询用户GPU配置
+        List<UserGpuConfig> userGpuConfigs = userGpuConfigMapper.selectList(new QueryWrapper<>(new UserGpuConfig().setUserId(userId)));
+        // 如果老用户未初始化GPU配置，则返回默认配置
+        if (CollectionUtils.isEmpty(userGpuConfigs) && userGpuConfigMapper.selectCountByUserId(userId) == 0) {
+            List<UserGpuConfig> preUserGpuConfigs = userGpuConfigMapper.selectList(new QueryWrapper<>(new UserGpuConfig().setUserId(0L)));
+            if (CollectionUtil.isNotEmpty(preUserGpuConfigs)) {
+                userGpuConfigs.addAll(preUserGpuConfigs);
+            }
+        }
+        List<SysUserGpuConfigDTO> sysUserGpuConfigDTOs = userGpuConfigs.stream().map(x -> {
+            SysUserGpuConfigDTO sysUserGpuConfigDTO = new SysUserGpuConfigDTO();
+            BeanUtils.copyProperties(x, sysUserGpuConfigDTO);
+            return sysUserGpuConfigDTO;
+        }).collect(Collectors.toList());
+        sysUserConfigDTO.setGpuResources(sysUserGpuConfigDTOs);
+        //如果当前用户如果没有默认镜像，就使用管理员的
+        if (userConfig == null || userConfig.getDefaultImageId() == null) {
+            LambdaQueryWrapper<UserConfig> queryWrapper = new LambdaQueryWrapper<>();
+            queryWrapper.eq(UserConfig::getUserId, PermissionAspect.PUBLIC_DATA_USER_ID);
+            UserConfig adminConfig = userConfigMapper.selectOne(queryWrapper);
+            sysUserConfigDTO.setDefaultImageId(adminConfig.getDefaultImageId());
+        }
         return sysUserConfigDTO;
     }
 
@@ -491,6 +602,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         //用户信息校验
         checkoutUserInfo(userRegisterDTO);
         String encode = passwordEncoder.encode(RsaEncrypt.decrypt(userRegisterDTO.getPassword(), privateKey));
+        Long userId;
         try {
             User newUser = User.builder()
                     .email(userRegisterDTO.getEmail())
@@ -503,18 +615,42 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
 
             //新增用户注册信息
             userMapper.insert(newUser);
-
+            userId = newUser.getId();
             //绑定用户默认权限
-            userRoleMapper.insert(UserRole.builder().roleId((long) UserConstant.REGISTER_ROLE_ID).userId(newUser.getId()).build());
-
+            userRoleMapper.insert(UserRole.builder().roleId((long) UserConstant.REGISTER_ROLE_ID).userId(userId).build());
         } catch (Exception e) {
             LogUtil.error(LogEnum.SYS_ERR, "UserServiceImpl userRegister error , param:{} error:{}", JSONObject.toJSONString(userRegisterDTO), e);
             throw new BusinessException(BaseErrorCodeEnum.ERROR_SYSTEM.getCode(), BaseErrorCodeEnum.ERROR_SYSTEM.getMsg());
         }
 
+        //初始化用户配置
+        execute(userId, userRegisterDTO.getUsername(), userRegisterDTO.getPassword());
         return new DataResponseBody();
     }
 
+    /**
+     * 同步初始化用户配置
+     * @param userId 用户id
+     * @param username 用户名
+     * @param password 用户密码
+     */
+    public void execute(Long userId, String username, String password) {
+        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronizationAdapter() {
+            @Override
+            public void afterCommit() {
+                //为注册用户生成token
+                String token = obtainAccessToken.generateToken(username, password);
+                //初始化用户配置
+                UserConfigSaveDTO userConfigDTO = new UserConfigSaveDTO();
+                userConfigDTO.setUserId(userId).setCpuLimit(cpuLimit).setMemoryLimit(memoryLimit)
+                        .setNotebookDelayDeleteTime(userConfigNotebookDelayDeleteTime);
+                List<UserGpuConfigDTO> userGpuConfigs = new ArrayList<>();
+                userGpuConfigs.add(new UserGpuConfigDTO().setGpuType(gpuType).setGpuModel(gpuModel).setK8sLabelKey(k8sLabelKey).setGpuLimit(gpuNumLimit));
+                userConfigDTO.setGpuResources(userGpuConfigs);
+                saveUserConfig(userConfigDTO, token);
+            }
+        });
+    }
 
     /**
      * 获取code通过发送邮件
@@ -565,6 +701,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
 
         } catch (Exception e) {
             redisUtils.hdel(UserConstant.USER_EMAIL_REGISTER.concat(email), email);
+            redisUtils.hdel(UserConstant.USER_EMAIL_LIMIT_COUNT.concat(email), email);
             LogUtil.error(LogEnum.SYS_ERR, "UserServiceImpl getCodeBySentEmail error , param:{} error:{}", email, e);
             throw new BusinessException(BaseErrorCodeEnum.ERROR_SYSTEM.getCode(), BaseErrorCodeEnum.ERROR_SYSTEM.getMsg());
         }
@@ -623,7 +760,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
                 .email(curUser.getUser().getEmail())
                 .password(Md5Util.createMd5(Md5Util.createMd5(curUser.getUsername()).concat(initialPassword)))
                 .username(curUser.getUsername())
-                .is_staff(!CollectionUtils.isEmpty(userRoles) ? true : false).build();
+                .is_staff(!CollectionUtils.isEmpty(userRoles)).build();
 
         return BeanMap.create(vo);
     }
@@ -752,43 +889,112 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         // 查询用户配置
         UserConfig userConfig = userConfigMapper.selectOne(new QueryWrapper<>(new UserConfig().setUserId(userId)));
         UserConfigVO userConfigVO = new UserConfigVO();
-        // 如果用户配置为空，则返回
-        if (userConfig == null){
-            return userConfigVO.setUserId(userId).setCpuLimit(cpuLimit).setMemoryLimit(memoryLimit)
-                    .setGpuLimit(gpuLimit).setNotebookDelayDeleteTime(defaultNotebookDelayDeleteTime);
+        // 如果用户配置为空，则返回默认配置
+        if (userConfig == null) {
+            userConfigVO.setUserId(userId).setCpuLimit(cpuLimit).setMemoryLimit(memoryLimit)
+                    .setNotebookDelayDeleteTime(userConfigNotebookDelayDeleteTime);
+        } else {
+            BeanUtils.copyProperties(userConfig, userConfigVO);
         }
-       // 封装用户配置 VO
-        BeanUtils.copyProperties(userConfig, userConfigVO);
+        // 查询用户GPU配置
+        List<UserGpuConfig> userGpuConfigs = userGpuConfigMapper.selectList(new QueryWrapper<>(new UserGpuConfig().setUserId(userId)));
+        List<UserGpuConfigVO> userGpuConfigVOList = new ArrayList<>();
+        // 如果老用户未初始化GPU配置，则返回默认配置
+        if (CollectionUtils.isEmpty(userGpuConfigs) && userGpuConfigMapper.selectCountByUserId(userId) == 0) {
+            List<UserGpuConfig> preUserGpuConfigs = userGpuConfigMapper.selectList(new QueryWrapper<>(new UserGpuConfig().setUserId(PermissionAspect.PUBLIC_DATA_USER_ID)));
+            userGpuConfigs = preUserGpuConfigs;
+        }
+        userGpuConfigs.forEach(userGpuConfig -> {
+            UserGpuConfigVO userGpuConfigVO = new UserGpuConfigVO();
+            BeanUtils.copyProperties(userGpuConfig, userGpuConfigVO);
+            userGpuConfigVOList.add(userGpuConfigVO);
+        });
+
+        userConfigVO.setGpuResources(userGpuConfigVOList);
         return userConfigVO;
     }
 
     /**
      * 创建或更新用户配置
      *
-     * @param userConfigDTO 用户配置
-     * @return org.dubhe.admin.domain.vo.UserConfigCreateVO 用户配置 VO
+     * @param userConfigSaveDTO 用户配置
      */
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public UserConfigCreateVO createOrUpdateUserConfig(UserConfigDTO userConfigDTO) {
-        DataResponseBody dataResponseBody = resourceQuotaClient.updateResourceQuota(userConfigDTO);
-        if (!dataResponseBody.succeed()){
-            throw new BusinessException("用户配置更新失败");
+    public void saveUserConfig(UserConfigSaveDTO userConfigSaveDTO, String token) {
+        //设置k8s quota (k8s quota设置只支持以厂商为单位的配置)
+        ResourceQuotaDTO resourceQuotaDTO = new ResourceQuotaDTO();
+        BeanUtils.copyProperties(userConfigSaveDTO, resourceQuotaDTO);
+        //目前只有nvidia和suiyuan,map初始化空间设置为2
+        Map<String, Integer> map = new HashMap<>(2);
+        if (!CollectionUtils.isEmpty(userConfigSaveDTO.getGpuResources())) {
+            for (UserGpuConfigDTO userGpuConfigDTO : userConfigSaveDTO.getGpuResources()) {
+                Integer gpuNumLimit = userGpuConfigDTO.getGpuLimit();
+                if (map.containsKey(userGpuConfigDTO.getK8sLabelKey())) {
+                    gpuNumLimit = map.get(userGpuConfigDTO.getK8sLabelKey()) + userGpuConfigDTO.getGpuLimit();
+                }
+                map.put(userGpuConfigDTO.getK8sLabelKey(), gpuNumLimit);
+            }
         }
-        UserConfig userConfig = new UserConfig();
-        BeanUtils.copyProperties(userConfigDTO, userConfig);
-        userConfigMapper.insertOrUpdate(userConfig);
-        // 封装用户配置 VO
-        UserConfigCreateVO userConfigCreateVO = new UserConfigCreateVO().setId(userConfig.getId());
-        return userConfigCreateVO;
-    }
+        resourceQuotaDTO.setGpuLimit(map);
 
+        //设置k8s GPU型号配置
+        GpuConfigDTO gpuConfigDTO = new GpuConfigDTO();
+        gpuConfigDTO.setUserId(userConfigSaveDTO.getUserId());
+        if (!CollectionUtils.isEmpty(userConfigSaveDTO.getGpuResources())) {
+            List<SysUserGpuConfigDTO> sysUserGpuConfigs = userConfigSaveDTO.getGpuResources().stream().map(x -> {
+                SysUserGpuConfigDTO sysUserGpuConfigDTO = new SysUserGpuConfigDTO();
+                BeanUtils.copyProperties(x, sysUserGpuConfigDTO);
+                return sysUserGpuConfigDTO;
+            }).collect(Collectors.toList());
+            gpuConfigDTO.setGpuResources(sysUserGpuConfigs);
+        }
+        DataResponseBody gpuConfigDataResponse;
+        if (token == null) {
+            gpuConfigDataResponse = gpuConfigClient.updateGpuConfig(gpuConfigDTO);
+        } else {
+            gpuConfigDataResponse = gpuConfigTemplateClient.updateGpuConfig(gpuConfigDTO, AuthConst.ACCESS_TOKEN_PREFIX + token);
+        }
+        if (gpuConfigDataResponse == null || !gpuConfigDataResponse.succeed()) {
+            throw new BusinessException("k8s GPU型号配置更新失败");
+        }
+        //创建或更新用户配置
+        UserConfig userConfig = new UserConfig();
+        BeanUtils.copyProperties(userConfigSaveDTO, userConfig);
+        userConfigMapper.insertOrUpdate(userConfig);
+        //创建或更新用户GPU配置
+        //删除原有记录
+        if (userGpuConfigMapper.selectCount(new QueryWrapper<>(new UserGpuConfig().setUserId(userConfigSaveDTO.getUserId()))) > 0) {
+            userGpuConfigMapper.delete(new QueryWrapper<>(new UserGpuConfig().setUserId(userConfigSaveDTO.getUserId())));
+        }
+        if (!CollectionUtils.isEmpty(userConfigSaveDTO.getGpuResources())) {
+            List<UserGpuConfig> userGpuConfigs = userConfigSaveDTO.getGpuResources().stream().map(x ->
+            {
+                UserGpuConfig userGpuConfig = new UserGpuConfig();
+                BeanUtils.copyProperties(x, userGpuConfig);
+                userGpuConfig.setUserId(userConfigSaveDTO.getUserId());
+                return userGpuConfig;
+            }).collect(Collectors.toList());
+            userGpuConfigMapper.insertBatchs(userGpuConfigs);
+        }
+
+        //更新quota中GPU的配额
+        DataResponseBody dataResponseBody;
+        if (token == null) {
+            dataResponseBody = resourceQuotaClient.updateResourceQuota(resourceQuotaDTO);
+        } else {
+            dataResponseBody = resourceQuotaTemplateClient.updateResourceQuota(resourceQuotaDTO, AuthConst.ACCESS_TOKEN_PREFIX + token);
+        }
+        if (dataResponseBody == null || !dataResponseBody.succeed()) {
+            throw new BusinessException("k8s quota用户配置更新失败");
+        }
+    }
 
     /**
      * 校验验证码
      *
-     * @param loginCaptcha  验证码参数
-     * @param uuid          验证码redis-key
+     * @param loginCaptcha 验证码参数
+     * @param uuid         验证码redis-key
      */
     private void validateCode(String loginCaptcha, String uuid) {
         // 验证码未输入
@@ -853,17 +1059,15 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
      */
     private void limitSendEmail(final String receiverMailAddress) {
         double count = redisUtils.hincr(UserConstant.USER_EMAIL_LIMIT_COUNT.concat(receiverMailAddress), receiverMailAddress, 1);
-        if (count > UserConstant.COUNT_SENT_EMAIL) {
-            LogUtil.error(LogEnum.SYS_ERR, "Email verification code cannot exceed three times , error:{}", UserConstant.COUNT_SENT_EMAIL);
+        if (count > emailSendLimit) {
+            LogUtil.error(LogEnum.SYS_ERR, "Email verification code cannot exceed three times , error:{}", emailSendLimit);
             throw new BusinessException(BaseErrorCodeEnum.SYSTEM_USER_EMAIL_CODE_CANNOT_EXCEED_TIMES.getCode(),
                     BaseErrorCodeEnum.SYSTEM_USER_EMAIL_CODE_CANNOT_EXCEED_TIMES.getMsg());
         } else {
             // 验证码次数凌晨清除
             String concat = UserConstant.USER_EMAIL_LIMIT_COUNT.concat(receiverMailAddress);
-
-            Long secondsNextEarlyMorning = DateUtil.getSecondTime();
-
-            redisUtils.expire(concat, secondsNextEarlyMorning);
+            Duration duration = Duration.between(LocalDateTime.now(), LocalDate.now().plusDays(1).atTime(0, 0, 0));
+            redisUtils.expire(concat, duration.getSeconds());
         }
     }
 
@@ -889,8 +1093,8 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
     /**
      * 校验 邮箱地址 和 验证码
      *
-     * @param code 验证码
-     * @param email 邮箱
+     * @param code         验证码
+     * @param email        邮箱
      * @param codeRedisKey redis-key
      */
     private void checkoutEmailAndCode(String code, String email, String codeRedisKey) {
@@ -993,4 +1197,58 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         dto.setUserConfig(sysUserConfigDTO);
         return DataResponseFactory.success(dto);
     }
+
+    /**
+     * 重置密码
+     *
+     * @return 重置密码结果集
+     */
+    @Transactional(rollbackFor = Exception.class)
+    @Override
+    public DataResponseBody resetPassword(Long userId) {
+
+        PasswordEncoder passwordEncoder = PasswordEncoderFactory.getPasswordEncoder();
+        //重置为默认密码123456，加密密码
+        String encode = passwordEncoder.encode(initialPassword);
+        userMapper.updateById(User.builder().id(userId).password(encode).lastPasswordResetTime(new Date()).build());
+        return new DataResponseBody();
+    }
+
+    /**
+     * 获取用户分配的资源总量
+     *
+     * @return 资源配额总量统计
+     */
+    @Override
+    public DataResponseBody getAllotResources() {
+        //获取内存、cpu分配总量
+        UserAllotResourceVO userAllotResourceVO = userConfigMapper.selectResourceSum();
+        //按型号获取gpu分配总量
+        List<GpuAllotVO> gpuAllotVOList = userGpuConfigMapper.selectGpuAllotSum();
+        List<Integer> gpuAllotTotal = gpuAllotVOList.stream().map(allot -> Integer.valueOf(allot.getAllotTotal())).collect(Collectors.toList());
+        userAllotResourceVO.setGpuAllotTotal(gpuAllotTotal.stream().reduce(Integer::sum).get());
+        userAllotResourceVO.setGpuAllotList(gpuAllotVOList);
+        return new DataResponseBody(userAllotResourceVO);
+    }
+
+
+    /**
+     * 将user转换为userDTO,并且设置对应的用户组名
+     *
+     * @return userDTO list
+     */
+    private List<UserDTO> convertToUserDTO(IPage<User> users) {
+        List<UserDTO> userDTOList = new ArrayList<>();
+        if (CollectionUtil.isEmpty(users.getRecords())) {
+            return userDTOList;
+        }
+        userDTOList = userConvert.toDto(users.getRecords());
+        for (UserDTO userDTO : userDTOList) {
+            String userGroupName = userMapper.queryUserGroupNameByUserId(userDTO.getId());
+            userDTO.setUserGroupName(userGroupName);
+        }
+
+        return userDTOList;
+    }
+
 }

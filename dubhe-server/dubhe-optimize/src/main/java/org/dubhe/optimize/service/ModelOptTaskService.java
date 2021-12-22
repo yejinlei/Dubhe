@@ -19,7 +19,6 @@ package org.dubhe.optimize.service;
 
 import org.dubhe.optimize.domain.dto.ModelOptDatasetCreateDTO;
 import org.dubhe.optimize.domain.dto.ModelOptTaskCreateDTO;
-import org.dubhe.optimize.domain.dto.ModelOptTaskDeleteDTO;
 import org.dubhe.optimize.domain.dto.ModelOptTaskQueryDTO;
 import org.dubhe.optimize.domain.dto.ModelOptTaskSubmitDTO;
 import org.dubhe.optimize.domain.dto.ModelOptTaskUpdateDTO;
@@ -28,11 +27,13 @@ import org.dubhe.optimize.domain.vo.ModelOptCreateVO;
 import org.dubhe.optimize.domain.vo.ModelOptDatasetQueryVO;
 import org.dubhe.optimize.domain.vo.ModelOptDatasetVO;
 import org.dubhe.optimize.domain.vo.ModelOptModelQueryVO;
+import org.dubhe.optimize.domain.vo.ModelOptTaskQueryVO;
 import org.dubhe.optimize.domain.vo.ModelOptUpdateVO;
 import org.dubhe.recycle.domain.dto.RecycleCreateDTO;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * @description 模型优化任务
@@ -72,9 +73,9 @@ public interface ModelOptTaskService {
     /**
      * 删除模型优化任务
      *
-     * @param modelOptTaskDeleteDTO 模型优化任务删除参数
+     * @param ids
      */
-    void delete(ModelOptTaskDeleteDTO modelOptTaskDeleteDTO);
+    void delete(Set<Long> ids);
 
     /**
      * 获取内置模型
@@ -127,4 +128,11 @@ public interface ModelOptTaskService {
      * @param dto 还原DTO对象
      */
     void recycleRollback(RecycleCreateDTO dto);
+
+    /**
+     * 根据id查询模型优化任务
+     * @param id
+     * @return
+     */
+    ModelOptTaskQueryVO getTaskById(Long id);
 }

@@ -37,6 +37,7 @@ import org.dubhe.k8s.api.NodeApi;
 import org.dubhe.k8s.api.PersistentVolumeClaimApi;
 import org.dubhe.k8s.api.PodApi;
 import org.dubhe.k8s.api.ResourceQuotaApi;
+import org.dubhe.k8s.api.ServiceApi;
 import org.dubhe.k8s.api.TerminalApi;
 import org.dubhe.k8s.api.TrainJobApi;
 import org.dubhe.k8s.api.impl.DistributeTrainApiImpl;
@@ -53,6 +54,7 @@ import org.dubhe.k8s.api.impl.NodeApiImpl;
 import org.dubhe.k8s.api.impl.PersistentVolumeClaimApiImpl;
 import org.dubhe.k8s.api.impl.PodApiImpl;
 import org.dubhe.k8s.api.impl.ResourceQuotaApiImpl;
+import org.dubhe.k8s.api.impl.ServiceApiImpl;
 import org.dubhe.k8s.api.impl.TerminalApiImpl;
 import org.dubhe.k8s.api.impl.TrainJobApiImpl;
 import org.dubhe.k8s.cache.ResourceCache;
@@ -184,11 +186,11 @@ public class K8sConfig {
     }
 
     @Bean
-    public RestHighLevelClient restHighLevelClient(){
+    public RestHighLevelClient restHighLevelClient() {
 
         String[] hosts = hostlist.split(COMMA);
         HttpHost[] httpHostArray = new HttpHost[hosts.length];
-        for(int i=ZERO;i<hosts.length;i++){
+        for (int i = ZERO; i < hosts.length; i++) {
             String item = hosts[i];
             httpHostArray[i] = new HttpHost(item.split(COLON)[ZERO], Integer.parseInt(item.split(COLON)[1]), HTTP);
         }
@@ -202,19 +204,24 @@ public class K8sConfig {
     }
 
     @Bean
-    public ModelServingApi modelServingApi(K8sUtils k8sUtils){
+    public ModelServingApi modelServingApi(K8sUtils k8sUtils) {
         return new ModelServingApiImpl(k8sUtils);
     }
 
     @Bean
     public ServerEndpointExporter handlerAdapter() {
-            return new ServerEndpointExporter();
-        }
+        return new ServerEndpointExporter();
+    }
 
 
     @Bean
-    public TerminalApi terminalApi(K8sUtils k8sUtils){
+    public TerminalApi terminalApi(K8sUtils k8sUtils) {
         return new TerminalApiImpl(k8sUtils);
+    }
+
+    @Bean
+    public ServiceApi serviceApi(K8sUtils k8sUtils) {
+        return new ServiceApiImpl(k8sUtils);
     }
 
 }

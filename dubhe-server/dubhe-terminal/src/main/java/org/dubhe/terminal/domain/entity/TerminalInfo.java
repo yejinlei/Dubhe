@@ -109,16 +109,34 @@ public class TerminalInfo extends BaseEntity {
     private Integer diskMemNum;
 
     /**
-     * 资源拥有者ID
-     */
-    @TableField(value = "origin_user_id",fill = FieldFill.INSERT)
-    private Long originUserId;
-
-    /**
      * pod ip
      */
     @TableField(value = "pod_ip")
     private String podIp;
+
+    /**
+     * GPU类型(例如：NVIDIA)
+     */
+    @TableField(value = "gpu_type")
+    private String gpuType;
+
+    /**
+     * GPU型号(例如：v100)
+     */
+    @TableField(value = "gpu_model")
+    private String gpuModel;
+
+    /**
+     * k8s GPU资源标签key值(例如：nvidia.com/gpu)
+     */
+    @TableField(value = "k8s_label_key")
+    private String k8sLabelKey;
+
+    /**
+     * 资源拥有者ID
+     */
+    @TableField(value = "origin_user_id",fill = FieldFill.INSERT)
+    private Long originUserId;
 
     /**
      * ssh端口
@@ -138,13 +156,16 @@ public class TerminalInfo extends BaseEntity {
     @TableField("master_flag")
     private boolean masterFlag;
 
-    public TerminalInfo(Long id,Long terminalId,Integer cpuNum,Integer memNum,Integer gpuNum,Integer diskMemNum,String k8sResourceName,Long originUserId,String sshUser,String sshPwd){
+    public TerminalInfo(Long id,Long terminalId,Integer cpuNum,Integer memNum,Integer gpuNum,Integer diskMemNum,String gpuType,String gpuModel,String k8sLabelKey,String k8sResourceName,Long originUserId,String sshUser,String sshPwd){
         this.id = id;
         this.terminalId = terminalId;
         this.cpuNum = cpuNum;
         this.memNum = memNum;
         this.gpuNum = gpuNum;
         this.diskMemNum = diskMemNum;
+        this.gpuType=gpuType;
+        this.gpuModel=gpuModel;
+        this.k8sLabelKey=k8sLabelKey;
         this.k8sResourceName = k8sResourceName;
         this.originUserId = originUserId;
         this.setCreateUserId(originUserId);

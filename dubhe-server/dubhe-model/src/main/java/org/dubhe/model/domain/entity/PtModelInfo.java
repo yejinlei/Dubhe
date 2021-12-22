@@ -102,6 +102,12 @@ public class PtModelInfo extends BaseEntity {
     private Integer totalNum;
 
     /**
+     * 有效版本数量
+     */
+    @TableField(value = "version_num")
+    private Integer versionNum;
+
+    /**
      * 资源拥有者ID
      */
     @TableField(value = "origin_user_id", fill = FieldFill.INSERT)

@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context.xsd">
+    <!--set注入-->
+    <bean class="org.dubhe.train.inner.factory.SystemRunParamFactory" name="systemRunParamFactory">
+        <property name="systemRunParamHandlerMap">
+            <map>
+                <entry key="out" value-ref="systemOutRunParamHandler"/>
+                <entry key="mount" value-ref="systemMountRunParamHandler"/>
+                <entry key="normal" value-ref="systemNormalRunParamHandler"/>
+            </map>
+        </property>
+    </bean>
+
+    <bean id="systemOutRunParamHandler" class="org.dubhe.train.inner.handler.SystemOutRunParamHandler"/>
+    <bean id="systemMountRunParamHandler" class="org.dubhe.train.inner.handler.SystemMountRunParamHandler"/>
+    <bean id="systemNormalRunParamHandler" class="org.dubhe.train.inner.handler.SystemNormalRunParamHandler"/>
+</beans>

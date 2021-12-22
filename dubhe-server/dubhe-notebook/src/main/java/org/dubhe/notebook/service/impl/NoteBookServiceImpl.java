@@ -26,7 +26,6 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
-import org.dubhe.biz.base.utils.StringUtils;
 import org.dubhe.biz.base.constant.HarborProperties;
 import org.dubhe.biz.base.constant.MagicNumConstant;
 import org.dubhe.biz.base.constant.NumberConstant;
@@ -45,6 +44,7 @@ import org.dubhe.biz.base.service.UserContextService;
 import org.dubhe.biz.base.utils.HttpUtils;
 import org.dubhe.biz.base.utils.NumberUtil;
 import org.dubhe.biz.base.utils.ResultUtil;
+import org.dubhe.biz.base.utils.StringUtils;
 import org.dubhe.biz.base.vo.DataResponseBody;
 import org.dubhe.biz.base.vo.DatasetVO;
 import org.dubhe.biz.db.utils.PageUtil;
@@ -53,16 +53,17 @@ import org.dubhe.biz.file.api.FileStoreApi;
 import org.dubhe.biz.file.enums.BizPathEnum;
 import org.dubhe.biz.log.enums.LogEnum;
 import org.dubhe.biz.log.utils.LogUtil;
-import org.dubhe.biz.redis.utils.RedisUtils;
 import org.dubhe.k8s.api.JupyterResourceApi;
 import org.dubhe.k8s.api.NamespaceApi;
 import org.dubhe.k8s.api.PodApi;
-import org.dubhe.k8s.cache.ResourceCache;
+import org.dubhe.k8s.dao.K8sTaskIdentifyMapper;
 import org.dubhe.k8s.domain.PtBaseResult;
+import org.dubhe.k8s.domain.entity.K8sTaskIdentify;
 import org.dubhe.k8s.domain.resource.BizNamespace;
 import org.dubhe.k8s.domain.resource.BizPod;
 import org.dubhe.k8s.domain.vo.PtJupyterDeployVO;
 import org.dubhe.k8s.enums.K8sResponseEnum;
+import org.dubhe.k8s.service.K8sCallbackEventService;
 import org.dubhe.k8s.utils.K8sNameTool;
 import org.dubhe.notebook.client.DatasetClient;
 import org.dubhe.notebook.client.ImageClient;
@@ -75,11 +76,11 @@ import org.dubhe.notebook.domain.dto.NoteBookCreateDTO;
 import org.dubhe.notebook.domain.dto.NoteBookListQueryDTO;
 import org.dubhe.notebook.domain.dto.SourceNoteBookDTO;
 import org.dubhe.notebook.domain.entity.NoteBook;
+import org.dubhe.notebook.domain.vo.NoteBookVO;
 import org.dubhe.notebook.enums.NoteBookStatusEnum;
 import org.dubhe.notebook.service.NoteBookService;
 import org.dubhe.notebook.service.ProcessNotebookCommand;
 import org.dubhe.notebook.utils.NotebookUtil;
-import org.dubhe.biz.base.vo.NoteBookVO;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -89,7 +90,12 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
 
 import java.io.File;
-import java.util.*;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Date;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
@@ -139,15 +145,12 @@ public class NoteBookServiceImpl implements NoteBookService {
 
     @Autowired
     private NoteBookConfig noteBookConfig;
+    
+    @Autowired
+    private K8sTaskIdentifyMapper k8sTaskIdentifyMapper;
 
     @Autowired
-    private RedisUtils redisUtils;
-
-    @Autowired
-    private ResourceCache resourceCache;
-
-    @Value("Task:Notebook:"+"${spring.profiles.active}_notebook_id_")
-    private String notebookIdPrefix;
+    private K8sCallbackEventService k8sCallbackEventService;
 
     /**
      * 分页查询所有 notebook 记录
@@ -159,8 +162,6 @@ public class NoteBookServiceImpl implements NoteBookService {
     @Override
     public Map<String, Object> getNoteBookList(Page page, NoteBookListQueryDTO noteBookListQueryDTO) {
         QueryWrapper<NoteBook> queryWrapper = WrapperHelp.getWrapper(noteBookListQueryDTO);
-        queryWrapper.ne(NoteBook.COLUMN_STATUS, NoteBookStatusEnum.DELETED.getCode())
-                .ne("deleted", NoteBookStatusEnum.STOP.getCode());
         if (noteBookListQueryDTO.getStatus() != null) {
             if (noteBookListQueryDTO.getStatus().equals(NoteBookStatusEnum.RUN.getCode())) {
                 //运行中的notebook必须有url
@@ -209,6 +210,8 @@ public class NoteBookServiceImpl implements NoteBookService {
         PtImageQueryUrlDTO imageQueryUrlDTO = new PtImageQueryUrlDTO();
         imageQueryUrlDTO.setProjectType(ImageTypeEnum.NOTEBOOK.getType())
                 .setImageResource(ImageSourceEnum.PRE.getCode());
+        Long defaultImageId = userContextService.getCurUser().getUserConfig().getDefaultImageId();
+        imageQueryUrlDTO.setId(defaultImageId);
         DataResponseBody<String> responseBody = imageClient.getImageUrl(imageQueryUrlDTO);
         if (!responseBody.succeed()) {
             LogUtil.error(LogEnum.NOTE_BOOK, "dubhe-image service call failed, responseBody is 【{}】", responseBody);
@@ -234,7 +237,7 @@ public class NoteBookServiceImpl implements NoteBookService {
 
         LambdaQueryWrapper<NoteBook> queryWrapper = new LambdaQueryWrapper();
 
-        queryWrapper.eq(NoteBook::getName, noteBookName);
+        queryWrapper.eq(NoteBook::getNoteBookName, noteBookName);
 
         int res = noteBookMapper.selectCount(queryWrapper);
 
@@ -306,14 +309,24 @@ public class NoteBookServiceImpl implements NoteBookService {
         }
         noteBook.setCreateResource(BizPathEnum.NOTEBOOK.getCreateResource());
         noteBook.setK8sMountPath(NotebookUtil.getK8sMountPath());
-        String taskIdentify = StringUtils.getUUID();
-        if (start(noteBook, taskIdentify)) {
+
+        noteBook.setStatus(NoteBookStatusEnum.STARTING.getCode());
+        noteBookMapper.insert(noteBook);
+        
+        //获取任务识别标识
+        K8sTaskIdentify taskIdentify = new K8sTaskIdentify();
+        taskIdentify.setTaskId(noteBook.getId());
+        taskIdentify.setTaskName(noteBookName);
+        k8sTaskIdentifyMapper.insert(taskIdentify);
+        
+        
+        if (start(noteBook, String.valueOf(taskIdentify.getId()))) {
             noteBook.setStatus(NoteBookStatusEnum.STARTING.getCode());
         } else {
             noteBook.setStatus(NoteBookStatusEnum.STOP.getCode());
         }
-        noteBookMapper.insert(noteBook);
-        resourceCache.addTaskCache(taskIdentify,noteBook.getId(), noteBookName, notebookIdPrefix);
+        
+        noteBookMapper.updateStatusById(noteBook.getId(),noteBook.getStatus());
         return noteBookConvert.toDto(noteBook);
     }
 
@@ -371,12 +384,10 @@ public class NoteBookServiceImpl implements NoteBookService {
         List<NoteBook> noteBookList = validateDeletableNoteBook(noteBookIds);
         if (CollUtil.isNotEmpty(noteBookList)) {
             for (NoteBook noteBook : noteBookList) {
-                noteBook.setStatus(NoteBookStatusEnum.DELETING.getCode());
-                noteBookMapper.updateById(noteBook);
-                String taskIdentify = (String) redisUtils.get(notebookIdPrefix + String.valueOf(noteBook.getId()));
-                if (StringUtils.isNotEmpty(taskIdentify)){
-                    redisUtils.del(taskIdentify, notebookIdPrefix + String.valueOf(noteBook.getId()));
-                }
+                noteBookMapper.deleteById(noteBook.getId());
+                k8sTaskIdentifyMapper.deleteByTaskId(noteBook.getId());
+                //删除关联的事件信息
+                k8sCallbackEventService.delete(noteBook.getK8sResourceName(), BizEnum.NOTEBOOK.getBizCode());
             }
         }
     }
@@ -412,9 +423,21 @@ public class NoteBookServiceImpl implements NoteBookService {
         } else if (!NoteBookStatusEnum.STOP.getCode().equals(noteBook.getStatus())) {
             throw new BusinessException("notebook【" + noteBook.getName() + "】当前状态：" + NoteBookStatusEnum.getDescription(noteBook.getStatus()) + ",无法再次启动。");
         }
+
+
+
+        K8sTaskIdentify taskIdentify = k8sTaskIdentifyMapper.getInfoByTaskId(noteBook.getId());
+        if (taskIdentify == null) {
+            taskIdentify = new K8sTaskIdentify();
+            taskIdentify.setTaskId(noteBook.getId());
+            taskIdentify.setTaskName(noteBook.getNoteBookName());
+            k8sTaskIdentifyMapper.insert(taskIdentify);
+        }
+        //方法（实验创建开始运行）上的大事务commit后再执行异步方法申请k8s资源执行任务。
+        String taskIdentityId = String.valueOf(taskIdentify.getId());
+
         String returnStr;
-        String taskIdentify = resourceCache.getTaskIdentify(noteBook.getId(), noteBook.getNoteBookName(), notebookIdPrefix);
-        if (start(noteBook, taskIdentify)) {
+        if (start(noteBook, taskIdentityId)) {
             noteBook.setStatus(NoteBookStatusEnum.STARTING.getCode());
             returnStr = NoteBookStatusEnum.STARTING.getDescription();
         } else {
@@ -767,17 +790,16 @@ public class NoteBookServiceImpl implements NoteBookService {
                 processNotebookCommand.running(noteBook);
                 updateById(noteBook);
                 return true;
-            }
-        } else if (NoteBookStatusEnum.STOP == statusEnum) {
-            //删除notebook (删除中->删除)
-            if (NoteBookStatusEnum.DELETING.getCode().equals(noteBook.getStatus())) {
-                processNotebookCommand.delete(noteBook);
-                noteBookMapper.deleteById(noteBook.getId());
+            } else {
+                //运行态container terminated
+                updateById(noteBook);
                 return true;
             }
+        } else if (NoteBookStatusEnum.STOP == statusEnum) {
             noteBook.setUrl(SymbolConstant.BLANK);
             noteBook.setStatus(NoteBookStatusEnum.STOP.getCode());
             noteBook.setStatusDetail(SymbolConstant.BLANK);
+            jupyterResourceApi.delete(noteBook.getK8sNamespace(),noteBook.getK8sResourceName());
             processNotebookCommand.stop(noteBook);
             updateById(noteBook);
             return true;

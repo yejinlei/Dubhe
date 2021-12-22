@@ -28,6 +28,7 @@ import org.dubhe.biz.base.context.UserContext;
 import org.dubhe.biz.base.dto.PtModelInfoConditionQueryDTO;
 import org.dubhe.biz.base.dto.PtModelInfoQueryByIdDTO;
 import org.dubhe.biz.base.dto.PtModelStatusQueryDTO;
+import org.dubhe.biz.base.dto.UserDTO;
 import org.dubhe.biz.base.enums.DatasetTypeEnum;
 import org.dubhe.biz.base.exception.BusinessException;
 import org.dubhe.biz.base.service.UserContextService;
@@ -41,6 +42,7 @@ import org.dubhe.biz.log.enums.LogEnum;
 import org.dubhe.biz.log.utils.LogUtil;
 import org.dubhe.biz.permission.annotation.DataPermissionMethod;
 import org.dubhe.biz.permission.base.BaseService;
+import org.dubhe.cloud.authconfig.service.AdminClient;
 import org.dubhe.cloud.remotecall.config.RestTemplateHolder;
 import org.dubhe.model.constant.ModelConstants;
 import org.dubhe.model.dao.PtModelBranchMapper;
@@ -74,10 +76,8 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
 import org.springframework.web.client.RestTemplate;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
+import javax.annotation.Resource;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
@@ -116,6 +116,9 @@ public class PtModelInfoServiceImpl implements PtModelInfoService {
 
     @Autowired
     private ModelStatusUtil ModelStatusUtil;
+
+    @Resource
+    private AdminClient adminClient;
 
     public final static List<String> FIELD_NAMES;
 
@@ -156,6 +159,16 @@ public class PtModelInfoServiceImpl implements PtModelInfoService {
 
         Page<PtModelInfo> ptModelInfos = ptModelInfoMapper.selectPage(page, wrapper);
 
+        Map<Long, String> idUserNameMap = new HashMap<>();
+        List<Long> userIds = ptModelInfos.getRecords().stream().map(PtModelInfo::getCreateUserId).filter(Objects::nonNull).distinct().collect(Collectors.toList());
+        if (org.apache.commons.collections4.CollectionUtils.isNotEmpty(userIds)) {
+            DataResponseBody<List<UserDTO>> result = adminClient.getUserList(userIds);
+            if (result.getData() != null) {
+                idUserNameMap = result.getData().stream().collect(Collectors.toMap(UserDTO::getId, UserDTO::getUsername, (o, n) -> n));
+            }
+        }
+        Map<Long, String> finalIdUserNameMap = idUserNameMap;
+
         List<PtModelInfoQueryVO> ptModelInfoQueryVOList = ptModelInfos.getRecords().stream().map(x -> {
             PtModelInfoQueryVO vo = new PtModelInfoQueryVO();
             BeanUtils.copyProperties(x, vo);
@@ -165,6 +178,11 @@ public class PtModelInfoServiceImpl implements PtModelInfoService {
                     || (x.getFrameType() == PtModelUtil.NUMBER_FOUR && x.getModelType() == PtModelUtil.NUMBER_ONE)
                     || (x.getFrameType() == PtModelUtil.NUMBER_THREE && x.getModelType() == PtModelUtil.NUMBER_EIGHT);
             vo.setServingModel(flag);
+
+            //获取任务创建人用户名
+            if (BaseService.isAdmin(userContextService.getCurUser()) && x.getCreateUserId() != null) {
+                vo.setCreateUserName(finalIdUserNameMap.getOrDefault(x.getCreateUserId(), null));
+            }
             return vo;
         }).collect(Collectors.toList());
         return PageUtil.toPage(page, ptModelInfoQueryVOList);

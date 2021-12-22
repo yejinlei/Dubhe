@@ -29,7 +29,6 @@ import io.fabric8.kubernetes.api.model.Toleration;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClientException;
 import org.dubhe.biz.base.constant.MagicNumConstant;
-import org.dubhe.biz.base.constant.NumberConstant;
 import org.dubhe.biz.base.service.UserContextService;
 import org.dubhe.biz.base.utils.SpringContextHolder;
 import org.dubhe.biz.base.utils.StringUtils;
@@ -40,6 +39,7 @@ import org.dubhe.k8s.api.NodeApi;
 import org.dubhe.k8s.constant.K8sLabelConstants;
 import org.dubhe.k8s.constant.K8sParamConstants;
 import org.dubhe.k8s.domain.PtBaseResult;
+import org.dubhe.k8s.domain.bo.BaseResourceBo;
 import org.dubhe.k8s.domain.resource.BizNode;
 import org.dubhe.k8s.domain.resource.BizTaint;
 import org.dubhe.k8s.domain.vo.PtNodeMetricsVO;
@@ -53,7 +53,13 @@ import org.dubhe.k8s.utils.ResourceBuildUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.util.CollectionUtils;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
@@ -158,7 +164,7 @@ public class NodeApiImpl implements NodeApi {
             client.nodes().withName(nodeName).edit().editMetadata().addToLabels(labels).endMetadata().done();
             return new PtBaseResult();
         } catch (KubernetesClientException e) {
-            LogUtil.error(LogEnum.BIZ_K8S, "NodeApiImpl.addLabels error, param:[nodeName]={}, [labels]={},error:{}",nodeName, JSON.toJSONString(labels), e);
+            LogUtil.error(LogEnum.BIZ_K8S, "NodeApiImpl.addLabels error, param:[nodeName]={}, [labels]={},error:{}", nodeName, JSON.toJSONString(labels), e);
             return new PtBaseResult(String.valueOf(e.getCode()), e.getMessage());
         }
     }
@@ -180,7 +186,7 @@ public class NodeApiImpl implements NodeApi {
             client.nodes().withName(nodeName).edit().editMetadata().removeFromLabels(labelKey).endMetadata().done();
             return new PtBaseResult();
         } catch (KubernetesClientException e) {
-            LogUtil.error(LogEnum.BIZ_K8S, "NodeApiImpl.deleteLabel error, param:[nodeName]={}, [labelKey]={},error:{}",nodeName, labelKey, e);
+            LogUtil.error(LogEnum.BIZ_K8S, "NodeApiImpl.deleteLabel error, param:[nodeName]={}, [labelKey]={},error:{}", nodeName, labelKey, e);
             return new PtBaseResult(String.valueOf(e.getCode()), e.getMessage());
         }
     }
@@ -223,16 +229,16 @@ public class NodeApiImpl implements NodeApi {
     public List<BizNode> getWithLabel(String key, String value) {
         try {
             List<BizNode> bizNodes = new ArrayList<>();
-            if (StringUtils.isEmpty(key) || StringUtils.isEmpty(value)){
+            if (StringUtils.isEmpty(key) || StringUtils.isEmpty(value)) {
                 return bizNodes;
             }
-            NodeList nodeList = client.nodes().withLabel(key,value).list();
-            if (nodeList != null && !CollectionUtils.isEmpty(nodeList.getItems())){
+            NodeList nodeList = client.nodes().withLabel(key, value).list();
+            if (nodeList != null && !CollectionUtils.isEmpty(nodeList.getItems())) {
                 return BizConvertUtils.toBizNodes(nodeList.getItems());
             }
             return bizNodes;
         } catch (KubernetesClientException e) {
-            LogUtil.error(LogEnum.BIZ_K8S, "NodeApiImpl.getWithLabels error, param:[key]={} [value]={},error:{}", key,value, e);
+            LogUtil.error(LogEnum.BIZ_K8S, "NodeApiImpl.getWithLabels error, param:[key]={} [value]={},error:{}", key, value, e);
             return new ArrayList<>();
         }
     }
@@ -247,11 +253,11 @@ public class NodeApiImpl implements NodeApi {
     public List<BizNode> getWithLabels(Map<String, String> labels) {
         try {
             List<BizNode> bizNodes = new ArrayList<>();
-            if (CollectionUtils.isEmpty(labels)){
+            if (CollectionUtils.isEmpty(labels)) {
                 return bizNodes;
             }
             NodeList nodeList = client.nodes().withLabels(labels).list();
-            if (nodeList != null && !CollectionUtils.isEmpty(nodeList.getItems())){
+            if (nodeList != null && !CollectionUtils.isEmpty(nodeList.getItems())) {
                 return BizConvertUtils.toBizNodes(nodeList.getItems());
             }
             return bizNodes;
@@ -293,27 +299,25 @@ public class NodeApiImpl implements NodeApi {
      *
      * @param nodeSelector 节点选择标签
      * @param taints 该资源所能容忍的污点
-     * @param cpuNum 单位为m 1核等于1000m
-     * @param memNum 单位为Mi 1Mi等于1024Ki
-     * @param gpuNum 单位为显卡，即"1"表示1张显卡
+     * @param baseResourceBo 资源通用属性基类
      * @return LackOfResourcesEnum 资源缺乏枚举类
      */
     @Override
-    public LackOfResourcesEnum isAllocatable(Map<String, String> nodeSelector, List<BizTaint> taints, Integer cpuNum, Integer memNum, Integer gpuNum) {
-        LogUtil.info(LogEnum.BIZ_K8S, "Input nodeSelector={};taints={};cpuNum={};memNum={};gpuNum={}", JSON.toJSONString(nodeSelector), JSON.toJSONString(taints), cpuNum, memNum, gpuNum);
+    public LackOfResourcesEnum isAllocatable(Map<String, String> nodeSelector, List<BizTaint> taints, BaseResourceBo baseResourceBo) {
+        LogUtil.info(LogEnum.BIZ_K8S, "Input nodeSelector={};taints={};cpuNum={};memNum={};gpuNum={}", JSON.toJSONString(nodeSelector), JSON.toJSONString(taints), baseResourceBo.getCpuNum()
+                , baseResourceBo.getMemNum(), baseResourceBo.getGpuNum());
         NodeList list;
         try {
             list = client.nodes().list();
-        }catch (KubernetesClientException e) {
+        } catch (KubernetesClientException e) {
             LogUtil.error(LogEnum.BIZ_K8S, "NodeApiImpl.isAllocatable error:{}", e);
             return LackOfResourcesEnum.LACK_OF_NODE;
         }
 
         List<Node> nodeItems = list.getItems();
         //根据nodeSelector筛选节点
-        if (CollectionUtil.isNotEmpty(nodeSelector) && nodeSelector.size() > NumberConstant.NUMBER_1){
-            return LackOfResourcesEnum.LACK_OF_NODE;
-        } else if (CollectionUtil.isNotEmpty(nodeSelector) && nodeSelector.size() == NumberConstant.NUMBER_1){
+
+        if (CollectionUtil.isNotEmpty(nodeSelector)) {
             for (String nodeSelectorKey : nodeSelector.keySet()) {
                 String nodeSelectorValue = nodeSelector.get(nodeSelectorKey);
                 nodeItems = nodeItems.stream().filter(nodeItem -> nodeSelectorValue.equals(nodeItem.getMetadata().getLabels().get(nodeSelectorKey)))
@@ -321,12 +325,12 @@ public class NodeApiImpl implements NodeApi {
             }
         }
         //根据可容忍的污点筛选节点
-        if (CollectionUtil.isEmpty(taints)){
+        if (CollectionUtil.isEmpty(taints)) {
             nodeItems = nodeItems.stream().filter(nodeItem -> CollectionUtils.isEmpty(nodeItem.getSpec().getTaints())).collect(Collectors.toList());
         } else {
             List<Node> taintNodes = new ArrayList<>();
             for (BizTaint taint : taints) {
-                taintNodes.addAll( nodeItems.stream().filter(nodeItem -> doesTaintExit(nodeItem, taint)).collect(Collectors.toList()));
+                taintNodes.addAll(nodeItems.stream().filter(nodeItem -> doesTaintExit(nodeItem, taint)).collect(Collectors.toList()));
             }
             nodeItems = taintNodes;
         }
@@ -334,23 +338,26 @@ public class NodeApiImpl implements NodeApi {
         if (CollectionUtils.isEmpty(nodeItems)) {
             return LackOfResourcesEnum.LACK_OF_NODE;
         }
-        if (cpuNum != null && cpuNum >= MagicNumConstant.ZERO) {
-            nodeItems = isCpuAllocatable(cpuNum, nodeItems);
+        if (baseResourceBo.getCpuNum() != null && baseResourceBo.getCpuNum() >= MagicNumConstant.ZERO) {
+            nodeItems = isCpuAllocatable(baseResourceBo.getCpuNum(), nodeItems);
             if (CollectionUtils.isEmpty(nodeItems)) {
+                LogUtil.info(LogEnum.BIZ_K8S, "isAllocatable "+ LackOfResourcesEnum.LACK_OF_CPU.getMessage()+" nodeSelector={} taints={}  baseResourceBo={}",nodeSelector,taints,baseResourceBo);
                 return LackOfResourcesEnum.LACK_OF_CPU;
             }
         }
 
-        if (memNum != null && memNum >= MagicNumConstant.ZERO) {
-            nodeItems = isMemAllocatable(memNum, nodeItems);
+        if (baseResourceBo.getMemNum() != null && baseResourceBo.getMemNum() >= MagicNumConstant.ZERO) {
+            nodeItems = isMemAllocatable(baseResourceBo.getMemNum(), nodeItems);
             if (CollectionUtils.isEmpty(nodeItems)) {
+                LogUtil.info(LogEnum.BIZ_K8S, "isAllocatable "+ LackOfResourcesEnum.LACK_OF_MEM.getMessage()+" nodeSelector={} taints={}  baseResourceBo={}",nodeSelector,taints,baseResourceBo);
                 return LackOfResourcesEnum.LACK_OF_MEM;
             }
         }
 
-        if (gpuNum != null && gpuNum >= MagicNumConstant.ZERO) {
-            nodeItems = isGpuAllocatable(gpuNum, nodeItems);
+        if (baseResourceBo.getGpuNum() != null && baseResourceBo.getGpuNum() > MagicNumConstant.ZERO) {
+            nodeItems = isGpuAllocatable(baseResourceBo, nodeItems);
             if (CollectionUtils.isEmpty(nodeItems)) {
+                LogUtil.info(LogEnum.BIZ_K8S, "isAllocatable "+ LackOfResourcesEnum.LACK_OF_GPU.getMessage()+" nodeSelector={} taints={}  baseResourceBo={}",nodeSelector,taints,baseResourceBo);
                 return LackOfResourcesEnum.LACK_OF_GPU;
             }
         }
@@ -361,37 +368,62 @@ public class NodeApiImpl implements NodeApi {
     /**
      * 查询集群资源是否充足
      *
-     * @param cpuNum 单位为m 1核等于1000m
-     * @param memNum 单位为Mi 1Mi等于1024Ki
-     * @param gpuNum 单位为显卡，即"1"表示1张显卡
+     * @param baseResourceBo 单位为m 资源通用属性基类
      * @return LackOfResourcesEnum 资源缺乏枚举类
      */
     @Override
-    public LackOfResourcesEnum isAllocatable(Integer cpuNum, Integer memNum, Integer gpuNum) {
+    public LackOfResourcesEnum isAllocatable(BaseResourceBo baseResourceBo) {
         Toleration toleration = getNodeIsolationToleration();
-        if (toleration == null){
-            return isAllocatable(null,null,cpuNum,memNum,gpuNum);
-        }else {
-            return isAllocatable(getNodeIsolationNodeSelector(), geBizTaintListByUserId(),cpuNum,memNum,gpuNum);
+        Map<String, String> nodeSelecter = new HashMap<>();
+
+        if (StrUtil.isNotEmpty(baseResourceBo.getGpuModel())) {
+            nodeSelecter.put(K8sLabelConstants.NODE_GPU_MODEL_LABEL_KEY, baseResourceBo.getGpuModel());
+        }
+
+        if (toleration == null) {
+            return isAllocatable(nodeSelecter, null, baseResourceBo);
+        } else {
+            nodeSelecter.putAll(getNodeIsolationNodeSelector());
+            return isAllocatable(nodeSelecter, geBizTaintListByUserId(), baseResourceBo);
         }
     }
 
     /**
-     * 判断是否超出总可分配gpu数
-     * @param gpuNum
+     * 查询集群资源是否充足
+     *
+     * @param namespace 命名空间
+     * @param cpuNum cpu限制 单位核 0表示不限制
+     * @param memNum 内存限制 单位G 0表示不限制
+     *  @param k8sLabelKey k8s GPU资源标签key值(例如：nvidia.com/gpu)
+     * @param gpuNum GPU数量，0表示共享显卡，null表示不使用显卡
+     * @param gpuModel gpu型号
      * @return LackOfResourcesEnum 资源缺乏枚举类
      */
     @Override
-    public LackOfResourcesEnum isOutOfTotalAllocatableGpu(Integer gpuNum){
-        Integer remainingGpuNum = getTotalGpuNum() - getAllocatedGpuNum();
-        if (gpuNum > remainingGpuNum){
+    public LackOfResourcesEnum isAllocatableConvert(String namespace, Integer cpuNum, Integer memNum, Boolean useGpu, String k8sLabelKey, String gpuModel, Integer gpuNum) {
+        BaseResourceBo bo = new BaseResourceBo();
+        bo.setNamespace(namespace).setCpuNum(cpuNum).setMemNum(memNum).setUseGpu(useGpu).setK8sLabelKey(k8sLabelKey).setGpuModel(gpuModel).setGpuNum(gpuNum);
+        return isAllocatable(bo);
+    }
+
+
+    /**
+     * 判断是否超出总可分配gpu数
+     * @param gpuNum gpu数量
+     * @param gpuModel gpu型号
+     * @return LackOfResourcesEnum 资源缺乏枚举类
+     */
+    @Override
+    public LackOfResourcesEnum isOutOfTotalAllocatableGpu(String k8sLabelKey, String gpuModel, Integer gpuNum) {
+        Integer remainingGpuNum = getTotalGpuNum(k8sLabelKey, gpuModel) - getAllocatedGpuNum(k8sLabelKey, gpuModel);
+        if (gpuNum > remainingGpuNum) {
             return LackOfResourcesEnum.LACK_OF_GPU;
-        }else {
+        } else {
             return LackOfResourcesEnum.ADEQUATE;
         }
     }
 
-     /**
+    /**
      * 添加污点
      *
      * @param nodeName 节点名称
@@ -401,23 +433,23 @@ public class NodeApiImpl implements NodeApi {
     @Override
     public BizNode taint(String nodeName, List<BizTaint> bizTaintList) {
         try {
-            if (StringUtils.isEmpty(nodeName) || org.springframework.util.CollectionUtils.isEmpty(bizTaintList)){
+            if (StringUtils.isEmpty(nodeName) || org.springframework.util.CollectionUtils.isEmpty(bizTaintList)) {
                 return new BizNode().errorBadRequest();
             }
             Node nodeInfo = client.nodes().withName(nodeName).get();
-            if (nodeInfo == null){
-                return new BizNode().error(K8sResponseEnum.NOT_FOUND.getCode(), "节点["+nodeName+"]不存在");
+            if (nodeInfo == null) {
+                return new BizNode().error(K8sResponseEnum.NOT_FOUND.getCode(), "节点[" + nodeName + "]不存在");
             }
             List<Taint> oldTaints = nodeInfo.getSpec().getTaints();
-            for (Taint taint : oldTaints){
-                if (K8sLabelConstants.PLATFORM_TAG_ISOLATION_KEY.equals(taint.getKey())){
-                    return new BizNode().error(K8sResponseEnum.EXISTS.getCode(),"节点已被占用");
+            for (Taint taint : oldTaints) {
+                if (K8sLabelConstants.PLATFORM_TAG_ISOLATION_KEY.equals(taint.getKey())) {
+                    return new BizNode().error(K8sResponseEnum.EXISTS.getCode(), "节点已被占用");
                 }
             }
 
             Node node = client.nodes().withName(nodeName).edit().editSpec().addAllToTaints(BizConvertUtils.toTaints(bizTaintList)).endSpec().done();
             return BizConvertUtils.toBizNode(node);
-        }catch (KubernetesClientException e) {
+        } catch (KubernetesClientException e) {
             LogUtil.error(LogEnum.BIZ_K8S, "NodeApiImpl.schedulable error:{}", e);
             return new BizNode().error(String.valueOf(e.getCode()), e.getMessage());
         }
@@ -433,16 +465,16 @@ public class NodeApiImpl implements NodeApi {
     @Override
     public BizNode delTaint(String nodeName, List<BizTaint> bizTaintList) {
         try {
-            if (StringUtils.isEmpty(nodeName) || org.springframework.util.CollectionUtils.isEmpty(bizTaintList)){
+            if (StringUtils.isEmpty(nodeName) || org.springframework.util.CollectionUtils.isEmpty(bizTaintList)) {
                 return new BizNode().errorBadRequest();
             }
             Node nodeInfo = client.nodes().withName(nodeName).get();
-            if (nodeInfo == null){
-                return new BizNode().error(K8sResponseEnum.NOT_FOUND.getCode(), "节点["+nodeName+"]不存在");
+            if (nodeInfo == null) {
+                return new BizNode().error(K8sResponseEnum.NOT_FOUND.getCode(), "节点[" + nodeName + "]不存在");
             }
             Node node = client.nodes().withName(nodeName).edit().editSpec().removeAllFromTaints(BizConvertUtils.toTaints(bizTaintList)).endSpec().done();
             return BizConvertUtils.toBizNode(node);
-        }catch (KubernetesClientException e) {
+        } catch (KubernetesClientException e) {
             LogUtil.error(LogEnum.BIZ_K8S, "NodeApiImpl.delTaint error:{}", e);
             return new BizNode().error(String.valueOf(e.getCode()), e.getMessage());
         }
@@ -457,30 +489,30 @@ public class NodeApiImpl implements NodeApi {
     @Override
     public BizNode delTaint(String nodeName) {
         try {
-            if (StringUtils.isEmpty(nodeName)){
+            if (StringUtils.isEmpty(nodeName)) {
                 return new BizNode().errorBadRequest();
             }
             Node nodeInfo = client.nodes().withName(nodeName).get();
-            if (nodeInfo == null){
-                return new BizNode().error(K8sResponseEnum.NOT_FOUND.getCode(), "节点["+nodeName+"]不存在");
+            if (nodeInfo == null) {
+                return new BizNode().error(K8sResponseEnum.NOT_FOUND.getCode(), "节点[" + nodeName + "]不存在");
             }
 
             List<Taint> taints = nodeInfo.getSpec().getTaints();
             Taint taint = new Taint();
-            for (Taint obj : taints){
-                if (K8sLabelConstants.PLATFORM_TAG_ISOLATION_KEY.equals(obj.getKey())){
+            for (Taint obj : taints) {
+                if (K8sLabelConstants.PLATFORM_TAG_ISOLATION_KEY.equals(obj.getKey())) {
                     taint = obj;
                 }
             }
 
             Node node = client.nodes().withName(nodeName)
                     .edit()
-                        .editSpec()
-                            .removeFromTaints(taint)
-                        .endSpec()
+                    .editSpec()
+                    .removeFromTaints(taint)
+                    .endSpec()
                     .done();
             return BizConvertUtils.toBizNode(node);
-        }catch (KubernetesClientException e) {
+        } catch (KubernetesClientException e) {
             LogUtil.error(LogEnum.BIZ_K8S, "NodeApiImpl.delTaint error:{}", e);
             return new BizNode().error(String.valueOf(e.getCode()), e.getMessage());
         }
@@ -494,8 +526,8 @@ public class NodeApiImpl implements NodeApi {
      * @return node资源隔离 标志
      */
     @Override
-    public String getNodeIsolationValue(Long isolationId){
-        return StrUtil.format(K8sLabelConstants.PLATFORM_TAG_ISOLATION_VALUE, SpringContextHolder.getActiveProfile(),isolationId);
+    public String getNodeIsolationValue(Long isolationId) {
+        return StrUtil.format(K8sLabelConstants.PLATFORM_TAG_ISOLATION_VALUE, SpringContextHolder.getActiveProfile(), isolationId);
     }
 
     /**
@@ -505,7 +537,7 @@ public class NodeApiImpl implements NodeApi {
      */
     @Override
     public String getNodeIsolationValue() {
-        return StrUtil.format(K8sLabelConstants.PLATFORM_TAG_ISOLATION_VALUE, SpringContextHolder.getActiveProfile(),userContextService.getCurUserId());
+        return StrUtil.format(K8sLabelConstants.PLATFORM_TAG_ISOLATION_VALUE, SpringContextHolder.getActiveProfile(), userContextService.getCurUserId());
     }
 
     /**
@@ -515,21 +547,21 @@ public class NodeApiImpl implements NodeApi {
      */
     @Override
     public Toleration getNodeIsolationToleration() {
-        List<BizNode> nodes = getWithLabel(K8sLabelConstants.PLATFORM_TAG_ISOLATION_KEY,getNodeIsolationValue());
-        if (CollectionUtils.isEmpty(nodes)){
+        List<BizNode> nodes = getWithLabel(K8sLabelConstants.PLATFORM_TAG_ISOLATION_KEY, getNodeIsolationValue());
+        if (CollectionUtils.isEmpty(nodes)) {
             return null;
         }
-        return ResourceBuildUtils.buildNoScheduleEqualToleration(K8sLabelConstants.PLATFORM_TAG_ISOLATION_KEY,getNodeIsolationValue());
+        return ResourceBuildUtils.buildNoScheduleEqualToleration(K8sLabelConstants.PLATFORM_TAG_ISOLATION_KEY, getNodeIsolationValue());
     }
 
     /**
      * 获取当前用户 资源隔离 NodeSelector
-     * @return Map<String,String>
+     * @return Map<String, String>
      */
     @Override
     public Map<String, String> getNodeIsolationNodeSelector() {
-        Map<String,String> nodeSelector = new HashMap<>(MagicNumConstant.TWO);
-        nodeSelector.put(K8sLabelConstants.PLATFORM_TAG_ISOLATION_KEY,getNodeIsolationValue());
+        Map<String, String> nodeSelector = new HashMap<>(MagicNumConstant.TWO);
+        nodeSelector.put(K8sLabelConstants.PLATFORM_TAG_ISOLATION_KEY, getNodeIsolationValue());
         return nodeSelector;
     }
 
@@ -576,7 +608,7 @@ public class NodeApiImpl implements NodeApi {
         nodeItems.forEach(nodeItem -> {
             String nodeName = nodeItem.getMetadata().getName();
             List<PtNodeMetricsVO> collect = nodeMetrics.stream().filter(nodeMetric -> nodeMetric.getNodeName().equals(nodeName)).collect(Collectors.toList());
-            if (!CollectionUtils.isEmpty(collect)){
+            if (!CollectionUtils.isEmpty(collect)) {
                 String memAmount = collect.get(0).getMemoryUsageAmount();
                 int memCapacity = Integer.parseInt(nodeItem.getStatus().getCapacity().get(K8sParamConstants.QUANTITY_MEMORY_KEY).getAmount()) / MagicNumConstant.ONE_THOUSAND;
                 int memAmountInt = Integer.parseInt(memAmount) / MagicNumConstant.BINARY_TEN_EXP;
@@ -612,7 +644,7 @@ public class NodeApiImpl implements NodeApi {
         nodeItems.forEach(nodeItem -> {
             String nodeName = nodeItem.getMetadata().getName();
             List<PtNodeMetricsVO> collect = nodeMetrics.stream().filter(nodeMetric -> nodeMetric.getNodeName().equals(nodeName)).collect(Collectors.toList());
-            if (!CollectionUtils.isEmpty(collect)){
+            if (!CollectionUtils.isEmpty(collect)) {
                 String cpuAmount = collect.get(0).getCpuUsageAmount();
                 int cpuCapacity = Integer.parseInt(nodeItem.getStatus().getCapacity().get(K8sParamConstants.QUANTITY_CPU_KEY).getAmount()) * MagicNumConstant.ONE_THOUSAND;
                 int cpuAmountInt = (int) (Long.parseLong(cpuAmount) / MagicNumConstant.ONE_THOUSAND / MagicNumConstant.ONE_THOUSAND);
@@ -634,25 +666,25 @@ public class NodeApiImpl implements NodeApi {
     /**
      * 查询节点Gpu资源是否可分配
      *
-     * @param gpuNum 单位为显卡，即"1"表示1张显卡
+     * @param baseResourceBo 资源通用属性基类
      * @param nodeItems Node集合
      * @return List<Node> Node集合
      */
-    private List<Node> isGpuAllocatable(int gpuNum, List<Node> nodeItems) {
+    private List<Node> isGpuAllocatable(BaseResourceBo baseResourceBo, List<Node> nodeItems) {
         List<Node> nodeItemResults = new ArrayList<>();
         List<String> nodeNameList = new ArrayList<>();
-        nodeItems = nodeItems.stream().filter(node -> node.getStatus().getCapacity().containsKey(K8sParamConstants.GPU_RESOURCE_KEY)).collect(Collectors.toList());
+        nodeItems = nodeItems.stream().filter(node -> node.getStatus().getCapacity().containsKey(baseResourceBo.getK8sLabelKey())).collect(Collectors.toList());
 
-        List<Pod> podItems = filterRequestGpuPod();
+        List<Pod> podItems = filterRequestGpuPod(baseResourceBo.getK8sLabelKey(), baseResourceBo.getGpuModel());
         Map<String, Integer> allocatableGpu = new HashMap();
 
         for (Node nodeItem : nodeItems) {
             int totalGpuAmount = 0;
-            int totalGpu = Integer.parseInt(nodeItem.getStatus().getCapacity().get(K8sParamConstants.GPU_RESOURCE_KEY).getAmount());
+            int totalGpu = Integer.parseInt(nodeItem.getStatus().getCapacity().get(baseResourceBo.getK8sLabelKey()).getAmount());
             String nodeName = nodeItem.getMetadata().getName();
             List<Pod> nodePodItems = podItems.stream().filter(pod -> pod.getSpec().getNodeName().equals(nodeName)).collect(Collectors.toList());
             for (Pod pod : nodePodItems) {
-                String gpuAmount = pod.getSpec().getContainers().get(0).getResources().getLimits().get(K8sParamConstants.GPU_RESOURCE_KEY).getAmount();
+                String gpuAmount = pod.getSpec().getContainers().get(0).getResources().getLimits().get(baseResourceBo.getK8sLabelKey()).getAmount();
                 totalGpuAmount = totalGpuAmount + Integer.parseInt(gpuAmount);
             }
             allocatableGpu.put(nodeName, totalGpu - totalGpuAmount);
@@ -661,7 +693,7 @@ public class NodeApiImpl implements NodeApi {
         Set<String> keySet = allocatableGpu.keySet();
 
         keySet.forEach(key -> {
-            if (allocatableGpu.get(key) >= gpuNum) {
+            if (allocatableGpu.get(key) >= baseResourceBo.getGpuNum()) {
                 nodeNameList.add(key);
             }
         });
@@ -677,13 +709,14 @@ public class NodeApiImpl implements NodeApi {
      * 获取申请了gpu的pod列表
      * @return
      */
-    private List<Pod> filterRequestGpuPod(){
+    private List<Pod> filterRequestGpuPod(String K8sLabelKey, String gpuModel) {
         PodList podList = client.pods().list();
-        if (CollectionUtil.isNotEmpty(podList.getItems())){
+        if (CollectionUtil.isNotEmpty(podList.getItems())) {
             return podList.getItems().stream().filter(pod ->
                     pod.getSpec().getContainers().get(0).getResources().getLimits() != null &&
-                            pod.getSpec().getContainers().get(0).getResources().getLimits().containsKey(K8sParamConstants.GPU_RESOURCE_KEY) &&
-                            pod.getStatus().getPhase().equals(PodPhaseEnum.RUNNING.getPhase())).collect(Collectors.toList());
+                            pod.getSpec().getContainers().get(0).getResources().getLimits().containsKey(K8sLabelKey) &&
+                            pod.getStatus().getPhase().equals(PodPhaseEnum.RUNNING.getPhase()) &&
+                            pod.getMetadata().getLabels().containsValue(gpuModel)).collect(Collectors.toList());
         }
         return new ArrayList<>();
     }
@@ -692,10 +725,10 @@ public class NodeApiImpl implements NodeApi {
      * 查询集群已分配gpu数量
      * @return
      */
-    private Integer getAllocatedGpuNum(){
-        return filterRequestGpuPod().stream().mapToInt(pod->
+    private Integer getAllocatedGpuNum(String k8sLabelKey, String gpuModel) {
+        return filterRequestGpuPod(k8sLabelKey, gpuModel).stream().mapToInt(pod ->
                 pod.getSpec().getContainers().stream().mapToInt(container ->
-                        Integer.valueOf(String.valueOf(container.getResources().getLimits().get(K8sParamConstants.GPU_RESOURCE_KEY).getAmount()))).sum())
+                        Integer.valueOf(String.valueOf(container.getResources().getLimits().get(k8sLabelKey).getAmount()))).sum())
                 .sum();
     }
 
@@ -703,17 +736,17 @@ public class NodeApiImpl implements NodeApi {
      * 查询集群总gpu数量
      * @return
      */
-    private Integer getTotalGpuNum(){
+    private Integer getTotalGpuNum(String k8sLabelKey, String gpuModel) {
         return listAll().stream()
-                .filter(node -> !node.isUnschedulable() && node.getCapacity().containsKey(K8sParamConstants.GPU_RESOURCE_KEY) && CollectionUtils.isEmpty(node.getTaints()))
-                .mapToInt(node -> Integer.valueOf(String.valueOf(node.getCapacity().get(K8sParamConstants.GPU_RESOURCE_KEY).getAmount()))).sum();
+                .filter(node -> !node.isUnschedulable() && node.getLabels().containsValue(gpuModel))
+                .mapToInt(node -> Integer.valueOf(String.valueOf(node.getCapacity().get(k8sLabelKey).getAmount()))).sum();
     }
 
     /**
      * 查询节点是否存在指定的污点
      * @return
      */
-    private boolean doesTaintExit(Node node, BizTaint bizTaint){
+    private boolean doesTaintExit(Node node, BizTaint bizTaint) {
         List<Taint> taints = node.getSpec().getTaints().stream().filter(taint ->
                 StringUtils.equalsAny(taint.getKey(), bizTaint.getKey())
                         && StringUtils.equalsAny(taint.getValue(), bizTaint.getValue()))

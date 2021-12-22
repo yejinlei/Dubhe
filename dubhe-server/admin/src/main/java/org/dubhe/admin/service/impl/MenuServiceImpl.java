@@ -15,7 +15,6 @@
  */
 package org.dubhe.admin.service.impl;
 
-import cn.hutool.core.util.ObjectUtil;
 import cn.hutool.core.util.StrUtil;
 import com.alibaba.fastjson.JSONObject;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
@@ -27,7 +26,6 @@ import org.dubhe.admin.domain.dto.MenuQueryDTO;
 import org.dubhe.admin.domain.dto.MenuUpdateDTO;
 import org.dubhe.admin.domain.dto.RoleSmallDTO;
 import org.dubhe.admin.domain.entity.Menu;
-import org.dubhe.admin.domain.vo.MenuMetaVo;
 import org.dubhe.admin.domain.vo.MenuVo;
 import org.dubhe.admin.enums.MenuTypeEnum;
 import org.dubhe.admin.service.MenuService;
@@ -44,6 +42,7 @@ import org.dubhe.biz.log.utils.LogUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.CollectionUtils;
 
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
@@ -150,13 +149,13 @@ public class MenuServiceImpl implements MenuService {
                 .sort(resources.getSort())
                 .type(resources.getType())
                 .build();
-        if(MenuTypeEnum.PAGE_TYPE.getValue().equals(resources.getType())){
+        if (MenuTypeEnum.PAGE_TYPE.getValue().equals(resources.getType()) || MenuTypeEnum.DIR_TYPE.getValue().equals(resources.getType())) {
             menu.setBackTo(resources.getBackTo());
             menu.setExtConfig(resources.getExtConfig());
         }
         menuMapper.insert(menu);
         //管理员新增默认权限
-        roleService.tiedRoleMenu(PermissionConstant.ADMIN_ROLE_ID,menu.getId());
+        roleService.tiedRoleMenu(PermissionConstant.ADMIN_ROLE_ID, menu.getId());
 
         return menuConvert.toDto(menu);
     }
@@ -202,9 +201,9 @@ public class MenuServiceImpl implements MenuService {
         menu.setHidden(resources.getHidden());
         menu.setComponentName(resources.getComponentName());
         menu.setPermission(resources.getPermission());
-        if(MenuTypeEnum.PAGE_TYPE.getValue().equals(resources.getType())){
+        if (MenuTypeEnum.PAGE_TYPE.getValue().equals(resources.getType()) || MenuTypeEnum.DIR_TYPE.getValue().equals(resources.getType())) {
             ExtConfigDTO extConfigDTO = analyzeBackToValue(resources.getExtConfig());
-            menu.setBackTo(Objects.isNull(extConfigDTO)?null:extConfigDTO.getBackTo());
+            menu.setBackTo(Objects.isNull(extConfigDTO) ? null : extConfigDTO.getBackTo());
             menu.setExtConfig(resources.getExtConfig());
         }
         menuMapper.updateById(menu);
@@ -215,16 +214,16 @@ public class MenuServiceImpl implements MenuService {
      * 解析扩展配置中 backTO 属性值
      *
      * @param extConfig 扩展配置
-     * @return  ExtConfigDTO扩展配置
+     * @return ExtConfigDTO扩展配置
      */
-    private ExtConfigDTO analyzeBackToValue(String extConfig){
+    private ExtConfigDTO analyzeBackToValue(String extConfig) {
         ExtConfigDTO dto = ExtConfigDTO.builder().build();
         try {
-            if(!Objects.isNull(extConfig)){
+            if (!Objects.isNull(extConfig)) {
                 dto = JSONObject.parseObject(extConfig, ExtConfigDTO.class);
             }
-        }catch (Exception e){
-            LogUtil.error(LogEnum.SYS_ERR,"analyzeBackToValue error, params:{} , error:{}",JSONObject.toJSONString(extConfig),e);
+        } catch (Exception e) {
+            LogUtil.error(LogEnum.SYS_ERR, "analyzeBackToValue error, params:{} , error:{}", JSONObject.toJSONString(extConfig), e);
         }
         return dto;
     }
@@ -358,7 +357,7 @@ public class MenuServiceImpl implements MenuService {
                     if (menuDTO != null) {
                         List<MenuDTO> menuDtoList = menuDTO.getChildren();
                         MenuVo menuVo = new MenuVo();
-                        menuVo.setName(ObjectUtil.isNotEmpty(menuDTO.getComponentName()) ? menuDTO.getComponentName() : menuDTO.getName());
+                        menuVo.setName(menuDTO.getComponentName());
                         // 一级目录需要加斜杠，不然会报警告
                         menuVo.setPath(menuDTO.getPid() == 0 ? "/" + menuDTO.getPath() : menuDTO.getPath());
                         menuVo.setHidden(menuDTO.getHidden());
@@ -370,7 +369,20 @@ public class MenuServiceImpl implements MenuService {
                                 menuVo.setComponent(menuDTO.getComponent());
                             }
                         }
-                        menuVo.setMeta(new MenuMetaVo(menuDTO.getName(), menuDTO.getIcon(), menuDTO.getLayout(), !menuDTO.getCache()));
+                        Map<String, Object> metaMap = new HashMap<>();
+                        metaMap.put("title", menuDTO.getName());
+                        metaMap.put("icon", menuDTO.getIcon());
+                        metaMap.put("layout", menuDTO.getLayout());
+                        metaMap.put("noCache", !menuDTO.getCache());
+                        if (menuDTO.getExtConfig() != null) {
+                            Map json = (Map) JSONObject.parse(menuDTO.getExtConfig());
+                            if(!CollectionUtils.isEmpty(json)){
+                                for (Object key : json.keySet()){
+                                    metaMap.put(key.toString(),json.get(key));
+                                }
+                            }
+                        }
+                        menuVo.setMeta(metaMap);
                         if (menuDtoList != null && menuDtoList.size() != 0) {
                             menuVo.setChildren(buildMenus(menuDtoList));
                             // 处理是一级菜单并且没有子菜单的情况

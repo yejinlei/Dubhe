@@ -1528,8 +1528,8 @@ public class FileServiceImpl extends ServiceImpl<FileMapper, File> implements Fi
      * @param dataset 数据集
      */
     @Override
-    public void transportTextToEs(Dataset dataset,List<Long> fileIdsNotToEs) {
-        List<EsTransportDTO> esTransportDTOList = fileMapper.selectTextDataNoTransport(dataset.getId(), fileIdsNotToEs);
+    public void transportTextToEs(Dataset dataset,List<Long> fileIdsNotToEs,Boolean ifImport) {
+        List<EsTransportDTO> esTransportDTOList = fileMapper.selectTextDataNoTransport(dataset.getId(), fileIdsNotToEs, ifImport);
         esTransportDTOList.forEach(esTransportDTO -> {
             FileInputStream fileInputStream = null;
             InputStreamReader reader = null;

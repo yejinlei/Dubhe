@@ -37,4 +37,6 @@ public class PtImageQueryUrlDTO {
 
     private Integer projectType;
 
+    private Long id;
+
 }

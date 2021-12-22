@@ -61,7 +61,10 @@ public enum BizEnum {
      * 专业版终端
      */
     TERMINAL("专业版终端", "terminal", 7),
-    ;
+    /**
+     * TADL
+     */
+    TADL("TADL服务", "tadl", 8);
 
     /**
      * 业务模块名称

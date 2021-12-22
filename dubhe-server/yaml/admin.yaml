@@ -33,7 +33,7 @@ ribbon:
 dubhe-proxy:
   visual:
     keyword: visual
-    server: 127.0.0.1
+    server: 10.5.26.88
     port: 9898
   refine:
     keyword: refine

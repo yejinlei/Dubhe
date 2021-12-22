@@ -20,7 +20,7 @@ import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import org.dubhe.biz.base.constant.ResponseCode;
 import org.dubhe.biz.base.vo.DataResponseBody;
-import org.dubhe.dubhek8s.domain.dto.ResourceQuotaDTO;
+import org.dubhe.biz.base.dto.ResourceQuotaDTO;
 import org.dubhe.dubhek8s.service.ResourceQuotaService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.PostMapping;

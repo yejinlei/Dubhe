@@ -18,13 +18,21 @@ package org.dubhe.admin.service;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.IService;
-import org.dubhe.admin.domain.dto.*;
+import org.dubhe.admin.domain.dto.AuthUserDTO;
+import org.dubhe.admin.domain.dto.UserCenterUpdateDTO;
+import org.dubhe.admin.domain.dto.UserCreateDTO;
+import org.dubhe.admin.domain.dto.UserEmailUpdateDTO;
+import org.dubhe.admin.domain.dto.UserQueryDTO;
+import org.dubhe.admin.domain.dto.UserRegisterDTO;
+import org.dubhe.admin.domain.dto.UserRegisterMailDTO;
+import org.dubhe.admin.domain.dto.UserResetPasswordDTO;
+import org.dubhe.admin.domain.dto.UserUpdateDTO;
 import org.dubhe.admin.domain.entity.User;
-import org.dubhe.admin.domain.vo.UserConfigCreateVO;
-import org.dubhe.admin.domain.vo.UserConfigVO;
 import org.dubhe.biz.base.dto.TeamDTO;
+import org.dubhe.biz.base.dto.UserConfigSaveDTO;
 import org.dubhe.biz.base.dto.UserDTO;
 import org.dubhe.biz.base.vo.DataResponseBody;
+import org.dubhe.biz.base.vo.UserConfigVO;
 import org.dubhe.cloud.authconfig.service.AdminUserService;
 
 import javax.servlet.http.HttpServletResponse;
@@ -69,7 +77,7 @@ public interface UserService extends AdminUserService, IService<User> {
      *
      * @param ids 用户ID列表
      */
-    void delete(Set<Long> ids);
+    void delete(Set<Long> ids, String accessToken);
 
     /**
      * 根据用户名称获取用户信息
@@ -235,8 +243,21 @@ public interface UserService extends AdminUserService, IService<User> {
     /**
      * 创建或更新用户配置
      *
-     * @param userConfigDTO 用户配置
-     * @return org.dubhe.admin.domain.vo.UserConfigCreateVO 用户配置 VO
+     * @param userConfigSaveDTO 用户配置
      */
-    UserConfigCreateVO createOrUpdateUserConfig(UserConfigDTO userConfigDTO);
+    void saveUserConfig(UserConfigSaveDTO userConfigSaveDTO, String token);
+
+    /**
+     * 重置密码
+     *
+     * @return 重置密码结果集
+     */
+    DataResponseBody resetPassword(Long userId);
+
+    /**
+     * 获取用户分配的资源总量
+     *
+     * @return 资源配额总量统计
+     */
+    DataResponseBody getAllotResources();
 }

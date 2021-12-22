@@ -16,7 +16,10 @@
  */
 package org.dubhe.dubhek8s.service;
 
+import org.dubhe.biz.base.dto.NamespaceDeleteDTO;
 import org.dubhe.dubhek8s.domain.vo.NamespaceVO;
+
+import java.util.Set;
 
 /**
  * @description 查询命名空间状态的 service 层接口
@@ -30,4 +33,10 @@ public interface SystemNamespaceService {
      * @return NamespaceVO
      */
     NamespaceVO findNamespace(Long userId);
+
+    /**
+     *  删除用户namespace
+     * @param namespaceDeleteDTO 用户DTO
+     */
+    void deleteNamespace(NamespaceDeleteDTO namespaceDeleteDTO);
 }

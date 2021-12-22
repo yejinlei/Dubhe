@@ -16,8 +16,10 @@
  */
 package org.dubhe.cloud.authconfig.service;
 
+import org.dubhe.biz.base.dto.UserConfigSaveDTO;
 import org.dubhe.biz.base.dto.UserDTO;
 import org.dubhe.biz.base.vo.DataResponseBody;
+import org.dubhe.biz.base.vo.UserAllotResourceVO;
 import org.dubhe.biz.dataresponse.factory.DataResponseFactory;
 import org.springframework.stereotype.Component;
 
@@ -44,4 +46,19 @@ public class AdminClientFallback implements AdminClient {
         return DataResponseFactory.failed("call user controller to get users error");
     }
 
+    @Override
+    public DataResponseBody setUserConfig(UserConfigSaveDTO userConfigCreateOrUpdateDTO) {
+        return DataResponseFactory.failed("call admin server setUserConfig error");
+    }
+
+    @Override
+    public DataResponseBody getUserConfig(Long userId) {
+        return DataResponseFactory.failed("call admin server getUserConfig error");
+    }
+
+
+    @Override
+    public DataResponseBody<UserAllotResourceVO> getUserAllotTotal() {
+        return DataResponseFactory.failed("call admin server getUserAllotTotal error ");
+    }
 }

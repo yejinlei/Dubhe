@@ -21,6 +21,7 @@ import com.alibaba.fastjson.JSONObject;
 import org.dubhe.biz.base.enums.MeasureStateEnum;
 import org.dubhe.biz.base.exception.BusinessException;
 import org.dubhe.biz.base.vo.DataResponseBody;
+import org.dubhe.biz.file.api.FileStoreApi;
 import org.dubhe.biz.log.enums.LogEnum;
 import org.dubhe.biz.log.utils.LogUtil;
 import org.dubhe.cloud.remotecall.config.RestTemplateHolder;
@@ -33,6 +34,7 @@ import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
 
+import javax.annotation.Resource;
 import java.util.List;
 
 /**
@@ -51,6 +53,9 @@ public class GenerateMeasureFileAsync {
     @Value("${model.measuring.url.json}")
     private String modelMeasuringUrlJson;
 
+    @Resource(name = "hostFileStoreApiImpl")
+    private FileStoreApi fileStoreApi;
+
     /**
      * 异步生成度量json文件
      *
@@ -65,7 +70,7 @@ public class GenerateMeasureFileAsync {
         //打包模型的路径集合
         params.put(MeasureConstants.ZOO_SET, StrUtil.split(ptMeasure.getModelUrls(), StrUtil.COMMA));
         //探针数据
-        params.put(MeasureConstants.PROBE_SET_ROOT, ptMeasure.getDatasetUrl() + StrUtil.SLASH + "origin");
+        params.put(MeasureConstants.PROBE_SET_ROOT, fileStoreApi.formatPath(StrUtil.SLASH + ptMeasure.getDatasetUrl() + StrUtil.SLASH + MeasureConstants.DATASET_SUFFIX));
         params.put(MeasureConstants.EXPORT_PATH, measurePath);
         RestTemplate restTemplate = restTemplateHolder.getRestTemplate();
         try {

@@ -65,4 +65,7 @@ public class ServingInfoQueryVO implements Serializable {
 
     @ApiModelProperty(value = "服务总节点数")
     private Integer totalNode;
+
+    @ApiModelProperty("创建人用户名")
+    private String createUserName;
 }

@@ -20,11 +20,13 @@ package org.dubhe.train.service;
 
 import org.dubhe.biz.base.dto.PtModelStatusQueryDTO;
 import org.dubhe.biz.base.dto.PtTrainDataSourceStatusQueryDTO;
+import org.dubhe.biz.db.entity.PageResult;
 import org.dubhe.train.domain.dto.*;
 import org.dubhe.train.domain.vo.*;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * @description 训练作业job 服务类
@@ -39,8 +41,14 @@ public interface PtTrainJobService {
      * @param ptTrainQueryDTO 查询作业列表参数
      * @return Map<String, Object>      作业列表分页数据
      **/
-    Map<String, Object> getTrainJob(PtTrainQueryDTO ptTrainQueryDTO);
+    PageResult<PtTrainVO> getTrainJob(PtTrainQueryDTO ptTrainQueryDTO);
 
+    /**
+     *  根据训练作业ID查询训练详情
+     * @param ptTrainQueryByIdDTO 查询条件
+     * @return PtTrainQueryByIdVO 训练作业详情
+     */
+    PtTrainQueryByIdVO getTrainById(PtTrainQueryByIdDTO ptTrainQueryByIdDTO);
 
     /**
      * 作业不同版本job列表展示
@@ -154,4 +162,31 @@ public interface PtTrainJobService {
      *
      */
     void batchStopTrainJob();
+
+    /**
+     * 批量删除训练
+     * @param ids
+     */
+    void batchDeleteTrain(Set<Long> ids);
+
+    /**
+     * 批量删除训练任务
+     * @param ids
+     */
+    void batchDeleteTrainJob(Set<Long> ids);
+
+    /**
+     * 根据trainId集合查询
+     * @param ids
+     * @return
+     */
+    List<PtTrainVO> findTrainByIds(Set<Long> ids);
+
+    /**
+     * 根据trainJobId集合查询
+     * @param ids
+     * @return
+     */
+    List<PtTrainJobDetailVO> findTrainJobByIds(Set<Long> ids);
+
 }

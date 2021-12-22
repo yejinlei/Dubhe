@@ -65,4 +65,7 @@ public class BatchServingQueryVO implements Serializable {
 
     @ApiModelProperty(value = "输出路径")
     private String outputPath;
+
+    @ApiModelProperty("创建人用户名")
+    private String createUserName;
 }

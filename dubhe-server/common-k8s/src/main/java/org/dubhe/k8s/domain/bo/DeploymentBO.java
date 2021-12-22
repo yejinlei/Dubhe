@@ -18,6 +18,7 @@
 package org.dubhe.k8s.domain.bo;
 
 import cn.hutool.core.collection.CollectionUtil;
+import io.fabric8.kubernetes.api.model.Quantity;
 import lombok.Data;
 import lombok.experimental.Accessors;
 import org.dubhe.biz.base.constant.MagicNumConstant;
@@ -67,6 +68,22 @@ public class DeploymentBO {
      * CPU数量
      **/
     private Integer cpuNum;
+    /**是否使用gpu true：使用；false：不用**/
+    private Boolean useGpu;
+    /**
+     * GPU类型(例如：NVIDIA)
+     */
+    private String gpuType;
+
+    /**
+     * GPU型号(例如：v100)
+     */
+    private String gpuModel;
+
+    /**
+     * k8s GPU资源标签key值(例如：nvidia.com/gpu)
+     */
+    private String k8sLabelKey;
     /**
      * 镜像名称
      **/
@@ -92,6 +109,19 @@ public class DeploymentBO {
      * 端口
      */
     private Set<Integer> ports;
+
+    /**
+     * 镜像拉取策略
+     * IfNotPresent 默认值
+     * Always
+     * Never
+     */
+    private String imagePullPolicy;
+
+    /**
+     * 自定义资源
+     */
+    private Map<String, Quantity> customResourcesLimitsMap;
 
     /**
      * 获取nfs路径

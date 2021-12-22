@@ -76,4 +76,28 @@ public class ModelOptTaskQueryVO extends BaseVO {
 
     @ApiModelProperty(value = "运行参数")
     private JSONObject params;
+
+    @ApiModelProperty(value = "节点类型(0为CPU，1为GPU)")
+    private Integer resourcesPoolType;
+
+    @ApiModelProperty(value = "节点规格")
+    private String resourcesPoolSpecs;
+
+    @ApiModelProperty(value = "规格信息")
+    private String poolSpecsInfo;
+
+    @ApiModelProperty(value = "节点个数")
+    private Integer resourcesPoolNode;
+
+    @ApiModelProperty(value = "GPU类型")
+    private String gpuType;
+
+    @ApiModelProperty(value = "GPU型号")
+    private String gpuModel;
+
+    @ApiModelProperty(value = "k8s GPU资源标签key值")
+    private String k8sLabelKey;
+
+    @ApiModelProperty("创建人用户名")
+    private String createUserName;
 }

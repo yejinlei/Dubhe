@@ -19,21 +19,27 @@ package org.dubhe.admin.service.impl;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import org.apache.commons.collections4.CollectionUtils;
+import org.dubhe.admin.client.SystemNodeClient;
 import org.dubhe.admin.dao.ResourceSpecsMapper;
-import org.dubhe.admin.domain.dto.ResourceSpecsCreateDTO;
-import org.dubhe.admin.domain.dto.ResourceSpecsDeleteDTO;
-import org.dubhe.admin.domain.dto.ResourceSpecsQueryDTO;
-import org.dubhe.admin.domain.dto.ResourceSpecsUpdateDTO;
+import org.dubhe.admin.dao.UserGpuConfigMapper;
+import org.dubhe.admin.domain.dto.*;
 import org.dubhe.admin.domain.entity.ResourceSpecs;
+import org.dubhe.admin.domain.entity.UserGpuConfig;
 import org.dubhe.admin.domain.vo.ResourceSpecsQueryVO;
 import org.dubhe.admin.service.ResourceSpecsService;
+import org.dubhe.admin.service.UserService;
+import org.dubhe.biz.base.constant.MagicNumConstant;
 import org.dubhe.biz.base.constant.StringConstant;
 import org.dubhe.biz.base.context.UserContext;
 import org.dubhe.biz.base.dto.QueryResourceSpecsDTO;
+import org.dubhe.biz.base.dto.QueryUserK8sResourceDTO;
 import org.dubhe.biz.base.exception.BusinessException;
 import org.dubhe.biz.base.service.UserContextService;
 import org.dubhe.biz.base.utils.StringUtils;
+import org.dubhe.biz.base.vo.DataResponseBody;
 import org.dubhe.biz.base.vo.QueryResourceSpecsVO;
+import org.dubhe.biz.base.vo.QueryUserResourceSpecsVO;
+import org.dubhe.biz.base.vo.UserConfigVO;
 import org.dubhe.biz.db.utils.PageUtil;
 import org.dubhe.biz.log.enums.LogEnum;
 import org.dubhe.biz.log.utils.LogUtil;
@@ -58,6 +64,15 @@ public class ResourceSpecsServiceImpl implements ResourceSpecsService {
     @Autowired
     private UserContextService userContextService;
 
+    @Autowired
+    private UserService userService;
+
+    @Autowired
+    private SystemNodeClient systemNodeClient;
+
+    @Autowired
+    private UserGpuConfigMapper userGpuConfigMapper;
+
     /**
      *  查询资源规格
      * @param resourceSpecsQueryDTO 查询资源规格请求实体
@@ -72,6 +87,13 @@ public class ResourceSpecsServiceImpl implements ResourceSpecsService {
         queryResourceSpecsWrapper.like(resourceSpecsQueryDTO.getSpecsName() != null, "specs_name", resourceSpecsQueryDTO.getSpecsName())
                 .eq(resourceSpecsQueryDTO.getResourcesPoolType() != null, "resources_pool_type", resourceSpecsQueryDTO.getResourcesPoolType())
                 .eq(resourceSpecsQueryDTO.getModule() != null, "module", resourceSpecsQueryDTO.getModule());
+        if (resourceSpecsQueryDTO.getMultiGpu() != null) {
+            if (resourceSpecsQueryDTO.getMultiGpu()) {
+                queryResourceSpecsWrapper.gt("gpu_num", MagicNumConstant.ONE);
+            } else {
+                queryResourceSpecsWrapper.eq("gpu_num", MagicNumConstant.ONE);
+            }
+        }
         if (StringConstant.SORT_ASC.equals(resourceSpecsQueryDTO.getOrder())) {
             queryResourceSpecsWrapper.orderByAsc(StringUtils.humpToLine(sort));
         } else {
@@ -204,6 +226,102 @@ public class ResourceSpecsServiceImpl implements ResourceSpecsService {
         }
         QueryResourceSpecsVO queryResourceSpecsVO = new QueryResourceSpecsVO();
         BeanUtils.copyProperties(resourceSpecs, queryResourceSpecsVO);
+        return queryResourceSpecsVO;
+    }
+
+
+    /**
+     * 查询用户资源规格
+     * @param queryUserResourceSpecsDTO 查询用户资源规格请求实体
+     * @return List<QueryUserResourceSpecsVO> 用户资源规格返回结果实体类集合
+     */
+    @Override
+    public List<QueryUserResourceSpecsVO> getUserResourceSpecs(QueryUserResourceSpecsDTO queryUserResourceSpecsDTO) {
+        Long userId;
+        if (queryUserResourceSpecsDTO.getUserId() == null) {
+            userId = userContextService.getCurUser().getId();
+        } else {
+            userId = queryUserResourceSpecsDTO.getUserId();
+        }
+        UserConfigVO userConfig = userService.findUserConfig(userId);
+        if (queryUserResourceSpecsDTO.getResourcesPoolNode() == null) {
+            queryUserResourceSpecsDTO.setResourcesPoolNode(MagicNumConstant.ONE);
+        }
+        QueryWrapper<ResourceSpecs> queryResourceSpecsWrapper = new QueryWrapper<>();
+        queryResourceSpecsWrapper.eq("module", queryUserResourceSpecsDTO.getModule()).eq("resources_pool_type", queryUserResourceSpecsDTO.getResourcesPoolType())
+                .le("cpu_num", userConfig.getCpuLimit()).le("mem_num", userConfig.getMemoryLimit() * MagicNumConstant.ONE_THOUSAND_TWENTY_FOUR);
+        if (queryUserResourceSpecsDTO.getResourcesPoolType()) {
+            if (queryUserResourceSpecsDTO.getGpuModel() == null || queryUserResourceSpecsDTO.getK8sLabelKey() == null) {
+                throw new BusinessException("传参错误");
+            }
+            UserGpuConfig userGpuConfig = userGpuConfigMapper.selectOne(new QueryWrapper<>(new UserGpuConfig().setUserId(userId).setGpuModel(queryUserResourceSpecsDTO.getGpuModel())
+                    .setK8sLabelKey(queryUserResourceSpecsDTO.getK8sLabelKey())).last(" limit 1 "));
+            Integer gpuLimit = null;
+            if (userGpuConfig != null) {
+                gpuLimit = userGpuConfig.getGpuLimit();
+            }
+            // 如果老用户未初始化GPU配置，则设置默认配置
+            if (userGpuConfig == null && userGpuConfigMapper.selectCountByUserId(userId) == 0) {
+                UserGpuConfig preUserGpuConfig = userGpuConfigMapper.selectOne(new QueryWrapper<>(new UserGpuConfig().setUserId(0L).setGpuModel(queryUserResourceSpecsDTO.getGpuModel()).setK8sLabelKey(queryUserResourceSpecsDTO.getK8sLabelKey())));
+                if (preUserGpuConfig != null) {
+                    gpuLimit = preUserGpuConfig.getGpuLimit();
+                }
+            }
+            if (gpuLimit != null) {
+                queryResourceSpecsWrapper.le("gpu_num", gpuLimit);
+            }
+        }
+
+        if (queryUserResourceSpecsDTO.getMultiGpu() != null) {
+            if (queryUserResourceSpecsDTO.getMultiGpu()) {
+                queryResourceSpecsWrapper.gt("gpu_num", MagicNumConstant.ONE);
+            } else {
+                queryResourceSpecsWrapper.eq("gpu_num", MagicNumConstant.ONE);
+            }
+        }
+
+        queryResourceSpecsWrapper.orderByAsc("cpu_num");
+        List<ResourceSpecs> resourceSpecs = resourceSpecsMapper.selectList(queryResourceSpecsWrapper);
+        List<QueryUserResourceSpecsVO> queryUserResourceSpecsVOS = new ArrayList<>();
+        List<QueryUserK8sResourceDTO> QueryUserK8sResources = new ArrayList<>();
+        if (CollectionUtils.isNotEmpty(resourceSpecs)) {
+            QueryUserK8sResources = resourceSpecs.stream().map(x -> {
+                QueryUserK8sResourceDTO queryUserK8sResourceDTO = new QueryUserK8sResourceDTO();
+                BeanUtils.copyProperties(x, queryUserK8sResourceDTO);
+                queryUserK8sResourceDTO.setUserId(userId).setResourcesPoolNode(queryUserResourceSpecsDTO.getResourcesPoolNode());
+                if (queryUserResourceSpecsDTO.getResourcesPoolType()) {
+                    queryUserK8sResourceDTO.setGpuModel(queryUserResourceSpecsDTO.getGpuModel()).setK8sLabelKey(queryUserResourceSpecsDTO.getK8sLabelKey());
+                }
+                return queryUserK8sResourceDTO;
+            }).collect(Collectors.toList());
+        }
+        //过滤k8s集群资源
+        if (CollectionUtils.isNotEmpty(QueryUserK8sResources)) {
+            DataResponseBody<List<QueryUserResourceSpecsVO>> dataResponseBody = systemNodeClient.queryUserK8sResource(QueryUserK8sResources);
+            if (!dataResponseBody.succeed()) {
+                throw new BusinessException("dubhe-k8s服务调用异常，查询集群资源是否可用失败");
+            }
+            return dataResponseBody.getData();
+        }
+        return queryUserResourceSpecsVOS;
+    }
+
+    /**
+     * 查询资源规格
+     * @param id 资源规格id
+     * @return QueryResourceSpecsVO 资源规格返回结果实体类
+     */
+    @Override
+    public QueryResourceSpecsVO queryTadlResourceSpecs(Long id) {
+        LogUtil.info(LogEnum.BIZ_SYS,"Query resource specification information with resource id:{}",id);
+        ResourceSpecs resourceSpecs = resourceSpecsMapper.selectById(id);
+        LogUtil.info(LogEnum.BIZ_SYS,"Obtain resource specification information:{} ",resourceSpecs);
+        if (resourceSpecs == null) {
+            throw new BusinessException("资源规格不存在或已被删除");
+        }
+        QueryResourceSpecsVO queryResourceSpecsVO = new QueryResourceSpecsVO();
+        BeanUtils.copyProperties(resourceSpecs, queryResourceSpecsVO);
+        LogUtil.info(LogEnum.BIZ_SYS,"Return resource specification information :{} ",queryResourceSpecsVO);
         return queryResourceSpecsVO;
     }
 }

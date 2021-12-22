@@ -29,17 +29,27 @@ import org.dubhe.biz.base.constant.MagicNumConstant;
 import org.dubhe.biz.base.constant.SymbolConstant;
 import org.dubhe.biz.base.functional.StringFormat;
 import org.dubhe.biz.base.utils.StringUtils;
+import org.dubhe.biz.base.vo.UserAllotVO;
 import org.dubhe.biz.log.enums.LogEnum;
 import org.dubhe.biz.log.utils.LogUtil;
 import org.dubhe.k8s.api.MetricsApi;
 import org.dubhe.k8s.api.PodApi;
+import org.dubhe.k8s.config.PromethuesConfig;
 import org.dubhe.k8s.constant.K8sParamConstants;
 import org.dubhe.k8s.domain.bo.PrometheusMetricBO;
 import org.dubhe.k8s.domain.dto.PodQueryDTO;
 import org.dubhe.k8s.domain.resource.BizContainer;
 import org.dubhe.k8s.domain.resource.BizPod;
 import org.dubhe.k8s.domain.resource.BizQuantity;
-import org.dubhe.k8s.domain.vo.*;
+import org.dubhe.k8s.domain.vo.GpuMetricsDataResultVO;
+import org.dubhe.k8s.domain.vo.GpuTotalMemResultVO;
+import org.dubhe.k8s.domain.vo.GpuUsageVO;
+import org.dubhe.k8s.domain.vo.GpuValueVO;
+import org.dubhe.k8s.domain.vo.MetricsDataResultValueVO;
+import org.dubhe.k8s.domain.vo.PodRangeMetricsVO;
+import org.dubhe.k8s.domain.vo.PtContainerMetricsVO;
+import org.dubhe.k8s.domain.vo.PtNodeMetricsVO;
+import org.dubhe.k8s.domain.vo.PtPodsVO;
 import org.dubhe.k8s.utils.BizConvertUtils;
 import org.dubhe.k8s.utils.K8sUtils;
 import org.dubhe.k8s.utils.PrometheusUtil;
@@ -47,7 +57,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.util.CollectionUtils;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
@@ -117,6 +131,9 @@ public class MetricsApiImpl implements MetricsApi {
      */
     @Value("${k8s.prometheus.gpu-mem-use-range-query-param}")
     private String k8sPrometheusGpuMemUseRangeQueryParam;
+
+    @Autowired
+    private PromethuesConfig promethuesConfig;
 
     public MetricsApiImpl(K8sUtils k8sUtils) {
         this.client = k8sUtils.getClient();
@@ -551,5 +568,70 @@ public class MetricsApiImpl implements MetricsApi {
             LogUtil.error(LogEnum.BIZ_K8S, "MetricsApiImpl.getContainerMetrics error, param:{} error:{}", pods, e);
             return Collections.EMPTY_LIST;
         }
+    }
+
+    /**
+     * 查询某个节点的gpu使用率
+     *
+     * 
+     * @return List<GpuUsageVO> 节点gpu使用率集合
+     */
+    @Override
+    public Map<String,List<GpuUsageVO>> getNodeGpuUsage() {
+        Map<String, List<GpuUsageVO>> result = PrometheusUtil.getPrometheusQuery(k8sPrometheusUrl + k8sPrometheusQuery, PrometheusUtil.getQueryNodeParamMap(promethuesConfig.getK8sPrometheusGpuUsageQueryParam()));
+        return result;
+    }
+
+    /**
+     * 查询用户资源使用率峰值
+     *
+     * @param resourceType 资源类型（gpu、cpu、memory）
+     * @param sumDay 查询时间段
+     * @return List<UserAllotVO> 用户资源使用率VO实体类
+     */
+    @Override
+    public List<UserAllotVO> getNamespaceUsageRate(Integer resourceType, String sumDay) {
+        PrometheusMetricBO prometheusMetricBO =new PrometheusMetricBO();
+        switch (resourceType) {
+            case 1:
+                //GPU
+                prometheusMetricBO = PrometheusUtil.getQuery(k8sPrometheusUrl + k8sPrometheusQuery, PrometheusUtil.getResourceUsageRateParamMap(promethuesConfig.getK8sGpuUsageRateQueryParam(), sumDay));
+                break;
+            case 2:
+                //CPU
+                prometheusMetricBO = PrometheusUtil.getQuery(k8sPrometheusUrl + k8sPrometheusQuery, PrometheusUtil.getResourceUsageRateParamMap(promethuesConfig.getK8sCpuUsageRateQueryParam(), sumDay));
+                break;
+            case 3:
+                prometheusMetricBO = PrometheusUtil.getQuery(k8sPrometheusUrl + k8sPrometheusQuery, PrometheusUtil.getResourceUsageRateParamMap(promethuesConfig.getK8sMemUsageRateQueryParam(), sumDay));
+                break;
+            default:
+                break;
+        }
+
+        if (prometheusMetricBO == null) {
+            return null;
+        }
+        return prometheusMetricBO.getUsageRateResults();
+    }
+
+    @Override
+    public Map<Long, String> getResourceUsageByUser(Integer resourceType, String sumDay, String namespaces) {
+        PrometheusMetricBO prometheusMetricBO = new PrometheusMetricBO();
+        switch (resourceType) {
+            //GPU
+            case 1:
+                prometheusMetricBO = PrometheusUtil.getQuery(k8sPrometheusUrl + k8sPrometheusQuery, PrometheusUtil.getResourceUsageParamMap(promethuesConfig.getK8sGpuUsageByNamespaceQueryParam(), sumDay, namespaces));
+                break;
+            //CPU
+            case 2:
+                prometheusMetricBO = PrometheusUtil.getQuery(k8sPrometheusUrl + k8sPrometheusQuery, PrometheusUtil.getResourceUsageParamMap(promethuesConfig.getK8sCpuUsageByNamespaceQueryParam(), sumDay, namespaces));
+                break;
+            //memory
+            case 3:
+                prometheusMetricBO = PrometheusUtil.getQuery(k8sPrometheusUrl + k8sPrometheusQuery, PrometheusUtil.getResourceUsageParamMap(promethuesConfig.getK8sMemUsageByNamespaceQueryParam(), sumDay, namespaces));
+                break;
+
+        }
+        return prometheusMetricBO.getResourceUsageResults();
     }
 }

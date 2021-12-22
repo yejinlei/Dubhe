@@ -18,6 +18,7 @@ package org.dubhe.dubhek8s.domain.vo;
 
 import lombok.Data;
 import lombok.experimental.Accessors;
+
 import java.util.List;
 
 /**
@@ -36,10 +37,7 @@ public class NamespaceVO {
      * 内存资源总量 单位：Gi
      */
     private Integer hardMemory;
-    /**
-     * GPU 资源总量 单位：块
-     */
-    private Integer hardGpu;
+
     /**
      * CPU 资源已使用量 单位：核
      */
@@ -48,6 +46,13 @@ public class NamespaceVO {
      * 内存资源已使用量 单位：Gi
      */
     private Integer usedMemory;
+
+    /**
+     * GPU 资源总量 单位：块
+     */
+    private Integer hardGpu;
+
+
     /**
      * GPU 资源已使用量 单位：块
      */
@@ -58,6 +63,10 @@ public class NamespaceVO {
      */
     private List<TaskResVO> tasks;
 
+    /**
+     * GPU 资源信息
+     */
+    private List<GpuResourceVO> gpuResourceList;
 
 
 }

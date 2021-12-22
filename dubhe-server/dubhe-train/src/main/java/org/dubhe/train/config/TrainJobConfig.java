@@ -60,6 +60,12 @@ public class TrainJobConfig {
 
     private String dockerModelPath;
 
+    private String trainModelPathValue;
+
+    private String trainOutPathValue;
+
+    private String visualizedLogPathValue;
+
     private String dockerTeacherModelPath;
 
     private String dockerTeacherModelKey;

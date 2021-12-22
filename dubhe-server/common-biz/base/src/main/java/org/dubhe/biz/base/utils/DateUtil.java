@@ -19,6 +19,7 @@ package org.dubhe.biz.base.utils;
 
 import java.sql.Timestamp;
 import java.text.DateFormat;
+import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.time.Instant;
 import java.time.LocalDate;
@@ -124,5 +125,25 @@ public class DateUtil {
         SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd 01:00:00");
 
         return Timestamp.valueOf(sdf.format(calendar.getTime()));
+    }
+
+    /**
+     * CST时间转换成UTC Date String
+     * 输入：2021-11-17T08:50:23Z
+     * 返回：2021-11-17 16:50:23
+     *
+     * @param time
+     * @return
+     * @throws ParseException
+     */
+    public static String convertCST2UTCDate(String time) throws ParseException {
+        SimpleDateFormat parseFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'");
+        Date dateTime = parseFormat.parse(time);
+
+        Calendar calendar = Calendar.getInstance();
+        calendar.setTime(dateTime);
+        calendar.set(Calendar.HOUR,calendar.get(Calendar.HOUR) + 8);
+        SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+        return simpleDateFormat.format(calendar.getTime());
     }
 }

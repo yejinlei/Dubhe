@@ -38,7 +38,7 @@ public interface LabelGroupService {
      *
      * @param labelGroupCreateDTO 创建标签组DTO
      */
-    void creatLabelGroup(LabelGroupCreateDTO labelGroupCreateDTO);
+    Long creatLabelGroup(LabelGroupCreateDTO labelGroupCreateDTO);
 
     /**
      * 更新（编辑）标签组
@@ -94,7 +94,7 @@ public interface LabelGroupService {
      * @param labelGroupImportDTO 标签组导入DTO
      * @param file                导入文件
      */
-    void importLabelGroup(LabelGroupImportDTO labelGroupImportDTO, MultipartFile file);
+    Long importLabelGroup(LabelGroupImportDTO labelGroupImportDTO, MultipartFile file);
 
     /**
      * 标签组复制

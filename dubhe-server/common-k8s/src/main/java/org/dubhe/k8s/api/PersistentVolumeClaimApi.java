@@ -88,6 +88,15 @@ public interface PersistentVolumeClaimApi {
     PtBaseResult delete(String namespace, String pvcName);
 
     /**
+     * 删除PVC
+     *
+     * @param namespace 命名空间
+     * @param resourceName 资源名称
+     * @return PtBaseResult 基础结果类
+     */
+    PtBaseResult deletePvcByResourceName(String namespace, String resourceName);
+
+    /**
      * 拼接storageClassName
      *
      * @param pvcName PVC 名称

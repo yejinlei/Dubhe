@@ -33,7 +33,7 @@ import java.util.stream.Collectors;
  * @date 2020-05-31
  */
 @Data
-public class PtModelOptimizationJobBO extends PtJobBO {
+public class PtModelOptimizationJobBO extends BaseResourceBo {
     /**
      * 执行命令
      **/

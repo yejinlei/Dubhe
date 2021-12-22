@@ -20,13 +20,14 @@ import lombok.Data;
 
 import java.io.Serializable;
 import java.util.List;
+import java.util.Map;
 
 /**
  * @description 菜单VO
  * @date 2020-06-01
  */
 @Data
-@JsonInclude(JsonInclude.Include.NON_EMPTY)
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public class MenuVo implements Serializable {
 
     private static final long serialVersionUID = 7145999097655311261L;
@@ -38,7 +39,7 @@ public class MenuVo implements Serializable {
 
     private String component;
 
-    private MenuMetaVo meta;
+    private Map<String,Object> meta;
 
     private List<MenuVo> children;
 }

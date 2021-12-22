@@ -82,6 +82,10 @@ public class ApplicationNameConst {
     public final static String SERVER_DATA_DCM = "dubhe-data-dcm";
 
     /**
+     * TADL
+     */
+    public final static String SERVER_TADL = "dubhe-tadl";
+    /**
      * k8s
      */
     public final static String SERVER_K8S = "dubhe-k8s";

@@ -71,7 +71,7 @@ public class DeploymentCallback extends Observable {
                 return;
             }
             String businessLabel = deployment.getBusinessLabel();
-            LogUtil.info(LogEnum.BIZ_K8S,"watch deployment {} action:{} readyReplicas:{}",deployment.getName(),watcherActionEnum.getAction(),deployment.getReadyReplicas());
+            LogUtil.info(LogEnum.BIZ_K8S,"watch deployment {} action:{} readyReplicas:{} deployment: {}",deployment.getName(),watcherActionEnum.getAction(),deployment.getReadyReplicas(), deployment);
             setChanged();
             notifyObservers(deployment);
             if (StringUtils.isNotEmpty(businessLabel)){

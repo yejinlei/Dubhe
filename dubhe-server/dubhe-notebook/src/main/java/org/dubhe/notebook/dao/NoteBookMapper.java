@@ -98,4 +98,8 @@ public interface NoteBookMapper extends BaseMapper<NoteBook> {
             "</script>"
     })
     List<Long> getNoteBookIdByAlgorithm(@Param("algorithmIds")Collection<Long> algorithmIds);
+
+    @Update("update notebook set status=#{status} where id=#{id}")
+    void updateStatusById(@Param("id") Long id,
+                          @Param("status") Integer status);
 }

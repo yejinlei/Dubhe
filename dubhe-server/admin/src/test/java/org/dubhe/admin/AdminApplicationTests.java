@@ -1,5 +1,6 @@
 package org.dubhe.admin;
 
+import com.alibaba.fastjson.JSON;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import org.dubhe.admin.domain.dto.DictCreateDTO;
 import org.dubhe.admin.domain.dto.DictDetailDTO;
@@ -7,8 +8,10 @@ import org.dubhe.admin.domain.dto.DictDetailQueryDTO;
 import org.dubhe.admin.domain.entity.DictDetail;
 import org.dubhe.admin.rest.DictController;
 import org.dubhe.admin.service.DictDetailService;
+import org.dubhe.admin.service.UserService;
 import org.dubhe.biz.base.utils.DateUtil;
 import org.dubhe.biz.base.vo.DataResponseBody;
+import org.dubhe.biz.base.vo.UserConfigVO;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -27,6 +30,9 @@ public class AdminApplicationTests {
     private DictController dictController;
     @Autowired
     private DictDetailService dictDetailService;
+
+    @Autowired
+    private UserService userService;
 
     /**
      * 字典分页查询
@@ -65,6 +71,12 @@ public class AdminApplicationTests {
         DataResponseBody dataResponseBody = dictController.create(dict);
         System.out.println(dataResponseBody.getData());
 
+    }
+
+    @Test
+    public void findUserConfig() {
+        UserConfigVO userConfig = userService.findUserConfig(1l);
+        System.out.println(JSON.toJSONString(userConfig));
     }
 
 }

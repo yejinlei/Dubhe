@@ -23,6 +23,12 @@
         pt_train_job t1
         INNER JOIN pt_train t2 ON t1.train_id = t2.id
         WHERE
+        <if test="trainIds != null and trainIds.size() != 0 ">
+        t1.train_id in <foreach collection="trainIds" item="item" open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        AND
+        </if>
         t1.id IN ( SELECT max(id) FROM pt_train_job WHERE deleted = 0
         <if test="trainStatus != null">
             AND train_status = #{trainStatus}
@@ -34,6 +40,7 @@
         <if test="trainName != null and trainName != ''">
             AND (t2.train_name like concat('%', #{trainName}, '%') or t2.id = #{trainName})
         </if>
+        <if test="sort !=null and order != null">
         <choose>
             <when test="sort == 'id'">
                 order by <![CDATA[t1.]]>${sort} ${order}
@@ -42,5 +49,6 @@
                 order by ${sort} ${order}
             </otherwise>
         </choose>
+        </if>
     </select>
 </mapper>

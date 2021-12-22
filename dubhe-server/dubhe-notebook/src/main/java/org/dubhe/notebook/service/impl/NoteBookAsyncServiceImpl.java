@@ -21,6 +21,7 @@ import org.dubhe.biz.base.utils.StringUtils;
 import org.dubhe.biz.log.enums.LogEnum;
 import org.dubhe.biz.log.utils.LogUtil;
 import org.dubhe.k8s.abstracts.AbstractPodCallback;
+import org.dubhe.k8s.api.JupyterResourceApi;
 import org.dubhe.k8s.domain.dto.BaseK8sPodCallbackCreateDTO;
 import org.dubhe.k8s.service.PodCallbackAsyncService;
 import org.dubhe.notebook.dao.NoteBookMapper;
@@ -31,6 +32,12 @@ import org.dubhe.notebook.service.ProcessNotebookCommand;
 import org.dubhe.notebook.utils.NotebookUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.dubhe.k8s.enums.K8sEventTypeEnum;
+
+import javax.annotation.Resource;
+
+import static org.dubhe.biz.base.constant.SymbolConstant.BLANK;
+import static org.dubhe.biz.base.constant.SymbolConstant.COLON;
 
 /**
  * @description 异步刪除接口实现
@@ -45,6 +52,9 @@ public class NoteBookAsyncServiceImpl<NotebookK8sPodCallbackCreateDTO> extends A
     @Autowired
     private NoteBookMapper noteBookMapper;
 
+    @Resource
+    private JupyterResourceApi jupyterResourceApi;
+
 
     @Override
     public <R extends BaseK8sPodCallbackCreateDTO> boolean doCallback(int times, R notebookK8sPodCallbackCreateDTO) {
@@ -58,15 +68,24 @@ public class NoteBookAsyncServiceImpl<NotebookK8sPodCallbackCreateDTO> extends A
             }
             NoteBookStatusEnum statusEnum = NoteBookStatusEnum.convert(notebookK8sPodCallbackCreateDTO.getPhase());
 
+            //OOMKilled情况下需要刷新notebook url
+            if (notebookK8sPodCallbackCreateDTO.getMessages().contains(K8sEventTypeEnum.OOMKilled.getReason())) {
+                notebook.setUrl(noteBookService.getJupyterUrl(notebook));
+                notebook.putStatusDetail(notebookK8sPodCallbackCreateDTO.getResourceName(), notebookK8sPodCallbackCreateDTO.getMessages());
+                noteBookService.updateById(notebook);
+                return true;
+            }
+
             noteBookService.refreshNoteBookStatus(statusEnum, notebook, new ProcessNotebookCommand() {
                 @Override
                 public void running(NoteBook noteBook) {
                     notebook.setK8sStatusCode(notebookK8sPodCallbackCreateDTO.getPhase());
                     notebook.setK8sStatusInfo(NotebookUtil.getK8sStatusInfo(notebookK8sPodCallbackCreateDTO.getMessages()));
-                    if (StringUtils.isEmpty(notebookK8sPodCallbackCreateDTO.getMessages())){
-                        notebook.removeStatusDetail(notebookK8sPodCallbackCreateDTO.getResourceName());
-                    }else {
+                    if (StringUtils.isNotEmpty(notebookK8sPodCallbackCreateDTO.getMessages())) {
                         notebook.putStatusDetail(notebookK8sPodCallbackCreateDTO.getResourceName(),notebookK8sPodCallbackCreateDTO.getMessages());
+                    } else if (StringUtils.isEmpty(notebookK8sPodCallbackCreateDTO.getMessages())
+                            && !K8sEventTypeEnum.OOMKilled.getMessage().equals(notebook.getStatusDetail())){
+                        notebook.removeStatusDetail(notebookK8sPodCallbackCreateDTO.getResourceName());
                     }
                 }
             });

@@ -47,6 +47,7 @@ import org.dubhe.k8s.cache.ResourceCache;
 import org.dubhe.k8s.constant.K8sLabelConstants;
 import org.dubhe.k8s.constant.K8sParamConstants;
 import org.dubhe.k8s.domain.PtBaseResult;
+import org.dubhe.k8s.domain.bo.BaseResourceBo;
 import org.dubhe.k8s.domain.bo.PtModelOptimizationDeploymentBO;
 import org.dubhe.k8s.domain.resource.BizDeployment;
 import org.dubhe.k8s.enums.ImagePullPolicyEnum;
@@ -57,9 +58,11 @@ import org.dubhe.k8s.enums.LimitsOfResourcesEnum;
 import org.dubhe.k8s.enums.RestartPolicyEnum;
 import org.dubhe.k8s.enums.ShellCommandEnum;
 import org.dubhe.k8s.utils.BizConvertUtils;
+import org.dubhe.k8s.utils.K8sCommonUtils;
 import org.dubhe.k8s.utils.K8sUtils;
 import org.dubhe.k8s.utils.LabelUtils;
 import org.dubhe.k8s.utils.YamlUtils;
+import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import javax.annotation.Resource;
@@ -76,6 +79,7 @@ import java.util.stream.Collectors;
  */
 public class DubheDeploymentApiImpl implements DubheDeploymentApi {
     private K8sUtils k8sUtils;
+
     private KubernetesClient client;
 
     @Autowired
@@ -88,6 +92,9 @@ public class DubheDeploymentApiImpl implements DubheDeploymentApi {
     private FileStoreApi fileStoreApi;
     @Autowired
     private ResourceIisolationApi resourceIisolationApi;
+
+    @Autowired
+    private K8sCommonUtils k8sCommonUtils;
 
     private static final String DATASET = "/dataset";
     private static final String WORKSPACE = "/workspace";
@@ -112,11 +119,15 @@ public class DubheDeploymentApiImpl implements DubheDeploymentApi {
     public BizDeployment create(PtModelOptimizationDeploymentBO bo) {
         try {
             LogUtil.info(LogEnum.BIZ_K8S, "Param of create:{}", bo);
-            LimitsOfResourcesEnum limitsOfResources = resourceQuotaApi.reachLimitsOfResources(bo.getNamespace(), bo.getCpuNum(), bo.getMemNum(), bo.getGpuNum());
+
+            BaseResourceBo baseResourceBo = new BaseResourceBo();
+            BeanUtils.copyProperties(bo, baseResourceBo);
+
+            LimitsOfResourcesEnum limitsOfResources = resourceQuotaApi.reachLimitsOfResources(baseResourceBo);
             if (!LimitsOfResourcesEnum.ADEQUATE.equals(limitsOfResources)) {
                 return new BizDeployment().error(K8sResponseEnum.LACK_OF_RESOURCES.getCode(), limitsOfResources.getMessage());
             }
-            LackOfResourcesEnum lack = nodeApi.isAllocatable(bo.getCpuNum(), bo.getMemNum(), bo.getGpuNum());
+            LackOfResourcesEnum lack = nodeApi.isAllocatable(baseResourceBo);
             if (!LackOfResourcesEnum.ADEQUATE.equals(lack)) {
                 return new BizDeployment().error(K8sResponseEnum.LACK_OF_RESOURCES.getCode(), lack.getMessage());
             }
@@ -192,7 +203,7 @@ public class DubheDeploymentApiImpl implements DubheDeploymentApi {
      */
     @Override
     public PtBaseResult deleteByResourceName(String namespace, String resourceName) {
-        LogUtil.info(LogEnum.BIZ_K8S, "Param of deleteByResourceName:namespace {} resourceName {}", namespace,resourceName);
+        LogUtil.info(LogEnum.BIZ_K8S, "Param of deleteByResourceName:namespace {} resourceName {}", namespace, resourceName);
         if (StringUtils.isEmpty(namespace) || StringUtils.isEmpty(resourceName)) {
             return new PtBaseResult().baseErrorBadRequest();
         }
@@ -247,8 +258,9 @@ public class DubheDeploymentApiImpl implements DubheDeploymentApi {
 
             this.resourcesLimitsMap = Maps.newHashMap();
             Optional.ofNullable(bo.getCpuNum()).ifPresent(v -> resourcesLimitsMap.put(K8sParamConstants.QUANTITY_CPU_KEY, new Quantity(v.toString(), K8sParamConstants.CPU_UNIT)));
-            Optional.ofNullable(bo.getGpuNum()).ifPresent(v -> resourcesLimitsMap.put(K8sParamConstants.GPU_RESOURCE_KEY, new Quantity(v.toString())));
+            Optional.ofNullable(bo.getGpuNum()).ifPresent(v -> resourcesLimitsMap.put(bo.getK8sLabelKey(), new Quantity(v.toString())));
             Optional.ofNullable(bo.getMemNum()).ifPresent(v -> resourcesLimitsMap.put(K8sParamConstants.QUANTITY_MEMORY_KEY, new Quantity(v.toString(), K8sParamConstants.MEM_UNIT)));
+            k8sCommonUtils.addRdmaResource(resourcesLimitsMap);
             this.businessLabel = bo.getBusinessLabel();
             this.taskIdentifyLabel = bo.getTaskIdentifyLabel();
             this.baseLabels = LabelUtils.getBaseLabels(baseName, businessLabel);
@@ -413,8 +425,8 @@ public class DubheDeploymentApiImpl implements DubheDeploymentApi {
                         .withName(PVC_DATASET)
                         .withNewHostPath()
                             .withPath(datasetDir)
-                            .withType(K8sParamConstants.HOST_PATH_TYPE)
-                        .endHostPath()
+                        .withType(K8sParamConstants.HOST_PATH_TYPE)
+                            .endHostPath()
                         .build());
             }
             if (StrUtil.isNotBlank(workspaceDir)) {

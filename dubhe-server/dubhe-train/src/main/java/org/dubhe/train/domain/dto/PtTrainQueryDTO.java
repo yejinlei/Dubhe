@@ -27,6 +27,7 @@ import org.hibernate.validator.constraints.Length;
 import javax.validation.constraints.Max;
 import javax.validation.constraints.Min;
 import java.io.Serializable;
+import java.util.Set;
 
 /**
  * @description 查询训练
@@ -47,4 +48,6 @@ public class PtTrainQueryDTO extends PageQueryBase implements Serializable {
     @Max(value = MagicNumConstant.SEVEN, message = "trainStatus错误")
     private Integer trainStatus;
 
+    @ApiModelProperty(value = "训练id集合",hidden = true)
+    private Set<Long> ids;
 }

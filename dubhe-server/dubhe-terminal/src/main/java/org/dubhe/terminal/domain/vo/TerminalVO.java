@@ -21,6 +21,7 @@ import io.swagger.annotations.ApiModelProperty;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.experimental.Accessors;
+import org.dubhe.k8s.domain.vo.K8sEventVO;
 import org.dubhe.terminal.domain.entity.Terminal;
 import org.dubhe.terminal.domain.entity.TerminalInfo;
 import org.springframework.util.CollectionUtils;
@@ -85,7 +86,19 @@ public class TerminalVO implements Serializable {
     @ApiModelProperty("状态对应的详情信息")
     private String statusDetail;
 
-    public TerminalVO(Terminal terminal,List<TerminalInfo> terminalInfoList){
+    @ApiModelProperty("创建用户id")
+    private Long createUserId;
+
+    @ApiModelProperty("创建用户名")
+    private String createUserName;
+
+    @ApiModelProperty("描述长度不能超过200个字符")
+    private String description;
+
+    @ApiModelProperty("K8s事件列表")
+    private List<K8sEventVO> eventList;
+
+    public TerminalVO(Terminal terminal, List<TerminalInfo> terminalInfoList) {
         this.id = terminal.getId();
         this.name = terminal.getName();
         this.dataSourceName = terminal.getDataSourceName();
@@ -100,8 +113,10 @@ public class TerminalVO implements Serializable {
         this.sameInfo = terminal.isSameInfo();
         this.status = terminal.getStatus();
         this.statusDetail = terminal.getStatusDetail();
+        this.createUserId = terminal.getCreateUserId();
+        this.description = terminal.getDescription();
 
-        if (!CollectionUtils.isEmpty(terminalInfoList)){
+        if (!CollectionUtils.isEmpty(terminalInfoList)) {
             info = new ArrayList<>();
             terminalInfoList.forEach(terminalInfo -> {
                 info.add(new TerminalInfoVO(terminalInfo));

@@ -26,8 +26,11 @@ import org.dubhe.biz.log.enums.LogEnum;
 import org.dubhe.biz.log.utils.LogUtil;
 import org.dubhe.k8s.constant.K8sParamConstants;
 import org.dubhe.k8s.domain.bo.PrometheusMetricBO;
+import org.dubhe.k8s.domain.bo.PromethusNodeMetricsBo;
 import org.dubhe.k8s.domain.dto.PodQueryDTO;
+import org.dubhe.k8s.domain.vo.GpuUsageVO;
 
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -41,18 +44,18 @@ public class PrometheusUtil {
      * @param paramMap
      * @return
      */
-    public static PrometheusMetricBO getQuery(String url,Map<String, Object> paramMap){
-        if (StringUtils.isEmpty(url)){
+    public static PrometheusMetricBO getQuery(String url, Map<String, Object> paramMap) {
+        if (StringUtils.isEmpty(url)) {
             return null;
         }
         try {
-            String metricStr = HttpUtil.get(url,paramMap);
-            if (StringUtils.isEmpty(metricStr)){
+            String metricStr = HttpUtil.get(url, paramMap);
+            if (StringUtils.isEmpty(metricStr)) {
                 return null;
             }
             return JSON.parseObject(metricStr, PrometheusMetricBO.class);
-        }catch (Exception e){
-            LogUtil.error(LogEnum.BIZ_K8S, "getQuery url:{} paramMap:{} error:{}", url,paramMap,e.getMessage(),e);
+        } catch (Exception e) {
+            LogUtil.error(LogEnum.BIZ_K8S, "getQuery url:{} paramMap:{} error:{}", url, paramMap, e.getMessage(), e);
             return null;
         }
     }
@@ -64,23 +67,23 @@ public class PrometheusUtil {
      * @param podQueryDTO 查询参数
      * @return
      */
-    public static Map<String, Object> getQueryParamMap(String param,String podName,PodQueryDTO podQueryDTO){
+    public static Map<String, Object> getQueryParamMap(String param, String podName, PodQueryDTO podQueryDTO) {
         Map<String, Object> paramMap = new HashedMap<>(MagicNumConstant.EIGHT);
-        if (StringUtils.isEmpty(param) || StringUtils.isEmpty(podName)){
+        if (StringUtils.isEmpty(param) || StringUtils.isEmpty(podName)) {
             return paramMap;
         }
-        paramMap.put(StringConstant.QUERY, param.replace(K8sParamConstants.POD_NAME_PLACEHOLDER,podName));
-        if (podQueryDTO == null){
+        paramMap.put(StringConstant.QUERY, param.replace(K8sParamConstants.POD_NAME_PLACEHOLDER, podName));
+        if (podQueryDTO == null) {
             return paramMap;
         }
-        if (podQueryDTO.getStartTime() != null){
-            paramMap.put(StringConstant.START_LOW,podQueryDTO.getStartTime());
+        if (podQueryDTO.getStartTime() != null) {
+            paramMap.put(StringConstant.START_LOW, podQueryDTO.getStartTime());
         }
-        if (podQueryDTO.getEndTime() != null){
-            paramMap.put(StringConstant.END_LOW,podQueryDTO.getEndTime());
+        if (podQueryDTO.getEndTime() != null) {
+            paramMap.put(StringConstant.END_LOW, podQueryDTO.getEndTime());
         }
-        if (podQueryDTO.getStep() != null){
-            paramMap.put(StringConstant.STEP_LOW,podQueryDTO.getStep());
+        if (podQueryDTO.getStep() != null) {
+            paramMap.put(StringConstant.STEP_LOW, podQueryDTO.getStep());
         }
         return paramMap;
     }
@@ -91,12 +94,80 @@ public class PrometheusUtil {
      * @param podName pod名称
      * @return
      */
-    public static Map<String, Object> getQueryParamMap(String param,String podName){
+    public static Map<String, Object> getQueryParamMap(String param, String podName) {
         Map<String, Object> paramMap = new HashedMap<>(MagicNumConstant.TWO);
-        if (StringUtils.isEmpty(param) || StringUtils.isEmpty(podName)){
+        if (StringUtils.isEmpty(param) || StringUtils.isEmpty(podName)) {
             return paramMap;
         }
-        paramMap.put(StringConstant.QUERY, param.replace(K8sParamConstants.POD_NAME_PLACEHOLDER,podName));
+        paramMap.put(StringConstant.QUERY, param.replace(K8sParamConstants.POD_NAME_PLACEHOLDER, podName));
+        return paramMap;
+    }
+
+    /**
+     * prometheus get node使用率查询
+     * @param url
+     * @param paramMap
+     * @return List<GpuUsageVO> node上gpu使用率统计
+     */
+    public static Map<String, List<GpuUsageVO>> getPrometheusQuery(String url, Map<String, Object> paramMap) {
+        if (StringUtils.isEmpty(url)) {
+            return null;
+        }
+        try {
+            String metricStr = HttpUtil.get(url, paramMap);
+            if (StringUtils.isEmpty(metricStr)) {
+                return null;
+            }
+            PromethusNodeMetricsBo promethusNodeMetricsBo = JSON.parseObject(metricStr, PromethusNodeMetricsBo.class);
+            return promethusNodeMetricsBo.getGpuUsageResults();
+        } catch (Exception e) {
+            LogUtil.error(LogEnum.BIZ_K8S, "getQuery url:{} paramMap:{} error:{}", url, paramMap, e.getMessage(), e);
+            return null;
+        }
+    }
+
+    /**
+     * 组装参数
+     * @param param 查询表达式
+     * @return
+     */
+    public static Map<String, Object> getQueryNodeParamMap(String param) {
+        Map<String, Object> paramMap = new HashedMap<>(MagicNumConstant.TWO);
+
+        paramMap.put(StringConstant.QUERY, param);
+        return paramMap;
+    }
+
+    /**
+     * 组装参数
+     * @param param 查询表达式
+     * @param sumDay 统计时间段
+     * @return
+     */
+    public static Map<String, Object> getResourceUsageRateParamMap(String param, String sumDay) {
+        Map<String, Object> paramMap = new HashedMap<>(MagicNumConstant.TWO);
+        if (StringUtils.isEmpty(param) || StringUtils.isEmpty(sumDay)) {
+            return paramMap;
+        }
+        paramMap.put(StringConstant.QUERY, param.replace(K8sParamConstants.SUM_DAY, sumDay));
+
+        return paramMap;
+    }
+
+    /**
+     * 组装参数
+     * @param param 查询表达式
+     * @param sumDay 统计时间段
+     * @param namespaces 用户命名空间
+     * @return Map<String, Object>
+     */
+    public static Map<String, Object> getResourceUsageParamMap(String param, String sumDay, String namespaces) {
+        Map<String, Object> paramMap = new HashedMap<>(MagicNumConstant.TWO);
+        if (StringUtils.isEmpty(param) || StringUtils.isEmpty(sumDay)) {
+            return paramMap;
+        }
+        paramMap.put(StringConstant.QUERY, param.replace(K8sParamConstants.SUM_DAY, sumDay).replace(K8sParamConstants.NAMESPACES, namespaces));
+
         return paramMap;
     }
 }

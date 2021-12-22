@@ -51,6 +51,15 @@ public enum RecycleResourceEnum {
     BATCH_SERVING_RECYCLE_FILE("batchServingRecycleFile", "云端Serving批量服务文件回收"),
 
     /**
+     * tadl算法文件回收
+     */
+    TADL_ALGORITHM_RECYCLE_FILE("tadlAlgorithmRecycleFile", "tadl算法文件回收"),
+    /**
+     * tadl实验文件回收
+     */
+    TADL_EXPERIMENT_RECYCLE_FILE("tadlExperimentRecycleFile","tadl实验文件回收"),
+
+    /**
      * 标签组文件回收
      */
     LABEL_GROUP_RECYCLE_FILE("labelGroupRecycleFile", "标签组文件回收"),

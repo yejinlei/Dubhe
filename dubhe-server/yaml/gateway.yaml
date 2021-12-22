@@ -4,125 +4,139 @@ spring:
     gateway:
       enabled: true
       routes:
-      # id唯一表示 路由至admin服务
-      - id: admin-route
-      # uri=> lb://服务名称  
-        uri: lb://admin
-      # 路由规则
-        predicates:
-          - Path=/api/v1/admin/**
-        filters:
-          - StripPrefix=3
-      - id: visual-route
-      # uri=> lb://服务名称  
-        uri: lb://admin
-      # 路由规则
-        predicates:
-          - Path=/visual/api/**
-      # 路由至auth服务
-      - id: auth-route
-        uri: lb://auth
-        predicates:
-          - Path=/api/v1/auth/**
-        filters:
-          - StripPrefix=3
-      # 路由至notebook服务
-      - id: notebook-route
-        uri: lb://dubhe-notebook
-        predicates:
-          - Path=/api/v1/notebook/**
-        filters:
-          - StripPrefix=3
-       # 路由至镜像管理服务
-      - id: image-route
-        uri: lb://dubhe-image
-        predicates:
-          - Path=/api/v1/image/**
-        filters:
-          - StripPrefix=3
-      # 路由至度量管理服务
-      - id: measure-route
-        uri: lb://dubhe-measure
-        predicates:
-          - Path=/api/v1/measure/**
-        filters:
-          - StripPrefix=3
-      # 路由至dubhe-k8s服务
-      - id: dubhe-k8s
-        uri: lb://dubhe-k8s
-        predicates:
-          - Path=/api/v1/k8s/**
-        filters:
-          - StripPrefix=3
-      # 路由至dubhe-model(模型管理)服务
-      - id: dubhe-model
-        uri: lb://dubhe-model
-        predicates:
-          - Path=/api/v1/model/**
-        filters:
-          - StripPrefix=3
-      # 路由至dubhe-algorithm(算法管理)服务
-      - id: dubhe-algorithm
-        uri: lb://dubhe-algorithm
-        predicates:
-          - Path=/api/v1/algorithm/**
-        filters:
-          - StripPrefix=3
-      # 路由至dubhe-train(训练管理)服务
-      - id: dubhe-train
-        uri: lb://dubhe-train
-        predicates:
-          - Path=/api/v1/train/**
-        filters:
-          - StripPrefix=3
-      # id唯一表示 路由至data(数据集)服务
-      - id: dubhe-data
-      # uri=> lb://服务名称  
-        uri: lb://dubhe-data
-      # 路由规则
-        predicates:
-          - Path=/api/v1/data/**
-        filters: 
-          - StripPrefix=3
-      # 路由至dubhe-optimize(模型优化)服务
-      - id: dubhe-optimize
-        uri: lb://dubhe-optimize
-        predicates:
-          - Path=/api/v1/optimize/**
-        filters:
-          - StripPrefix=3
-      # 路由至dubhe-serving(云端Serving)服务
-      - id: dubhe-serving
-        uri: lb://dubhe-serving
-        predicates:
-          - Path=/api/v1/serving/**,/api/v1/batchServing/**
-        filters:
-          - StripPrefix=3
-      # 负载均衡样例
-      - id: weight-route1
-        uri: lb://demo-client
-        # 路由规则
-        predicates:
-          # 接口匹配前缀
-          - Path=/api/v1/w/**
-          # 权重组weight-group1，权重比例 1/4
-          - Weight=weight-group1, 1
-        filters:
-          # 根据接口匹配前缀截取
-          - StripPrefix=3
-      - id: weight-route2
-        uri: lb://demo-provider
-        # 路由规则
-        predicates:
-          - Path=/api/v1/w/**
-          # 权重组weight-group1，权重比例 3/4
-          - Weight=weight-group1, 3
-        filters:
-          - StripPrefix=3
-      # 路由至dubhe-data-dcm(医学数据集)服务
-      - id: dubhe-data-dcm
-        uri: lb://dubhe-data-dcm
-        predicates:
-          - Path=/api/v1/dcm/**
-        filters:
-          - StripPrefix=3
+        # id唯一表示 路由至admin服务
+        - id: admin-route
+          # uri=> lb://服务名称
+          uri: lb://admin
+          # 路由规则
+          predicates:
+            - Path=/api/v1/admin/**
+          filters:
+            - StripPrefix=3
+        - id: visual-route
+          # uri=> lb://服务名称
+          uri: lb://admin
+          # 路由规则
+          predicates:
+            - Path=/visual/api/**
+        # 路由至demo-provider服务
+        - id: nacos-server-route
+          uri: lb://demo-provider
+          predicates:
+            - Path=/api/v1/server/**,/api/v1/service/**
+          filters:
+            - StripPrefix=3
+        # 路由至auth服务
+        - id: auth-route
+          uri: lb://auth
+          predicates:
+            - Path=/api/v1/auth/**
+          filters:
+            - StripPrefix=3
+        # 路由至notebook服务
+        - id: notebook-route
+          uri: lb://dubhe-notebook
+          predicates:
+            - Path=/api/v1/notebook/**
+          filters:
+            - StripPrefix=3
+        # 路由至镜像管理服务
+        - id: image-route
+          uri: lb://dubhe-image
+          predicates:
+            - Path=/api/v1/image/**
+          filters:
+            - StripPrefix=3
+        # 路由至度量管理服务
+        - id: measure-route
+          uri: lb://dubhe-measure
+          predicates:
+            - Path=/api/v1/measure/**
+          filters:
+            - StripPrefix=3
+        # 路由至dubhe-k8s服务
+        - id: dubhe-k8s
+          uri: lb://dubhe-k8s
+          predicates:
+            - Path=/api/v1/k8s/**
+          filters:
+            - StripPrefix=3
+        # 路由至dubhe-model(模型管理)服务
+        - id: dubhe-model
+          uri: lb://dubhe-model
+          predicates:
+            - Path=/api/v1/model/**
+          filters:
+            - StripPrefix=3
+        # 路由至dubhe-algorithm(算法管理)服务
+        - id: dubhe-algorithm
+          uri: lb://dubhe-algorithm
+          predicates:
+            - Path=/api/v1/algorithm/**
+          filters:
+            - StripPrefix=3
+        # 路由至dubhe-train(训练管理)服务
+        - id: dubhe-train
+          uri: lb://dubhe-train
+          predicates:
+            - Path=/api/v1/train/**
+          filters:
+            - StripPrefix=3
+        # id唯一表示 路由至data(数据集)服务
+        - id: dubhe-data
+          # uri=> lb://服务名称
+          uri: lb://dubhe-data
+          # 路由规则
+          predicates:
+            - Path=/api/v1/data/**
+          filters:
+            - StripPrefix=3
+        # 路由至dubhe-optimize(模型优化)服务
+        - id: dubhe-optimize
+          uri: lb://dubhe-optimize
+          predicates:
+            - Path=/api/v1/optimize/**
+          filters:
+            - StripPrefix=3
+        # 路由至dubhe-serving(云端Serving)服务
+        - id: dubhe-serving
+          uri: lb://dubhe-serving
+          predicates:
+            - Path=/api/v1/serving/**,/api/v1/batchServing/**
+          filters:
+            - StripPrefix=3
+        # 负载均衡样例
+        - id: weight-route1
+          uri: lb://demo-client
+          # 路由规则
+          predicates:
+            # 接口匹配前缀
+            - Path=/api/v1/w/**
+            # 权重组weight-group1，权重比例 1/4
+            - Weight=weight-group1, 1
+          filters:
+            # 根据接口匹配前缀截取
+            - StripPrefix=3
+        - id: weight-route2
+          uri: lb://demo-provider
+          # 路由规则
+          predicates:
+            - Path=/api/v1/w/**
+            # 权重组weight-group1，权重比例 3/4
+            - Weight=weight-group1, 3
+          filters:
+            - StripPrefix=3
+        # 路由至dubhe-data-dcm(医学数据集)服务
+        - id: dubhe-data-dcm
+          uri: lb://dubhe-data-dcm
+          predicates:
+            - Path=/api/v1/dcm/**
+          filters:
+            - StripPrefix=3
+        # 路由至dubhe-tadl服务
+        - id: dubhe-tadl
+          uri: lb://dubhe-tadl
+          predicates:
+            - Path=/api/v1/tadl/**
+          filters:
+            - StripPrefix=3

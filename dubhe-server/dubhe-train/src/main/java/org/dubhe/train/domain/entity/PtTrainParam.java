@@ -106,6 +106,12 @@ public class PtTrainParam extends BaseEntity {
     private JSONObject runParams;
 
     /**
+     * 运行参数映射关系
+     */
+    @TableField(value = "run_params_name_map", typeHandler = FastjsonTypeHandler.class)
+    private JSONObject runParamsNameMap;
+
+    /**
      * 算法来源(1为我的算法，2为预置算法)
      */
     @TableField(value = "algorithm_source")
@@ -128,6 +134,24 @@ public class PtTrainParam extends BaseEntity {
      */
     @TableField(value = "resources_pool_type")
     private Integer resourcesPoolType;
+
+    /**
+     * GPU类型(例如：NVIDIA)
+     */
+    @TableField(value = "gpu_type")
+    private String gpuType;
+
+    /**
+     * GPU型号(例如：v100)
+     */
+    @TableField(value = "gpu_model")
+    private String gpuModel;
+
+    /**
+     * k8s GPU资源标签key值(例如：nvidia.com/gpu)
+     */
+    @TableField(value = "k8s_label_key")
+    private String k8sLabelKey;
 
     /**
      * 节点个数

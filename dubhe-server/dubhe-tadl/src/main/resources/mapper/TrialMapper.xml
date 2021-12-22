@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+
+<mapper namespace="org.dubhe.tadl.dao.TrialMapper">
+
+    <update id="updateTrialStatus">
+        update tadl_trial set status = #{status} where id = #{id}
+    </update>
+    <update id="updateTrialFailed">
+        update tadl_trial t inner join
+        tadl_experiment_stage s on t.stage_id = s.id
+        inner join tadl_experiment e on s.experiment_id = e.id
+        set t.status = #{trialStatus},s.status = #{stageStatus},
+        e.status = #{experimentStatus} ,e.status_detail=#{statusDetail}
+        where  t.id = #{id}
+    </update>
+
+    <select id="getExperimentStageStateByTrial" resultType="java.lang.Integer">
+        select distinct status from tadl_trial where stage_id = #{experimentStageId} and  deleted !=1
+    </select>
+
+    <select id="getBestData" resultType="java.lang.Double">
+        select max(id) from tadl_trial_data where experiment_id=#{experimentId} and stage_id=#{stageId}
+    </select>
+
+    <insert id="saveList" useGeneratedKeys="true" keyProperty="id"  keyColumn="id">
+        insert into tadl_trial (experiment_id, stage_id, name, status, update_time,
+        create_user_id, update_user_id, create_time, sequence)
+        values
+        <foreach collection="trials" item="temp" separator=",">
+            (#{temp.experimentId}
+            ,#{temp.stageId}
+            ,#{temp.name}
+            ,#{temp.status}
+            ,#{temp.updateTime}
+            ,#{temp.createUserId}
+            ,#{temp.updateUserId}
+            ,#{temp.createTime}
+            ,#{temp.sequence})
+        </foreach>
+    </insert>
+
+    <select id="queryTrialDataById" resultType="org.dubhe.tadl.domain.entity.TrialData">
+        select * from tadl_trial_data where experiment_id=#{experimentId} and stage_id=#{stageId} and deleted = 0
+    </select>
+
+    <select id="queryTrialById" resultType="org.dubhe.tadl.domain.entity.Trial">
+        select * from tadl_trial where experiment_id=#{experimentId} and stage_id=#{stageId} and deleted = 0
+        <if test="statusList != null and statusList.size() > 0 ">
+            and status in
+            <foreach collection="statusList" item="item" index="index" separator="," open="(" close=")">
+                #{item}
+            </foreach>
+        </if>
+        <if test="trialIds != null and trialIds.size() > 0 ">
+            and id in
+            <foreach collection="trialIds" item="item" index="index" separator="," open="(" close=")">
+                #{item}
+            </foreach>
+        </if>
+    </select>
+
+    <select id="getTrialCountOfStatus" resultType="java.lang.Integer">
+        SELECT count(1) FROM tadl_trial WHERE
+        experiment_id = #{experimentId}
+        AND stage_id = #{stageId}
+        AND status = #{status}
+        AND deleted = false
+    </select>
+</mapper>
