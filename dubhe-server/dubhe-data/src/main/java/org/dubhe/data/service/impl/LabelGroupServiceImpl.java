@@ -108,7 +108,7 @@ public class LabelGroupServiceImpl extends ServiceImpl<LabelGroupMapper, LabelGr
      */
     @Transactional(rollbackFor = Exception.class)
     @Override
-    public void creatLabelGroup(LabelGroupCreateDTO labelGroupCreateDTO) {
+    public Long creatLabelGroup(LabelGroupCreateDTO labelGroupCreateDTO) {
 
         //1 标签组名称唯一校验
         labelGroupCreateDTO.setOriginUserId(JwtUtils.getCurUserId());
@@ -132,7 +132,7 @@ public class LabelGroupServiceImpl extends ServiceImpl<LabelGroupMapper, LabelGr
         if (!CollectionUtils.isEmpty(labelList)) {
             buildLabelDataByCreate(labelGroup, labelList);
         }
-
+        return labelGroup.getId();
     }
 
     /**
@@ -488,7 +488,7 @@ public class LabelGroupServiceImpl extends ServiceImpl<LabelGroupMapper, LabelGr
      */
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public void importLabelGroup(LabelGroupImportDTO labelGroupImportDTO, MultipartFile file) {
+    public Long importLabelGroup(LabelGroupImportDTO labelGroupImportDTO, MultipartFile file) {
         //文件格式/大小/属性校验
         FileUtil.checkoutFile(file);
 
@@ -506,7 +506,7 @@ public class LabelGroupServiceImpl extends ServiceImpl<LabelGroupMapper, LabelGr
                 .remark(labelGroupImportDTO.getRemark()).build();
 
         //调用新增标签方法
-        this.creatLabelGroup(createDTO);
+        return this.creatLabelGroup(createDTO);
     }
 
     /**

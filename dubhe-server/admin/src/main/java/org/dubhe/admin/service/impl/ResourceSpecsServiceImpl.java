@@ -27,6 +27,7 @@ import org.dubhe.admin.domain.dto.ResourceSpecsUpdateDTO;
 import org.dubhe.admin.domain.entity.ResourceSpecs;
 import org.dubhe.admin.domain.vo.ResourceSpecsQueryVO;
 import org.dubhe.admin.service.ResourceSpecsService;
+import org.dubhe.biz.base.constant.MagicNumConstant;
 import org.dubhe.biz.base.constant.StringConstant;
 import org.dubhe.biz.base.context.UserContext;
 import org.dubhe.biz.base.dto.QueryResourceSpecsDTO;
@@ -72,6 +73,13 @@ public class ResourceSpecsServiceImpl implements ResourceSpecsService {
         queryResourceSpecsWrapper.like(resourceSpecsQueryDTO.getSpecsName() != null, "specs_name", resourceSpecsQueryDTO.getSpecsName())
                 .eq(resourceSpecsQueryDTO.getResourcesPoolType() != null, "resources_pool_type", resourceSpecsQueryDTO.getResourcesPoolType())
                 .eq(resourceSpecsQueryDTO.getModule() != null, "module", resourceSpecsQueryDTO.getModule());
+        if (resourceSpecsQueryDTO.getMultiGpu() != null) {
+            if (resourceSpecsQueryDTO.getMultiGpu()) {
+                queryResourceSpecsWrapper.gt("gpu_num", MagicNumConstant.ONE);
+            } else {
+                queryResourceSpecsWrapper.eq("gpu_num", MagicNumConstant.ONE);
+            }
+        }
         if (StringConstant.SORT_ASC.equals(resourceSpecsQueryDTO.getOrder())) {
             queryResourceSpecsWrapper.orderByAsc(StringUtils.humpToLine(sort));
         } else {
@@ -204,6 +212,25 @@ public class ResourceSpecsServiceImpl implements ResourceSpecsService {
         }
         QueryResourceSpecsVO queryResourceSpecsVO = new QueryResourceSpecsVO();
         BeanUtils.copyProperties(resourceSpecs, queryResourceSpecsVO);
+        return queryResourceSpecsVO;
+    }
+
+    /**
+     * 查询资源规格
+     * @param id 资源规格id
+     * @return QueryResourceSpecsVO 资源规格返回结果实体类
+     */
+    @Override
+    public QueryResourceSpecsVO queryTadlResourceSpecs(Long id) {
+        LogUtil.info(LogEnum.BIZ_SYS,"Query resource specification information with resource id:{}",id);
+        ResourceSpecs resourceSpecs = resourceSpecsMapper.selectById(id);
+        LogUtil.info(LogEnum.BIZ_SYS,"Obtain resource specification information:{} ",resourceSpecs);
+        if (resourceSpecs == null) {
+            throw new BusinessException("资源规格不存在或已被删除");
+        }
+        QueryResourceSpecsVO queryResourceSpecsVO = new QueryResourceSpecsVO();
+        BeanUtils.copyProperties(resourceSpecs, queryResourceSpecsVO);
+        LogUtil.info(LogEnum.BIZ_SYS,"Return resource specification information :{} ",queryResourceSpecsVO);
         return queryResourceSpecsVO;
     }
 }

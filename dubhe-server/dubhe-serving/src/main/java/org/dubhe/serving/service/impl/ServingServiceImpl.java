@@ -193,7 +193,7 @@ public class ServingServiceImpl implements ServingService {
     private RedisUtils redisUtils;
     @Autowired
     private ResourceCache resourceCache;
-    @Value("Task:Serving:"+"${spring.profiles.active}_serving_id_")
+    @Value("Task:Serving:" + "${spring.profiles.active}_serving_id_")
     private String servingIdPrefix;
 
     /**
@@ -553,7 +553,7 @@ public class ServingServiceImpl implements ServingService {
                 throw new BusinessException(ServingErrorEnum.INTERNAL_SERVER_ERROR);
             }
             servingInfo.setStatusDetail(SymbolConstant.BRACKETS);
-            deployServingAsyncTask.deleteServing(user, servingInfo, oldModelConfigList);
+            deployServingAsyncTask.deleteServing(servingInfo, oldModelConfigList);
             // 删除拷贝的文件
             for (ServingModelConfig oldModelConfig : oldModelConfigList) {
                 String recyclePath = k8sNameTool.getAbsolutePath(onlineRootPath + servingInfo.getCreateUserId() + File.separator + servingInfo.getId() + File.separator + oldModelConfig.getId());
@@ -567,7 +567,7 @@ public class ServingServiceImpl implements ServingService {
             }
         }
         List<ServingModelConfig> modelConfigList = updateServing(servingInfoUpdateDTO, user, servingInfo);
-        String taskIdentify = resourceCache.getTaskIdentify(servingInfo.getId(), servingInfo.getName(),servingIdPrefix);
+        String taskIdentify = resourceCache.getTaskIdentify(servingInfo.getId(), servingInfo.getName(), servingIdPrefix);
         // 异步部署容器
         deployServingAsyncTask.deployServing(user, servingInfo, modelConfigList, taskIdentify);
         return new ServingInfoUpdateVO(servingInfo.getId(), servingInfo.getStatus());
@@ -641,10 +641,10 @@ public class ServingServiceImpl implements ServingService {
         }
         ServingInfo servingInfo = checkServingInfoExist(servingInfoDeleteDTO.getId(), user.getId());
         List<ServingModelConfig> modelConfigList = getModelConfigByServingId(servingInfo.getId());
-        deployServingAsyncTask.deleteServing(user, servingInfo, modelConfigList);
+        deployServingAsyncTask.deleteServing(servingInfo, modelConfigList);
         deleteServing(servingInfoDeleteDTO, user, servingInfo);
         String taskIdentify = (String) redisUtils.get(servingIdPrefix + String.valueOf(servingInfo.getId()));
-        if (StringUtils.isNotEmpty(taskIdentify)){
+        if (StringUtils.isNotEmpty(taskIdentify)) {
             redisUtils.del(taskIdentify, servingIdPrefix + String.valueOf(servingInfo.getId()));
         }
         Map<String, Object> map = new HashMap<>(NumberConstant.NUMBER_2);
@@ -787,8 +787,8 @@ public class ServingServiceImpl implements ServingService {
             throw new BusinessException(ServingErrorEnum.INTERNAL_SERVER_ERROR);
         }
         for (ServingModelConfig servingModelConfig : modelConfigList) {
-            servingModelConfig.setResourceInfo(null);
-            servingModelConfig.setUrl(null);
+            servingModelConfig.setResourceInfo(SymbolConstant.BLANK);
+            servingModelConfig.setUrl(SymbolConstant.BLANK);
             if (servingModelConfigMapper.updateById(servingModelConfig) < NumberConstant.NUMBER_1) {
                 throw new BusinessException(ServingErrorEnum.DATABASE_ERROR);
             }
@@ -871,7 +871,7 @@ public class ServingServiceImpl implements ServingService {
         servingInfo.setStatus(ServingStatusEnum.STOP.getStatus());
         servingInfo.setRunningNode(NumberConstant.NUMBER_0);
         List<ServingModelConfig> modelConfigList = getModelConfigByServingId(servingInfo.getId());
-        deployServingAsyncTask.deleteServing(user, servingInfo, modelConfigList);
+        deployServingAsyncTask.deleteServing(servingInfo, modelConfigList);
         updateServingStop(user, servingInfo, modelConfigList);
         servingInfo.setStatusDetail(SymbolConstant.BRACKETS);
         // 删除路由信息
@@ -903,7 +903,7 @@ public class ServingServiceImpl implements ServingService {
             servingModelConfigMapper.updateById(servingModelConfig);
         });
         if (ServingTypeEnum.GRPC.getType().equals(servingInfo.getType())) {
-            GrpcClient.shutdownChannel(servingInfo.getId(), user);
+            GrpcClient.shutdownChannel(servingInfo.getId());
         }
     }
 
@@ -1154,7 +1154,7 @@ public class ServingServiceImpl implements ServingService {
             servingInfo.putStatusDetail(statusDetailKey, req.getMessages());
         }
         LogUtil.info(LogEnum.SERVING, "The callback serving message:{} ,req message:{}", servingInfo, req);
-        return servingInfoMapper.updateById(servingInfo) < NumberConstant.NUMBER_1;
+        return servingInfoMapper.updateStatusDetail(servingInfo.getId(), servingInfo.getStatusDetail()) < NumberConstant.NUMBER_1;
     }
 
     @Transactional(rollbackFor = Exception.class)
@@ -1186,6 +1186,9 @@ public class ServingServiceImpl implements ServingService {
                     servingInfo.getRunningNode(), req);
             servingInfo.putStatusDetail(statusDetailKey, "运行中的节点数为0");
             servingInfo.setStatus(ServingStatusEnum.EXCEPTION.getStatus());
+            // 删除已创建的pod
+            List<ServingModelConfig> deleteList = getModelConfigByServingId(servingInfo.getId());
+            deployServingAsyncTask.deleteServing(servingInfo, deleteList);
         }
         if (servingInfo.getRunningNode() > NumberConstant.NUMBER_0) {
             LogUtil.info(LogEnum.SERVING,
@@ -1289,7 +1292,7 @@ public class ServingServiceImpl implements ServingService {
                 }
             }
             if (servingInfoId != null) {
-                servingInfoMapper.updateStatusById(servingInfoId, false);
+                servingInfoMapper.rollbackById(servingInfoId, false);
             }
         }
     }

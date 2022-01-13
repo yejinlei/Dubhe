@@ -73,7 +73,7 @@ public class K8sCallBackTool {
      * k8s 回调路径
      */
     private static final String K8S_CALLBACK_PATH_DEPLOYMENT = "/api/k8s/callback/deployment/";
-    public static final String K8S_CALLBACK_PATH_POD = StringConstant.K8S_CALLBACK_URI+  SymbolConstant.SLASH;
+    public static final String K8S_CALLBACK_PATH_POD = StringConstant.K8S_CALLBACK_URI + SymbolConstant.SLASH;
 
     static {
         K8S_CALLBACK_PATH = new ArrayList<>();
@@ -113,7 +113,7 @@ public class K8sCallBackTool {
      */
     public boolean validateToken(String token) {
         String expireTime = AesUtil.decrypt(token, secretKey);
-        if (StringUtils.isEmpty(expireTime)){
+        if (StringUtils.isEmpty(expireTime)) {
             return false;
         }
         String nowTime = DateUtil.format(
@@ -141,7 +141,7 @@ public class K8sCallBackTool {
      * @return String
      */
     public String getPodCallbackUrl(String podLabel) {
-        return "http://"+BusinessLabelServiceNameEnum.getServiceNameByBusinessLabel(podLabel) + K8S_CALLBACK_PATH_POD + podLabel;
+        return "http://" + BusinessLabelServiceNameEnum.getServiceNameByBusinessLabel(podLabel) + K8S_CALLBACK_PATH_POD + podLabel;
     }
 
     /**
@@ -151,7 +151,7 @@ public class K8sCallBackTool {
      * @return String
      */
     public String getDeploymentCallbackUrl(String businessLabel) {
-        return "http://"+BusinessLabelServiceNameEnum.getServiceNameByBusinessLabel(businessLabel) + K8S_CALLBACK_PATH_DEPLOYMENT + businessLabel;
+        return "http://" + BusinessLabelServiceNameEnum.getServiceNameByBusinessLabel(businessLabel) + K8S_CALLBACK_PATH_DEPLOYMENT + businessLabel;
     }
 
 

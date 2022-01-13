@@ -37,6 +37,9 @@ public class ResourceSpecsQueryDTO extends PageQueryBase implements Serializable
 
     private static final long serialVersionUID = 1L;
 
+    @ApiModelProperty(value = "多GPU，true：GPU数大于1核，false:GPU数等于1核")
+    private Boolean multiGpu;
+
     @ApiModelProperty("规格名称")
     @Length(max = MagicNumConstant.THIRTY_TWO, message = "规格名称错误")
     private String specsName;
@@ -44,8 +47,8 @@ public class ResourceSpecsQueryDTO extends PageQueryBase implements Serializable
     @ApiModelProperty("规格类型(0为CPU, 1为GPU)")
     private Boolean resourcesPoolType;
 
-    @ApiModelProperty("所属业务场景(0:通用，1：dubhe-notebook，2：dubhe-train，3：dubhe-serving)")
+    @ApiModelProperty("所属业务场景(0:通用，1：dubhe-notebook，2：dubhe-train，3：dubhe-serving,4：dubhe-tadl)")
     @Min(value = MagicNumConstant.ZERO, message = "所属业务场景错误")
-    @Max(value = MagicNumConstant.THREE, message = "所属业务场景错误")
+    @Max(value = MagicNumConstant.FOUR, message = "所属业务场景错误")
     private Integer module;
 }

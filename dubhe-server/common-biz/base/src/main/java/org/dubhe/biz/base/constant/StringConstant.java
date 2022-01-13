@@ -53,6 +53,19 @@ public final class StringConstant {
      * 整数匹配
      */
     public static final Pattern PATTERN_NUM = Pattern.compile("^[-\\+]?[\\d]*$");
+    /**
+     * 数字匹配
+     */
+    public static final String NUMBER ="(\\d+)";
+    /**
+     * 整数匹配
+     */
+    public static final Pattern PATTERN_NUMBER  = Pattern.compile("(\\d+)");
+    /**
+     * 小数匹配
+     */
+    public static final Pattern PATTERN_DECIMAL = Pattern.compile("(\\d+\\.\\d+)");
+
 
 
     /**

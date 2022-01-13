@@ -36,7 +36,7 @@ serving:
   gateway:
     postfixUrl: .apitest.dubhe.ai
     token:
-      secret-key: 1n3512x
+      secret-key: password
       expire-seconds: 108000
     http-port: "32493"
     corePoolSize: 10

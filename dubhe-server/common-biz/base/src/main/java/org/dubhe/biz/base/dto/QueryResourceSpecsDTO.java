@@ -45,10 +45,10 @@ public class QueryResourceSpecsDTO implements Serializable {
     private String specsName;
 
     /**
-     * 所属业务场景(0:通用，1：dubhe-notebook，2：dubhe-train，3：dubhe-serving)
+     * 所属业务场景(0:通用，1：dubhe-notebook，2：dubhe-train，3：dubhe-serving，4：dubhe-tadl)
      */
     @NotNull(message = "所属业务场景不能为空")
     @Min(value = MagicNumConstant.ZERO, message = "所属业务场景错误")
-    @Max(value = MagicNumConstant.THREE, message = "所属业务场景错误")
+    @Max(value = MagicNumConstant.FOUR, message = "所属业务场景错误")
     private Integer module;
 }

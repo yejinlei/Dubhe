@@ -329,7 +329,7 @@ public class RecycleTaskServiceImpl implements RecycleTaskService {
                 }
                 String emptyDir = recycleFileTmpPath + randomPath + File.separator;
                 LogUtil.debug(LogEnum.GARBAGE_RECYCLE, "recycle task sourcePath:{},emptyDir:{}", sourcePath, emptyDir);
-                Process process = Runtime.getRuntime().exec(new String[]{"/bin/sh", "-c", String.format(ShellFileStoreApiImpl.DEL_COMMAND, userName, ip, emptyDir, emptyDir, sourcePath, emptyDir, sourcePath)});
+                Process process = Runtime.getRuntime().exec(new String[]{"/bin/sh", "-c", String.format(ShellFileStoreApiImpl.DEL_COMMAND, emptyDir, emptyDir, sourcePath, emptyDir, sourcePath)});
                 return processRecycle(process);
             } else {
                 LogUtil.error(LogEnum.GARBAGE_RECYCLE, "file recycle is failed! sourcePath:{}", sourcePath);
@@ -460,7 +460,7 @@ public class RecycleTaskServiceImpl implements RecycleTaskService {
                                 String delRealPath = fileStoreApi.formatPath(sourcePath + File.separator + fileName + File.separator + directoryName);
                                 delRealPath = delRealPath.endsWith(File.separator) ? delRealPath : delRealPath + File.separator;
                                 String emptyDir = invalidFileTmpPath + directoryName + File.separator;
-                                Process process = Runtime.getRuntime().exec(new String[]{"/bin/sh", "-c", String.format(ShellFileStoreApiImpl.DEL_COMMAND, userName, ip, emptyDir, emptyDir, delRealPath, emptyDir, delRealPath)});
+                                Process process = Runtime.getRuntime().exec(new String[]{"/bin/sh", "-c", String.format(ShellFileStoreApiImpl.DEL_COMMAND, emptyDir, emptyDir, delRealPath, emptyDir, delRealPath)});
                                 Integer deleteStatus = process.waitFor();
                                 LogUtil.info(LogEnum.GARBAGE_RECYCLE, "recycle resources path:{},recycle status:{}", delRealPath, deleteStatus);
                             } catch (Exception e) {

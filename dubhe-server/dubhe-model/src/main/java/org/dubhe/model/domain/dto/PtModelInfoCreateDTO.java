@@ -66,9 +66,9 @@ public class PtModelInfoCreateDTO implements Serializable {
     @Length(max = PtModelUtil.NUMBER_ONE_HUNDRED_TWENTY_EIGHT, message = "模型地址-输入长度不能超过128个字符")
     private String modelAddress;
 
-    @ApiModelProperty("模型来源(0用户上传，1训练输出，2模型优化)")
+    @ApiModelProperty("模型来源(0用户上传，1训练输出，2模型优化，3模型转换，4自动机器学习)")
     @Min(value = PtModelUtil.NUMBER_ZERO, message = "模型来源错误")
-    @Max(value = PtModelUtil.NUMBER_TWO, message = "模型来源错误")
+    @Max(value = PtModelUtil.NUMBER_FOUR, message = "模型来源错误")
     private Integer modelSource;
 
     @ApiModelProperty("算法ID")

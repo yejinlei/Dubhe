@@ -22,6 +22,7 @@ import io.swagger.annotations.ApiModelProperty;
 import lombok.Data;
 
 import javax.validation.constraints.NotEmpty;
+import java.util.Map;
 
 /**
  * @descripton  统一通用参数实现与校验
@@ -57,6 +58,9 @@ public class BaseK8sPodCallbackCreateDTO {
 
     @ApiModelProperty(value = "k8s pod containerStatuses state")
     private String messages;
+
+    @ApiModelProperty(value = "k8s pod lables")
+    private Map<String,String> lables;
 
     public BaseK8sPodCallbackCreateDTO(){
 

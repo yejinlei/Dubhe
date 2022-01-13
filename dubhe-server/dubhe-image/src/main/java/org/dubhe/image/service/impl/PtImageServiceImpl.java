@@ -209,11 +209,14 @@ public class PtImageServiceImpl implements PtImageService {
                 .setRemark(ptImageUploadDTO.getRemark())
                 .setImageTag(ptImageUploadDTO.getImageTag())
                 .setCreateUserId(user.getId());
-
         if (ImageSourceEnum.PRE.getCode().equals(ptImageUploadDTO.getImageResource())) {
             ptImage.setOriginUserId(MagicNumConstant.ZERO_LONG);
         } else {
             ptImage.setOriginUserId(user.getId());
+        }
+        //设置notebook镜像为预置镜像
+        if (ptImageUploadDTO.getProjectType().equals(ImageTypeEnum.NOTEBOOK.getCode()) && BaseService.isAdmin(user)) {
+            ptImage.setOriginUserId(0L);
         }
         int count = ptImageMapper.insert(ptImage);
         if (count < 1) {

@@ -54,6 +54,8 @@ public class PtModelUtil {
 
     public static final int MODEL_OPTIMIZATION = 2;
 
+    public static final int AUTOMATIC_MACHINE_LEARNING = 4;
+
     public static final int RANDOM_LENGTH = 4;
 
 }

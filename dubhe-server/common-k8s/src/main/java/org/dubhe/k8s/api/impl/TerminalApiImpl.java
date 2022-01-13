@@ -47,6 +47,7 @@ import org.dubhe.k8s.domain.bo.TerminalBO;
 import org.dubhe.k8s.domain.vo.PtJupyterDeployVO;
 import org.dubhe.k8s.domain.vo.TerminalResourceVO;
 import org.dubhe.k8s.domain.vo.VolumeVO;
+import org.dubhe.k8s.enums.ImagePullPolicyEnum;
 import org.dubhe.k8s.enums.K8sKindEnum;
 import org.dubhe.k8s.enums.K8sResponseEnum;
 import org.dubhe.k8s.enums.LackOfResourcesEnum;
@@ -132,6 +133,7 @@ public class TerminalApiImpl implements TerminalApi {
             Map<String, String> podLabels = LabelUtils.getChildLabels(bo.getResourceName(), deploymentName, K8sKindEnum.DEPLOYMENT.getKind(), bo.getBusinessLabel(), bo.getTaskIdentifyLabel());
 
             //部署deployment
+            bo.setImagePullPolicy(ImagePullPolicyEnum.ALWAYS.getPolicy());
             Deployment deployment = ResourceBuildUtils.buildDeployment(bo, volumeVO, deploymentName);
             LogUtil.info(LogEnum.BIZ_K8S, "Ready to deploy {}, yaml信息为{}", deploymentName, YamlUtils.dumpAsYaml(deployment));
             resourceIisolationApi.addIisolationInfo(deployment);

@@ -559,7 +559,7 @@ public class DataTaskExecuteThread implements Runnable {
                     for (List<File> el : lists) {
                         List<Long> fileIds = csvImportSaveDb(el, dataset);
                         LogUtil.info(LogEnum.BIZ_DATASET, "table import transport to es datasetid:{}", datasetId);
-                        fileService.transportTextToEs(dataset, fileIds);
+                        fileService.transportTextToEs(dataset, fileIds,Boolean.FALSE);
                     }
                 }
                 //-------  导入完成后 更改数据集状态 ---------

@@ -197,7 +197,7 @@ public class RecycleTool {
             if (sourcePath.length() > nfsBucket.length()) {
                 String emptyDir = recycleFileTmpPath + randomPath + StrUtil.SLASH;
                 LogUtil.info(LogEnum.GARBAGE_RECYCLE, "recycle task sourcePath:{},emptyDir:{}", sourcePath, emptyDir);
-                process = Runtime.getRuntime().exec(new String[]{"/bin/sh", "-c", String.format(ShellFileStoreApiImpl.DEL_COMMAND, userName, ip, emptyDir, emptyDir, sourcePath, emptyDir, sourcePath)});
+                process = Runtime.getRuntime().exec(new String[]{"/bin/sh", "-c", String.format(ShellFileStoreApiImpl.DEL_COMMAND, emptyDir, emptyDir, sourcePath, emptyDir, sourcePath)});
             }
             return processRecycle(process);
 

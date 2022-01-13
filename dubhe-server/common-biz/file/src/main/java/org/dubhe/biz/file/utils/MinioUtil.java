@@ -18,6 +18,7 @@
 package org.dubhe.biz.file.utils;
 
 import cn.hutool.core.io.IoUtil;
+import com.alibaba.fastjson.JSONObject;
 import io.minio.CopyConditions;
 import io.minio.MinioClient;
 import io.minio.PutObjectOptions;
@@ -40,6 +41,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.Charset;
 import java.util.*;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * @description Minio工具类
@@ -278,6 +281,35 @@ public class MinioUtil {
             LogUtil.error(LogEnum.BIZ_DATASET, e.getMessage());
             throw new BusinessException("MinIO an error occurred, please contact the administrator");
         }
+    }
+
+    /**
+     * 生成给HTTP PUT请求用的presigned URLs。浏览器/移动端的客户端可以用这个URL进行上传，
+     * 即使其所在的存储桶是私有的。这个presigned URL可以设置一个失效时间，默认值是7天
+     *
+     * @param bucketName  存储桶名称
+     * @param objectNames 存储桶里的对象名称
+     * @param expires    失效时间（以秒为单位），默认是7天，不得大于七天
+     * @return String
+     */
+    public JSONObject getEncryptedPutUrls(String bucketName,String objectNames, Integer expires) {
+        List<String> filePaths = JSONObject.parseObject(objectNames, List.class);
+        List<String> urls = new ArrayList<>();
+        filePaths.stream().forEach(filePath->{
+            if (StringUtils.isEmpty(filePath)) {
+                throw new BusinessException("filePath cannot be empty");
+            }
+            try {
+                urls.add(client.presignedPutObject(bucketName, filePath, expires));
+            } catch (Exception e) {
+                LogUtil.error(LogEnum.BIZ_DATASET, e.getMessage());
+                throw new BusinessException("MinIO an error occurred, please contact the administrator");
+            }
+        });
+        JSONObject jsonObject = new JSONObject();
+        jsonObject.put("preUrls",urls);
+        jsonObject.put("bucketName", bucketName);
+        return jsonObject;
     }
 
 }

@@ -158,15 +158,14 @@ public class GrpcClient {
      * 关闭grpc通道
      *
      * @param servingId 在线服务id
-     * @param user   用户信息
      */
-    public static void shutdownChannel(Long servingId, UserContext user) {
+    public static void shutdownChannel(Long servingId) {
         if (channelMap.containsKey(servingId)) {
             ManagedChannel channel = channelMap.get(servingId);
             try {
                 GrpcClient.shutdown(channel);
             } catch (InterruptedException e) {
-                LogUtil.error(LogEnum.SERVING, "An Exception occurred when user {} shutting down the grpc channel, service id：{}", user.getUsername(), servingId, e);
+                LogUtil.error(LogEnum.SERVING, "An Exception occurred when shutting down the grpc channel, service id：{}", servingId, e);
             }
         }
     }

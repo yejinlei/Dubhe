@@ -47,7 +47,7 @@ spring:
 harbor:
   address: harbor.dubhe.ai
   username: admin
-  password: Harbor12345
+  password: password
 
 
 

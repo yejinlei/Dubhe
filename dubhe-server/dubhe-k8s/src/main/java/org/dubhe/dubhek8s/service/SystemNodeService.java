@@ -18,7 +18,6 @@
 package org.dubhe.dubhek8s.service;
 
 
-import com.sun.org.apache.xpath.internal.operations.Bool;
 import org.dubhe.dubhek8s.domain.dto.NodeDTO;
 import org.dubhe.k8s.domain.dto.NodeIsolationDTO;
 import org.dubhe.k8s.domain.resource.BizNode;

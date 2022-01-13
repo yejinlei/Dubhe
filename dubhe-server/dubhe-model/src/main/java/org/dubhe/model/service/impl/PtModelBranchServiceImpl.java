@@ -195,7 +195,8 @@ public class PtModelBranchServiceImpl implements PtModelBranchService {
                 LogUtil.error(LogEnum.BIZ_MODEL, "User {} failed to create new version", user.getUsername());
                 throw new BusinessException("模型版本创建失败");
             }
-        } else if (ptModelBranchCreateDTO.getModelSource() == PtModelUtil.TRAINING_IMPORT || ptModelBranchCreateDTO.getModelSource() == PtModelUtil.MODEL_OPTIMIZATION) {
+        } else if (ptModelBranchCreateDTO.getModelSource() == PtModelUtil.TRAINING_IMPORT || ptModelBranchCreateDTO.getModelSource() == PtModelUtil.MODEL_OPTIMIZATION
+        ||ptModelBranchCreateDTO.getModelSource() == PtModelUtil.AUTOMATIC_MACHINE_LEARNING) {
             //文件拷贝中
             ptModelBranch.setStatus(ModelCopyStatusEnum.COPING.getCode());
             //判断模型版本是否已存在

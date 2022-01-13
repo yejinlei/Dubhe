@@ -96,6 +96,7 @@ public class PodCallback extends Observable {
             if (StringUtils.isNotEmpty(businessLabel) && needCallback(watcherActionEnum,pod)){
                 dealWithDeleted(watcherActionEnum,pod);
                 BaseK8sPodCallbackCreateDTO baseK8sPodCallbackCreateDTO = new BaseK8sPodCallbackCreateDTO(pod.getNamespace(), pod.getLabel(K8sLabelConstants.BASE_TAG_SOURCE),pod.getName(), pod.getLabel(K8sLabelConstants.BASE_TAG_P_KIND), pod.getLabel(K8sLabelConstants.BASE_TAG_P_NAME), pod.getPhase(), waitingReason);
+                baseK8sPodCallbackCreateDTO.setLables(pod.getLabels());
                 String url = k8sCallBackTool.getPodCallbackUrl(businessLabel);
                 String token = k8sCallBackTool.generateToken();
 

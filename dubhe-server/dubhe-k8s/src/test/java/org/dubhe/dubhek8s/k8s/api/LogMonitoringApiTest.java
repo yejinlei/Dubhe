@@ -94,4 +94,14 @@ public class LogMonitoringApiTest {
         System.out.println(count);
     }
 
+    @Test
+    public void addTadlLog(){
+        logMonitoringApi.addTadlLogsToEs(1L,"Once I was a wooden boy");
+    }
+
+    @Test
+    public void searchTadlLogById(){
+        LogMonitoringVO logMonitoringVO = logMonitoringApi.searchTadlLogById(1, 10, 1L);
+    }
+
 }

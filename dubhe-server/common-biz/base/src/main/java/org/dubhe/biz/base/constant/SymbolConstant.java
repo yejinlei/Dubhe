@@ -27,6 +27,7 @@ public class SymbolConstant {
 	public static final String COLON = ":";
 	public static final String LINEBREAK = "\n";
 	public static final String BLANK = "";
+	public static final String SPACE = " ";
 	public static final String QUESTION = "?";
 	public static final String ZERO = "0";
     public static final String DOT = ".";

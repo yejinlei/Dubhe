@@ -43,4 +43,5 @@ public class BatchFileCreateDTO implements Serializable {
     @NotNull(message = "文件不能为空")
     private List<FileCreateDTO> files;
 
+    Boolean ifImport;
 }

@@ -74,6 +74,7 @@ public class DockerCallbackTool {
             LogUtil.info(LogEnum.TERMINAL, "{} sendPushCallback {} count {} status：{}", url, dockerPushCallbackDTO,count,httpResponse.getStatus());
             //重试
             if (HttpStatus.HTTP_OK != httpResponse.getStatus() && count > MagicNumConstant.ZERO){
+                Thread.sleep(MagicNumConstant.ONE_THOUSAND);
                 sendPushCallback(dockerPushCallbackDTO,url,--count);
             }
         }catch (Exception e){

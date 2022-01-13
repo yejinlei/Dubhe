@@ -33,7 +33,10 @@ import org.springframework.stereotype.Component;
 import java.io.File;
 import java.math.BigDecimal;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * @description oneflow文本格式转换
@@ -71,6 +74,15 @@ public class ConversionUtil {
             LogUtil.error(LogEnum.BIZ_DATASET, "getObjects is failed:{}", e);
             return;
         }
+        Map<String,Integer> labelMap = new HashMap<>();
+        try {
+            String labelIdsPath = path.replace("/origin","/annotation/");
+            String labelIdsString = minioUtil.readString(bucket, labelIdsPath + "labelsIds.text");
+            Map<Integer,String> idLabelMap = JSONObject.parseObject(labelIdsString, Map.class);
+            labelMap = idLabelMap.entrySet().stream().collect(Collectors.toMap(Map.Entry::getValue, Map.Entry::getKey));
+        } catch (Exception e) {
+            LogUtil.error(LogEnum.BIZ_DATASET, "ReadJson is failed:{}", e);
+        }
         for (int n = 0; n < imagePaths.size(); n++) {
             String imagePath = imagePaths.get(n);
             if (imagePath.endsWith(TXT_FILE_FORMATS)) {
@@ -92,7 +104,8 @@ public class ConversionUtil {
             StringBuffer content = new StringBuffer();
             for (Object object : objects) {
                 JSONObject jsonObject = (JSONObject) object;
-                Long categoryId = Long.valueOf(jsonObject.getString("category_id"));
+                String categoryName = jsonObject.getString("category_id");
+                Integer categoryId = labelMap.get(categoryName);
                 JSONArray jsonArray = (JSONArray) jsonObject.get("bbox");
                 BigDecimal[] bbox = new BigDecimal[ARRAY_LENGTH];
                 for (int j = 0; j < ARRAY_LENGTH; j++) {

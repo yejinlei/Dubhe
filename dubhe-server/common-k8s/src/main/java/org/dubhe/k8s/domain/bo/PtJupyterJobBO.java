@@ -65,6 +65,8 @@ public class PtJupyterJobBO {
     private GraphicsCardTypeEnum graphicsCardType;
     /**业务标签,用于标识业务模块**/
     private String businessLabel;
+    /**额外扩展的标签**/
+    private Map<String, String> extraLabelMap;
     /**任务身份标签,用于标识任务身份**/
     private String taskIdentifyLabel;
     /**延时创建时间，单位：分钟**/

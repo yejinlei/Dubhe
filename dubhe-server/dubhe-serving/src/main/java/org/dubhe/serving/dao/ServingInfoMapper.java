@@ -28,7 +28,7 @@ import org.dubhe.serving.domain.entity.ServingInfo;
  * @description 服务信息管理
  * @date 2020-08-25
  */
-@DataPermission(ignoresMethod = {"insert", "updateStatusById"})
+@DataPermission(ignoresMethod = {"insert", "rollbackById", "updateStatusDetail"})
 public interface ServingInfoMapper extends BaseMapper<ServingInfo> {
 
     /**
@@ -39,5 +39,14 @@ public interface ServingInfoMapper extends BaseMapper<ServingInfo> {
      * @return int 数量
      */
     @Update("update serving_info set deleted = #{deleteFlag} where id = #{id}")
-    int updateStatusById(@Param("id") Long id, @Param("deleteFlag") boolean deleteFlag);
+    int rollbackById(@Param("id") Long id, @Param("deleteFlag") boolean deleteFlag);
+
+    /**
+     * 修改状态详情
+     * @param id  serving id
+     * @param statusDetail 状态详情
+     * @return int 数量
+     */
+    @Update("update serving_info set status_detail = #{statusDetail} where id = #{id}")
+    int updateStatusDetail(@Param("id") Long id, @Param("statusDetail") String statusDetail);
 }

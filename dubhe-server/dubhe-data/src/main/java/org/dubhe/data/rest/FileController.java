@@ -187,6 +187,13 @@ public class FileController {
         return new DataResponseBody(minioUtil.getEncryptedPutUrl(bucketName, objectName, expiry));
     }
 
+    @ApiOperation("MinIO生成put请求的上传路径列表")
+    @PostMapping(value = "/minio/getUrls")
+    @PreAuthorize(Permissions.DATA)
+    public DataResponseBody getEncryptedPutUrls(@RequestBody String objectNames) {
+        return new DataResponseBody(minioUtil.getEncryptedPutUrls(bucketName, objectNames, expiry));
+    }
+
     @ApiOperation("获取MinIO相关信息")
     @GetMapping(value = "/minio/info")
     public DataResponseBody getMinIOInfo() {

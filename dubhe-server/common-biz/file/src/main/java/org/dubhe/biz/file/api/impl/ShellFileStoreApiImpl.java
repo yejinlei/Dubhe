@@ -62,7 +62,7 @@ public class ShellFileStoreApiImpl implements FileStoreApi {
      * 删除服务器无效文件(大文件)
      * 示例：rsync --delete-before -d /空目录 /需要回收的源目录
      */
-    public static final String DEL_COMMAND = "ssh %s@%s \"mkdir -p %s; rsync --delete-before -d %s %s; rmdir %s %s\"";
+    public static final String DEL_COMMAND = "mkdir -p %s; rsync --delete-before -d %s %s; rmdir %s %s";
 
     /**
      * 拷贝文件并重命名

@@ -19,6 +19,7 @@ package org.dubhe.data.dao;
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import org.apache.ibatis.annotations.*;
+import org.dubhe.data.domain.bo.FileUploadBO;
 import org.dubhe.data.domain.dto.DatasetVersionFileDTO;
 import org.dubhe.data.domain.entity.DataFileAnnotation;
 import org.dubhe.data.domain.entity.Dataset;
@@ -302,4 +303,11 @@ public interface DatasetVersionFileMapper extends BaseMapper<DatasetVersionFile>
      * @return Long             版本文件id
      */
     Long getVersionFileIdByFileName(@Param("datasetId")Long datasetId, @Param("fileName")String fileName, @Param("versionName")String versionName);
+
+    /**
+     * 获取导入文件所需信息
+     * @param datasetId         数据集id
+     * @return List<FileUploadBO>
+     */
+    List<FileUploadBO> getFileUploadContent(@Param("datasetId")Long datasetId, @Param("fileIds")List<Long> fileIds);
 }

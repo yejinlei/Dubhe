@@ -26,6 +26,7 @@ import com.google.common.collect.Maps;
 import org.dubhe.biz.base.constant.MagicNumConstant;
 import org.dubhe.biz.base.constant.ResponseCode;
 import org.dubhe.biz.base.constant.SymbolConstant;
+import org.dubhe.biz.base.context.UserContext;
 import org.dubhe.biz.base.enums.BizEnum;
 import org.dubhe.biz.base.exception.BusinessException;
 import org.dubhe.biz.base.service.UserContextService;
@@ -33,6 +34,7 @@ import org.dubhe.biz.base.utils.StringUtils;
 import org.dubhe.biz.file.api.FileStoreApi;
 import org.dubhe.biz.log.enums.LogEnum;
 import org.dubhe.biz.log.utils.LogUtil;
+import org.dubhe.biz.permission.base.BaseService;
 import org.dubhe.biz.redis.utils.RedisUtils;
 import org.dubhe.docker.api.DockerApi;
 import org.dubhe.docker.config.DockerClientFactory;
@@ -211,13 +213,17 @@ public class TerminalServiceImpl implements TerminalService {
             throw new BusinessException("master 容器未运行");
         }
         terminal.setStatus(TerminalStatusEnum.SAVING.getCode());
+        terminal.putStatusDetail(TerminalStatusEnum.SAVING.getDescription(),"commit 镜像...");
         terminalMapper.updateById(terminal);
         DockerClient dockerClient = dockerClientFactory.getDockerClient(pod.getHostIP());
-        String newImagePath = terminal.getImageProject()+SymbolConstant.SLASH+userContextService.getCurUserId()+SymbolConstant.SLASH+terminalPreserveDTO.getImageName();
+        String newImagePath = terminal.getImageProject()+SymbolConstant.SLASH+terminal.getCreateUserId()+SymbolConstant.SLASH+terminalPreserveDTO.getImageName();
         String newImageRepository = terminalConfig.getHarborAddress()+SymbolConstant.SLASH+newImagePath;
         try {
             dockerApi.commit(dockerClient,containerID,newImageRepository,terminalPreserveDTO.getImageTag());
-            boolean pushResult = dockerApi.push(dockerClient,newImageRepository+SymbolConstant.COLON+terminalPreserveDTO.getImageTag(),new TerminalPushImageResultCallback(dockerCallbackTool.getCallbackUrl(SymbolConstant.LOCAL_HOST,terminalConfig.getServerPort(), DockerOperationEnum.PUSH.getType()),terminal.getId(),dockerClient,userContextService.getCurUserId()));
+            terminal.setStatus(null);
+            terminal.putStatusDetail(TerminalStatusEnum.SAVING.getDescription(),"push 镜像...");
+            terminalMapper.updateById(terminal);
+            boolean pushResult = dockerApi.push(dockerClient,newImageRepository+SymbolConstant.COLON+terminalPreserveDTO.getImageTag(),new TerminalPushImageResultCallback(dockerCallbackTool.getCallbackUrl(SymbolConstant.LOCAL_HOST,terminalConfig.getServerPort(), DockerOperationEnum.PUSH.getType()),terminal.getId(),dockerClient,terminal.getCreateUserId()));
             if (!pushResult){
                 LogUtil.error(LogEnum.TERMINAL,"master 推送镜像错误 terminalPreserveDTO:{}",terminalPreserveDTO);
                 throw new BusinessException("推送镜像错误:");
@@ -310,10 +316,16 @@ public class TerminalServiceImpl implements TerminalService {
     public List<TerminalVO> list() {
         try{
             List<TerminalVO> terminalVOList = new ArrayList<>();
+            List<Terminal> terminalInfoList = new ArrayList<>();
 
-            LambdaQueryWrapper<Terminal> wrapper = new LambdaQueryWrapper<>();
-            wrapper.eq(Terminal::getCreateUserId, userContextService.getCurUserId());
-            List<Terminal> terminalInfoList = terminalMapper.selectList(wrapper);
+            UserContext user = userContextService.getCurUser();
+            if (!BaseService.isAdmin(user)){
+                LambdaQueryWrapper<Terminal> wrapper = new LambdaQueryWrapper<>();
+                wrapper.eq(Terminal::getCreateUserId, userContextService.getCurUserId());
+                terminalInfoList = terminalMapper.selectList(wrapper);
+            }else {
+                terminalInfoList = terminalMapper.selectList(null);
+            }
 
             if (CollectionUtils.isEmpty(terminalInfoList)){
                 return terminalVOList;
@@ -471,6 +483,7 @@ public class TerminalServiceImpl implements TerminalService {
             stop(userId,terminalId);
             if (TerminalStatusEnum.SAVING.getCode().equals(terminal.getStatus())){
                 terminal.setStatus(TerminalStatusEnum.DELETED.getCode());
+                terminal.removeStatusDetail(TerminalStatusEnum.SAVING.getDescription());
                 terminalMapper.updateById(terminal);
 
                 LambdaQueryWrapper<PtImage> wrapper = new LambdaQueryWrapper<>();
@@ -526,7 +539,7 @@ public class TerminalServiceImpl implements TerminalService {
                 return;
             }
             terminal.setStatus(TerminalStatusEnum.FAILED.getCode());
-            terminal.putStatusDetail("镜像推送失败",message);
+            terminal.putStatusDetail(TerminalStatusEnum.SAVING.getDescription(),message);
             terminalMapper.updateById(terminal);
         }catch (Exception e){
             LogUtil.error(LogEnum.TERMINAL,"pushImageError error : {}",e.getMessage(),e);

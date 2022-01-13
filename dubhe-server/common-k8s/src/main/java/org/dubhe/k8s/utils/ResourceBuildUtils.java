@@ -63,6 +63,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+import static org.dubhe.biz.base.constant.MagicNumConstant.ZERO_LONG;
+
 /**
  * @description 构建 Kubernetes 资源对象
  * @date 2020-09-10
@@ -256,6 +258,7 @@ public class ResourceBuildUtils {
                             .withNamespace(bo.getNamespace())
                         .endMetadata()
                         .withNewSpec()
+                            .withTerminationGracePeriodSeconds(ZERO_LONG)
                             .addToNodeSelector(K8sUtils.gpuSelector(bo.getGpuNum()))
                             .addToContainers(buildContainer(bo, volumeVO, deploymentName))
                             .addToVolumes(volumeVO.getVolumes().toArray(new Volume[0]))
@@ -281,7 +284,7 @@ public class ResourceBuildUtils {
         Container container = new ContainerBuilder()
                 .withNewName(name)
                 .withNewImage(bo.getImage())
-                .withNewImagePullPolicy(ImagePullPolicyEnum.IFNOTPRESENT.getPolicy())
+                .withNewImagePullPolicy(StringUtils.isEmpty(bo.getImagePullPolicy())?ImagePullPolicyEnum.IFNOTPRESENT.getPolicy():bo.getImagePullPolicy())
                 .withVolumeMounts(volumeVO.getVolumeMounts())
                 .withNewResources().addToLimits(resourcesLimitsMap).endResources()
                 .build();

@@ -75,4 +75,31 @@ public interface LogMonitoringApi {
      */
     long searchLogCountByPodName(LogMonitoringBO logMonitoringBo);
 
+
+    /**
+     * 日志查询方法
+     *
+     * @param logMonitoringBo 日志查询bo
+     * @return LogMonitoringVO 日志查询结果类
+     */
+    LogMonitoringVO searchLog(LogMonitoringBO logMonitoringBo);
+
+    /**
+     * 添加 TADL 服务日志到 Elasticsearch
+     *
+     * @param experimentId Experiment ID
+     * @param log 日志
+     * @return boolean 日志添加是否成功
+     */
+    boolean addTadlLogsToEs(long experimentId, String log);
+
+    /**
+     * TADL 服务日志查询方法
+     *
+     * @param from 日志查询起始值，初始值为1，表示从第一条日志记录开始查询
+     * @param size 日志查询记录数
+     * @param experimentId TADL Experiment ID
+     * @return LogMonitoringVO 日志查询结果类
+     */
+    LogMonitoringVO searchTadlLogById(int from, int size, long experimentId);
 }

@@ -94,6 +94,14 @@ public class DeploymentBO {
     private Set<Integer> ports;
 
     /**
+     * 镜像拉取策略
+     * IfNotPresent 默认值
+     * Always
+     * Never
+     */
+    private String imagePullPolicy;
+
+    /**
      * 获取nfs路径
      * @return
      */

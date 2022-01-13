@@ -62,4 +62,11 @@ public interface ResourceSpecsService {
      * @return QueryResourceSpecsVO 资源规格返回结果实体类
      */
     QueryResourceSpecsVO queryResourceSpecs(QueryResourceSpecsDTO queryResourceSpecsDTO);
+
+    /**
+     * 查询资源规格
+     * @param id 资源规格id
+     * @return QueryResourceSpecsVO 资源规格返回结果实体类
+     */
+    QueryResourceSpecsVO queryTadlResourceSpecs(Long id);
 }

@@ -24,10 +24,7 @@ import org.dubhe.biz.log.utils.LogUtil;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.redis.connection.RedisConnection;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
-import org.springframework.data.redis.core.Cursor;
-import org.springframework.data.redis.core.RedisConnectionUtils;
-import org.springframework.data.redis.core.RedisTemplate;
-import org.springframework.data.redis.core.ScanOptions;
+import org.springframework.data.redis.core.*;
 import org.springframework.data.redis.core.script.DefaultRedisScript;
 import org.springframework.data.redis.core.script.RedisScript;
 import org.springframework.data.redis.serializer.Jackson2JsonRedisSerializer;
@@ -670,6 +667,40 @@ public class RedisUtils {
         return zRangeByScorePop( key,0, max,0,1);
     }
 
+    /**
+     * 根据键获取score值为 min 到 max 之间的所有 member 和 score
+     * @param key 健
+     * @param min score最小值
+     * @param max score最大值
+     * @return
+     */
+    public Set<ZSetOperations.TypedTuple<Object>> zRangeByScoreWithScores(String key, Long min, Long max){
+        try {
+            return redisTemplate.opsForZSet().rangeWithScores(key, min, max);
+        } catch (Exception e) {
+            LogUtil.error(LogEnum.BIZ_DATASET, "RedisUtils rangeWithScores key {} error:{}", key, e.getMessage(), e);
+            return null;
+        }
+    }
+
+    /**
+     * 根据 key 和 member 移除元素
+     * @param key
+     * @param member
+     * @return
+     */
+    public Boolean zRem(String key,Object member){
+        try{
+            if (StringUtils.isEmpty(key) || null == member){
+                return false;
+            }
+            redisTemplate.opsForZSet().remove(key,member);
+            return true;
+        }catch (Exception e){
+            LogUtil.error(LogEnum.REDIS, "RedisUtils zrem key {} member {} error:{}", key, member, e);
+            return false;
+        }
+    }
 
     // ===============================list=================================
 

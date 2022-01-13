@@ -516,6 +516,7 @@ public class PtTrainJobServiceImpl implements PtTrainJobService {
             ptImageAndAlgorithmVO = getPtImageByAlgorithmId(ptTrainJobBaseDTO.getAlgorithmId());
             String imageName = trainHarborConfig.getAddress() + StrUtil.SLASH + userImageName;
             ptImageAndAlgorithmVO.setImageName(imageName);
+            ptImageAndAlgorithmVO.setImageUrl(trainHarborConfig.getAddress() + StrUtil.SLASH + imageUrl);
 
         }
         ptImageAndAlgorithmVO.setRunCommand(ptTrainJobBaseDTO.getRunCommand());
@@ -1552,11 +1553,10 @@ public class PtTrainJobServiceImpl implements PtTrainJobService {
         ptTrainJobBaseDTO.setNotebookId(ptJobParam.getNotebookId());
         ptTrainJobBaseDTO.setRunCommand(ptJobParam.getRunCommand());
         if (ptJobParam != null) {
-            String[] infos = ptJobParam.getImageName().split(StrUtil.SLASH);
-            if (infos.length == 2) {
-                ptTrainJobBaseDTO.setImageName(infos[0]);
-                ptTrainJobBaseDTO.setImageTag(infos[1]);
-            }
+            String imageNameSuffix = ptJobParam.getImageName().substring(ptJobParam.getImageName().lastIndexOf(StrUtil.SLASH) + MagicNumConstant.ONE);
+            String[] imageNameSuffixArray = imageNameSuffix.split(StrUtil.COLON);
+            ptTrainJobBaseDTO.setImageName(imageNameSuffixArray[0]);
+            ptTrainJobBaseDTO.setImageTag(imageNameSuffixArray[1]);
         }
         return ptTrainJobBaseDTO;
     }

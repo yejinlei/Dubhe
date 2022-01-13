@@ -37,6 +37,9 @@ public class PtImageAndAlgorithmVO implements Serializable {
     @ApiModelProperty("镜像名称")
     private String imageName;
 
+    @ApiModelProperty("镜像路径")
+    private String imageUrl;
+
     @ApiModelProperty("代码目录")
     private String codeDir;
 

@@ -250,8 +250,8 @@ public class TrainJobApiImpl implements TrainJobApi {
 
             this.fsMounts = bo.getFsMounts();
             businessLabel = bo.getBusinessLabel();
+            this.baseLabels = LabelUtils.getBaseLabels(baseName,bo.getBusinessLabel(),bo.getExtraLabelMap());
             this.taskIdentifyLabel = bo.getTaskIdentifyLabel();
-            this.baseLabels = LabelUtils.getBaseLabels(baseName,bo.getBusinessLabel());
 
             this.volumeMounts = new ArrayList<>();
             this.volumes = new ArrayList<>();
@@ -458,7 +458,7 @@ public class TrainJobApiImpl implements TrainJobApi {
                         .withNewTemplate()
                             .withNewMetadata()
                                 .withName(jobName)
-                                .addToLabels(LabelUtils.getChildLabels(baseName, jobName, K8sKindEnum.JOB.getKind(),businessLabel, taskIdentifyLabel))
+                                .addToLabels(LabelUtils.getChildLabels(baseName, jobName, K8sKindEnum.JOB.getKind(),businessLabel,taskIdentifyLabel,baseLabels))
                                 .withNamespace(namespace)
                             .endMetadata()
                             .withNewSpec()
@@ -474,7 +474,7 @@ public class TrainJobApiImpl implements TrainJobApi {
             if (delayCreate == null || delayCreate == MagicNumConstant.ZERO){
                 resourceIisolationApi.addIisolationInfo(job);
                 LogUtil.info(LogEnum.BIZ_K8S, "Ready to deploy {}", jobName);
-                job = client.batch().jobs().create(job);
+                job = client.batch().jobs().inNamespace(namespace).create(job);
                 LogUtil.info(LogEnum.BIZ_K8S, "{} deployed successfully", jobName);
             }
             if (delayCreate > MagicNumConstant.ZERO || delayDelete > MagicNumConstant.ZERO){

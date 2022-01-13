@@ -210,7 +210,7 @@ public class TrainJobAsync {
                 .setNamespace(namespace)
                 .setName(baseTrainJobDTO.getJobName())
                 .setSize(ptTrainJob.getResourcesPoolNode())
-                .setImage(ptImageAndAlgorithmVO.getImageName())
+                .setImage(ptImageAndAlgorithmVO.getImageUrl())
                 .setMasterCmd(wholeCommand)
                 .setMemNum(baseTrainJobDTO.getMemNum())
                 .setCpuNum(baseTrainJobDTO.getCpuNum() * MagicNumConstant.ONE_THOUSAND)
@@ -393,7 +393,7 @@ public class TrainJobAsync {
 
         jobBo.setNamespace(namespace)
                 .setName(baseTrainJobDTO.getJobName())
-                .setImage(ptImageAndAlgorithmVO.getImageName())
+                .setImage(ptImageAndAlgorithmVO.getImageUrl())
                 .setCmdLines(list)
                 .putFsMounts(trainJobConfig.getDockerTrainPath(), fileStoreApi.getRootDir() + commonPath.substring(1))
                 .setBusinessLabel(k8sNameTool.getPodLabel(BizEnum.ALGORITHM))

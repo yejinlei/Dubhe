@@ -30,7 +30,7 @@ import java.util.List;
 @Data
 @AllArgsConstructor
 public class LogMonitoringVO extends PtBaseResult {
-    private Long totalLogs;
+    private Integer totalLogs;
     private List<String> logs;
 
     public LogMonitoringVO() {

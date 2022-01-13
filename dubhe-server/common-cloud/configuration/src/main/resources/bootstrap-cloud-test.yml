@@ -6,7 +6,7 @@ spring:
       context-path: /nacos
       config:
         namespace: dubhe-server-cloud-test
-        server-addr: 10.105.1.132:8848
+        server-addr: 127.0.0.1:8848
       discovery:
         namespace: dubhe-server-cloud-test
-        server-addr: 10.105.1.132:8848
+        server-addr: 127.0.0.1:8848

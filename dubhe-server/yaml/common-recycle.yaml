@@ -18,6 +18,8 @@ recycle:
     image-valid: 3
     #回收serving相关文件后，回收文件最大有效时长，以天为单位
     serving-valid: 3
+    #用户删除tadl算法版本文件后，文件最大有效时长，以天为单位
+    tadl-vdlid: 3
   # 任务配置
   task:
    # 资源回收单次执行任务数量限制（默认10000）

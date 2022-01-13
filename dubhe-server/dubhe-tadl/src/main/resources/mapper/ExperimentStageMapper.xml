@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+
+<mapper namespace="org.dubhe.tadl.dao.ExperimentStageMapper">
+    <insert id="insertExperimentStageList">
+       insert into `tadl_experiment_stage`
+       (`experiment_id`,
+        `algorithm_stage_id`,
+        `stage_name`,
+        `stage_order`,
+        `resource_id`,
+        `resource_Name`,
+        `max_trial_num`,
+        `trial_concurrent_num`,
+        `max_exec_duration`,
+        `status`,
+        `create_user_id`,
+        `update_user_id`,
+        `max_exec_duration_unit`
+        )
+       VALUES
+       <foreach collection="experimentStageList" item="item"  separator=",">
+       (
+           #{item.experimentId},
+           #{item.algorithmStageId},
+           #{item.stageName},
+           #{item.stageOrder},
+           #{item.resourceId},
+           #{item.resourceName},
+           #{item.maxTrialNum},
+           #{item.trialConcurrentNum},
+           #{item.maxExecDuration},
+           #{item.status},
+           #{item.createUserId},
+           #{item.updateUserId},
+           #{item.maxExecDurationUnit}
+           )
+       </foreach>
+    </insert>
+    <update id="updateExperimentStageStatus">
+        update tadl_experiment_stage set status =#{status} where id =#{id}
+    </update>
+
+    <select id="getExperimentStateByStage" resultType="java.lang.Integer">
+        select distinct status from tadl_experiment_stage where experiment_id = #{experimentId} and  deleted !=1
+    </select>
+
+    <select id="getExperimentStateByExperimentIdAndStageId" resultType="org.dubhe.tadl.domain.entity.ExperimentStage">
+        select * from tadl_experiment_stage where experiment_id = #{experimentId} and id = #{experimentStageId}
+    </select>
+</mapper>

@@ -32,6 +32,8 @@ public class NumberConstant {
     public final static int NUMBER_6 = 6;
     public final static int NUMBER_8 = 8;
     public final static int NUMBER_10 = 10;
+    public final static int NUMBER_12 = 12;
+    public final static int NUMBER_24 = 24;
     public final static int NUMBER_30 = 30;
     public final static int NUMBER_32 = 32;
     public final static int NUMBER_50 = 50;

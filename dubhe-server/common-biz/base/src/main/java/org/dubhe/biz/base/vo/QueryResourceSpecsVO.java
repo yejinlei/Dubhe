@@ -48,7 +48,7 @@ public class QueryResourceSpecsVO implements Serializable {
     private Boolean resourcesPoolType;
 
     /**
-     *所属业务场景
+     *所属业务场景(0:通用，1：dubhe-notebook，2：dubhe-train，3：dubhe-serving，4：dubhe-tadl)
      */
     private Integer module;
 

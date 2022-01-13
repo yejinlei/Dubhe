@@ -49,10 +49,10 @@ public class ResourceSpecsUpdateDTO implements Serializable {
     @Pattern(regexp = StringConstant.REGEXP_SPECS, message = "规格名称支持字母、数字、汉字、英文横杠、下划线和空白字符")
     private String specsName;
 
-    @ApiModelProperty(value = "所属业务场景(0:通用，1：dubhe-notebook，2：dubhe-train，3：dubhe-serving)", required = true)
+    @ApiModelProperty(value = "所属业务场景(0:通用，1：dubhe-notebook，2：dubhe-train，3：dubhe-serving, 4：dubhe-tadl)", required = true)
     @NotNull(message = "所属业务场景不能为空")
     @Min(value = MagicNumConstant.ZERO, message = "所属业务场景错误")
-    @Max(value = MagicNumConstant.THREE, message = "所属业务场景错误")
+    @Max(value = MagicNumConstant.FOUR, message = "所属业务场景错误")
     private Integer module;
 
     @ApiModelProperty(value = "CPU数量,单位：核")

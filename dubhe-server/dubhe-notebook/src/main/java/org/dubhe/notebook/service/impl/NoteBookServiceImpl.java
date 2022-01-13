@@ -778,6 +778,7 @@ public class NoteBookServiceImpl implements NoteBookService {
             noteBook.setUrl(SymbolConstant.BLANK);
             noteBook.setStatus(NoteBookStatusEnum.STOP.getCode());
             noteBook.setStatusDetail(SymbolConstant.BLANK);
+            jupyterResourceApi.delete(noteBook.getK8sNamespace(),noteBook.getK8sResourceName());
             processNotebookCommand.stop(noteBook);
             updateById(noteBook);
             return true;

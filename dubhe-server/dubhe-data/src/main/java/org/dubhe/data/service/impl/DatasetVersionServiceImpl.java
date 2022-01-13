@@ -87,6 +87,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionCallbackWithoutResult;
 import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.util.CollectionUtils;
+import springfox.documentation.spring.web.json.Json;
 
 import javax.annotation.Resource;
 import java.io.File;
@@ -609,6 +610,13 @@ public class DatasetVersionServiceImpl extends ServiceImpl<DatasetVersionMapper,
         if (null == dataset) {
             throw new BusinessException(ErrorEnum.DATASET_ABSENT, "id:" + datasetId, null);
         }
+        //判断目标版本是否存在
+        QueryWrapper<DatasetVersion> queryWrapper = new QueryWrapper<>();
+        queryWrapper.lambda().eq(DatasetVersion::getDatasetId, datasetId).eq(DatasetVersion::getVersionName, versionName);
+        DatasetVersion datasetVersion = baseMapper.selectOne(queryWrapper);
+        if(datasetVersion == null) {
+            throw new BusinessException(ErrorEnum.DATASET_CHECK_VERSION_ERROR);
+        }
         //判断数据集是否在发布中
         if (!StringUtils.isBlank(dataset.getCurrentVersionName())) {
             if (getDatasetVersionSourceVersion(dataset).getDataConversion().equals(NumberConstant.NUMBER_4)) {
@@ -875,6 +883,7 @@ public class DatasetVersionServiceImpl extends ServiceImpl<DatasetVersionMapper,
         }
         try {
             minioUtil.writeString(bucketName, targetDir + "/labels.text", Strings.join(labelStr, ','));
+            minioUtil.writeString(bucketName, targetDir + "/labelsIds.text", JSONObject.toJSONString(labelMaps));
         } catch (Exception e) {
             LogUtil.error(LogEnum.BIZ_DATASET, "MinIO file write exception, {}", e);
         }
