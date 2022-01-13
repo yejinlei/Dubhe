@@ -1,152 +1,154 @@
-/** Copyright 2020 Tianshu AI Platform. All Rights Reserved.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- * =============================================================
- */
+/** Copyright 2020 Tianshu AI Platform. All Rights Reserved. * * Licensed under the Apache License,
+Version 2.0 (the "License"); * you may not use this file except in compliance with the License. *
+You may obtain a copy of the License at * * http://www.apache.org/licenses/LICENSE-2.0 * * Unless
+required by applicable law or agreed to in writing, software * distributed under the License is
+distributed on an "AS IS" BASIS, * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+implied. * See the License for the specific language governing permissions and * limitations under
+the License. * ============================================================= */
 
 <template>
   <BaseModal
     :key="state.formKey"
     title="创建数据集"
     width="630px"
+    :okText="okText"
     :loading="state.loading"
     :visible="state.visible"
     @change="handleClose"
     @ok="handleOk"
   >
-    <el-form ref="formRef" :model="state.form" :rules="rules" label-width="100px">
-      <el-form-item label="数据集名称" prop="name">
-        <el-input v-model="state.form.name" placeholder="数据集名称不能超过50字" maxlength="50" />
-      </el-form-item>
-      <el-form-item label="数据类型" prop="dataType">
-        <InfoRadio
-          v-model="state.form.dataType"
-          :dataSource="dataTypeList"
-          :transformOptions="transformOptions"
-          type="button"
-          @change="handleDataTypeChange"
-        />
-      </el-form-item>
-      <el-form-item label="模型类型" prop="annotateType">
-        <div
-          v-if="state.form.dataType !== dataTypeCodeMap.CUSTOM"
-          class="image-select flex flex-wrap"
-        >
+    <el-radio-group v-model="state.datasetRadio" class="my-20 pl-16" @change="onDatasetRadioChange">
+      <el-radio :label="0">新建数据集</el-radio>
+      <el-radio :label="1">导入已有数据集</el-radio>
+    </el-radio-group>
+    <template v-if="!Boolean(state.datasetRadio)">
+      <el-form ref="formRef" :model="state.form" :rules="rules" label-width="100px">
+        <el-form-item label="数据集名称" prop="name">
+          <el-input v-model="state.form.name" placeholder="数据集名称不能超过50字" maxlength="50" />
+        </el-form-item>
+        <el-form-item label="数据类型" prop="dataType">
+          <InfoRadio
+            v-model="state.form.dataType"
+            :dataSource="dataTypeList"
+            :transformOptions="transformOptions"
+            type="button"
+            @change="handleDataTypeChange"
+          />
+        </el-form-item>
+        <el-form-item label="模型类型" prop="annotateType">
           <div
-            v-for="item in annotationList"
-            :key="item.code"
-            :class="getImageKlass(item)"
-            @click="selectAnnotationType(item)"
+            v-if="state.form.dataType !== dataTypeCodeMap.CUSTOM"
+            class="image-select flex flex-wrap"
           >
-            <div class="image-title">{{ item.name }}</div>
-            <img class="pic responsive" :src="getImgUrl(item)" />
-            <span>
-              <i class="check-icon" />
-            </span>
-          </div>
-        </div>
-        <div v-else>
-          <el-select
-            v-model="state.customAnnotationType"
-            @change="(val) => selectCustomAnnotationType(val)"
-          >
-            <el-option
-              v-for="item in allAnnotationList"
-              :key="item.value"
-              :label="item.label"
-              :value="item.value"
-            />
-          </el-select>
-        </div>
-        <el-input :value="state.form.annotateType" class="dn" />
-      </el-form-item>
-      <div style="position: relative; top: -10px; margin-left: 100px;">
-        更多标注类型说明参考<a
-          target="_blank"
-          type="primary"
-          :underline="false"
-          class="primary"
-          :href="`${VUE_APP_DOCS_URL}module/dataset/intro`"
-          >官方文档</a
-        >
-      </div>
-      <el-form-item v-if="showlabelGroup" label="标签组" style="height: 32px;" prop="labelGroup">
-        <el-cascader
-          v-model="state.form.labelGroup"
-          clearable
-          placeholder="标签组"
-          :options="labelGroupOptions"
-          :props="{ expandTrigger: 'hover' }"
-          :show-all-levels="false"
-          filterable
-          popper-class="group-cascader"
-          style="width: 100%; line-height: 32px;"
-          @change="handleGroupChange"
-        >
-          <div slot="empty">
-            <span>没有找到标签组？去</span>
-            <a
-              target="_blank"
-              type="primary"
-              :underline="false"
-              class="primary"
-              :href="`/data/labelgroup/create`"
+            <div
+              v-for="item in annotationList"
+              :key="item.code"
+              :class="getImageKlass(item)"
+              @click="selectAnnotationType(item)"
             >
-              新建标签组
-            </a>
-            <span>页面创建</span>
+              <div class="image-title">{{ item.name }}</div>
+              <img class="pic responsive" :src="getImgUrl(item)" />
+              <span>
+                <i class="check-icon" />
+              </span>
+            </div>
           </div>
-        </el-cascader>
-        <div style="position: relative; top: -33px; right: 30px; float: right;">
-          <el-link
-            v-if="state.form.labelGroupId !== null"
+          <div v-else>
+            <el-select
+              v-model="state.customAnnotationType"
+              @change="(val) => selectCustomAnnotationType(val)"
+            >
+              <el-option
+                v-for="item in allAnnotationList"
+                :key="item.value"
+                :label="item.label"
+                :value="item.value"
+              />
+            </el-select>
+          </div>
+          <el-input :value="state.form.annotateType" class="dn" />
+        </el-form-item>
+        <div style="position: relative; top: -10px; margin-left: 100px;">
+          更多标注类型说明参考<a
             target="_blank"
             type="primary"
             :underline="false"
-            class="vm"
-            :href="`/data/labelgroup/detail?id=${state.form.labelGroupId}`"
+            class="primary"
+            :href="`${VUE_APP_DOCS_URL}module/dataset/intro`"
+            >官方文档</a
           >
-            查看详情
-          </el-link>
         </div>
-      </el-form-item>
-      <div
-        v-if="state.form.labelGroupId === null && showlabelGroup"
-        style="position: relative; top: -10px; margin-left: 100px;"
-      >
-        <span>标签组需要在</span>
-        <a
-          target="_blank"
-          type="primary"
-          :underline="false"
-          class="primary"
-          :href="`/data/labelgroup/create`"
+        <el-form-item v-if="showlabelGroup" label="标签组" style="height: 32px;" prop="labelGroup">
+          <el-cascader
+            v-model="state.form.labelGroup"
+            clearable
+            placeholder="标签组"
+            :options="labelGroupOptions"
+            :props="{ expandTrigger: 'hover' }"
+            :show-all-levels="false"
+            filterable
+            popper-class="group-cascader"
+            style="width: 100%; line-height: 32px;"
+            @change="handleGroupChange"
+          >
+            <div slot="empty">
+              <span>没有找到标签组？去</span>
+              <a
+                target="_blank"
+                type="primary"
+                :underline="false"
+                class="primary"
+                :href="`/data/labelgroup/create`"
+              >
+                新建标签组
+              </a>
+              <span>页面创建</span>
+            </div>
+          </el-cascader>
+          <div style="position: relative; top: -33px; right: 30px; float: right;">
+            <el-link
+              v-if="state.form.labelGroupId !== null"
+              target="_blank"
+              type="primary"
+              :underline="false"
+              class="vm"
+              :href="`/data/labelgroup/detail?id=${state.form.labelGroupId}`"
+            >
+              查看详情
+            </el-link>
+          </div>
+        </el-form-item>
+        <div
+          v-if="state.form.labelGroupId === null && showlabelGroup"
+          style="position: relative; top: -10px; margin-left: 100px;"
         >
-          新建标签组
-        </a>
-        <span>页面创建</span>
-      </div>
-      <el-form-item label="数据集描述">
-        <el-input
-          v-model="state.form.remark"
-          type="textarea"
-          placeholder="数据集描述长度不能超过100字"
-          maxlength="100"
-          rows="3"
-          show-word-limit
-        />
-      </el-form-item>
-    </el-form>
+          <span>标签组需要在</span>
+          <a
+            target="_blank"
+            type="primary"
+            :underline="false"
+            class="primary"
+            :href="`/data/labelgroup/create`"
+          >
+            新建标签组
+          </a>
+          <span>页面创建</span>
+        </div>
+        <el-form-item label="数据集描述">
+          <el-input
+            v-model="state.form.remark"
+            type="textarea"
+            placeholder="数据集描述长度不能超过100字"
+            maxlength="100"
+            rows="3"
+            show-word-limit
+          />
+        </el-form-item>
+      </el-form>
+    </template>
+    <template v-else>
+      <ImportDataset />
+    </template>
   </BaseModal>
 </template>
 <script>
@@ -170,6 +172,7 @@ import { validateName } from '@/utils/validate';
 
 import { getLabelGroupList } from '@/api/preparation/labelGroup';
 import { add } from '@/api/preparation/dataset';
+import ImportDataset from './import-dataset';
 
 const annotationByDataType = annotationBy('dataType');
 
@@ -192,6 +195,7 @@ export default {
   components: {
     BaseModal,
     InfoRadio,
+    ImportDataset,
   },
   props: {
     visible: Boolean,
@@ -232,6 +236,7 @@ export default {
       visible: props.visible,
       loading: false, // 数据集创建进行中
       customAnnotationType: null,
+      datasetRadio: 0,
     });
 
     const labelGroupOptions = ref(initialLabelGroupOptions);
@@ -255,6 +260,7 @@ export default {
       () =>
         enableLabelGroup(state.form.annotateType) && state.form.dataType !== dataTypeCodeMap.CUSTOM
     );
+    const okText = computed(() => (state.datasetRadio ? '知道了' : '确定'));
 
     const setForm = (params) =>
       Object.assign(state, {
@@ -388,12 +394,13 @@ export default {
           type: 0,
         },
         loading: false,
+        datasetRadio: 0,
       });
       toggleVisible();
       onResetFresh();
     };
 
-    const handleOk = () => {
+    const onSubmitDataset = () => {
       formRef.value.validate((valid) => {
         if (!valid) return;
         const params = omit(state.form, ['labelGroup']);
@@ -409,6 +416,14 @@ export default {
             setLoading(false);
           });
       });
+    };
+
+    const handleOk = () => {
+      state.datasetRadio ? toggleVisible() : onSubmitDataset();
+    };
+
+    const onDatasetRadioChange = () => {
+      resetForm();
     };
 
     watch(
@@ -445,7 +460,9 @@ export default {
       allAnnotationList,
       handleClose,
       handleOk,
+      okText,
       rules,
+      onDatasetRadioChange,
       showlabelGroup,
     };
   },

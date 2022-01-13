@@ -1,6 +1,6 @@
 {
   "name": "dubhe-web",
-  "version": "2.0.0",
+  "version": "2.1.0",
   "description": "之江天枢人工智能开源平台",
   "author": "zhejianglab",
   "keywords": [
@@ -41,6 +41,8 @@
     "url": "git@codeup.teambition.com:zhejianglab/dubhe-web.git"
   },
   "dependencies": {
+    "@antv/g2plot": "^2.3.17",
+    "@opd/g2plot-vue": "3.1.12",
     "@riophae/vue-treeselect": "0.1.0",
     "@vue/babel-plugin-transform-vue-jsx": "^1.1.2",
     "@vue/composition-api": "^1.0.0-rc.1",
@@ -51,6 +53,8 @@
     "chroma-js": "^2.1.0",
     "classnames": "^2.2.6",
     "clipboard": "^2.0.6",
+    "codemirror": "^5.60.0",
+    "core-js": "^3.9.1",
     "d3": "^5.16.0",
     "d3-selection": "^1.4.1",
     "d3-zoom": "^1.8.3",
@@ -68,6 +72,8 @@
     "jquery-contextmenu": "^2.9.1",
     "js-beautify": "^1.13.0",
     "js-cookie": "2.2.0",
+    "js-yaml": "^4.0.0",
+    "jschardet": "^2.2.1",
     "jsencrypt": "^3.0.0-rc.1",
     "json2csv": "^5.0.1",
     "lodash": "^4.17.15",
@@ -87,6 +93,7 @@
     "screenfull": "^5.0.2",
     "stream-to-array": "^2.3.0",
     "streamsaver": "^2.0.4",
+    "url-join": "^4.0.1",
     "v-click-outside": "^3.0.1",
     "v-hotkey": "^0.8.0",
     "vee-validate": "^3.3.0",

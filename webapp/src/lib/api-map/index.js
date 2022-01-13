@@ -16,8 +16,7 @@
 import { api_version, api_prefix } from '../../config';
 import { findMatchRule, isURL } from './util';
 
-// eslint-disable-next-line import/no-extraneous-dependencies
-const url = require('url');
+const urljoin = require('url-join');
 
 const { VUE_APP_DATA_API, VUE_APP_VISUAL_API, VUE_APP_BASE_API } = process.env;
 
@@ -27,14 +26,14 @@ const fullPrefix = `${api_prefix}/${api_version}`;
 const rules = [
   {
     match: /^\/data/,
-    host: url.resolve(VUE_APP_DATA_API, fullPrefix),
+    host: urljoin(VUE_APP_DATA_API, fullPrefix),
   },
   {
     match: /^\/visual\/api/,
     host: VUE_APP_VISUAL_API,
   },
   {
-    host: url.resolve(VUE_APP_BASE_API, fullPrefix),
+    host: urljoin(VUE_APP_BASE_API, fullPrefix),
   },
 ];
 

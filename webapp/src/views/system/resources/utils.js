@@ -19,6 +19,7 @@ export const moduleMap = {
   1: 'notebook',
   2: 'train',
   3: 'serving',
+  4: 'tadl',
 };
 
 const resourcesPoolTypeMap = {

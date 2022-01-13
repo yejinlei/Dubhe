@@ -1,18 +1,10 @@
-/** Copyright 2020 Tianshu AI Platform. All Rights Reserved.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- * =============================================================
- */
+/** Copyright 2020 Tianshu AI Platform. All Rights Reserved. * * Licensed under the Apache License,
+Version 2.0 (the "License"); * you may not use this file except in compliance with the License. *
+You may obtain a copy of the License at * * http://www.apache.org/licenses/LICENSE-2.0 * * Unless
+required by applicable law or agreed to in writing, software * distributed under the License is
+distributed on an "AS IS" BASIS, * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+implied. * See the License for the specific language governing permissions and * limitations under
+the License. * ============================================================= */
 
 <template>
   <div class="app-container">
@@ -28,15 +20,6 @@
           @click="createDatasetVisible = true"
         >
           创建数据集
-        </el-button>
-        <el-button
-          slot="left"
-          class="filter-item"
-          icon="el-icon-upload"
-          round
-          @click="toggleImportDatasetEvent"
-        >
-          导入数据集
         </el-button>
         <span slot="right">
           <!-- 搜索 -->
@@ -67,12 +50,6 @@
     <CreateDataset
       :visible="createDatasetVisible"
       :toggleVisible="closeCreateDatasetForm"
-      :onResetFresh="onResetFresh"
-    />
-    <!--导入自定义数据集表单组件-->
-    <ImportDataset
-      :visible="importDatasetVisible"
-      :toggleVisible="toggleImportDataset"
       :onResetFresh="onResetFresh"
     />
     <!--单独导入数据表单组件-->
@@ -312,6 +289,16 @@ import { isNil, omit, findKey } from 'lodash';
 import { mapState } from 'vuex';
 import CopyToClipboard from 'vue-copy-to-clipboard';
 
+import CRUD, { presenter, header, form, crud } from '@crud/crud';
+import rrOperation from '@crud/RR.operation';
+import cdOperation from '@crud/CD.operation';
+import {
+  publish,
+  autoAnnotate,
+  annotateStatus,
+  delAnnotation,
+  track,
+} from '@/api/preparation/annotation';
 import crudDataset, {
   editDataset,
   detail,
@@ -320,16 +307,6 @@ import crudDataset, {
   queryDatasetsProgress,
   queryDatasetStatus,
 } from '@/api/preparation/dataset';
-import {
-  publish,
-  autoAnnotate,
-  annotateStatus,
-  delAnnotation,
-  track,
-} from '@/api/preparation/annotation';
-import CRUD, { presenter, header, form, crud } from '@crud/crud';
-import rrOperation from '@crud/RR.operation';
-import cdOperation from '@crud/CD.operation';
 import datePickerMixin from '@/mixins/datePickerMixin';
 
 import {
@@ -361,7 +338,6 @@ import CreateDataset from './create-dataset';
 import Status from './status';
 import Action from './action';
 import Publish from './publish';
-import ImportDataset from './import-dataset';
 import DataEnhance from './data-enhance';
 import EditDataset from './edit-dataset';
 import UploadDataFile from './upload-datafile';
@@ -396,7 +372,6 @@ export default {
     BaseModal,
     CreateDataset,
     Publish,
-    ImportDataset,
     TenantSelector,
     Status,
     Action,
@@ -434,7 +409,6 @@ export default {
       chosenDatasetStatus: 0,
       createDatasetVisible: false, // 创建数据集对话框
       uploadDataFileVisible: false, // 单独导入数据文件的对话框
-      importDatasetVisible: false, // 导入自定义数据集对话框
       enhanceKey: 1000,
       editKey: 1,
       currentRow: null,
@@ -684,13 +658,6 @@ export default {
     // 关闭创建数据集对话框
     closeCreateDatasetForm() {
       this.createDatasetVisible = false;
-    },
-    // 导入自定义数据集表单显隐切换
-    toggleImportDataset(visible) {
-      this.importDatasetVisible = isNil(visible) ? !this.importDatasetVisible : visible;
-    },
-    toggleImportDatasetEvent() {
-      return this.toggleImportDataset();
     },
     handleCopy(text, result, row) {
       this.$set(row, 'copySuccess', false);

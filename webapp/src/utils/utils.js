@@ -20,10 +20,10 @@
 
 import { nanoid } from 'nanoid';
 import { Message } from 'element-ui';
+import { isNil } from 'lodash';
 import Config from '@/settings';
 
 import FileFilter from '@/components/UploadForm/FileFilter';
-import { isNil } from 'lodash';
 
 /**
  * Parse the time to string
@@ -551,6 +551,33 @@ export const runFunc = (func, ...args) => {
     func(...args);
   }
 };
+
+/**
+ * 从单一数据源对象中获取值匹配的指定属性
+ * @param {*} map 单一数据源对象，必须有 value 属性
+ * @param {*} value 用于匹配的值
+ * @param {*} key 指定属性名
+ * @returns 匹配的指定属性值
+ */
+export const getValueFromMap = (map, value, key) => {
+  const selectedObj = Object.values(map).find((obj) => obj.value === value);
+  if (isNil(selectedObj)) return selectedObj;
+  return key ? selectedObj[key] : selectedObj;
+};
+
+/**
+ * 对象与对象之间相同属性赋值
+ * @param {Object} target 目标对象
+ * @param {Object} source 数据源
+ * @param {Function} validate 用于自定义判断属性值所需条件
+ */
+export function propertyAssign(target, source, validate = isNil) {
+  Object.keys(target).forEach((key) => {
+    if (validate(source[key])) {
+      target[key] = source[key];
+    }
+  });
+}
 
 // 格式化时长
 export function durationTrans(time) {

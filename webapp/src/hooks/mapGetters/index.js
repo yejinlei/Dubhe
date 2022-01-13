@@ -26,7 +26,7 @@ import store from '@/store';
 export function useMapGetters(getters) {
   const map = reactive({});
   for (const getter of getters) {
-    map[getter] = store.getters[getter];
+    Object.assign(map, { [getter]: store.getters[getter] });
   }
   return map;
 }

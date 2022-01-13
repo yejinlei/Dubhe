@@ -1,18 +1,10 @@
-/** Copyright 2020 Tianshu AI Platform. All Rights Reserved.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- * =============================================================
- */
+/** Copyright 2020 Tianshu AI Platform. All Rights Reserved. * * Licensed under the Apache License,
+Version 2.0 (the "License"); * you may not use this file except in compliance with the License. *
+You may obtain a copy of the License at * * http://www.apache.org/licenses/LICENSE-2.0 * * Unless
+required by applicable law or agreed to in writing, software * distributed under the License is
+distributed on an "AS IS" BASIS, * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+implied. * See the License for the specific language governing permissions and * limitations under
+the License. * ============================================================= */
 
 <template>
   <div class="pro-table-container">
@@ -25,6 +17,7 @@
       :delete-title="deleteTitle"
       :form-items="mergedFormItems"
       :form-model="state.queryFormModel"
+      :loading="headerLoading"
       @create="onCreate"
       @delete="onDelete"
     >
@@ -64,7 +57,7 @@
     </slot>
     <BaseTable
       ref="table"
-      v-loading="state.loading"
+      v-loading="tableLoading"
       v-bind="tableAttrs"
       :columns="mergedColumns"
       :data="state.data"
@@ -77,7 +70,7 @@
       </template>
     </BaseTable>
     <el-pagination
-      v-if="showPagination"
+      v-if="pageShow"
       v-bind="mergedPageAttrs"
       :style="`text-align:${pageAlign}; margin-top: 8px;`"
       @size-change="onSizeChange"
@@ -182,12 +175,26 @@ export default {
       type: Object,
       default: () => ({}),
     },
+    // 查询之前的回调方法，如果返回 false 则停止请求
+    beforeListFn: Function,
+    // 查询之后的回调方法，入参为当前查询结果
+    afterListFn: Function,
     // 删除数据方法
     delRequest: Function,
     // 调用默认删除接口时用于获取 ID 字段
     idField: {
       type: String,
       default: 'id',
+    },
+    // 区分在表格上展示 loading 还是在头部展示 loading。table - 表格; header - 头部。
+    loadingType: {
+      type: String,
+      default: 'table',
+    },
+    // 是否在渲染之后立刻请求数据
+    refreshImmediate: {
+      type: Boolean,
+      default: true,
     },
   },
   setup(props, ctx) {
@@ -201,7 +208,7 @@ export default {
       data: [], // 表格数据
       selectedRows: [], // 表格多选行
       loading: false, // 表格 loading 状态
-      queryObj: {}, // 其他查询对象
+      paginationVisible: false, // 需要在请求之后展示分页，避免分页页码提前设置之后无法正确展示
     });
 
     // 搜索
@@ -254,6 +261,10 @@ export default {
     // 数据请求
     const refresh = async (queryObj) => {
       if (typeof listRequest === 'function') {
+        if (typeof props.beforeListFn === 'function') {
+          const res = props.beforeListFn();
+          if (res === false) return;
+        }
         state.loading = true;
         const { currentPage, pageSize } = pagination;
         // 清除空的查询参数
@@ -268,7 +279,6 @@ export default {
           size: pageSize,
           sort: sortInfo.sort || undefined,
           order: sortInfo.order || undefined,
-          ...state.queryObj,
           ...props.listOptions,
           ...queryObj,
         }).finally(() => {
@@ -281,6 +291,10 @@ export default {
         }
         setPagination(page);
         state.data = result;
+        state.paginationVisible = true;
+        if (typeof props.afterListFn === 'function') {
+          props.afterListFn(result);
+        }
       }
     };
     // 数据查询
@@ -319,6 +333,7 @@ export default {
     const onSelectionChange = (selections) => {
       state.selectedRows = selections;
     };
+    const pageShow = computed(() => props.showPagination && state.paginationVisible);
 
     // 列定义预处理
     const mergedColumns = computed(() => {
@@ -326,7 +341,7 @@ export default {
         // 为下拉表头绑定默认查询方法
         if (column.dropdownList && typeof column.func !== 'function') {
           column.func = (value) => {
-            state.queryObj[column.prop] = value;
+            state.queryFormModel[column.prop] = value;
             query();
           };
         }
@@ -384,8 +399,18 @@ export default {
       refresh();
     };
 
+    const tableLoading = computed(() => {
+      return state.loading && props.loadingType === 'table';
+    });
+
+    const headerLoading = computed(() => {
+      return state.loading && props.loadingType === 'header';
+    });
+
     // 渲染后调用一次查询
-    onMounted(query);
+    if (props.refreshImmediate) {
+      onMounted(query);
+    }
 
     return {
       state,
@@ -401,19 +426,24 @@ export default {
 
       refresh,
       query,
+      setQuery,
       resetQuery,
       setSort,
+      sortInfo,
       onSizeChange,
       pagination,
       setPagination,
       onPageChange,
       onSortChange,
       onSelectionChange,
+      pageShow,
       mergedPageAttrs,
       mergedColumns,
       mergedFormItems,
 
       slotLeft,
+      tableLoading,
+      headerLoading,
     };
   },
 };

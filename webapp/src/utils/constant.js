@@ -71,6 +71,7 @@ export const RESOURCES_MODULE_ENUM = {
   NOTEBOOK: 1,
   TRAIN: 2,
   SERVING: 3,
+  TADL: 4,
 };
 
 // 资源类型名称
@@ -116,7 +117,11 @@ export const defaultProcessColors = [
 // 系统管理员ID
 export const ADMIN_ROLE_ID = 1;
 
-// 时间常量
+// 时间常量（毫秒）
 export const ONE_MINUTE = 1000 * 60;
 
 export const ONE_HOUR = ONE_MINUTE * 60;
+
+export const ONE_DAY = ONE_HOUR * 24;
+
+export const ONE_WEEK = ONE_DAY * 7;

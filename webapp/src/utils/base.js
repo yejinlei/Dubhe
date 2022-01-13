@@ -27,6 +27,7 @@ import {
   values,
   minBy,
   maxBy,
+  isFunction,
 } from 'lodash';
 import { nanoid } from 'nanoid';
 
@@ -54,6 +55,24 @@ export function mergeProps(...args) {
   });
   return props;
 }
+
+// 判断参数是否为函数
+export const callOrValue = (maybeFn, ...data) => {
+  if (isFunction(maybeFn)) {
+    return maybeFn(...data);
+  }
+  return maybeFn;
+};
+
+/**
+ * 解析对象，解析其中的函数，并传递参数进去
+ */
+export const restProps = (rest, ...data) => {
+  return Object.keys(rest).reduce((ret, cur) => {
+    ret[cur] = callOrValue(rest[cur], ...data);
+    return ret;
+  }, {});
+};
 
 // 生成唯一 id
 export const generateUuid = (count = 6) => nanoid(count);
@@ -164,6 +183,8 @@ export const leadingZero = (num, targetLength = 2, char = '0') => {
 // scale 放大倍数，length: 保留小数点位数
 // 0.5122 => 51
 export const toFixed = (num, scale = 2, length = 2) => {
+  // eslint-disable-next-line no-restricted-globals
+  if (isNaN(num)) return 0;
   // eslint-disable-next-line
   return Math.floor(num * Math.pow(10, scale + length)) / Math.pow(10, length);
 };

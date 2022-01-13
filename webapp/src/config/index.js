@@ -30,6 +30,7 @@ export const API_MODULE_NAME = {
   ATLAS: 'measure', // 模型炼知
   K8S: 'k8s', // K8S
   DCM: 'dcm', // 医学dcm
+  TADL: 'tadl', // TADL
   DUBHE_PRO: 'terminal', // 天枢专业版
 };
 

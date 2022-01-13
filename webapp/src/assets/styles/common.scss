@@ -264,6 +264,10 @@ pre {
   color: $infoColor;
 }
 
+.CodeMirror-lint-tooltip {
+  z-index: 10000 !important;
+}
+
 .app-result-content {
   padding: 24px 40px;
   margin-top: 24px;

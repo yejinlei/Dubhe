@@ -29,6 +29,8 @@ const isValidName = (value) => {
   return /^[\u4E00-\u9FA5\w-]+$/.test(value) && value.length <= 50;
 };
 
+const isValidInteger = (value) => /^[1-9]\d*$/.test(value);
+
 const isValidNameWithHyphen = (value) => {
   return /^[\u4E00-\u9FA5A-Za-z0-9_-]+$/.test(value);
 };
@@ -82,6 +84,13 @@ extend('validateLesionId', {
   validate: isValidLesionId,
   message: () => {
     return `病灶 id 必须是整数`;
+  },
+});
+
+extend('validInteger', {
+  validate: isValidInteger,
+  message: (_, params) => {
+    return `${params._field_}只支持正整数`;
   },
 });
 

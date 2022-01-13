@@ -1,18 +1,9 @@
-/*
-* Copyright 2019-2020 Zheng Jie
-*
-* Licensed under the Apache License, Version 2.0 (the "License");
-* you may not use this file except in compliance with the License.
-* You may obtain a copy of the License at
-*
-* http://www.apache.org/licenses/LICENSE-2.0
-*
-* Unless required by applicable law or agreed to in writing, software
-* distributed under the License is distributed on an "AS IS" BASIS,
-* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-* See the License for the specific language governing permissions and
-* limitations under the License.
-*/
+/* * Copyright 2019-2020 Zheng Jie * * Licensed under the Apache License, Version 2.0 (the
+"License"); * you may not use this file except in compliance with the License. * You may obtain a
+copy of the License at * * http://www.apache.org/licenses/LICENSE-2.0 * * Unless required by
+applicable law or agreed to in writing, software * distributed under the License is distributed on
+an "AS IS" BASIS, * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. * See
+the License for the specific language governing permissions and * limitations under the License. */
 
 <template>
   <div class="app-container">
@@ -242,14 +233,14 @@
 <script>
 import Treeselect from '@riophae/vue-treeselect';
 
-import Editor from '@/components/editor';
-import { validateName, validateString, validateJSON, hasPermission } from '@/utils';
-import crudMenu, { getMenusTree } from '@/api/system/menu';
-import { iconList } from '@/components/IconFont/iconfont';
 import CRUD, { presenter, header, form, crud } from '@crud/crud';
 import rrOperation from '@crud/RR.operation';
 import cdOperation from '@crud/CD.operation';
 import udOperation from '@crud/UD.operation';
+import Editor from '@/components/editor';
+import { validateName, validateString, validateJSON, hasPermission } from '@/utils';
+import crudMenu, { getMenusTree } from '@/api/system/menu';
+import { iconList } from '@/components/IconFont/iconfont';
 import datePickerMixin from '@/mixins/datePickerMixin';
 import BaseModal from '@/components/BaseModal';
 
@@ -271,7 +262,14 @@ const defaultForm = {
   hidden: false,
   type: 0,
   permission: null,
-  extConfig: '{}',
+  extConfig: '',
+};
+
+const validateExtConfig = (rule, value, callback) => {
+  if (value === '') callback();
+  else {
+    validateJSON(rule, value, callback);
+  }
 };
 
 export default {
@@ -315,7 +313,7 @@ export default {
         ],
         pid: [{ required: true, message: '请选择上级菜单', trigger: 'blur' }],
         layout: [{ required: true, message: '请选择页面布局', trigger: 'blur' }],
-        extConfig: [{ validator: validateJSON, trigger: 'change' }],
+        extConfig: [{ validator: validateExtConfig, trigger: 'change' }],
       },
     };
   },

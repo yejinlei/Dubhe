@@ -25,3 +25,4 @@ export * from './dict';
 export * from './localStorage';
 export * from './pagination';
 export * from './sort';
+export * from './keepPageInfo';

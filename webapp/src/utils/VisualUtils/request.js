@@ -19,11 +19,10 @@ import Config from '@/settings';
 import { getToken } from '@/utils/auth';
 import store from '@/store/modules/Visual/layout';
 
-// eslint-disable-next-line import/no-extraneous-dependencies
-const url = require('url');
+const urljoin = require('url-join');
 
 const service = axios.create({
-  baseURL: url.resolve(process.env.VUE_APP_VISUAL_API, '/visual'),
+  baseURL: urljoin(process.env.VUE_APP_VISUAL_API, '/visual'),
   timeout: Config.timeout, // 请求超时时间
   withCredentials: true,
 });

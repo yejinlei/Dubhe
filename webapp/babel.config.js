@@ -8,5 +8,5 @@ if (process.env.NODE_ENV === "production") {
 }
 module.exports = {
   plugins,
-  presets: ["@vue/app"],
+  presets: [["@vue/app",{ useBuiltIns: "entry" }]],
 };

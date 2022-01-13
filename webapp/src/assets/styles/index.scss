@@ -21,6 +21,7 @@
 @import 'element-ui';
 @import 'sidebar';
 @import 'common';
+@import url('//at.alicdn.com/t/font_1756495_ohftzv0cq9c.css');
 
 @media screen and (max-width: 768px) {
   .mb-dn {
@@ -91,6 +92,11 @@ ol li {
 
 .primary {
   color: $primaryColor;
+}
+
+.disabled {
+  color: $disableColor;
+  cursor: not-allowed;
 }
 
 .infoColor {

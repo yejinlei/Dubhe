@@ -43,6 +43,13 @@
   white-space: nowrap;
 }
 
+@mixin multiple-lines {
+  display: -webkit-box;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  -webkit-box-orient: vertical;
+}
+
 @mixin relative {
   position: relative;
   width: 100%;

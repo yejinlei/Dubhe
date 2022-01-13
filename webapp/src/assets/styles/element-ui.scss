@@ -339,3 +339,29 @@
     }
   }
 }
+
+.el-tooltip__popper.is-light {
+  border: none;
+  box-shadow: rgba(0, 0, 0, 0.15) 0 2px 8px 0;
+
+  .popper__arrow {
+    border: none;
+  }
+}
+
+.el-tabs-large .el-tabs__nav .el-tabs__item {
+  font-size: 16px;
+}
+
+.el-card__footer {
+  padding-top: 20px;
+  margin-top: 8px;
+  border-top: 1px solid #f0f0f0;
+}
+
+.el-form-item-explain {
+  min-height: 24px;
+  font-size: 14px;
+  line-height: 1.5715;
+  color: rgba(0, 0, 0, 0.45);
+}

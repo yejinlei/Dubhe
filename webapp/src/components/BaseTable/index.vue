@@ -1,18 +1,10 @@
-/** Copyright 2020 Tianshu AI Platform. All Rights Reserved.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- * =============================================================
- */
+/** Copyright 2020 Tianshu AI Platform. All Rights Reserved. * * Licensed under the Apache License,
+Version 2.0 (the "License"); * you may not use this file except in compliance with the License. *
+You may obtain a copy of the License at * * http://www.apache.org/licenses/LICENSE-2.0 * * Unless
+required by applicable law or agreed to in writing, software * distributed under the License is
+distributed on an "AS IS" BASIS, * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+implied. * See the License for the specific language governing permissions and * limitations under
+the License. * ============================================================= */
 
 <template>
   <el-table ref="table" v-loading="loading" :data="data" v-bind="attrs" v-on="$listeners">
@@ -68,6 +60,7 @@
                     @click.native="() => runFunc(moreOp.func, scope.row)"
                   >
                     <el-button
+                      v-click-once="moreOp.clickOnceTime || 1000"
                       type="text"
                       :disabled="getOperationStatus('disabled', 'disableFunc', moreOp, scope.row)"
                     >
@@ -81,6 +74,7 @@
                 v-else-if="!getOperationStatus('hide', 'hideFunc', operation, scope.row)"
                 :id="operation.label + scope.$index"
                 :key="operation.key"
+                v-click-once="operation.clickOnceTime || 1000"
                 type="text"
                 :disabled="getOperationStatus('disabled', 'disableFunc', operation, scope.row)"
                 @click.stop="() => runFunc(operation.func, scope.row)"
@@ -94,6 +88,13 @@
           <el-tag v-else-if="column.type === 'tag'" v-bind="getTagAttrs(column, scope.row)">{{
             getContent(column, scope.row)
           }}</el-tag>
+          <!-- link 列 -->
+          <el-link
+            v-else-if="column.type === 'link'"
+            type="primary"
+            @click="runFunc(column.func, scope.row)"
+            >{{ getContent(column, scope.row) }}</el-link
+          >
           <!-- 其他展示列 -->
           <span v-else>
             {{ getContent(column, scope.row) }}
@@ -107,7 +108,7 @@
 <script>
 import { computed, ref } from '@vue/composition-api';
 
-import { parseTime, noop, runFunc } from '@/utils';
+import { parseTime, noop, runFunc, restProps } from '@/utils';
 import DropdownHeader from '@/components/DropdownHeader';
 
 const defaultColunmDefinition = {
@@ -232,7 +233,7 @@ export default {
       if (typeof column.tagAttrFunc === 'function') {
         return column.tagAttrFunc(row[column.prop], row);
       }
-      const tagAttr = column.tagAttr || {};
+      const tagAttr = restProps(column.tagAttr || {}, row);
       const tagMap = column.tagMap || {};
       return {
         type: tagMap[row[column.prop]],
@@ -270,6 +271,7 @@ export default {
       // Utils 方法
       parseTime,
       runFunc,
+      restProps,
     };
   },
 };

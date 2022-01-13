@@ -1,18 +1,10 @@
-/** Copyright 2020 Tianshu AI Platform. All Rights Reserved.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- * =============================================================
- */
+/** Copyright 2020 Tianshu AI Platform. All Rights Reserved. * * Licensed under the Apache License,
+Version 2.0 (the "License"); * you may not use this file except in compliance with the License. *
+You may obtain a copy of the License at * * http://www.apache.org/licenses/LICENSE-2.0 * * Unless
+required by applicable law or agreed to in writing, software * distributed under the License is
+distributed on an "AS IS" BASIS, * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+implied. * See the License for the specific language governing permissions and * limitations under
+the License. * ============================================================= */
 
 <template>
   <BaseLayout
@@ -54,6 +46,16 @@ export default {
     border: 1px solid $borderColor;
   }
 
+  .app-container.fullWidth {
+    padding-right: 0;
+    padding-left: 0;
+
+    .app-page-header {
+      padding-bottom: 0;
+      border: none;
+    }
+  }
+
   .app-page-header-title {
     margin-right: 12px;
     margin-bottom: 0;
@@ -71,6 +73,29 @@ export default {
 
   .app-page-container-content {
     margin: 16px 0 0;
+  }
+
+  .app-page-contaniner-extra {
+    min-width: 300px;
+    margin-left: 88px;
+    text-align: right;
+  }
+
+  .app-page-header-footer {
+    margin-top: 20px;
+
+    .el-tabs__header {
+      margin-bottom: 0;
+
+      .el-tabs__nav-wrap::after {
+        width: 0;
+      }
+    }
+  }
+
+  .profile-advance {
+    display: flex;
+    justify-content: space-between;
   }
 
   .app-page-form-steps-desc {

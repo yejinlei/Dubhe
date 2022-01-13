@@ -14,8 +14,8 @@
  * =============================================================
  */
 
-import { parseBbox, flatBbox, generateUuid, pos2Array, rawArr2Pos } from '@/utils';
 import { isNil, pick } from 'lodash';
+import { parseBbox, flatBbox, generateUuid, pos2Array, rawArr2Pos } from '@/utils';
 import { bucketName, bucketHost } from '@/utils/minIO';
 
 const assert = require('assert');
@@ -581,3 +581,17 @@ export const getIcon = (ext) => {
   const reg = /^(mp4|avi|mkv|mov|wmv|bmp|jpeg|jpg|png|txt|zip|dir|mp3)$/;
   return reg.test(ext) ? ext : 'file';
 };
+
+// 导入数据集脚本
+export const datasetCode = [
+  {
+    id: 0,
+    text: '导入自定义数据集',
+    code: 'ts-cli dataset import --type=custom --source /Users/myDataset --annotation_type=custom',
+  },
+  {
+    id: 1,
+    text: '导入标准数据集',
+    code: 'ts-cli dataset import --type=ImageClassify --source /Users/myDataset',
+  },
+];

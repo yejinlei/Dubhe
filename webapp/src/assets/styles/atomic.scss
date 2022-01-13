@@ -180,6 +180,10 @@
   margin-left: 4px;
 }
 
+.mr-4 {
+  margin-right: 4px;
+}
+
 .ml-10 {
   margin-left: 10px;
 }
@@ -202,6 +206,10 @@
 
 .ml-auto {
   margin-left: auto;
+}
+
+.mb-0 {
+  margin-bottom: 0;
 }
 
 .mb-50 {
@@ -248,6 +256,10 @@
 .my-auto {
   margin-top: auto;
   margin-bottom: auto;
+}
+
+.w-80 {
+  width: 80px;
 }
 
 .w-100 {
@@ -410,4 +422,8 @@ img.responsive {
   z-index: 9;
   width: 100vw;
   height: 100vh;
+}
+
+.multiple-lines {
+  @include multiple-lines;
 }
