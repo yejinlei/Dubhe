@@ -76,11 +76,11 @@ insert  into `menu` (`id`,`pid`,`type`,`name`,`icon`,`path`,`component`,`compone
 (1080,10,1,'音频标注',NULL,'datasets/audio/annotation/:datasetId','dataset/audio/annotation','AudioAnnotation','DetailLayout',NULL,NULL,'{}',b'1',b'0',999,1,1,b'0'),
 (1081,10,1,'自定义数据集',NULL,'datasets/custom/:datasetId','dataset/custom','CustomList','DetailLayout',NULL,NULL,'{}',b'1',b'0',999,1,1,b'0'),
 (1084,90,1,'资源规格管理','xunlianzhunbei','resources','system/resources','Resources','BaseLayout','system:specs',NULL,NULL,b'0',b'0',999,NULL,NULL,b'0'),
-(1085, 0, 0, '自动机器学习', 'jinhangzhongshiyan', 'tadl', NULL, NULL, NULL, 'TADL', b'0', b'0', 35, 1, 3, '2021-03-31 08:09:20', '2021-09-14 10:18:05', b'0', NULL, NULL),
-(1086, 1085, 1, '实验详情', NULL, 'experiment/:experimentId', 'tadl/detail', 'ExperimentDetail', 'DetailLayout', NULL, b'1', b'0', 999, 1, 1, '2021-03-31 08:23:56', '2021-03-31 08:36:36', b'0', NULL, '{}'),
-(1087, 1085, 1, '实验管理', NULL, 'list', 'tadl/list/index', 'TadlList', 'BaseLayout', 'tadl', b'0', b'0', 36, 3, 14, '2021-03-31 09:51:04', '2021-09-14 10:18:29', b'0', NULL, '{}'),
-(1088, 1085, 1, 'TadlForm', NULL, 'form', 'tadl/formPage', 'TadlForm', 'SubpageLayout', 'tadl', b'1', b'0', 999, 3, 3, '2021-03-31 09:51:59', '2021-03-31 09:52:04', b'0', NULL, '{}'),
-(1089, 1085, 1, '搜索策略', 'zoom', 'searchstrategy', 'tadl/strategy/index', 'SearchStrategy', 'BaseLayout', 'tadl', b'0', b'0', 37, 14, 14, '2021-03-31 10:40:50', '2021-03-31 11:39:59', b'0', NULL, '{}');
+(1085, 0, 0, '自动机器学习', 'jinhangzhongshiyan', 'tadl', NULL, NULL, NULL, 'TADL', NULL, NULL, b'0', b'0', 35, 1, 3,  b'0'),
+(1086, 1085, 1, '实验详情', NULL, 'experiment/:experimentId', 'tadl/detail', 'ExperimentDetail', 'DetailLayout', NULL,NULL, '{}', b'1', b'0', 999, 1, 1,  b'0'),
+(1087, 1085, 1, '实验管理', NULL, 'list', 'tadl/list/index', 'TadlList', 'BaseLayout', 'tadl',NULL, '{}', b'0', b'0', 36, 3, 14, b'0'),
+(1088, 1085, 1, 'TadlForm', NULL, 'form', 'tadl/formPage', 'TadlForm', 'SubpageLayout', 'tadl',NULL, '{}', b'1', b'0', 999, 3, 3,  b'0'),
+(1089, 1085, 1, '搜索策略', 'zoom', 'searchstrategy', 'tadl/strategy/index', 'SearchStrategy', 'BaseLayout', 'tadl', NULL, '{}', b'0', b'0', 37, 14, 14,  b'0');
 
 insert into auth(id, auth_code, description, create_user_id, update_user_id) values (1, 'admin权限组', '默认全部操作权限', 1, 1);
 
