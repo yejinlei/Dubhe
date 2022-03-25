@@ -351,3 +351,24 @@ create table k8s_task_identify
     update_time    datetime default CURRENT_TIMESTAMP null on update CURRENT_TIMESTAMP,
     deleted        bit      default b'0'              null comment '删除标记 0正常，1已删除'
 );
+
+-- pt_job_param表添加algorithm_usage字段，val_algorithm_usage字段
+ALTER TABLE
+  `pt_job_param`
+add
+  column algorithm_usage varchar(255) default '' null comment '算法用途',
+add
+  column val_algorithm_usage varchar(255) default '' null comment '验证数据集算法用途';
+-- pt_train_param表添加algorithm_usage字段，val_algorithm_usage字段
+ALTER TABLE
+  `pt_train_param`
+add
+  column algorithm_usage varchar(255) default '' null comment '算法用途',
+add
+  column val_algorithm_usage varchar(255) default '' null comment '验证数据集算法用途';
+
+-- pt_job_param表添加notebook_name字段
+ALTER TABLE
+  `pt_job_param`
+add
+  column notebook_name varchar(255) default null null comment 'notebook名称';
