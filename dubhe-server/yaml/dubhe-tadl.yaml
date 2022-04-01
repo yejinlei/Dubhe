@@ -1,0 +1,48 @@
+#开启超时熔断
+feign:
+  hystrix:
+    enabled: true
+  client:
+    config:
+      default:
+        connectTimeout: 10000
+        readTimeout: 20000
+tadl:
+  # 镜像配置
+  image: "harbor.dubhe.ai/automl/tadl:latest"
+  # docker 中数据集路径
+  docker-dataset-path: "/dataset"
+  # docker 中算法路径
+  docker-algorithm-path: "/algorithm"
+  # docker 中实验路径
+  docker-experiment-path: "/experiment"
+  path:
+    # tadl任务实验相关路径
+    experiment:
+      experimentPath: "%s/TADL/experiment/%s"
+      algorithm:
+        algorithm: "%s/TADL/experiment/%s/algorithm/TADL"
+        yaml: "%s/TADL/experiment/%s/algorithm/yaml/"
+      systemLogs: "%s/TADL/experiment/%s/systemLogs/"
+      # tadl任务实验阶段及trail相关路径
+      stage:
+        trial:
+          selectSpace: "%s/TADL/experiment/%s/%s/%s/model_selected_space/"
+          result: "%s/TADL/experiment/%s/%s/%s/result/"
+          log: "%s/TADL/experiment/%s/%s/%s/log/"
+        searchSpace: "%s/TADL/experiment/%s/"
+        bestSelectedSpace: "%s/TADL/experiment/%s/"
+        bestCheckpoint: "%s/TADL/experiment/%s/"
+        experimentConfig: "%s/TADL/experiment/%s/"
+      # tadl算法相关路径
+    algorithm:
+      algorithmPath: "%s/TADL/algorithm/%s"
+      parentYaml: "%s/TADL/algorithm/%s/TADL/pytorch/%s/yaml/"
+      yaml: "%s/TADL/algorithm/%s/yaml/%s"
+    pytorch:
+      algorithm:
+        yaml: "TADL/pytorch/%s/yaml/"
+# 可匿名访问路径
+security:
+  permitAll:
+    matchers: /api/k8s/callback/pod/tadl

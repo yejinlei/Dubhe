@@ -1,10 +1,12 @@
 use `dubhe-cloud-prod`;
 
-INSERT INTO `menu` VALUES (1085, 0, 0, '自动机器学习', 'jinhangzhongshiyan', 'tadl', NULL, NULL, NULL, 'TADL', b'0', b'0', 35, 1, 3, '2021-03-31 08:09:20', '2021-09-14 10:18:05', b'0', NULL, NULL);
-INSERT INTO `menu` VALUES (1086, 1085, 1, '实验详情', NULL, 'experiment/:experimentId', 'tadl/detail', 'ExperimentDetail', 'DetailLayout', NULL, b'1', b'0', 999, 1, 1, '2021-03-31 08:23:56', '2021-03-31 08:36:36', b'0', NULL, '{}');
-INSERT INTO `menu` VALUES (1087, 1085, 1, '实验管理', NULL, 'list', 'tadl/list/index', 'TadlList', 'BaseLayout', 'tadl', b'0', b'0', 36, 3, 14, '2021-03-31 09:51:04', '2021-09-14 10:18:29', b'0', NULL, '{}');
-INSERT INTO `menu` VALUES (1088, 1085, 1, 'TadlForm', NULL, 'form', 'tadl/formPage', 'TadlForm', 'SubpageLayout', 'tadl', b'1', b'0', 999, 3, 3, '2021-03-31 09:51:59', '2021-03-31 09:52:04', b'0', NULL, '{}');
-INSERT INTO `menu` VALUES (1089, 1085, 1, '搜索策略', 'zoom', 'searchstrategy', 'tadl/strategy/index', 'SearchStrategy', 'BaseLayout', 'tadl', b'0', b'0', 37, 14, 14, '2021-03-31 10:40:50', '2021-03-31 11:39:59', b'0', NULL, '{}');
+INSERT INTO `menu` (`id`, `pid`, `type`, `name`, `icon` , `path`, `component`, `component_name`, `layout`, `permission` , `back_to`, `ext_config`, `hidden`, `cache`, `sort` , `create_user_id`, `update_user_id`, `deleted`) VALUES
+(1085, 0, 0, '自动机器学习', 'jinhangzhongshiyan' , 'tadl', NULL, NULL, NULL, 'TADL' , NULL, NULL, b'0', b'0', 35 , 1, 3, b'0'),
+(1086, 1085, 1, '实验详情', NULL , 'experiment/:experimentId', 'tadl/detail', 'ExperimentDetail', 'DetailLayout', NULL , NULL, '{}', b'1', b'0', 999 , 1, 1, b'0'),
+(1087, 1085, 1, '实验管理', NULL, 'list', 'tadl/list/index', 'TadlList', 'BaseLayout', 'tadl', NULL, '{}', b'0', b'0', 36, 3, 14,  b'0'),
+(1088, 1085, 1, 'TadlForm', NULL, 'form', 'tadl/formPage', 'TadlForm', 'SubpageLayout', 'tadl',NULL, '{}', b'1', b'0', 999, 3, 3,  b'0'),
+(1089, 1085, 1, '搜索策略', 'zoom', 'searchstrategy', 'tadl/strategy/index', 'SearchStrategy', 'BaseLayout', 'tadl', NULL, '{}', b'0', b'0', 37, 14, 14, b'0');
+
 UPDATE menu SET menu.name ='云端部署' WHERE menu.name = '云端Serving'
 INSERT INTO `dict_detail`(`dict_id`, `label`, `value`, `sort`) VALUES (9, '自动机器学习', '4', 5);
 
