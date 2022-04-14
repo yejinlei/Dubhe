@@ -1378,14 +1378,14 @@ create table if not exists `tadl_algorithm` (
 	`create_user_id` BIGINT(20) NULL DEFAULT NULL COMMENT '创建人',
 	`update_user_id` BIGINT(20) NULL DEFAULT NULL COMMENT '更新人',
 	`create_time` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
-	`deleted` BIT(1) NOT NULL DEFAULT 'b\'0\'' COMMENT '删除(0：正常，1：删除)',
+	`deleted` BIT(1) NOT NULL DEFAULT b'0' COMMENT '删除(0：正常，1：删除)',
 	`update_time` TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
 	`default_metric` VARCHAR(64) NOT NULL COMMENT '默认主要指标' COLLATE 'utf8_general_ci',
-	`one_shot` BIT(1) NOT NULL DEFAULT 'b\'0\'' COMMENT '是否oneshot',
+	`one_shot` BIT(1) NOT NULL DEFAULT b'0' COMMENT '是否oneshot',
 	`algorithm_type` VARCHAR(50) NOT NULL COMMENT '算法类型' COLLATE 'utf8_general_ci',
 	`platform` VARCHAR(64) NOT NULL COMMENT '算法框架' COLLATE 'utf8_general_ci',
 	`platform_version` VARCHAR(64) NOT NULL COMMENT '算法框架版本' COLLATE 'utf8_general_ci',
-	`gpu` BIT(1) NULL DEFAULT 'b\'0\'' COMMENT '是否支持gpu计算（0支持，1不支持）',
+	`gpu` BIT(1) NULL DEFAULT b'0' COMMENT '是否支持gpu计算（0支持，1不支持）',
 	PRIMARY KEY (`id`) USING BTREE
 )
 COMMENT='tadl 算法表'
@@ -1406,7 +1406,7 @@ create table if not exists  `tadl_algorithm_stage` (
 	`dataset_path` VARCHAR(255) NOT NULL COMMENT '数据集路径' COLLATE 'utf8_general_ci',
 	`python_version` VARCHAR(64) NULL DEFAULT NULL COMMENT 'command命令所使用的python环境' COLLATE 'utf8_general_ci',
 	`execute_script` VARCHAR(64) NULL DEFAULT NULL COMMENT 'command命令所使用py文件' COLLATE 'utf8_general_ci',
-	`multi_gpu` BIT(1) NOT NULL DEFAULT 'b\'0\'' COMMENT '是否支持多卡训练（0支持，1不支持）',
+	`multi_gpu` BIT(1) NOT NULL DEFAULT b'0' COMMENT '是否支持多卡训练（0支持，1不支持）',
 	`max_trial_num` INT(11) NOT NULL COMMENT '默认最大运行次数',
 	`max_exec_duration` DECIMAL(20,4) NOT NULL COMMENT '当前阶段默认最大执行时间',
 	`trial_concurrent_num` INT(11) NOT NULL COMMENT 'trial默认并发数量',
@@ -1431,7 +1431,7 @@ create table if not exists  `tadl_algorithm_version` (
 	`version_source` VARCHAR(64) NULL DEFAULT NULL COMMENT '版本来源' COLLATE 'utf8_general_ci',
 	`data_conversion` INT(11) NOT NULL DEFAULT '0',
 	`create_time` TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
-	`deleted` BIT(1) NOT NULL DEFAULT 'b\'0\'' COMMENT '是否删除(0正常，1删除)',
+	`deleted` BIT(1) NOT NULL DEFAULT b'0' COMMENT '是否删除(0正常，1删除)',
 	`create_user_id` BIGINT(20) NULL DEFAULT NULL COMMENT '创建人',
 	`update_user_id` BIGINT(20) NULL DEFAULT NULL COMMENT '更新人',
 	`update_time` TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
@@ -1456,7 +1456,7 @@ create table if not exists  `tadl_experiment` (
 	`update_time` TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
 	`start_time` TIMESTAMP NULL DEFAULT NULL COMMENT '启动时间',
 	`end_time` TIMESTAMP NULL DEFAULT NULL COMMENT '结束时间',
-	`deleted` BIT(1) NULL DEFAULT 'b\'0\'' COMMENT '是否删除（0正常，1删除）',
+	`deleted` BIT(1) NULL DEFAULT b'0' COMMENT '是否删除（0正常，1删除）',
 	`create_user_id` BIGINT(20) NULL DEFAULT NULL COMMENT '创建人',
 	PRIMARY KEY (`id`) USING BTREE,
 	INDEX `tadl_experiment_name` (`name`) USING BTREE
@@ -1482,7 +1482,7 @@ create table if not exists  `tadl_experiment_stage` (
 	`create_user_id` BIGINT(20) NULL DEFAULT NULL COMMENT '创建人',
 	`update_user_id` BIGINT(20) NULL DEFAULT NULL COMMENT '更新人',
 	`create_time` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
-	`deleted` BIT(1) NOT NULL DEFAULT 'b\'0\'' COMMENT '是否删除（0正常，1删除）',
+	`deleted` BIT(1) NOT NULL DEFAULT b'0' COMMENT '是否删除（0正常，1删除）',
 	`start_time` TIMESTAMP NULL DEFAULT NULL COMMENT '启动时间',
 	`begin_time` TIMESTAMP NULL DEFAULT NULL COMMENT '每次开始运行的时间',
 	`end_time` TIMESTAMP NULL DEFAULT NULL COMMENT '结束时间',
@@ -1509,7 +1509,7 @@ create table if not exists  `tadl_trial` (
 	`create_user_id` BIGINT(20) NULL DEFAULT NULL COMMENT '创建人',
 	`update_user_id` BIGINT(20) NULL DEFAULT NULL COMMENT '更新人',
 	`create_time` TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
-	`deleted` BIT(1) NOT NULL DEFAULT 'b\'0\'' COMMENT '是否删除(0正常，1删除)',
+	`deleted` BIT(1) NOT NULL DEFAULT b'0' COMMENT '是否删除(0正常，1删除)',
 	`sequence` INT(11) NOT NULL COMMENT '顺序',
 	PRIMARY KEY (`id`) USING BTREE
 )
@@ -1531,7 +1531,7 @@ create table if not exists  `tadl_trial_data` (
 	`update_time` TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '修改时间',
 	`create_user_id` BIGINT(20) NULL DEFAULT NULL COMMENT '创建人',
 	`update_user_id` BIGINT(20) NULL DEFAULT NULL COMMENT '更新人',
-	`deleted` BIT(1) NOT NULL DEFAULT 'b\'0\'' COMMENT '是否删除（0正常，1删除）',
+	`deleted` BIT(1) NOT NULL DEFAULT b'0' COMMENT '是否删除（0正常，1删除）',
 	PRIMARY KEY (`id`) USING BTREE
 )
 COMMENT='tadl trial 运行结果表'
