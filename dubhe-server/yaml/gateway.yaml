@@ -140,3 +140,17 @@ spring:
             - Path=/api/v1/tadl/**
           filters:
             - StripPrefix=3
+        # 路由至dubhe-terminal 天枢专业版终端
+        - id: dubhe-terminal
+          uri: lb://dubhe-terminal
+          predicates:
+            - Path=/api/v1/terminal/**
+          filters:
+            - StripPrefix=3
+        # 路由至dubhe-inference
+        - id: inference-route
+          uri: lb://dubhe-inference
+          predicates:
+            - Path=/api/v1/inference/**
+          filters:
+            - StripPrefix=3
