@@ -2,7 +2,7 @@
 spring:
   redis:
     #数据库索引
-    database: 1
+    database: 0
     host: 127.0.0.1
     port: 6379
     password:
@@ -12,7 +12,7 @@ spring:
     druid:
       db-type: com.alibaba.druid.pool.DruidDataSource
       driverClassName: net.sf.log4jdbc.sql.jdbcapi.DriverSpy
-      url: jdbc:log4jdbc:mysql://127.0.0.1:3306/dubhe-cloud-test?serverTimezone=Asia/Shanghai&characterEncoding=utf8&useSSL=false&allowMultiQueries=true
+      url: jdbc:log4jdbc:mysql://127.0.0.1:3306/dubhe-cloud-prod?serverTimezone=Asia/Shanghai&characterEncoding=utf8&useSSL=false&allowMultiQueries=true
       username: test
       password: test
 
@@ -45,9 +45,9 @@ spring:
 
 #配置harbor
 harbor:
-  address: harbor.dubhe.ai
+  address: harbor.dubhe.com
   username: admin
-  password: password
+  password: Harbor12345
 
 
 
