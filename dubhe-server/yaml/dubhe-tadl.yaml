@@ -9,7 +9,7 @@ feign:
         readTimeout: 20000
 tadl:
   # 镜像配置
-  image: "harbor.dubhe.ai/automl/tadl:latest"
+  image: "harbor.dubhe.com/automl/tadl:latest"
   # docker 中数据集路径
   docker-dataset-path: "/dataset"
   # docker 中算法路径
