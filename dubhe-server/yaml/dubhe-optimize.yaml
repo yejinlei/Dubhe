@@ -1,6 +1,6 @@
 # 模型优化容器镜像配置
 optimize:
-  image: harbor.dubhe.ai/optimize/oneflow-gpu:base
+  image: harbor.dubhe.com/optimize/oneflow-gpu:base
 
 #关闭熔断机制
 feign:
