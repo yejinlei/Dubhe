@@ -6,10 +6,10 @@ feign:
 # serving模块配置
 serving:
   # 容器镜像配置
-  gpu-image: harbor.dubhe.ai/serving/serving-gpu:base
-  cpu-image: harbor.dubhe.ai/serving/serving-cpu:base
+  gpu-image: harbor.dubhe.com/serving/serving-gpu:base
+  cpu-image: harbor.dubhe.com/serving/serving-cpu:base
   sourcePath: "/serving/dubhe_serving"
-  gateway-uri-postfix: .apitest.dubhe.ai
+  gateway-uri-postfix: .api.dubhe.ai
   onlineRootPath: "/serving/deployment/"
   batchRootPath: "/serving/batch/"
   group: serving_test_group
