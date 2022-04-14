@@ -34,7 +34,7 @@ management:
 
 serving:
   gateway:
-    postfixUrl: .apitest.dubhe.ai
+    postfixUrl: .api.dubhe.ai
     token:
       secret-key: password
       expire-seconds: 108000
