@@ -2,7 +2,7 @@ train-job:
   docker-dataset-path: "/dataset"
 
 k8s:
-  # k8s集群配置文件
+  # k8s集群配置文件,路径为/Dubhe/dubhe-server/common-k8s/src/main/resources,将自己k8s集群的配置文件替换进去即可
   kubeconfig: kubeconfig_test
   # nfs服务暴露的IP地址 如需测试需修改为合适的地址
   nfs: 127.0.0.1
@@ -17,7 +17,7 @@ k8s:
   # 命名空间关键字
   namespace: namespace
   # k8s ingress域名 如需测试需修改为合适的域名,注意：需要为此域名配置泛域名解析到 k8s集群master节点的ip
-  host: notebooktest.dubhe.club
+  host: notebook.dubhe.club
   # k8s ingress-controller 对外port
   port: 30865
   # k8s ingress-controller 对外grpc port
@@ -25,7 +25,7 @@ k8s:
   # k8s 模型部署配置
   serving:
     # k8s 模型部署域名 如需测试需修改为合适的域名
-    host: servingtest.dubhe.club
+    host: serving.dubhe.club
     # tls 证书 crt
     tls-crt:
     # tls 证书 key
@@ -70,7 +70,7 @@ k8s:
     gpu: 2
 #配置harbor
 harbor:
-  address: harbor.dubhe.ai
+  address: harbor.dubhe.com
   username: admin
   password: Harbor12345
   model-name: train
@@ -80,7 +80,7 @@ minio:
   url: http://127.0.0.1:9000/
   accessKey: admin
   secretKey: 123@abc.com
-  bucketName: dubhe-cloud-test
+  bucketName: dubhe-prod
   presignedUrlExpiryTime: 300
   annotation: /annotation/
 
