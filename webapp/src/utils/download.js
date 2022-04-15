@@ -19,8 +19,8 @@ import { minioBaseUrl } from '@/utils/minIO';
 import ZIP from './zip';
 
 const pMap = require('p-map');
-
-streamSaver.mitm = 'https://static.tianshu.org.cn/mitm.html';
+//调用天枢内部网址，开源版本去除即可
+//streamSaver.mitm = 'https://static.tianshu.org.cn/mitm.html';
 
 // 默认名字解析
 const defaultName = (file) => file.name;
